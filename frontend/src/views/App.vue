@@ -10,7 +10,7 @@ import CardYugi from "@/components/CardYugi.vue";
 
   <main>
 
-    <nav class="flex flex-row flex-shrink gap-6 shadow-xs bg-white w-full place-items-center justify-between px-3">
+    <nav class="flex flex-row flex-shrink gap-6 shadow-xs bg-black w-full place-items-center justify-between px-3">
       <div class="flex flex-row w-2/3 gap-6">
         <img alt="TradeMarket Logo" class="" src="../assets/theLogo.png" width="250"/>
         <div class="flex my-2 rounded-md bg-gray-100 has-[input:focus-within]:outline-[#85144B] has-[input:focus-within]:outline-2 w-3/5 justify-between">
