@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-export const supabase = createClient('https://cgzszfciepbzjoyiwzzq.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnenN6ZmNpZXBiempveWl3enpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU1NzUzMDIsImV4cCI6MjA2MTE1MTMwMn0.bqzSiJOdPj35CJ7g-pgFtV850kGIrw1Kw7ObIxAxaSw')
+export const supabase = createClient('https://cgzszfciepbzjoyiwzzq.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJscnB3eWtoanhpcnFyaXBydG9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0NjA5MzYsImV4cCI6MjA3MjAzNjkzNn0.mPkMea4kLSJToshEGm9l-oXZEjxpfJUb1uBhMRBLFLY')
 
 export async function signUpNewUser(user_email, user_password) {
     const { data, error } = await supabase.auth.signUp({

@@ -3,7 +3,7 @@
     <div class="flex flex-row gap-2 " >
         <img alt="imagew" @mouseover="toggle" @mouseleave="toggle" class="h-21 w-15" :src="'src/assets/Cards/'+componentCard.id+'.jpg'"/>
 
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col gap-2 text-gray-300">
             <p>{{ componentCard.name }}</p>
             <div v-for="set in componentCard.card_sets">
                 <p> Sets: {{ set.set_code }}</p>
