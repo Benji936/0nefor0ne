@@ -95,14 +95,6 @@ import { signInWithEmail, signOut, signUpNewUser } from "@/lib/supabaseClient";
               authenticated: false,
               page:"search",
               previousPage:"",
-  
-              items: [
-                { title: 'Click Me' },
-                { title: 'Click Me' },
-                { title: 'Click Me' },
-                { title: 'Click Me 2' },
-              ],
-              
           };
       },
       methods: {

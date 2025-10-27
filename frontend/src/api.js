@@ -12,7 +12,10 @@ export const searchCardByName= async (fname = "") => {
 
 export const searchCardBySetCode = (code="") => {
 
-    const response = axios.get(API_URL+"cardsetsinfo.php?setcode="+code)
+    let split_code = code.split("-")
+    let final_code = split_code[0]+"-EN"+split_code[1].replace(/[a-zA-Z]/g,'')
+
+    const response = axios.get(API_URL+"cardsetsinfo.php?setcode="+final_code)
     .catch(function(error){
         console.error("Error fetching card with " + code, error);
         return null;
