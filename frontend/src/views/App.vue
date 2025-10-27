@@ -35,20 +35,20 @@ import Library from "@/components/Pages/Library.vue";
 
         <v-tooltip location="top" text="Collection">
           <template  v-slot:activator="{ props }">
-            <img src="../assets/library.svg" class="size-8 cursor-pointer" v-on:click="changePage('library')" v-bind="props" v-if="!authenticated" alt="">
+            <img src="../assets/library.svg" class="size-8 cursor-pointer" v-on:click="changePage('library')" v-bind="props" v-if="authenticated" alt="">
           </template>
         </v-tooltip>
 
         <v-tooltip location="top" color="deep-purple accent-4" text="Account">
           <template v-slot:activator="{ props }">
-              <img src="../assets/user.svg" class="size-8 cursor-pointer" v-on:click="changePage('account')"  v-bind="props" v-if="!authenticated" alt="">
+              <img src="../assets/user.svg" class="size-8 cursor-pointer" v-on:click="changePage('account')"  v-bind="props" v-if="authenticated" alt="">
           </template>
 
         </v-tooltip>
         
         
-        <img src="../assets/log-in.svg" class="size-8 cursor-pointer" v-on:click="login" v-if="authenticated" alt="">
-        <img src="../assets/log-out.svg" class="size-8 cursor-pointer" v-on:click="logout" v-if="!authenticated" alt="">
+        <img src="../assets/log-in.svg" class="size-8 cursor-pointer" v-on:click="login" v-if="!authenticated" alt="">
+        <img src="../assets/log-out.svg" class="size-8 cursor-pointer" v-on:click="logout" v-if="authenticated" alt="">
 
 
       </div>
@@ -123,6 +123,10 @@ import { signInWithEmail, signOut, signUpNewUser } from "@/lib/supabaseClient";
           
           //console.log(this.cards)
         },    
+        async signUp(){
+          this.authenticated = await signUpNewUser("Benjaminsitbon@hotmail.com","Okwuntughe7!");
+          console.log(this.authenticated)
+        },
         async login(){
           this.authenticated = await signInWithEmail("Benjaminsitbon@hotmail.com","Okwuntughe7!");
           console.log(this.authenticated)

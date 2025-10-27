@@ -1,6 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 
-export const supabase = createClient('https://cgzszfciepbzjoyiwzzq.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJscnB3eWtoanhpcnFyaXBydG9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0NjA5MzYsImV4cCI6MjA3MjAzNjkzNn0.mPkMea4kLSJToshEGm9l-oXZEjxpfJUb1uBhMRBLFLY')
+const supabaseUrl = 'https://sxteuctysfiwripnaozi.supabase.co'
+const supabasePublishableKey =  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4dGV1Y3R5c2Zpd3JpcG5hb3ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTczNTA1OTAsImV4cCI6MjA3MjkyNjU5MH0.nrRXz20dGkNH3wDIkHTxlrVMC-uvEiukWsq9-Pu4Lcw'
+console.log(supabaseUrl)
+console.log(supabasePublishableKey)
+export const supabase = createClient(supabaseUrl,supabasePublishableKey)
 
 export async function signUpNewUser(user_email, user_password) {
     const { data, error } = await supabase.auth.signUp({
@@ -44,4 +48,8 @@ export async function signOut() {
         // Redirection vers la page de connexion (exemple)
         return false;
     }
+}
+
+export function query(tableName){
+    return supabase.from(tableName)
 }

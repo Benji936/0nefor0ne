@@ -1,6 +1,10 @@
+<script setup>
+import CardYugi from "@/components/CardYugi.vue";
+</script>
+
 <template>
 
-    <v-dialog max-width="500">
+    <v-overlay class="flex items-center place-content-center">
 
     
     <template v-slot:activator="{ props: activatorProps }">
@@ -17,25 +21,90 @@
     </template>
 
     <template v-slot:default="{ isActive }">
-        <v-card title="Dialog">
-        <v-card-text>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-        </v-card-text>
+        <v-card class="w-[75vw]">
+            <v-card-actions>
+                <v-text-field
+                    v-model="search"
+                    label="Search"
+                    prepend-inner-icon="mdi-magnify"
+                    variant="outlined"
+                    hide-details
+                    single-line
+                    v-on:keyup.enter="update"
+                ></v-text-field>
+            </v-card-actions>
+            <div class="flex flex-column max-h-[300px] overflow-scroll px-5 py-5 border gap-5">
+                <div class="flex flex-row gap-5" v-for="card in cards.data">
+                        
+                    <img :src="'src/assets/Cards/'+card.id+'.jpg'" alt="image" width="60px">
+                    <h1 class="align-self-center">{{ card.name }}</h1>
+                    <v-overlay>
+                        <template v-slot:activator="{ props: activatorProps }">
+                            <v-btn 
+                            class="align-self-center" 
+                            key="1" 
+                            icon="$plus"
+                            v-bind="activatorProps"
+                            ></v-btn>
+                        </template>
 
-        <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-text-field
-                v-model="search"
-                label="Search"
-                prepend-inner-icon="mdi-magnify"
-                variant="outlined"
-                hide-details
-                single-line
-            ></v-text-field>
-        </v-card-actions>
+                        <template v-slot:default="{ isActive }">
+                            <div class="border-1 w-screen">
+
+                            </div>
+                        </template>
+                    </v-overlay>
+                    
+                    
+                </div>
+               
+            </div>
         </v-card>
     </template>
-    </v-dialog>
+    </v-overlay>
 
 
 </template>
+
+<script>
+
+import { searchCardByName, searchCardBySetCode, searchById } from "@/api";  
+
+  export default {
+      
+
+      data() {
+          return {
+              search: "",
+              cards:[],
+          };
+      },
+      methods: {
+        async update(){
+          const response = await searchCardByName(this.search);
+          if(response.data.length === 0){
+            console.log("pas un nom, essaie pour setcode")
+            const alternative_response = await searchCardBySetCode(this.search)
+            if(alternative_response){
+              console.log(alternative_response)
+              const new_response = await searchById(alternative_response.data.id)
+              this.cards = new_response.data
+            }
+          }else{
+            this.cards = response.data
+          }
+          
+          
+          console.log(this.cards)
+        },    
+      },
+
+      
+
+
+      mounted() {
+          
+      },
+  };
+
+</script>
