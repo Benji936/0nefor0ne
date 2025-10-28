@@ -65,16 +65,16 @@ import CardYugi from "@/components/CardYugi.vue";
                                     <div class="flex flex-col gap-3">
                                         <div class="flex flex-col">
                                             <label for="Extension">Extension</label>
-                                            <select @change="test" v-model="set_selection" class="bg-grey-lighten-2 px-1 py-1 rounded"  name="Extension" id="">
+                                            <select @change="test(card)" v-model="rarity_selection" class="bg-grey-lighten-2 px-1 py-1 rounded"  name="Extension" id="">
                                                 <option :value=null>Choisir</option>
-                                                <option v-for="set in card.card_sets" :value=set>{{ set.set_code }}</option>
+                                                <option v-for="set in card.card_sets" :value=set.set_rarity>{{ set.set_rarity}}</option>
                                             </select>
                                         </div>
                                         
-                                        <div v-if="set_selection!=null" class="flex flex-col">
+                                        <div v-if="rarity_selection!=null" class="flex flex-col">
                                             <label  for="Rarity">Rarity</label>
                                             <select class="bg-grey-lighten-2 px-1 py-1 rounded"  name="Rarity" id="">
-                                                <option :value=set_selection.set_rarity>{{ set_selection.set_rarity }}</option>
+                                                <option v-for="set in set_selection" :value=set.set_code>{{ set.set_code }}</option>
                                             </select>
                                         </div>
 
@@ -121,7 +121,8 @@ import { ref } from "vue";
           return {
               search: "",
               cards:[],
-              set_selection:ref(null),
+              set_selection:[],
+              rarity_selection:ref(null),
           };
       },
       methods: {
@@ -140,8 +141,14 @@ import { ref } from "vue";
           }
           console.log(this.cards)
         },    
-        test(){
-            console.log(this.set_selection.set_rarity)
+        test(card){
+            this.set_selection = []
+            console.log(card)
+            for(let i = 0; i<card.card_sets.length; i++){
+                if(card.card_sets[i].set_rarity == this.rarity_selection){
+                    this.set_selection.push(card.card_sets[i])
+                }
+            }
         },
       },
 
