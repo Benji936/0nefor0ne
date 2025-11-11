@@ -50,6 +50,19 @@ export async function signOut() {
     }
 }
 
-export function query(tableName){
-    return supabase.from(tableName)
+export function query(name){
+    return supabase.from(name)
+}
+
+
+export async function insert(values){
+    const { data, error } = await supabase
+    .from('Card')
+    .insert([
+        values,
+    ])
+    .select()
+
+    console.log(data)
+    console.log(error)
 }

@@ -1,5 +1,5 @@
 <script setup>
-import CardYugi from "@/components/CardYugi.vue";
+import AddButtonForm from "@/components/AddButtonForm.vue";
 </script>
 
 <template>
@@ -39,64 +39,7 @@ import CardYugi from "@/components/CardYugi.vue";
                         
                     <img :src="'src/assets/Cards/'+card.id+'.jpg'" alt="image" width="60px">
                     <h1 class="align-self-center">{{ card.name }}</h1>
-                    <v-overlay class="border-1 border-red-500 flex items-center place-content-center">
-                        <template v-slot:activator="{ props: activatorProps }">
-                            <v-btn 
-                            class="align-self-center" 
-                            key="1" 
-                            icon="$plus"
-                            v-bind="activatorProps"
-                          
-                            ></v-btn>
-                        </template>
-
-                        <template v-slot:default="{ isActive }">
-                            <div class="flex flex-col gap-5 rounded py-8 px-8 bg-white w-fit-content place-self-center self-center">
-                                <div class="flex flex-row gap-5">
-                                    <img :src="'src/assets/Cards/'+card.id+'.jpg'" alt="image" width="180px">
-                                    <div class="flex flex-col">
-                                        <h1 class="font-bold">{{ card.name }}</h1>
-                                        <h2 class="w-[400px]">{{ card.desc }}</h2>
-                                    </div>
-                                </div>
-
-
-                                <form action="">
-                                    <div class="flex flex-col gap-3">
-                                        <div class="flex flex-col">
-                                            <label for="Extension">Extension</label>
-                                            <select @change="test(card)" v-model="rarity_selection" class="bg-grey-lighten-2 px-1 py-1 rounded"  name="Extension" id="">
-                                                <option :value=null>Choisir</option>
-                                                <option v-for="set in card.card_sets" :value=set.set_rarity>{{ set.set_rarity}}</option>
-                                            </select>
-                                        </div>
-                                        
-                                        <div v-if="rarity_selection!=null" class="flex flex-col">
-                                            <label  for="Rarity">Rarity</label>
-                                            <select class="bg-grey-lighten-2 px-1 py-1 rounded"  name="Rarity" id="">
-                                                <option v-for="set in set_selection" :value=set.set_code>{{ set.set_code }}</option>
-                                            </select>
-                                        </div>
-
-                                         <div class="flex flex-col">
-                                            <label for="Language">Language</label>
-                                            <select class="bg-grey-lighten-2 px-1 py-1 rounded"  name="Rarity" id="">
-                                                <option value="EN">English</option>
-                                                <option value="FR">French</option>
-                                                <option value="SP">Spanish</option>
-                                                <option value="DE">German</option>
-                                                <option value="IT">Italian</option>
-                                                <option value="PT">Portuguese</option>
-                                            </select>
-                                         </div>
-                                        
-                                    </div>
-                                    
-
-                                </form>
-                            </div>
-                        </template>
-                    </v-overlay>
+                    <AddButtonForm :card="card"></AddButtonForm>
                     
                     
                 </div>
@@ -112,17 +55,12 @@ import CardYugi from "@/components/CardYugi.vue";
 <script>
 
 import { searchCardByName, searchCardBySetCode, searchById } from "@/api";  
-import { ref } from "vue";
 
   export default {
-      
-
       data() {
           return {
               search: "",
               cards:[],
-              set_selection:[],
-              rarity_selection:ref(null),
           };
       },
       methods: {
@@ -140,21 +78,8 @@ import { ref } from "vue";
             this.cards = response.data
           }
           console.log(this.cards)
-        },    
-        test(card){
-            this.set_selection = []
-            console.log(card)
-            for(let i = 0; i<card.card_sets.length; i++){
-                if(card.card_sets[i].set_rarity == this.rarity_selection){
-                    this.set_selection.push(card.card_sets[i])
-                }
-            }
         },
       },
-
-      
-
-
       mounted() {
           
       },
