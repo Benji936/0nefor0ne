@@ -1,7 +1,7 @@
 
 <template>
 
-    <v-overlay class="flex items-center place-content-center">
+    <v-overlay class="flex items-center place-content-center" v-model="overlay">
         <template v-slot:activator="{ props: activatorProps }">
             <v-btn 
             class="align-self-center" 
@@ -16,10 +16,10 @@
         <template v-slot:default="{ isActive }">
             <div class="flex flex-col gap-5 rounded py-8 px-8 bg-white w-fit-content place-self-center self-center">
                 <div class="flex flex-row gap-5">
-                    <img :src="'src/assets/Cards/'+card.id+'.jpg'" alt="image" width="180px">
+                    <img :src="'src/assets/Cards/'+card.id+'.jpg'" alt="image" class="h-60 w-40">
                     <div class="flex flex-col">
-                        <h1 class="font-bold">{{ card.name }}</h1>
-                        <h2 class="w-[400px]">{{ card.desc }}</h2>
+                        <h1 class="font-bold text-lg">{{ card.name }}</h1>
+                        <h2 class="w-[400px] text-sm">{{ card.desc }}</h2>
                     </div>
                 </div>
 
@@ -67,7 +67,14 @@
                                     label="First edition"
                                     color="pink-darken-3"
                                     v-model="first_edition" 
-                                    v-on:click="console.log(first_edition)"></v-checkbox>
+                                    ></v-checkbox>
+
+                                    <v-checkbox 
+                                    density="comfortable"
+                                    label="Trade ?"
+                                    color="pink-darken-3"
+                                    v-model="trade" 
+                                    ></v-checkbox>
                             </div>
                             
 
@@ -94,6 +101,7 @@
                                 type="submit"
                                 text="Add card"
                                 :loading="loading"
+                                @click="overlay = false"
                                 ></v-btn>
                         
                     </div>
@@ -117,6 +125,7 @@ import { ref } from "vue";
     props: ['card'],
     data() {
         return {
+            overlay: false,
             loading: ref(null),
             language: "English",
             languages: ["English","French","Spanish","German","Italian","Portuguese"],
@@ -127,7 +136,8 @@ import { ref } from "vue";
             rarities: [],
             condition: "Near Mint",
             conditions: ["Mint","Near Mint","Excellent","Good","Light Played","Played","Poor"],
-            first_edition: false
+            first_edition: false,
+            trade: false,
         };
     },
     methods: {
@@ -153,7 +163,7 @@ import { ref } from "vue";
             this.loading = true
             const results = await event
             this.loading = false
-            insert({wish: true, first_edition: this.first_edition, game:'YGO', url: 'https://db.ygoprodeck.com/api/v7/cardinfo.php?name='+this.card.name, name: this.card.name, extension: this.extension, rarity:this.rarity, language: this.language, condition: this.condition, quantity: this.quantity, trader: 'c9a52548-d363-4574-b72d-e2b1151af266', image_id: this.card.id})
+            insert({wish: !this.trade, first_edition: this.first_edition, game:'YGO', url: 'https://db.ygoprodeck.com/api/v7/cardinfo.php?name='+this.card.name, name: this.card.name, extension: this.extension, rarity:this.rarity, language: this.language, condition: this.condition, quantity: this.quantity, trader: 'c9a52548-d363-4574-b72d-e2b1151af266', image_id: this.card.id})
             //alert(JSON.stringify(results, null, 2))
         },    
     },
@@ -162,7 +172,6 @@ import { ref } from "vue";
 
 
       mounted() {
-          
       },
   };
 

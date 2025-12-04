@@ -10,6 +10,7 @@ import AddButtonForm from "@/components/AddButtonForm.vue";
     <template v-slot:activator="{ props: activatorProps }">
 
         <v-btn 
+        density="comfortable"
         variant="default" 
         style="background-color: #85144B;" 
         prepend-icon="mdi-plus" 

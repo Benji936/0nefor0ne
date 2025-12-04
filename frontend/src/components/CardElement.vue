@@ -44,7 +44,7 @@ import ConditionTooltip from './tooltips/ConditionTooltip.vue';
 
 <script>
 
-import { query } from "@/lib/supabaseClient";
+import { getClient } from "@/lib/supabaseClient";
 
     
     export default {
@@ -56,9 +56,13 @@ import { query } from "@/lib/supabaseClient";
         },
         methods:{
             async onQuantityChange(){
-                const response = query('Card').update({quantity:this.quantityCount}).eq({id:this.wish.id}).select()
-                console.log(response)
-                console.log(this.wish.id)
+                const supabase_client = getClient()
+                if(this.quantityCount > 0){
+                    const {data, error} = await supabase_client.from('Card').update({'quantity':this.quantityCount}).eq('id',this.wish.id).select()
+                } 
+                else{
+                    const {data , error} = await supabase_client.from('Card').delete().eq('id',this.wish.id).select()
+                } 
             }
         },
         mounted(){

@@ -33,7 +33,7 @@ export async function signInWithEmail(user_email, user_password) {
         console.log(error)
         return false;
     }else{
-        return true
+        return data
     }
 }
 
@@ -50,8 +50,8 @@ export async function signOut() {
     }
 }
 
-export function query(name){
-    return supabase.from(name)
+export function getClient(){
+    return supabase
 }
 
 
