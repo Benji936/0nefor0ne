@@ -72,15 +72,6 @@ const emit = defineEmits(['showTraders'])
 </template>
 
 <script>
-
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-// Needed if you're using ES modules:
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
     export default {
       
         props: ['componentCard'],
@@ -91,9 +82,9 @@ const __dirname = path.dirname(__filename);
         
         },
         methods: {
-        toggle(){
-            this.over = !this.over;
-        },
+            toggle(){
+                this.over = !this.over;
+            },
         },
         mounted() {
             
