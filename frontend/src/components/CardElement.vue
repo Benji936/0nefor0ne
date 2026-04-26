@@ -1,12 +1,13 @@
 <script setup>
 import LanguageTooltip from './tooltips/LanguageTooltip.vue';
 import ConditionTooltip from './tooltips/ConditionTooltip.vue';
+import { cardImage } from '@/lib/cardImage';
 </script>
 
 <template>
 
 
-    <img :src="'src/assets/Cards/'+wish.image_id+'.jpg'" alt="image" width="40px">
+    <img :src="cardImage(wish.image_id)" alt="image" width="40px">
     <div class="flex flex-col justify-between">
         <div class="flex flex-row gap-5">
             <h1>{{ wish.name }}</h1>

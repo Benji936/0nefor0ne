@@ -14,6 +14,11 @@ dist-ssr
 coverage
 *.local
 
+# env files (keep .env.example committed)
+.env
+.env.*
+!.env.example
+
 /cypress/videos/
 /cypress/screenshots/
 

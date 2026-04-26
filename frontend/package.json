@@ -6,15 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cards:bulk-upload": "node scripts/r2/bulk-upload.mjs",
+    "cards:sync": "node scripts/r2/sync-from-api.mjs"
   },
   "dependencies": {
-    "@headlessui/vue": "^1.7.23",
-    "@heroicons/vue": "^2.2.0",
     "@mdi/font": "^7.4.47",
     "@supabase/supabase-js": "^2.57.4",
     "@tailwindcss/vite": "^4.1.4",
-    "@tailwindplus/elements": "^1.0.11",
     "axios": "^1.9.0",
     "tailwindcss": "^4.1.4",
     "vue": "^3.5.13",
@@ -22,10 +21,10 @@
     "vuetify": "^3.9.6"
   },
   "devDependencies": {
+    "@aws-sdk/client-s3": "^3.658.0",
     "@vitejs/plugin-vue": "^5.2.3",
-    "deepmerge": "^4.3.1",
+    "dotenv": "^16.4.5",
     "sass": "^1.91.0",
-    "sass-loader": "^16.0.5",
     "vite": "^6.2.4",
     "vite-plugin-vue-devtools": "^7.7.2"
   }

@@ -1,21 +1,24 @@
 <script setup>
+import { cardImage } from '@/lib/cardImage'
 const emit = defineEmits(['showTraders'])
 
 </script>
 
 <template>
+    
+
     <v-overlay class=" w-50 place-self-center align-center">
         <template v-slot:activator="{ props: activatorProps }">
 
             <div class="hover:outline hover:outline-white" v-bind="activatorProps">
-                <img alt="image" @mouseover="toggle" @mouseleave="toggle" class="h-31 w-22" :src="'src/assets/Cards/'+componentCard.id+'.jpg'"/>         
+                <img alt="image" @mouseover="toggle" @mouseleave="toggle" class="h-31 w-22" :src="cardImage(componentCard.id)"/>
             </div>
         </template>
 
         <template v-slot:default="{ isActive }">
             <div class="flex flex-col gap-5 text-black-300 bg-white px-10 py-7 rounded-xl">
                 <div class="flex flex-row gap-5">
-                    <img alt="image" class="h-61 w-44" :src="'src/assets/Cards/'+componentCard.id+'.jpg'"/>
+                    <img alt="image" class="h-61 w-44" :src="cardImage(componentCard.id)"/>
                     <div class="flex flex-col gap-2">
                         <p class="font-bold text-xl">{{ componentCard.name }}</p>
                         <div class="flex flex-row gap-3 text-lg">

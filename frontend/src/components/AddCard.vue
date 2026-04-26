@@ -1,5 +1,6 @@
 <script setup>
 import AddButtonForm from "@/components/AddButtonForm.vue";
+import { cardImage } from "@/lib/cardImage";
 </script>
 
 <template>
@@ -38,7 +39,7 @@ import AddButtonForm from "@/components/AddButtonForm.vue";
             <div class="flex flex-column max-h-[300px] overflow-scroll px-5 py-5 border gap-5">
                 <div class="flex flex-row gap-5" v-for="card in cards.data">
                         
-                    <img :src="'src/assets/Cards/'+card.id+'.jpg'" alt="image" width="60px">
+                    <img :src="cardImage(card.id)" alt="image" width="60px">
                     <h1 class="align-self-center">{{ card.name }}</h1>
                     <AddButtonForm :card="card"></AddButtonForm>
                     

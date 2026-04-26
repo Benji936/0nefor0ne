@@ -1,3 +1,6 @@
+<script setup>
+import { cardImage } from "@/lib/cardImage";
+</script>
 
 <template>
 
@@ -16,7 +19,7 @@
         <template v-slot:default="{ isActive }">
             <div class="flex flex-col gap-5 rounded py-8 px-8 bg-white w-fit-content place-self-center self-center">
                 <div class="flex flex-row gap-5">
-                    <img :src="'src/assets/Cards/'+card.id+'.jpg'" alt="image" class="h-60 w-40">
+                    <img :src="cardImage(card.id)" alt="image" class="h-60 w-40">
                     <div class="flex flex-col">
                         <h1 class="font-bold text-lg">{{ card.name }}</h1>
                         <h2 class="w-[400px] text-sm">{{ card.desc }}</h2>
