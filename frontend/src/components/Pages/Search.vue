@@ -6,7 +6,7 @@ const emit = defineEmits(['TradeCenter'])
 <template>
 
     <div class="d-flex flex-col">
-        <div class="flex flex-wrap gap-4 px-10 py-10"  >
+        <div class="flex flex-wrap gap-5 py-6">
             <CardYugi @showTraders="emit('TradeCenter',$event)" :componentCard="card" class="w-1/5 h-fit rounded-md text-xs" v-for="card in searchCards.data"></CardYugi>
         </div>
     </div>

@@ -115,144 +115,129 @@ function describe(card) {
   <v-dialog
     :model-value="modelValue"
     @update:model-value="emit('update:modelValue', $event)"
-    max-width="1100"
+    max-width="1000"
     scrollable
   >
-    <v-card v-if="user" class="bg-white text-gray-900">
-      <v-card-title class="flex flex-row items-center gap-3 pa-5">
-        <v-icon icon="mdi-swap-horizontal-bold" color="#85144B" size="28" />
-        <div class="flex flex-col">
-          <span class="text-lg font-bold text-gray-900">Propose trade</span>
-          <span class="text-sm text-gray-700">with {{ user.name ?? "Anonymous" }}</span>
+    <v-card v-if="user" class="bg-gray-900 text-gray-100">
+      <!-- Header -->
+      <div class="flex items-center gap-4 px-6 py-4 border-b border-white/10">
+        <div class="size-10 rounded-full flex items-center justify-center font-bold text-sm text-white shrink-0" style="background-color: #85144B">
+          {{ (user.name ?? "?").split(/\s+/).map(p => p[0]?.toUpperCase()).slice(0,2).join("") }}
         </div>
-      </v-card-title>
-
-      <v-divider />
+        <div class="flex flex-col grow min-w-0">
+          <span class="font-bold text-gray-100">Propose trade</span>
+          <span class="text-xs text-gray-400">with {{ user.name ?? "Anonymous" }}</span>
+        </div>
+        <v-btn icon="mdi-close" variant="text" color="white" density="compact" @click="close" />
+      </div>
 
       <v-card-text class="pa-6">
-        <p v-if="loading" class="text-center text-gray-700 py-6">Loading…</p>
+        <!-- Loading skeletons -->
+        <div v-if="loading" class="grid grid-cols-2 gap-6">
+          <div v-for="col in 2" :key="col" class="flex flex-col gap-3">
+            <div class="h-4 w-24 bg-gray-700 rounded animate-pulse"></div>
+            <div v-for="i in 3" :key="i" class="flex gap-3 p-3 rounded-xl border border-gray-700 animate-pulse">
+              <div class="h-16 w-11 bg-gray-700 rounded shrink-0"></div>
+              <div class="flex flex-col gap-2 grow pt-1">
+                <div class="h-3 bg-gray-700 rounded w-3/4"></div>
+                <div class="h-3 bg-gray-700 rounded w-1/2"></div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <!-- ============== You give ============== -->
-          <section class="flex flex-col gap-3">
-            <div class="flex flex-row items-center justify-between">
-              <p class="text-sm uppercase tracking-wide text-gray-700 font-semibold">You give</p>
-              <!-- Inline 'Add card not in your library' button. -->
-              <AddCard
-                mode="trade"
-                button-label="Add a card to offer"
-                @added="onCardAdded"
-              />
+          <!-- ── You give ── -->
+          <section class="flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <v-icon icon="mdi-arrow-up-circle" color="#85144B" size="20" />
+                <p class="text-sm font-semibold text-gray-100 uppercase tracking-wide">You give</p>
+                <span v-if="givePayload.length > 0" class="text-xs px-2 py-0.5 rounded-full bg-pink-900/50 text-pink-200 border border-pink-600/50 font-medium">{{ givePayload.length }}</span>
+              </div>
+              <AddCard mode="trade" button-label="Add to offer" @added="onCardAdded" />
             </div>
 
-            <p v-if="myOffers.length === 0" class="text-sm text-gray-600 py-2">
-              Your trade pile is empty. Use "Add a card to offer" to list one and add it to this proposal.
+            <p v-if="myOffers.length === 0" class="text-sm text-gray-400 py-6 text-center">
+              Your trade pile is empty. Add a card to offer above.
             </p>
 
-            <!--
-              Layout per row (with breathing room):
-                ┌────────────────────────────────────────────┐
-                │ Card name (full width, truncates)          │
-                │ ☑  [img]  meta · meta · meta   [- qty +]   │
-                └────────────────────────────────────────────┘
-            -->
             <div
               v-for="card in myOffers"
               :key="card.id"
-              class="flex flex-col gap-3 border rounded-md p-4"
-              :class="(giveSelection[card.id] ?? 0) > 0 ? 'border-pink-300 bg-pink-50' : 'border-gray-200'"
+              class="flex items-center gap-4 rounded-xl border p-4 cursor-pointer select-none transition-all"
+              :class="(giveSelection[card.id] ?? 0) > 0
+                ? 'border-pink-500/60 bg-pink-950/50'
+                : 'border-gray-600 hover:border-gray-400'"
+              @click="giveSelection[card.id] = (giveSelection[card.id] ?? 0) > 0 ? 0 : 1"
             >
-              <div class="flex flex-row items-center gap-2">
-                <p class="font-medium text-sm text-gray-900 truncate grow min-w-0" :title="card.name">
-                  {{ card.name }}
-                </p>
-                <v-chip
-                  v-if="card.theyWantThis"
-                  size="x-small"
-                  variant="flat"
-                  class="shrink-0"
-                  :style="{ backgroundColor: '#669911', color: 'white' }"
-                >
+              <v-checkbox
+                :model-value="(giveSelection[card.id] ?? 0) > 0"
+                @update:model-value="giveSelection[card.id] = $event ? 1 : 0"
+                @click.stop
+                hide-details density="compact" color="#85144B" class="shrink-0"
+              />
+              <img :src="cardImage(card.image_id)" :alt="card.name" class="h-16 w-11 rounded object-contain bg-gray-800 shrink-0" />
+              <div class="flex flex-col grow min-w-0 gap-1">
+                <p class="font-semibold text-sm text-white truncate">{{ card.name }}</p>
+                <p class="text-xs text-gray-300 truncate">{{ describe(card) || "—" }}</p>
+                <span v-if="card.theyWantThis" class="text-xs font-semibold text-lime-300 bg-lime-900/40 border border-lime-600/40 px-2 py-0.5 rounded w-fit">
                   They want this
-                </v-chip>
+                </span>
               </div>
-
-              <div class="flex flex-row gap-3 items-center min-w-0">
-                <v-checkbox
-                  :model-value="(giveSelection[card.id] ?? 0) > 0"
-                  @update:model-value="giveSelection[card.id] = $event ? 1 : 0"
-                  hide-details
-                  density="compact"
-                  color="#85144B"
-                  class="shrink-0"
-                />
-                <img
-                  :src="cardImage(card.image_id)"
-                  :alt="card.name"
-                  class="h-20 w-14 rounded-sm object-contain bg-gray-50 shrink-0"
-                />
-                <p class="text-xs text-gray-700 grow min-w-0 truncate" :title="describe(card)">
-                  {{ describe(card) || "—" }}
-                </p>
-                <v-number-input
-                  :model-value="giveSelection[card.id] ?? 0"
-                  @update:model-value="giveSelection[card.id] = Number($event) || 0"
-                  :min="0"
-                  :max="card.quantity ?? 99"
-                  control-variant="split"
-                  density="compact"
-                  hide-details
-                  class="shrink-0"
-                  style="width: 140px; flex: 0 0 140px"
-                />
-              </div>
+              <v-number-input
+                v-if="(giveSelection[card.id] ?? 0) > 0"
+                :model-value="giveSelection[card.id]"
+                @update:model-value="giveSelection[card.id] = Number($event) || 0"
+                :min="1" :max="card.quantity ?? 99"
+                control-variant="split" density="compact" hide-details
+                class="shrink-0" style="width: 120px; flex: 0 0 120px"
+                @click.stop
+              />
             </div>
           </section>
 
-          <!-- ============== You receive ============== -->
-          <section class="flex flex-col gap-3">
-            <p class="text-sm uppercase tracking-wide text-gray-700 font-semibold">You receive</p>
-            <p v-if="(user.theyHave ?? []).length === 0" class="text-sm text-gray-600 py-2">
+          <!-- ── You receive ── -->
+          <section class="flex flex-col gap-4">
+            <div class="flex items-center gap-2">
+              <v-icon icon="mdi-arrow-down-circle" color="#116699" size="20" />
+              <p class="text-sm font-semibold text-gray-100 uppercase tracking-wide">You receive</p>
+              <span v-if="receivePayload.length > 0" class="text-xs px-2 py-0.5 rounded-full bg-blue-900/50 text-blue-200 border border-blue-600/50 font-medium">{{ receivePayload.length }}</span>
+            </div>
+
+            <p v-if="(user.theyHave ?? []).length === 0" class="text-sm text-gray-400 py-6 text-center">
               They don't have anything on your wishlist.
             </p>
+
             <div
               v-for="card in user.theyHave"
               :key="card.id"
-              class="flex flex-col gap-3 border rounded-md p-4"
-              :class="(receiveSelection[card.id] ?? 0) > 0 ? 'border-blue-300 bg-blue-50' : 'border-gray-200'"
+              class="flex items-center gap-4 rounded-xl border p-4 cursor-pointer select-none transition-all"
+              :class="(receiveSelection[card.id] ?? 0) > 0
+                ? 'border-blue-500/60 bg-blue-950/50'
+                : 'border-gray-600 hover:border-gray-400'"
+              @click="receiveSelection[card.id] = (receiveSelection[card.id] ?? 0) > 0 ? 0 : 1"
             >
-              <p class="font-medium text-sm text-gray-900 truncate" :title="card.name">
-                {{ card.name }}
-              </p>
-              <div class="flex flex-row gap-3 items-center min-w-0">
-                <v-checkbox
-                  :model-value="(receiveSelection[card.id] ?? 0) > 0"
-                  @update:model-value="receiveSelection[card.id] = $event ? 1 : 0"
-                  hide-details
-                  density="compact"
-                  color="#116699"
-                  class="shrink-0"
-                />
-                <img
-                  :src="cardImage(card.image_id)"
-                  :alt="card.name"
-                  class="h-20 w-14 rounded-sm object-contain bg-gray-50 shrink-0"
-                />
-                <p class="text-xs text-gray-700 grow min-w-0 truncate" :title="describe(card)">
-                  {{ describe(card) || "—" }}
-                </p>
-                <v-number-input
-                  :model-value="receiveSelection[card.id] ?? 0"
-                  @update:model-value="receiveSelection[card.id] = Number($event) || 0"
-                  :min="0"
-                  :max="card.quantity ?? 99"
-                  control-variant="split"
-                  density="compact"
-                  hide-details
-                  class="shrink-0"
-                  style="width: 140px; flex: 0 0 140px"
-                />
+              <v-checkbox
+                :model-value="(receiveSelection[card.id] ?? 0) > 0"
+                @update:model-value="receiveSelection[card.id] = $event ? 1 : 0"
+                @click.stop
+                hide-details density="compact" color="#116699" class="shrink-0"
+              />
+              <img :src="cardImage(card.image_id)" :alt="card.name" class="h-16 w-11 rounded object-contain bg-gray-800 shrink-0" />
+              <div class="flex flex-col grow min-w-0 gap-1">
+                <p class="font-semibold text-sm text-white truncate">{{ card.name }}</p>
+                <p class="text-xs text-gray-300 truncate">{{ describe(card) || "—" }}</p>
               </div>
+              <v-number-input
+                v-if="(receiveSelection[card.id] ?? 0) > 0"
+                :model-value="receiveSelection[card.id]"
+                @update:model-value="receiveSelection[card.id] = Number($event) || 0"
+                :min="1" :max="card.quantity ?? 99"
+                control-variant="split" density="compact" hide-details
+                class="shrink-0" style="width: 120px; flex: 0 0 120px"
+                @click.stop
+              />
             </div>
           </section>
         </div>
@@ -262,22 +247,28 @@ function describe(card) {
         </v-alert>
       </v-card-text>
 
-      <v-divider />
-
-      <v-card-actions class="pa-5">
-        <v-spacer />
-        <v-btn variant="text" @click="close" :disabled="submitting">Cancel</v-btn>
-        <v-btn
-          variant="flat"
-          style="background-color: #85144B; color: white"
-          prepend-icon="mdi-send"
-          :loading="submitting"
-          :disabled="!canSubmit"
-          @click="submit"
-        >
-          Send proposal
-        </v-btn>
-      </v-card-actions>
+      <div class="flex items-center justify-between px-6 py-4 border-t border-white/10">
+        <p class="text-sm text-gray-300">
+          <span v-if="givePayload.length > 0 || receivePayload.length > 0">
+            Giving {{ givePayload.length }} card{{ givePayload.length !== 1 ? 's' : '' }},
+            receiving {{ receivePayload.length }} card{{ receivePayload.length !== 1 ? 's' : '' }}
+          </span>
+          <span v-else>Select cards to include in the proposal.</span>
+        </p>
+        <div class="flex gap-3">
+          <v-btn variant="text" color="gray" @click="close" :disabled="submitting">Cancel</v-btn>
+          <v-btn
+            variant="flat"
+            style="background-color: #85144B; color: white"
+            prepend-icon="mdi-send"
+            :loading="submitting"
+            :disabled="!canSubmit"
+            @click="submit"
+          >
+            Send proposal
+          </v-btn>
+        </div>
+      </div>
     </v-card>
   </v-dialog>
 </template>

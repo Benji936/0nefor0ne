@@ -30,38 +30,60 @@ import AuthDialog from "@/components/AuthDialog.vue";
         </div>
       </div>
 
-      <div class="flex row justify-around w-1/6">
+      <div class="flex row items-center justify-around w-1/6 gap-1">
 
         <v-tooltip location="top" text="Collection">
-          <template  v-slot:activator="{ props }">
-            <img src="../assets/library.svg" class="size-8 cursor-pointer" v-on:click="changePage('library')" v-bind="props" v-if="authenticated" alt="">
+          <template v-slot:activator="{ props }">
+            <div
+              v-if="authenticated"
+              v-bind="props"
+              class="flex flex-col items-center gap-0.5 cursor-pointer px-2 py-1 rounded-md transition-colors"
+              :class="page === 'library' ? 'bg-white/10' : 'hover:bg-white/5'"
+              @click="changePage('library')"
+            >
+              <img src="../assets/library.svg" class="size-6" alt="">
+              <div class="h-0.5 w-4 rounded-full transition-all" :class="page === 'library' ? 'bg-pink-400' : 'bg-transparent'"></div>
+            </div>
           </template>
         </v-tooltip>
 
         <v-tooltip location="top" text="Trade matches">
           <template v-slot:activator="{ props }">
-            <v-icon
+            <div
               v-if="authenticated"
               v-bind="props"
-              icon="mdi-swap-horizontal-bold"
-              size="32"
-              class="cursor-pointer text-white"
+              class="flex flex-col items-center gap-0.5 cursor-pointer px-2 py-1 rounded-md transition-colors"
+              :class="page === 'TradeCenter' ? 'bg-white/10' : 'hover:bg-white/5'"
               @click="openMatches()"
-            />
+            >
+              <v-icon
+                icon="mdi-swap-horizontal-bold"
+                size="24"
+                :style="page === 'TradeCenter' ? {} : { color: '#85144B' }"
+                :class="page === 'TradeCenter' ? 'text-pink-400' : ''"
+              />
+              <div class="h-0.5 w-4 rounded-full transition-all" :class="page === 'TradeCenter' ? 'bg-pink-400' : 'bg-transparent'"></div>
+            </div>
           </template>
         </v-tooltip>
 
-        <v-tooltip location="top" color="deep-purple accent-4" text="Account">
+        <v-tooltip location="top" text="Account">
           <template v-slot:activator="{ props }">
-              <img src="../assets/user.svg" class="size-8 cursor-pointer" v-on:click="changePage('account')"  v-bind="props" v-if="authenticated" alt="">
+            <div
+              v-if="authenticated"
+              v-bind="props"
+              class="flex flex-col items-center gap-0.5 cursor-pointer px-2 py-1 rounded-md transition-colors"
+              :class="page === 'account' ? 'bg-white/10' : 'hover:bg-white/5'"
+              @click="changePage('account')"
+            >
+              <img src="../assets/user.svg" class="size-6" alt="">
+              <div class="h-0.5 w-4 rounded-full transition-all" :class="page === 'account' ? 'bg-pink-400' : 'bg-transparent'"></div>
+            </div>
           </template>
-
         </v-tooltip>
-        
-        
-        <img src="../assets/log-in.svg" class="size-8 cursor-pointer" v-on:click="openLogin" v-if="!authenticated" alt="">
-        <img src="../assets/log-out.svg" class="size-8 cursor-pointer" v-on:click="logout" v-if="authenticated" alt="">
 
+        <img src="../assets/log-in.svg" class="size-7 cursor-pointer opacity-80 hover:opacity-100 transition-opacity" v-on:click="openLogin" v-if="!authenticated" alt="">
+        <img src="../assets/log-out.svg" class="size-7 cursor-pointer opacity-80 hover:opacity-100 transition-opacity" v-on:click="logout" v-if="authenticated" alt="">
 
       </div>
       
@@ -69,23 +91,25 @@ import AuthDialog from "@/components/AuthDialog.vue";
 
     </nav>
 
-  <main class="px-7">
-    <p class="text-3xl uppercase text-gray-300"> {{ page }}</p>
+  <main class="px-10 pt-6">
 
-      <div class="d-flex flex-column pa-6 gap-5" v-if="page=='search'">
-        <p class="font-bold">Monster</p>
-        <v-btn-group
-        variant="outlined"
-        divided
-        density="compact"
-        
-        >
-        <v-btn @click="addFilter('type',category)" size="small" color="white" variant="plain" :active="filters.monster_category == category" activeColor="#B5447B" v-for="category in filters.monster_categories">{{category}}</v-btn>
-
-        </v-btn-group>
+      <div class="flex flex-row items-center gap-3 py-4 overflow-x-auto" v-if="page=='search'">
+        <span class="text-xs uppercase text-gray-300 tracking-widest shrink-0">Type</span>
+        <div class="flex flex-row gap-2 flex-nowrap">
+          <button
+            v-for="category in filters.monster_categories"
+            :key="category"
+            @click="addFilter('type', category)"
+            class="px-3 py-1 rounded-full text-xs border transition-all shrink-0 cursor-pointer"
+            :class="filters.monster_category === category
+              ? 'bg-pink-700 border-pink-700 text-white'
+              : 'border-gray-600 text-gray-300 hover:border-gray-300 hover:text-white'"
+          >
+            {{ category }}
+          </button>
+        </div>
       </div>
 
-      
     <TradeCenter
       v-if="page=='TradeCenter'"
       :login="authenticated"
@@ -93,7 +117,9 @@ import AuthDialog from "@/components/AuthDialog.vue";
       @clear-filter="filterCardName = ''"
     ></TradeCenter>
     <Search @TradeCenter="openMatches($event)" :searchCards="cards" v-if="page=='search'"></Search>
-    <Library :login="authenticated" class="px-10 py-10" v-if="page=='library'"></Library>
+    <div v-if="page=='library'" class="py-8">
+      <Library :login="authenticated"></Library>
+    </div>
 
     <AuthDialog v-model="authDialogOpen" @authenticated="onAuthenticated" />
 

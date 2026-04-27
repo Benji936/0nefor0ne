@@ -7,46 +7,84 @@ import CardElement from '../CardElement.vue';
 
 
 
-    <div class="flex flex-col gap-2 pb-2">
-        <p class="text-gray-400">
-            Two lists, two buttons. Cards you <span class="text-pink-300">want</span>
-            go in your wishlist; cards you <span class="text-blue-300">have</span>
-            go in your trade pile.
+    <div class="flex flex-col gap-2 pb-4">
+        <p class="text-gray-300">
+            Cards you <span class="text-pink-300 font-medium">want</span> go in your wishlist;
+            cards you <span class="text-blue-300 font-medium">have</span> go in your trade pile.
         </p>
     </div>
 
 
-    <div class="flex row justify-between gap-6 py-5">
+    <div class="flex row justify-between gap-10 py-2">
 
         <!-- Trade pile (left) -->
-        <div class="flex flex-column gap-3 w-45/100">
+        <div class="flex flex-column gap-4 w-45/100">
             <div class="flex flex-row items-center justify-between">
-                <p class="text-left text-xl uppercase text-gray-300">Cards for trade</p>
-                <AddCard mode="trade"></AddCard>
+                <p class="text-left text-xl uppercase text-white font-semibold tracking-wide">Cards for trade</p>
+                <AddCard mode="trade" @added="onCardAdded"></AddCard>
             </div>
-            <div class="flex flex-row gap-3 w-100" v-for="trade in trade_cards.value">
-                <CardElement :wish="trade"></CardElement>
-            </div>
-            <p class="self-center text-gray-400 text-base py-4" v-if="trades_quantity < 1">
-                Nothing here yet. Click "Add card" to list cards you have for trade.
-            </p>
+            <template v-if="loading">
+                <div v-for="i in 3" :key="i" class="flex flex-row items-center gap-4 bg-gray-800/60 border border-gray-700 rounded-lg px-4 py-3 w-full animate-pulse">
+                    <div class="h-14 w-10 bg-gray-700 rounded shrink-0"></div>
+                    <div class="flex flex-col gap-2 grow">
+                        <div class="h-3 bg-gray-700 rounded w-3/4"></div>
+                        <div class="h-3 bg-gray-700 rounded w-1/2"></div>
+                    </div>
+                    <div class="h-8 w-32 bg-gray-700 rounded shrink-0"></div>
+                </div>
+            </template>
+            <template v-else>
+                <TransitionGroup name="card-slide" tag="div" class="flex flex-col gap-3">
+                    <CardElement
+                        :wish="trade"
+                        v-for="trade in trade_cards.value"
+                        :key="trade.id"
+                        :class="newCardId === trade.id ? 'ring-2 ring-blue-400' : ''"
+                    ></CardElement>
+                </TransitionGroup>
+                <p class="self-center text-gray-400 text-sm py-6" v-if="trades_quantity < 1">
+                    Nothing here yet — click "Add card" to list cards you have for trade.
+                </p>
+            </template>
         </div>
 
         <!-- Wishlist (right) -->
-        <div class="flex flex-column gap-3 w-45/100">
+        <div class="flex flex-column gap-4 w-45/100">
             <div class="flex flex-row items-center justify-between">
-                <p class="text-left text-xl uppercase text-gray-300">Wishlist</p>
-                <AddCard mode="wish"></AddCard>
+                <p class="text-left text-xl uppercase text-white font-semibold tracking-wide">Wishlist</p>
+                <AddCard mode="wish" @added="onCardAdded"></AddCard>
             </div>
-            <div class="flex flex-row gap-3 w-100" v-for="wish in wished_cards.value">
-                <CardElement :wish="wish"></CardElement>
-            </div>
-            <p class="self-center text-gray-400 text-base py-4" v-if="wishes_quantity < 1">
-                Nothing here yet. Click "Add card" to list cards you're hunting for.
-            </p>
+            <template v-if="loading">
+                <div v-for="i in 3" :key="i" class="flex flex-row items-center gap-4 bg-gray-800/60 border border-gray-700 rounded-lg px-4 py-3 w-full animate-pulse">
+                    <div class="h-14 w-10 bg-gray-700 rounded shrink-0"></div>
+                    <div class="flex flex-col gap-2 grow">
+                        <div class="h-3 bg-gray-700 rounded w-3/4"></div>
+                        <div class="h-3 bg-gray-700 rounded w-1/2"></div>
+                    </div>
+                    <div class="h-8 w-32 bg-gray-700 rounded shrink-0"></div>
+                </div>
+            </template>
+            <template v-else>
+                <TransitionGroup name="card-slide" tag="div" class="flex flex-col gap-3">
+                    <CardElement
+                        :wish="wish"
+                        v-for="wish in wished_cards.value"
+                        :key="wish.id"
+                        :class="newCardId === wish.id ? 'ring-2 ring-pink-400' : ''"
+                    ></CardElement>
+                </TransitionGroup>
+                <p class="self-center text-gray-400 text-sm py-6" v-if="wishes_quantity < 1">
+                    Nothing here yet — click "Add card" to list cards you're hunting for.
+                </p>
+            </template>
         </div>
 
     </div>
+
+    <v-snackbar v-model="snackbar.open" :timeout="3000" :color="snackbar.color" location="bottom right">
+        <v-icon :icon="snackbar.icon" class="mr-2" size="18" />
+        {{ snackbar.message }}
+    </v-snackbar>
 
 </template>
 
@@ -61,21 +99,38 @@ import { ref } from "vue";
                 wished_cards: ref([]),
                 wishes_quantity: 0,
                 trade_cards: ref([]),
-                trades_quantity:0,
-
+                trades_quantity: 0,
+                loading: true,
+                newCardId: null,
+                snackbar: { open: false, message: '', color: '', icon: '' },
             }
         },
         methods:{
-
+            onCardAdded(newCard) {
+                if (newCard.wish) {
+                    this.wished_cards.value = [newCard, ...this.wished_cards.value]
+                    this.wishes_quantity++
+                    this.snackbar = { open: true, message: `"${newCard.name}" added to wishlist.`, color: '#85144B', icon: 'mdi-heart-plus' }
+                } else {
+                    this.trade_cards.value = [newCard, ...this.trade_cards.value]
+                    this.trades_quantity++
+                    this.snackbar = { open: true, message: `"${newCard.name}" added to trade pile.`, color: '#116699', icon: 'mdi-plus-box' }
+                }
+                this.newCardId = newCard.id
+                setTimeout(() => { this.newCardId = null }, 2000)
+            },
         },
         async mounted(){
             console.log(this.login.user.id)
-            const wishes = await getClient().from('Card').select('*').eq('wish',true).eq('trader',this.login.user.id)
-            const trades = await getClient().from('Card').select('*').eq('wish',false).eq('trader',this.login.user.id)
+            const [wishes, trades] = await Promise.all([
+                getClient().from('Card').select('*').eq('wish', true).eq('trader', this.login.user.id),
+                getClient().from('Card').select('*').eq('wish', false).eq('trader', this.login.user.id),
+            ])
             this.wished_cards.value = wishes.data
             this.trade_cards.value = trades.data
             this.wishes_quantity = wishes.data.length
             this.trades_quantity = trades.data.length
+            this.loading = false
 
             const subscription = getClient().channel('custom-all-channel')
             .on(
@@ -101,3 +156,13 @@ import { ref } from "vue";
     };
 
 </script>
+
+<style scoped>
+.card-slide-enter-active {
+    transition: all 0.25s ease-out;
+}
+.card-slide-enter-from {
+    opacity: 0;
+    transform: translateY(-6px);
+}
+</style>

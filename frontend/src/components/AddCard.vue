@@ -1,38 +1,24 @@
 <script setup>
-import AddButtonForm from "@/components/AddButtonForm.vue";
 import { cardImage } from "@/lib/cardImage";
 import { computed } from "vue";
 
 const props = defineProps({
-  // 'wish' = adding to my wishlist (cards I want)
-  // 'trade' = adding to my trade pile (cards I have)
   mode: { type: String, default: "trade", validator: (m) => ["wish", "trade"].includes(m) },
-  // Optional override for the activator button label (e.g. "Add a card to offer").
   buttonLabel: { type: String, default: "" },
 });
 
-const emit = defineEmits(["added"]);
+defineEmits(["added"]);
 
 const meta = computed(() =>
   props.mode === "wish"
-    ? {
-        title: "Add to wishlist",
-        subtitle: "Pick a card you're hunting for.",
-        color: "#85144B", // pink/magenta - matches Wishlist accent
-        icon: "mdi-heart-plus",
-      }
-    : {
-        title: "Add card for trade",
-        subtitle: "Pick a card you have to offer.",
-        color: "#116699", // blue - matches Trade pile accent
-        icon: "mdi-plus-box",
-      }
+    ? { title: "Add to wishlist", subtitle: "Pick a card you're hunting for.", color: "#85144B", icon: "mdi-heart-plus" }
+    : { title: "Add to trade pile", subtitle: "Pick a card you have to offer.", color: "#116699", icon: "mdi-plus-box" }
 );
 </script>
 
 <template>
-  <v-overlay class="flex items-center place-content-center">
-    <template v-slot:activator="{ props: activatorProps }">
+  <v-dialog v-model="dialogOpen" max-width="560" scrollable @after-leave="reset">
+    <template #activator="{ props: activatorProps }">
       <v-btn
         density="comfortable"
         variant="flat"
@@ -44,69 +30,270 @@ const meta = computed(() =>
       </v-btn>
     </template>
 
-    <template v-slot:default>
-      <v-card class="w-[75vw]">
-        <!-- Mode banner so users always know which side they're filling -->
-        <div
-          class="px-5 py-3 flex flex-row items-center gap-3"
-          :style="{ backgroundColor: meta.color, color: 'white' }"
-        >
-          <v-icon :icon="meta.icon" size="24" />
-          <div class="flex flex-col">
-            <span class="font-bold">{{ meta.title }}</span>
-            <span class="text-sm opacity-90">{{ meta.subtitle }}</span>
-          </div>
+    <v-card class="bg-white text-gray-900" style="min-height: 480px">
+      <!-- Banner -->
+      <div class="flex flex-row items-center gap-3 px-5 py-3" :style="{ backgroundColor: meta.color, color: 'white' }">
+        <v-btn
+          v-if="step === 'form'"
+          icon="mdi-arrow-left"
+          variant="text"
+          color="white"
+          density="compact"
+          @click="step = 'search'"
+        />
+        <v-icon :icon="meta.icon" size="22" />
+        <div class="flex flex-col grow min-w-0">
+          <span class="font-bold leading-tight">{{ meta.title }}</span>
+          <span class="text-xs opacity-80">{{ step === 'search' ? meta.subtitle : selectedCard?.name }}</span>
         </div>
+        <v-btn icon="mdi-close" variant="text" color="white" density="compact" @click="dialogOpen = false" />
+      </div>
 
-        <v-card-actions>
+      <!-- ── Step 1: Search ── -->
+      <template v-if="step === 'search'">
+        <div class="px-4 pt-4 pb-2">
           <v-text-field
             v-model="search"
-            label="Search by card name or set code"
+            label="Card name or set code"
             prepend-inner-icon="mdi-magnify"
             variant="outlined"
             hide-details
-            single-line
-            v-on:keyup.enter="update"
-          ></v-text-field>
-        </v-card-actions>
+            autofocus
+            clearable
+            @keyup.enter="update"
+            @click:clear="cards = []"
+          />
+        </div>
 
-        <div class="flex flex-column max-h-[300px] overflow-scroll px-5 py-5 border gap-5">
-          <p v-if="!cards.data || cards.data.length === 0" class="text-gray-500 text-sm self-center">
-            Search above to find cards.
-          </p>
-          <div class="flex flex-row gap-5" v-for="card in cards.data" :key="card.id">
-            <img :src="cardImage(card.id)" alt="image" width="60px">
-            <h1 class="align-self-center">{{ card.name }}</h1>
-            <AddButtonForm :card="card" :mode="mode" @added="emit('added', $event)"></AddButtonForm>
+        <v-divider />
+
+        <div class="overflow-y-auto flex-1" style="max-height: 390px">
+          <!-- Skeleton while searching -->
+          <div v-if="searching" class="flex flex-col">
+            <div v-for="i in 5" :key="i" class="flex items-center gap-4 px-5 py-3 border-b border-gray-100 animate-pulse">
+              <div class="h-16 w-12 bg-gray-200 rounded shrink-0"></div>
+              <div class="flex flex-col gap-2 grow">
+                <div class="h-3 bg-gray-200 rounded w-2/3"></div>
+                <div class="h-3 bg-gray-200 rounded w-1/3"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- No results / prompt -->
+          <div v-else-if="!cards.length" class="flex flex-col items-center justify-center py-16 gap-2 text-gray-400">
+            <v-icon icon="mdi-card-search-outline" size="40" color="gray" />
+            <p class="text-sm">{{ searched ? 'No cards found.' : 'Type a name and press Enter to search.' }}</p>
+          </div>
+
+          <!-- Results list -->
+          <div v-else>
+            <div
+              v-for="card in cards"
+              :key="card.id"
+              class="flex items-center gap-4 px-5 py-3 cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-0 transition-colors"
+              @click="selectCard(card)"
+            >
+              <img :src="cardImage(card.id)" :alt="card.name" class="h-16 w-12 object-contain rounded shrink-0">
+              <div class="flex flex-col grow min-w-0">
+                <p class="font-semibold text-sm text-gray-900 truncate">{{ card.name }}</p>
+                <p class="text-xs text-gray-500 truncate">{{ card.type }}<span v-if="card.race"> · {{ card.race }}</span></p>
+                <p class="text-xs text-gray-400" v-if="card.atk != null">ATK {{ card.atk }} / DEF {{ card.def }}</p>
+              </div>
+              <v-icon icon="mdi-chevron-right" color="#ccc" size="20" class="shrink-0" />
+            </div>
           </div>
         </div>
-      </v-card>
-    </template>
-  </v-overlay>
+      </template>
+
+      <!-- ── Step 2: Form ── -->
+      <template v-else-if="step === 'form'">
+        <v-card-text class="pa-5 flex flex-col gap-4">
+          <!-- Card preview -->
+          <div class="flex gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+            <img :src="cardImage(selectedCard.id)" :alt="selectedCard.name" class="h-24 w-[68px] object-contain rounded shrink-0">
+            <div class="flex flex-col justify-center gap-1 min-w-0">
+              <p class="font-bold text-base text-gray-900 leading-tight truncate">{{ selectedCard.name }}</p>
+              <p class="text-xs text-gray-500">{{ selectedCard.type }}<span v-if="selectedCard.race"> · {{ selectedCard.race }}</span></p>
+              <p v-if="selectedCard.atk != null" class="text-xs text-gray-400">ATK {{ selectedCard.atk }} / DEF {{ selectedCard.def }}</p>
+            </div>
+          </div>
+
+          <v-form validate-on="submit lazy" @submit.prevent="submit" class="flex flex-col gap-3">
+            <v-select
+              density="comfortable"
+              variant="outlined"
+              v-model="extension"
+              :items="extensions"
+              :rules="[v => !!v || 'Pick an extension']"
+              label="Extension & Rarity"
+              @update:model-value="extensionSelected"
+              required
+            />
+
+            <template v-if="mode === 'trade'">
+              <v-select density="comfortable" variant="outlined" v-model="language" :items="languages" label="Language" />
+              <div class="flex gap-4 items-center">
+                <v-select density="comfortable" variant="outlined" v-model="condition" :items="conditions" label="Condition" class="grow" />
+                <v-checkbox density="comfortable" label="1st Ed." color="blue-darken-3" v-model="first_edition" hide-details />
+              </div>
+            </template>
+
+            <v-number-input
+              density="comfortable"
+              v-model="quantity"
+              variant="outlined"
+              control-variant="split"
+              :rules="[v => v > 0 || 'Quantity must be more than 0']"
+              label="Quantity"
+              required
+              :min="1"
+            />
+
+            <v-alert v-if="errorMessage" type="error" variant="tonal" density="compact">{{ errorMessage }}</v-alert>
+
+            <v-btn
+              class="w-full mt-1"
+              size="large"
+              :prepend-icon="meta.icon"
+              :style="{ backgroundColor: meta.color, color: 'white' }"
+              variant="flat"
+              type="submit"
+              :loading="loading"
+            >
+              {{ meta.title }}
+            </v-btn>
+          </v-form>
+        </v-card-text>
+      </template>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script>
 import { searchCardByName, searchCardBySetCode, searchById } from "@/api";
+import { getClient } from "@/lib/supabaseClient";
 
 export default {
+  props: {
+    mode: { type: String, default: "trade" },
+    buttonLabel: { type: String, default: "" },
+  },
+  emits: ["added"],
   data() {
     return {
+      dialogOpen: false,
+      step: "search",
+      // search
       search: "",
       cards: [],
+      searching: false,
+      searched: false,
+      // form
+      selectedCard: null,
+      loading: false,
+      errorMessage: "",
+      extension: null,
+      extensions: [],
+      rarity: null,
+      quantity: 1,
+      language: "English",
+      languages: ["English", "French", "Spanish", "German", "Italian", "Portuguese"],
+      condition: "Near Mint",
+      conditions: ["Mint", "Near Mint", "Excellent", "Good", "Light Played", "Played", "Poor"],
+      first_edition: false,
     };
   },
   methods: {
+    reset() {
+      this.step = "search";
+      this.search = "";
+      this.cards = [];
+      this.searched = false;
+      this.selectedCard = null;
+      this.errorMessage = "";
+      this.extension = null;
+      this.quantity = 1;
+      this.first_edition = false;
+    },
+
     async update() {
-      const response = await searchCardByName(this.search);
-      if (response.data.length === 0) {
-        const alternative_response = await searchCardBySetCode(this.search);
-        if (alternative_response) {
-          const new_response = await searchById(alternative_response.data.id);
-          this.cards = new_response.data;
+      if (!this.search.trim()) return;
+      this.searching = true;
+      this.searched = true;
+      try {
+        const response = await searchCardByName(this.search);
+        if (response.data?.data?.length > 0) {
+          this.cards = response.data.data;
+        } else if (response.data?.length > 0) {
+          this.cards = response.data;
+        } else {
+          const alt = await searchCardBySetCode(this.search);
+          if (alt) {
+            const byId = await searchById(alt.data.id);
+            this.cards = byId.data?.data ?? byId.data ?? [];
+          } else {
+            this.cards = [];
+          }
         }
-      } else {
-        this.cards = response.data;
+      } finally {
+        this.searching = false;
       }
+    },
+
+    selectCard(card) {
+      this.selectedCard = card;
+      this.extensions = (card.card_sets ?? []).map(s => `${s.set_code} | ${s.set_rarity}`);
+      this.extension = null;
+      this.rarity = null;
+      this.quantity = 1;
+      this.errorMessage = "";
+      this.step = "form";
+    },
+
+    extensionSelected() {
+      const [ext, rar] = (this.extension ?? "").split("|").map(s => s.trim());
+      this.extension = ext ?? "";
+      this.rarity = rar ?? "";
+    },
+
+    async submit() {
+      this.loading = true;
+      this.errorMessage = "";
+
+      const supabase = getClient();
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData?.user?.id) {
+        this.errorMessage = "You must be signed in to add a card.";
+        this.loading = false;
+        return;
+      }
+
+      const isWish = this.mode === "wish";
+      const row = {
+        wish: isWish,
+        game: "YGO",
+        url: "https://db.ygoprodeck.com/api/v7/cardinfo.php?name=" + this.selectedCard.name,
+        name: this.selectedCard.name,
+        extension: this.extension,
+        rarity: this.rarity,
+        quantity: this.quantity,
+        trader: userData.user.id,
+        image_id: this.selectedCard.id,
+        language: isWish ? null : this.language,
+        condition: isWish ? "Mint" : this.condition,
+        first_edition: isWish ? false : this.first_edition,
+      };
+
+      const { data: inserted, error } = await supabase.from("Card").insert([row]).select().single();
+      this.loading = false;
+
+      if (error) {
+        this.errorMessage = error.message ?? "Could not save the card.";
+        return;
+      }
+
+      this.$emit("added", inserted);
+      this.dialogOpen = false;
     },
   },
 };

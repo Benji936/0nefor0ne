@@ -6,40 +6,31 @@ import { cardImage } from '@/lib/cardImage';
 
 <template>
 
+  <div class="flex flex-row items-center gap-4 bg-gray-800/60 border border-gray-700 rounded-lg px-5 py-4 w-full hover:border-gray-500 transition-colors">
+    <img :src="cardImage(wish.image_id)" alt="image" class="h-14 w-10 rounded object-contain shrink-0">
 
-    <img :src="cardImage(wish.image_id)" alt="image" width="40px">
-    <div class="flex flex-col justify-between">
-        <div class="flex flex-row gap-5">
-            <h1>{{ wish.name }}</h1>
-            <h1> x {{ quantityCount }}</h1>
-        </div>
-        
-        <div class="flex flex-row gap-3">
-
-            <ConditionTooltip :condition="wish.condition"></ConditionTooltip>
-
-            <LanguageTooltip :language="wish.language"></LanguageTooltip>
-                    
-            <p class="py-1 px-1 bg-amber-lighten-4 rounded text-xs h-fit">{{ wish.rarity}}</p>
-                
-
-            <h1> {{ wish.extension }} </h1> 
-        </div>
+    <div class="flex flex-col gap-1 grow min-w-0">
+      <p class="font-medium text-sm text-gray-100 truncate">{{ wish.name }}</p>
+      <div class="flex flex-row flex-wrap gap-2 items-center">
+        <ConditionTooltip :condition="wish.condition"></ConditionTooltip>
+        <LanguageTooltip :language="wish.language"></LanguageTooltip>
+        <span v-if="wish.rarity" class="px-1.5 py-0.5 bg-amber-900/50 border border-amber-700/40 rounded text-xs text-amber-300">{{ wish.rarity }}</span>
+        <span v-if="wish.extension" class="text-xs text-gray-300">{{ wish.extension }}</span>
+      </div>
     </div>
-    
+
     <v-number-input
-        bg-color="pink-darken-4"
-        class="place-items-end align-self-center"
-        hide-input
+        class="shrink-0"
+        style="width: 130px; flex: 0 0 130px"
         hide-details
         density="compact"
-        variant="solo-filled"
+        variant="outlined"
         control-variant="split"
         v-model="quantityCount"
         @update:model-value="onQuantityChange"
-        :rules="[v=> v>0 || 'Quantity must be more than 0']">
+        :min="0">
     </v-number-input>
-    
+  </div>
 
 </template>
 

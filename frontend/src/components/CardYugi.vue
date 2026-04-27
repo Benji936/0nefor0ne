@@ -40,27 +40,27 @@ const emit = defineEmits(['showTraders'])
 
                     <v-btn
                         class="grow"
-                        variant="outlined" 
-                        style="background-color: #669911;" 
-                        prepend-icon="mdi-plus" 
+                        variant="flat"
+                        style="background-color: #669911;"
+                        prepend-icon="mdi-plus"
                         color="#ffffff">
-                        trades
+                        Add to trade pile
                     </v-btn>
 
                     <v-btn
                         class="grow"
-                        variant="default" 
-                        style="background-color: #116699;" 
-                        prepend-icon="mdi-plus" 
+                        variant="flat"
+                        style="background-color: #116699;"
+                        prepend-icon="mdi-heart-plus"
                         color="#ffffff">
-                        wishes
+                        Add to wishlist
                     </v-btn>
 
                     <v-btn
                         class="grow"
-                        variant="default" 
-                        style="background-color: #85144B;" 
-                        append-icon="mdi-swap-horizontal" 
+                        variant="flat"
+                        style="background-color: #85144B;"
+                        append-icon="mdi-swap-horizontal"
                         color="#ffffff"
                         @click="emit('showTraders',componentCard)">
                         See traders

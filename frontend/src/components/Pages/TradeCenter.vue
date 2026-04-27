@@ -4,66 +4,66 @@ import ProposeTradeDialog from "@/components/ProposeTradeDialog.vue";
 </script>
 
 <template>
-  <div class="flex flex-col gap-6 py-6">
+  <div class="flex flex-col gap-8 py-6">
     <!-- Header -->
     <div class="flex flex-col gap-1">
-      <p v-if="filterCardName" class="text-sm text-gray-400">
+      <p v-if="filterCardName" class="text-sm text-gray-300">
         Filtered by card:
         <span class="text-white font-medium">{{ filterCardName }}</span>
         <a class="ml-3 text-pink-400 underline cursor-pointer" @click="$emit('clearFilter')">clear</a>
       </p>
-      <p v-else class="text-sm text-gray-400">
+      <p v-else class="text-sm text-gray-300">
         Traders who overlap with your wishlist or trade pile.
       </p>
     </div>
 
     <!-- Loading / empty / not-logged-in states -->
-    <p v-if="!login" class="self-center text-gray-400 text-xl py-10">
+    <p v-if="!login" class="self-center text-gray-300 text-lg py-10">
       Log in to see your trade matches.
     </p>
-    <p v-else-if="loading" class="self-center text-gray-400 text-xl py-10">
+    <p v-else-if="loading" class="self-center text-gray-300 text-lg py-10">
       Looking for matches…
     </p>
-    <p v-else-if="totalMatches === 0" class="self-center text-gray-400 text-xl py-10">
+    <p v-else-if="totalMatches === 0" class="self-center text-gray-300 text-lg py-10">
       No matches yet. Add cards to your wishlist or trade pile to find traders.
     </p>
 
     <!-- Mutual matches first - the gold -->
-    <section v-if="buckets.mutual.length > 0" class="flex flex-col gap-3">
+    <section v-if="buckets.mutual.length > 0" class="flex flex-col gap-4">
       <div class="flex flex-row items-center gap-3">
-        <p class="text-xl uppercase text-gray-200 tracking-wide">Mutual matches</p>
+        <p class="text-xl uppercase text-white font-semibold tracking-wide">Mutual matches</p>
         <v-chip size="small" color="#669911" variant="flat" class="text-white">
           {{ buckets.mutual.length }}
         </v-chip>
       </div>
-      <p class="text-sm text-gray-400">
+      <p class="text-sm text-gray-300">
         Both sides have something for each other. Start here.
       </p>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         <UserCard v-for="u in buckets.mutual" :key="u.id" :user="u" @openTrade="onOpenTrade" />
       </div>
     </section>
 
-    <section v-if="buckets.theyHave.length > 0" class="flex flex-col gap-3">
+    <section v-if="buckets.theyHave.length > 0" class="flex flex-col gap-4">
       <div class="flex flex-row items-center gap-3">
-        <p class="text-xl uppercase text-gray-200 tracking-wide">Have what you want</p>
+        <p class="text-xl uppercase text-white font-semibold tracking-wide">Have what you want</p>
         <v-chip size="small" color="#116699" variant="flat" class="text-white">
           {{ buckets.theyHave.length }}
         </v-chip>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         <UserCard v-for="u in buckets.theyHave" :key="u.id" :user="u" @openTrade="onOpenTrade" />
       </div>
     </section>
 
-    <section v-if="buckets.theyWant.length > 0" class="flex flex-col gap-3">
+    <section v-if="buckets.theyWant.length > 0" class="flex flex-col gap-4">
       <div class="flex flex-row items-center gap-3">
-        <p class="text-xl uppercase text-gray-200 tracking-wide">Want what you have</p>
+        <p class="text-xl uppercase text-white font-semibold tracking-wide">Want what you have</p>
         <v-chip size="small" color="#85144B" variant="flat" class="text-white">
           {{ buckets.theyWant.length }}
         </v-chip>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         <UserCard v-for="u in buckets.theyWant" :key="u.id" :user="u" @openTrade="onOpenTrade" />
       </div>
     </section>
