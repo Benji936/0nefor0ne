@@ -7,35 +7,45 @@ import CardElement from '../CardElement.vue';
 
 
 
-    <div class="flex flex-col gap-3">
-        <p class="text-gray-400">Here you can add cards you're searching for and cards you are willing to trade</p>
-        <div class="">
-             <AddCard></AddCard>
-        </div>
-       
+    <div class="flex flex-col gap-2 pb-2">
+        <p class="text-gray-400">
+            Two lists, two buttons. Cards you <span class="text-pink-300">want</span>
+            go in your wishlist; cards you <span class="text-blue-300">have</span>
+            go in your trade pile.
+        </p>
     </div>
-    
 
-    <div class="flex row justify-between py-5">
 
-        <div class="flex flex-column gap-5 w-45/100">
-            <p class="text-left text-xl uppercase text-gray-300">Cards for trade</p> 
+    <div class="flex row justify-between gap-6 py-5">
+
+        <!-- Trade pile (left) -->
+        <div class="flex flex-column gap-3 w-45/100">
+            <div class="flex flex-row items-center justify-between">
+                <p class="text-left text-xl uppercase text-gray-300">Cards for trade</p>
+                <AddCard mode="trade"></AddCard>
+            </div>
             <div class="flex flex-row gap-3 w-100" v-for="trade in trade_cards.value">
                 <CardElement :wish="trade"></CardElement>
-                
-            </div>    
-            <p class="self-center text-gray-400 text-xl" v-if="trades_quantity < 1">No Card for Trades</p>       
+            </div>
+            <p class="self-center text-gray-400 text-base py-4" v-if="trades_quantity < 1">
+                Nothing here yet. Click "Add card" to list cards you have for trade.
+            </p>
         </div>
 
-        <div class="flex flex-column gap-5 w-45/100">
-            <p class="text-left text-xl uppercase text-gray-300">Wishlist</p>
-            
+        <!-- Wishlist (right) -->
+        <div class="flex flex-column gap-3 w-45/100">
+            <div class="flex flex-row items-center justify-between">
+                <p class="text-left text-xl uppercase text-gray-300">Wishlist</p>
+                <AddCard mode="wish"></AddCard>
+            </div>
             <div class="flex flex-row gap-3 w-100" v-for="wish in wished_cards.value">
                 <CardElement :wish="wish"></CardElement>
             </div>
-            <p class="self-center text-gray-400 text-xl" v-if="wishes_quantity < 1">No wishes</p> 
+            <p class="self-center text-gray-400 text-base py-4" v-if="wishes_quantity < 1">
+                Nothing here yet. Click "Add card" to list cards you're hunting for.
+            </p>
         </div>
-        
+
     </div>
 
 </template>

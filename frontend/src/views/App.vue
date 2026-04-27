@@ -3,6 +3,7 @@
 import Search from "@/components/Pages/Search.vue";
 import Library from "@/components/Pages/Library.vue";
 import TradeCenter from "@/components/Pages/TradeCenter.vue"
+import AuthDialog from "@/components/AuthDialog.vue";
 </script>
 
 <template>
@@ -37,6 +38,19 @@ import TradeCenter from "@/components/Pages/TradeCenter.vue"
           </template>
         </v-tooltip>
 
+        <v-tooltip location="top" text="Trade matches">
+          <template v-slot:activator="{ props }">
+            <v-icon
+              v-if="authenticated"
+              v-bind="props"
+              icon="mdi-swap-horizontal-bold"
+              size="32"
+              class="cursor-pointer text-white"
+              @click="openMatches()"
+            />
+          </template>
+        </v-tooltip>
+
         <v-tooltip location="top" color="deep-purple accent-4" text="Account">
           <template v-slot:activator="{ props }">
               <img src="../assets/user.svg" class="size-8 cursor-pointer" v-on:click="changePage('account')"  v-bind="props" v-if="authenticated" alt="">
@@ -45,7 +59,7 @@ import TradeCenter from "@/components/Pages/TradeCenter.vue"
         </v-tooltip>
         
         
-        <img src="../assets/log-in.svg" class="size-8 cursor-pointer" v-on:click="login" v-if="!authenticated" alt="">
+        <img src="../assets/log-in.svg" class="size-8 cursor-pointer" v-on:click="openLogin" v-if="!authenticated" alt="">
         <img src="../assets/log-out.svg" class="size-8 cursor-pointer" v-on:click="logout" v-if="authenticated" alt="">
 
 
@@ -72,17 +86,24 @@ import TradeCenter from "@/components/Pages/TradeCenter.vue"
       </div>
 
       
-    <TradeCenter :card="show_card" v-if="page=='TradeCenter'"></TradeCenter>
-    <Search @TradeCenter="page = 'TradeCenter'; show_card=$event" :searchCards="cards" v-if="page=='search'"></Search>
+    <TradeCenter
+      v-if="page=='TradeCenter'"
+      :login="authenticated"
+      :filter-card-name="filterCardName"
+      @clear-filter="filterCardName = ''"
+    ></TradeCenter>
+    <Search @TradeCenter="openMatches($event)" :searchCards="cards" v-if="page=='search'"></Search>
     <Library :login="authenticated" class="px-10 py-10" v-if="page=='library'"></Library>
+
+    <AuthDialog v-model="authDialogOpen" @authenticated="onAuthenticated" />
 
   </main>
 </template>
 
 
 <script>
-import { get, getUrl } from "@/api";  
-import { signInWithEmail, signOut, signUpNewUser } from "@/lib/supabaseClient";
+import { get, getUrl } from "@/api";
+import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
 
 
   export default {
@@ -91,6 +112,7 @@ import { signInWithEmail, signOut, signUpNewUser } from "@/lib/supabaseClient";
       data() {
           return {
             show_card:null,
+            filterCardName: "",
             api: getUrl()+'cardinfo.php',
             applied_filters:{},
             filters:{
@@ -99,7 +121,10 @@ import { signInWithEmail, signOut, signUpNewUser } from "@/lib/supabaseClient";
             },
             searchQuery: "",
             cards:[],
-            authenticated: false,
+            // null when logged out, { user, session } when logged in
+            authenticated: null,
+            authDialogOpen: false,
+            authUnsubscribe: null,
             page:"search",
             previousPage:"",
           };
@@ -136,17 +161,22 @@ import { signInWithEmail, signOut, signUpNewUser } from "@/lib/supabaseClient";
           this.filters.monster_category = value
           this.update()
         },   
-        async signUp(){
-          this.authenticated = await signUpNewUser("Benjaminsitbon@hotmail.com","Okwuntughe7!");
-          console.log(this.authenticated)
+        openLogin() {
+          this.authDialogOpen = true;
         },
-        async login(){
-          this.authenticated = await signInWithEmail("Benjaminsitbon@hotmail.com","Okwuntughe7!");
-          console.log(this.authenticated)
-          
+        onAuthenticated(session) {
+          // Called by AuthDialog after a successful sign in / sign up.
+          this.authenticated = session;
         },
         async logout(){
-          this.authenticated = await signOut();
+          await signOut();
+          // onAuthChange listener will clear `authenticated`, but clear it
+          // immediately for snappier UI.
+          this.authenticated = null;
+          // Bounce back to search so we don't leave them on a logged-in page.
+          if (this.page === "library" || this.page === "TradeCenter") {
+            this.page = "search";
+          }
         },
 
         changePage(name) {
@@ -155,13 +185,34 @@ import { signInWithEmail, signOut, signUpNewUser } from "@/lib/supabaseClient";
           this.page = name;
           console.log(this.page)
         },
+        // Open the TradeCenter (matches page). If a card is passed (from
+        // "See traders" on a card tile), pre-filter the matches by that
+        // card's name. Without an arg, opens the global view.
+        openMatches(card = null) {
+          this.show_card = card;
+          this.filterCardName = card?.name ?? "";
+          this.page = "TradeCenter";
+        },
       },
 
       
 
 
-      mounted() {
-          
+      async mounted() {
+        // Restore the session that Supabase persists in localStorage so a
+        // page refresh doesn't kick the user out.
+        this.authenticated = await getCurrentSession();
+
+        // Stay in sync if the token refreshes or the user signs in/out from
+        // another tab.
+        this.authUnsubscribe = onAuthChange((session) => {
+          this.authenticated = session;
+        });
+      },
+      beforeUnmount() {
+        if (typeof this.authUnsubscribe === "function") {
+          this.authUnsubscribe();
+        }
       },
   };
 </script>
