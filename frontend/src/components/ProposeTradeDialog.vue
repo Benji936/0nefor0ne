@@ -82,6 +82,12 @@ const canSubmit = computed(
   () => !submitting.value && (givePayload.value.length > 0 || receivePayload.value.length > 0)
 );
 
+const userInitials = computed(() => {
+  const name = props.user?.name?.trim();
+  if (!name) return "?";
+  return name.split(/\s+/).map(p => p[0]?.toUpperCase()).slice(0, 2).join("");
+});
+
 function close() {
   emit("update:modelValue", false);
 }
@@ -118,70 +124,102 @@ function describe(card) {
     max-width="1000"
     scrollable
   >
-    <v-card v-if="user" class="bg-gray-900 text-gray-100">
+    <v-card v-if="user" theme="dark" class="trade-dialog !rounded-2xl overflow-hidden" style="background-color: var(--c-surface); color: var(--c-text)">
       <!-- Header -->
-      <div class="flex items-center gap-4 px-6 py-4 border-b border-white/10">
-        <div class="size-10 rounded-full flex items-center justify-center font-bold text-sm text-white shrink-0" style="background-color: #85144B">
-          {{ (user.name ?? "?").split(/\s+/).map(p => p[0]?.toUpperCase()).slice(0,2).join("") }}
+      <div class="relative">
+        <div class="flex items-center gap-4 px-6 py-4">
+          <!-- User avatar -->
+          <div class="relative shrink-0">
+            <div class="absolute -inset-1 rounded-full blur-md opacity-40" style="background-color: var(--c-accent)" />
+            <div
+              class="relative size-11 rounded-full flex items-center justify-center font-bold text-sm text-white ring-2 ring-white/10"
+              style="background-color: var(--c-accent)"
+            >
+              {{ userInitials }}
+            </div>
+          </div>
+          <div class="flex flex-col grow min-w-0">
+            <span class="font-bold text-lg text-gray-50 leading-tight">Propose trade</span>
+            <span class="text-sm text-gray-400 mt-0.5">with {{ user.name ?? "Anonymous" }}</span>
+          </div>
+          <v-btn icon="mdi-close" variant="text" color="white" density="compact" @click="close" />
         </div>
-        <div class="flex flex-col grow min-w-0">
-          <span class="font-bold text-gray-100">Propose trade</span>
-          <span class="text-xs text-gray-400">with {{ user.name ?? "Anonymous" }}</span>
-        </div>
-        <v-btn icon="mdi-close" variant="text" color="white" density="compact" @click="close" />
+        <!-- Gradient accent line -->
+        <div class="h-[2px] w-full" style="background: linear-gradient(90deg, var(--c-accent), transparent 40%, transparent 60%, var(--c-trade))" />
       </div>
 
-      <v-card-text class="pa-6">
+      <v-card-text class="pa-5">
         <!-- Loading skeletons -->
-        <div v-if="loading" class="grid grid-cols-2 gap-6">
-          <div v-for="col in 2" :key="col" class="flex flex-col gap-3">
-            <div class="h-4 w-24 bg-gray-700 rounded animate-pulse"></div>
-            <div v-for="i in 3" :key="i" class="flex gap-3 p-3 rounded-xl border border-gray-700 animate-pulse">
-              <div class="h-16 w-11 bg-gray-700 rounded shrink-0"></div>
-              <div class="flex flex-col gap-2 grow pt-1">
-                <div class="h-3 bg-gray-700 rounded w-3/4"></div>
-                <div class="h-3 bg-gray-700 rounded w-1/2"></div>
+        <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div v-for="col in 2" :key="col" class="flex flex-col gap-4">
+            <div class="h-5 w-28 rounded-lg skeleton-pulse" style="background-color: var(--c-skeleton)" />
+            <div
+              v-for="i in 3"
+              :key="i"
+              class="flex gap-3 p-4 rounded-xl border skeleton-pulse"
+              :style="{ animationDelay: `${i * 150}ms`, borderColor: 'var(--c-border)' }"
+            >
+              <div class="h-[72px] w-[50px] rounded-lg shrink-0" style="background-color: var(--c-skeleton)" />
+              <div class="flex flex-col gap-2.5 grow pt-2">
+                <div class="h-3.5 rounded w-3/4" style="background-color: var(--c-skeleton)" />
+                <div class="h-3 rounded w-1/2" style="background-color: var(--c-border)" />
               </div>
             </div>
           </div>
         </div>
 
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- ── You give ── -->
           <section class="flex flex-col gap-4">
             <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <v-icon icon="mdi-arrow-up-circle" color="#85144B" size="20" />
-                <p class="text-sm font-semibold text-gray-100 uppercase tracking-wide">You give</p>
-                <span v-if="givePayload.length > 0" class="text-xs px-2 py-0.5 rounded-full bg-pink-900/50 text-pink-200 border border-pink-600/50 font-medium">{{ givePayload.length }}</span>
+              <div class="flex items-center gap-3">
+                <div class="w-1 h-6 rounded-full bg-pink-500/80" />
+                <v-icon icon="mdi-arrow-up-circle" :color="'var(--c-accent)'" size="20" />
+                <p class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">You give</p>
+                <span
+                  v-if="givePayload.length > 0"
+                  class="text-[11px] px-2 py-0.5 rounded-md bg-pink-500/15 text-pink-300 border border-pink-500/30 font-semibold"
+                >
+                  {{ givePayload.length }}
+                </span>
               </div>
               <AddCard mode="trade" button-label="Add to offer" @added="onCardAdded" />
             </div>
 
-            <p v-if="myOffers.length === 0" class="text-sm text-gray-400 py-6 text-center">
-              Your trade pile is empty. Add a card to offer above.
+            <p v-if="myOffers.length === 0" class="text-sm py-8 text-center flex flex-col items-center gap-3" style="color: var(--c-muted)">
+              <v-icon icon="mdi-card-off-outline" size="36" color="#555" />
+              <span>Your trade pile is empty.<br />Add a card to offer above.</span>
             </p>
 
             <div
               v-for="card in myOffers"
               :key="card.id"
-              class="flex items-center gap-4 rounded-xl border p-4 cursor-pointer select-none transition-all"
+              class="trade-row flex items-center gap-3 rounded-lg py-2 px-3 cursor-pointer select-none"
               :class="(giveSelection[card.id] ?? 0) > 0
-                ? 'border-pink-500/60 bg-pink-950/50'
-                : 'border-gray-600 hover:border-gray-400'"
+                ? 'border-pink-500/50 bg-pink-950/40 shadow-[inset_0_0_20px_rgba(133,20,75,0.08)]'
+                : 'hover:bg-[var(--c-surface-2)]'"
+              :style="(giveSelection[card.id] ?? 0) > 0 ? {} : { borderColor: 'var(--c-border)' }"
               @click="giveSelection[card.id] = (giveSelection[card.id] ?? 0) > 0 ? 0 : 1"
             >
               <v-checkbox
                 :model-value="(giveSelection[card.id] ?? 0) > 0"
                 @update:model-value="giveSelection[card.id] = $event ? 1 : 0"
                 @click.stop
-                hide-details density="compact" color="#85144B" class="shrink-0"
+                hide-details density="compact" color="var(--c-accent)" class="shrink-0"
               />
-              <img :src="cardImage(card.image_id)" :alt="card.name" class="h-16 w-11 rounded object-contain bg-gray-800 shrink-0" />
+              <img
+                :src="cardImage(card.image_id)"
+                :alt="card.name"
+                class="h-[72px] w-[50px] rounded-lg object-contain shrink-0 ring-1 ring-white/10" style="background-color: var(--c-surface-2)"
+              />
               <div class="flex flex-col grow min-w-0 gap-1">
-                <p class="font-semibold text-sm text-white truncate">{{ card.name }}</p>
-                <p class="text-xs text-gray-300 truncate">{{ describe(card) || "—" }}</p>
-                <span v-if="card.theyWantThis" class="text-xs font-semibold text-lime-300 bg-lime-900/40 border border-lime-600/40 px-2 py-0.5 rounded w-fit">
+                <p class="font-semibold text-sm truncate" style="color: var(--c-text)">{{ card.name }}</p>
+                <p class="text-xs truncate" style="color: var(--c-muted)">{{ describe(card) || "—" }}</p>
+                <span
+                  v-if="card.theyWantThis"
+                  class="text-[11px] font-bold text-lime-300 bg-lime-500/15 border border-lime-500/30 px-2 py-0.5 rounded-md w-fit flex items-center gap-1"
+                >
+                  <v-icon icon="mdi-star-four-points" size="10" color="#bef264" />
                   They want this
                 </span>
               </div>
@@ -199,35 +237,47 @@ function describe(card) {
 
           <!-- ── You receive ── -->
           <section class="flex flex-col gap-4">
-            <div class="flex items-center gap-2">
-              <v-icon icon="mdi-arrow-down-circle" color="#116699" size="20" />
-              <p class="text-sm font-semibold text-gray-100 uppercase tracking-wide">You receive</p>
-              <span v-if="receivePayload.length > 0" class="text-xs px-2 py-0.5 rounded-full bg-blue-900/50 text-blue-200 border border-blue-600/50 font-medium">{{ receivePayload.length }}</span>
+            <div class="flex items-center gap-3">
+              <div class="w-1 h-6 rounded-full bg-blue-500/80" />
+              <v-icon icon="mdi-arrow-down-circle" :color="'var(--c-trade)'" size="20" />
+              <p class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">You receive</p>
+              <span
+                v-if="receivePayload.length > 0"
+                class="text-[11px] px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-300 border border-blue-500/30 font-semibold"
+              >
+                {{ receivePayload.length }}
+              </span>
             </div>
 
-            <p v-if="(user.theyHave ?? []).length === 0" class="text-sm text-gray-400 py-6 text-center">
-              They don't have anything on your wishlist.
+            <p v-if="(user.theyHave ?? []).length === 0" class="text-sm py-8 text-center flex flex-col items-center gap-3" style="color: var(--c-muted)">
+              <v-icon icon="mdi-card-off-outline" size="36" color="#555" />
+              <span>They don't have anything<br />on your wishlist.</span>
             </p>
 
             <div
               v-for="card in user.theyHave"
               :key="card.id"
-              class="flex items-center gap-4 rounded-xl border p-4 cursor-pointer select-none transition-all"
+              class="trade-row flex items-center gap-3 rounded-lg py-2 px-3 cursor-pointer select-none"
               :class="(receiveSelection[card.id] ?? 0) > 0
-                ? 'border-blue-500/60 bg-blue-950/50'
-                : 'border-gray-600 hover:border-gray-400'"
+                ? 'border-blue-500/50 bg-blue-950/40 shadow-[inset_0_0_20px_rgba(17,102,153,0.08)]'
+                : 'hover:bg-[var(--c-surface-2)]'"
+              :style="(receiveSelection[card.id] ?? 0) > 0 ? {} : { borderColor: 'var(--c-border)' }"
               @click="receiveSelection[card.id] = (receiveSelection[card.id] ?? 0) > 0 ? 0 : 1"
             >
               <v-checkbox
                 :model-value="(receiveSelection[card.id] ?? 0) > 0"
                 @update:model-value="receiveSelection[card.id] = $event ? 1 : 0"
                 @click.stop
-                hide-details density="compact" color="#116699" class="shrink-0"
+                hide-details density="compact" color="var(--c-trade)" class="shrink-0"
               />
-              <img :src="cardImage(card.image_id)" :alt="card.name" class="h-16 w-11 rounded object-contain bg-gray-800 shrink-0" />
+              <img
+                :src="cardImage(card.image_id)"
+                :alt="card.name"
+                class="h-[72px] w-[50px] rounded-lg object-contain shrink-0 ring-1 ring-white/10" style="background-color: var(--c-surface-2)"
+              />
               <div class="flex flex-col grow min-w-0 gap-1">
-                <p class="font-semibold text-sm text-white truncate">{{ card.name }}</p>
-                <p class="text-xs text-gray-300 truncate">{{ describe(card) || "—" }}</p>
+                <p class="font-semibold text-sm truncate" style="color: var(--c-text)">{{ card.name }}</p>
+                <p class="text-xs truncate" style="color: var(--c-muted)">{{ describe(card) || "—" }}</p>
               </div>
               <v-number-input
                 v-if="(receiveSelection[card.id] ?? 0) > 0"
@@ -242,33 +292,61 @@ function describe(card) {
           </section>
         </div>
 
-        <v-alert v-if="errorMessage" type="error" variant="tonal" class="mt-4" density="compact">
+        <v-alert v-if="errorMessage" type="error" variant="tonal" class="mt-6" density="compact">
           {{ errorMessage }}
         </v-alert>
       </v-card-text>
 
-      <div class="flex items-center justify-between px-6 py-4 border-t border-white/10">
-        <p class="text-sm text-gray-300">
-          <span v-if="givePayload.length > 0 || receivePayload.length > 0">
-            Giving {{ givePayload.length }} card{{ givePayload.length !== 1 ? 's' : '' }},
-            receiving {{ receivePayload.length }} card{{ receivePayload.length !== 1 ? 's' : '' }}
-          </span>
-          <span v-else>Select cards to include in the proposal.</span>
-        </p>
-        <div class="flex gap-3">
-          <v-btn variant="text" color="gray" @click="close" :disabled="submitting">Cancel</v-btn>
-          <v-btn
-            variant="flat"
-            style="background-color: #85144B; color: white"
-            prepend-icon="mdi-send"
-            :loading="submitting"
-            :disabled="!canSubmit"
-            @click="submit"
-          >
-            Send proposal
-          </v-btn>
+      <!-- Footer -->
+      <div class="relative">
+        <div class="h-[2px] w-full" style="background: linear-gradient(90deg, var(--c-accent), transparent 40%, transparent 60%, var(--c-trade))" />
+        <div class="flex items-center justify-between px-6 py-4">
+          <div class="text-sm flex items-center gap-4" style="color: var(--c-muted)">
+            <span v-if="givePayload.length > 0 || receivePayload.length > 0" class="flex items-center gap-4">
+              <span class="flex items-center gap-1.5">
+                <v-icon icon="mdi-arrow-up-bold" size="14" color="#d06b94" />
+                <span class="text-pink-300 font-semibold">{{ givePayload.length }}</span>
+              </span>
+              <v-icon icon="mdi-swap-horizontal" size="16" color="#666" />
+              <span class="flex items-center gap-1.5">
+                <v-icon icon="mdi-arrow-down-bold" size="14" color="#5b9bd5" />
+                <span class="text-blue-300 font-semibold">{{ receivePayload.length }}</span>
+              </span>
+            </span>
+            <span v-else class="text-gray-500">Select cards to include in the proposal.</span>
+          </div>
+          <div class="flex gap-3">
+            <v-btn variant="text" color="gray" @click="close" :disabled="submitting">Cancel</v-btn>
+            <v-btn
+              variant="flat"
+              style="background-color: var(--c-accent); color: white"
+              prepend-icon="mdi-send"
+              class="!rounded-xl"
+              :loading="submitting"
+              :disabled="!canSubmit"
+              @click="submit"
+            >
+              Send proposal
+            </v-btn>
+          </div>
         </div>
       </div>
     </v-card>
   </v-dialog>
 </template>
+
+<style scoped>
+.trade-dialog {
+  border: 1px solid var(--c-border);
+}
+.trade-row {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.skeleton-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+</style>

@@ -95,7 +95,7 @@ async function submit() {
     max-width="420"
     persistent
   >
-    <v-card class="bg-white">
+    <v-card style="background-color: var(--c-surface); color: var(--c-text)">
       <v-card-title class="flex flex-row items-center justify-between pa-4">
         <span class="text-lg font-bold">{{ title }}</span>
         <v-btn
@@ -154,7 +154,7 @@ async function submit() {
           <v-btn
             type="submit"
             variant="flat"
-            style="background-color: #85144B; color: white"
+            style="background-color: var(--c-accent); color: white"
             :loading="submitting"
             block
           >
@@ -171,7 +171,7 @@ async function submit() {
         </span>
         <v-btn
           variant="text"
-          color="#85144B"
+          color="var(--c-accent)"
           size="small"
           @click="toggleMode"
           :disabled="submitting"

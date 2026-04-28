@@ -11,8 +11,8 @@ defineEmits(["added"]);
 
 const meta = computed(() =>
   props.mode === "wish"
-    ? { title: "Add to wishlist", subtitle: "Pick a card you're hunting for.", color: "#85144B", icon: "mdi-heart-plus" }
-    : { title: "Add to trade pile", subtitle: "Pick a card you have to offer.", color: "#116699", icon: "mdi-plus-box" }
+    ? { title: "Add to wishlist", subtitle: "Pick a card you're hunting for.", color: "var(--c-accent)", icon: "mdi-heart-plus" }
+    : { title: "Add to trade pile", subtitle: "Pick a card you have to offer.", color: "var(--c-trade)", icon: "mdi-plus-box" }
 );
 </script>
 
@@ -30,7 +30,7 @@ const meta = computed(() =>
       </v-btn>
     </template>
 
-    <v-card class="bg-white text-gray-900" style="min-height: 480px">
+    <v-card style="min-height: 480px; background-color: var(--c-surface); color: var(--c-text)">
       <!-- Banner -->
       <div class="flex flex-row items-center gap-3 px-5 py-3" :style="{ backgroundColor: meta.color, color: 'white' }">
         <v-btn
@@ -70,17 +70,17 @@ const meta = computed(() =>
         <div class="overflow-y-auto flex-1" style="max-height: 390px">
           <!-- Skeleton while searching -->
           <div v-if="searching" class="flex flex-col">
-            <div v-for="i in 5" :key="i" class="flex items-center gap-4 px-5 py-3 border-b border-gray-100 animate-pulse">
-              <div class="h-16 w-12 bg-gray-200 rounded shrink-0"></div>
+            <div v-for="i in 5" :key="i" class="flex items-center gap-4 px-5 py-3 border-b animate-pulse" style="border-color: var(--c-border)">
+              <div class="h-16 w-12 rounded shrink-0" style="background-color: var(--c-skeleton)"></div>
               <div class="flex flex-col gap-2 grow">
-                <div class="h-3 bg-gray-200 rounded w-2/3"></div>
-                <div class="h-3 bg-gray-200 rounded w-1/3"></div>
+                <div class="h-3 rounded w-2/3" style="background-color: var(--c-skeleton)"></div>
+                <div class="h-3 rounded w-1/3" style="background-color: var(--c-border)"></div>
               </div>
             </div>
           </div>
 
           <!-- No results / prompt -->
-          <div v-else-if="!cards.length" class="flex flex-col items-center justify-center py-16 gap-2 text-gray-400">
+          <div v-else-if="!cards.length" class="flex flex-col items-center justify-center py-16 gap-2" style="color: var(--c-muted)">
             <v-icon icon="mdi-card-search-outline" size="40" color="gray" />
             <p class="text-sm">{{ searched ? 'No cards found.' : 'Type a name and press Enter to search.' }}</p>
           </div>
@@ -90,14 +90,15 @@ const meta = computed(() =>
             <div
               v-for="card in cards"
               :key="card.id"
-              class="flex items-center gap-4 px-5 py-3 cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-0 transition-colors"
+              class="flex items-center gap-4 px-5 py-3 cursor-pointer border-b last:border-0 transition-colors hover:bg-[var(--c-surface-2)]"
+              style="border-color: var(--c-border)"
               @click="selectCard(card)"
             >
               <img :src="cardImage(card.id)" :alt="card.name" class="h-16 w-12 object-contain rounded shrink-0">
               <div class="flex flex-col grow min-w-0">
-                <p class="font-semibold text-sm text-gray-900 truncate">{{ card.name }}</p>
-                <p class="text-xs text-gray-500 truncate">{{ card.type }}<span v-if="card.race"> · {{ card.race }}</span></p>
-                <p class="text-xs text-gray-400" v-if="card.atk != null">ATK {{ card.atk }} / DEF {{ card.def }}</p>
+                <p class="font-semibold text-sm truncate" style="color: var(--c-text)">{{ card.name }}</p>
+                <p class="text-xs truncate" style="color: var(--c-muted)">{{ card.type }}<span v-if="card.race"> · {{ card.race }}</span></p>
+                <p class="text-xs" style="color: var(--c-muted); opacity: 0.7" v-if="card.atk != null">ATK {{ card.atk }} / DEF {{ card.def }}</p>
               </div>
               <v-icon icon="mdi-chevron-right" color="#ccc" size="20" class="shrink-0" />
             </div>
@@ -109,12 +110,12 @@ const meta = computed(() =>
       <template v-else-if="step === 'form'">
         <v-card-text class="pa-5 flex flex-col gap-4">
           <!-- Card preview -->
-          <div class="flex gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+          <div class="flex gap-4 p-4 rounded-xl border" style="background-color: var(--c-surface-2); border-color: var(--c-border)">
             <img :src="cardImage(selectedCard.id)" :alt="selectedCard.name" class="h-24 w-[68px] object-contain rounded shrink-0">
             <div class="flex flex-col justify-center gap-1 min-w-0">
-              <p class="font-bold text-base text-gray-900 leading-tight truncate">{{ selectedCard.name }}</p>
-              <p class="text-xs text-gray-500">{{ selectedCard.type }}<span v-if="selectedCard.race"> · {{ selectedCard.race }}</span></p>
-              <p v-if="selectedCard.atk != null" class="text-xs text-gray-400">ATK {{ selectedCard.atk }} / DEF {{ selectedCard.def }}</p>
+              <p class="font-bold text-base leading-tight truncate" style="color: var(--c-text)">{{ selectedCard.name }}</p>
+              <p class="text-xs" style="color: var(--c-muted)">{{ selectedCard.type }}<span v-if="selectedCard.race"> · {{ selectedCard.race }}</span></p>
+              <p v-if="selectedCard.atk != null" class="text-xs" style="color: var(--c-muted); opacity: 0.7">ATK {{ selectedCard.atk }} / DEF {{ selectedCard.def }}</p>
             </div>
           </div>
 

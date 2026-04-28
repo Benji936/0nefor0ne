@@ -6,16 +6,16 @@ import { cardImage } from '@/lib/cardImage';
 
 <template>
 
-  <div class="flex flex-row items-center gap-4 bg-gray-800/60 border border-gray-700 rounded-lg px-5 py-4 w-full hover:border-gray-500 transition-colors">
+  <div class="flex flex-row items-center gap-4 rounded-lg px-5 py-4 w-full transition-colors border" style="background-color: var(--c-surface-2); border-color: var(--c-border)">
     <img :src="cardImage(wish.image_id)" alt="image" class="h-14 w-10 rounded object-contain shrink-0">
 
     <div class="flex flex-col gap-1 grow min-w-0">
-      <p class="font-medium text-sm text-gray-100 truncate">{{ wish.name }}</p>
+      <p class="font-medium text-sm truncate" style="color: var(--c-text)">{{ wish.name }}</p>
       <div class="flex flex-row flex-wrap gap-2 items-center">
         <ConditionTooltip :condition="wish.condition"></ConditionTooltip>
         <LanguageTooltip :language="wish.language"></LanguageTooltip>
         <span v-if="wish.rarity" class="px-1.5 py-0.5 bg-amber-900/50 border border-amber-700/40 rounded text-xs text-amber-300">{{ wish.rarity }}</span>
-        <span v-if="wish.extension" class="text-xs text-gray-300">{{ wish.extension }}</span>
+        <span v-if="wish.extension" class="text-xs" style="color: var(--c-muted)">{{ wish.extension }}</span>
       </div>
     </div>
 

@@ -8,7 +8,7 @@ import CardElement from '../CardElement.vue';
 
 
     <div class="flex flex-col gap-2 pb-4">
-        <p class="text-gray-300">
+        <p style="color: var(--c-muted)">
             Cards you <span class="text-pink-300 font-medium">want</span> go in your wishlist;
             cards you <span class="text-blue-300 font-medium">have</span> go in your trade pile.
         </p>
@@ -20,17 +20,17 @@ import CardElement from '../CardElement.vue';
         <!-- Trade pile (left) -->
         <div class="flex flex-column gap-4 w-45/100">
             <div class="flex flex-row items-center justify-between">
-                <p class="text-left text-xl uppercase text-white font-semibold tracking-wide">Cards for trade</p>
+                <p class="text-left text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">Cards for trade</p>
                 <AddCard mode="trade" @added="onCardAdded"></AddCard>
             </div>
             <template v-if="loading">
-                <div v-for="i in 3" :key="i" class="flex flex-row items-center gap-4 bg-gray-800/60 border border-gray-700 rounded-lg px-4 py-3 w-full animate-pulse">
-                    <div class="h-14 w-10 bg-gray-700 rounded shrink-0"></div>
+                <div v-for="i in 3" :key="i" class="flex flex-row items-center gap-4 rounded-lg px-4 py-3 w-full animate-pulse border" style="background-color: var(--c-surface-2); border-color: var(--c-border)">
+                    <div class="h-14 w-10 rounded shrink-0" style="background-color: var(--c-skeleton)"></div>
                     <div class="flex flex-col gap-2 grow">
-                        <div class="h-3 bg-gray-700 rounded w-3/4"></div>
-                        <div class="h-3 bg-gray-700 rounded w-1/2"></div>
+                        <div class="h-3 rounded w-3/4" style="background-color: var(--c-skeleton)"></div>
+                        <div class="h-3 rounded w-1/2" style="background-color: var(--c-border)"></div>
                     </div>
-                    <div class="h-8 w-32 bg-gray-700 rounded shrink-0"></div>
+                    <div class="h-8 w-32 rounded shrink-0" style="background-color: var(--c-skeleton)"></div>
                 </div>
             </template>
             <template v-else>
@@ -42,7 +42,7 @@ import CardElement from '../CardElement.vue';
                         :class="newCardId === trade.id ? 'ring-2 ring-blue-400' : ''"
                     ></CardElement>
                 </TransitionGroup>
-                <p class="self-center text-gray-400 text-sm py-6" v-if="trades_quantity < 1">
+                <p class="self-center text-sm py-6" style="color: var(--c-muted)" v-if="trades_quantity < 1">
                     Nothing here yet — click "Add card" to list cards you have for trade.
                 </p>
             </template>
@@ -51,17 +51,17 @@ import CardElement from '../CardElement.vue';
         <!-- Wishlist (right) -->
         <div class="flex flex-column gap-4 w-45/100">
             <div class="flex flex-row items-center justify-between">
-                <p class="text-left text-xl uppercase text-white font-semibold tracking-wide">Wishlist</p>
+                <p class="text-left text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">Wishlist</p>
                 <AddCard mode="wish" @added="onCardAdded"></AddCard>
             </div>
             <template v-if="loading">
-                <div v-for="i in 3" :key="i" class="flex flex-row items-center gap-4 bg-gray-800/60 border border-gray-700 rounded-lg px-4 py-3 w-full animate-pulse">
-                    <div class="h-14 w-10 bg-gray-700 rounded shrink-0"></div>
+                <div v-for="i in 3" :key="i" class="flex flex-row items-center gap-4 rounded-lg px-4 py-3 w-full animate-pulse border" style="background-color: var(--c-surface-2); border-color: var(--c-border)">
+                    <div class="h-14 w-10 rounded shrink-0" style="background-color: var(--c-skeleton)"></div>
                     <div class="flex flex-col gap-2 grow">
-                        <div class="h-3 bg-gray-700 rounded w-3/4"></div>
-                        <div class="h-3 bg-gray-700 rounded w-1/2"></div>
+                        <div class="h-3 rounded w-3/4" style="background-color: var(--c-skeleton)"></div>
+                        <div class="h-3 rounded w-1/2" style="background-color: var(--c-border)"></div>
                     </div>
-                    <div class="h-8 w-32 bg-gray-700 rounded shrink-0"></div>
+                    <div class="h-8 w-32 rounded shrink-0" style="background-color: var(--c-skeleton)"></div>
                 </div>
             </template>
             <template v-else>
@@ -73,7 +73,7 @@ import CardElement from '../CardElement.vue';
                         :class="newCardId === wish.id ? 'ring-2 ring-pink-400' : ''"
                     ></CardElement>
                 </TransitionGroup>
-                <p class="self-center text-gray-400 text-sm py-6" v-if="wishes_quantity < 1">
+                <p class="self-center text-sm py-6" style="color: var(--c-muted)" v-if="wishes_quantity < 1">
                     Nothing here yet — click "Add card" to list cards you're hunting for.
                 </p>
             </template>
@@ -110,11 +110,11 @@ import { ref } from "vue";
                 if (newCard.wish) {
                     this.wished_cards.value = [newCard, ...this.wished_cards.value]
                     this.wishes_quantity++
-                    this.snackbar = { open: true, message: `"${newCard.name}" added to wishlist.`, color: '#85144B', icon: 'mdi-heart-plus' }
+                    this.snackbar = { open: true, message: `"${newCard.name}" added to wishlist.`, color: 'var(--c-accent)', icon: 'mdi-heart-plus' }
                 } else {
                     this.trade_cards.value = [newCard, ...this.trade_cards.value]
                     this.trades_quantity++
-                    this.snackbar = { open: true, message: `"${newCard.name}" added to trade pile.`, color: '#116699', icon: 'mdi-plus-box' }
+                    this.snackbar = { open: true, message: `"${newCard.name}" added to trade pile.`, color: 'var(--c-trade)', icon: 'mdi-plus-box' }
                 }
                 this.newCardId = newCard.id
                 setTimeout(() => { this.newCardId = null }, 2000)

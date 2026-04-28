@@ -82,7 +82,4 @@ export async function insert(values) {
         .from('Card')
         .insert([values])
         .select()
-
-    console.log(data)
-    console.log(error)
 }

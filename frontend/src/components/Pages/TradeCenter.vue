@@ -7,36 +7,36 @@ import ProposeTradeDialog from "@/components/ProposeTradeDialog.vue";
   <div class="flex flex-col gap-8 py-6">
     <!-- Header -->
     <div class="flex flex-col gap-1">
-      <p v-if="filterCardName" class="text-sm text-gray-300">
+      <p v-if="filterCardName" class="text-sm" style="color: var(--c-muted)">
         Filtered by card:
-        <span class="text-white font-medium">{{ filterCardName }}</span>
+        <span class="font-medium" style="color: var(--c-text)">{{ filterCardName }}</span>
         <a class="ml-3 text-pink-400 underline cursor-pointer" @click="$emit('clearFilter')">clear</a>
       </p>
-      <p v-else class="text-sm text-gray-300">
+      <p v-else class="text-sm" style="color: var(--c-muted)">
         Traders who overlap with your wishlist or trade pile.
       </p>
     </div>
 
     <!-- Loading / empty / not-logged-in states -->
-    <p v-if="!login" class="self-center text-gray-300 text-lg py-10">
+    <p v-if="!login" class="self-center text-lg py-10" style="color: var(--c-muted)">
       Log in to see your trade matches.
     </p>
-    <p v-else-if="loading" class="self-center text-gray-300 text-lg py-10">
+    <p v-else-if="loading" class="self-center text-lg py-10" style="color: var(--c-muted)">
       Looking for matches…
     </p>
-    <p v-else-if="totalMatches === 0" class="self-center text-gray-300 text-lg py-10">
+    <p v-else-if="totalMatches === 0" class="self-center text-lg py-10" style="color: var(--c-muted)">
       No matches yet. Add cards to your wishlist or trade pile to find traders.
     </p>
 
     <!-- Mutual matches first - the gold -->
     <section v-if="buckets.mutual.length > 0" class="flex flex-col gap-4">
       <div class="flex flex-row items-center gap-3">
-        <p class="text-xl uppercase text-white font-semibold tracking-wide">Mutual matches</p>
-        <v-chip size="small" color="#669911" variant="flat" class="text-white">
+        <p class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">Mutual matches</p>
+        <v-chip size="small" color="var(--c-mutual)" variant="flat" class="text-white">
           {{ buckets.mutual.length }}
         </v-chip>
       </div>
-      <p class="text-sm text-gray-300">
+      <p class="text-sm" style="color: var(--c-muted)">
         Both sides have something for each other. Start here.
       </p>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -46,8 +46,8 @@ import ProposeTradeDialog from "@/components/ProposeTradeDialog.vue";
 
     <section v-if="buckets.theyHave.length > 0" class="flex flex-col gap-4">
       <div class="flex flex-row items-center gap-3">
-        <p class="text-xl uppercase text-white font-semibold tracking-wide">Have what you want</p>
-        <v-chip size="small" color="#116699" variant="flat" class="text-white">
+        <p class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">Have what you want</p>
+        <v-chip size="small" color="var(--c-trade)" variant="flat" class="text-white">
           {{ buckets.theyHave.length }}
         </v-chip>
       </div>
@@ -56,10 +56,10 @@ import ProposeTradeDialog from "@/components/ProposeTradeDialog.vue";
       </div>
     </section>
 
-    <section v-if="buckets.theyWant.length > 0" class="flex flex-col gap-4">
+    <section v-if="buckets.theyWant.length > 0" class="flex flex-col gap-4 border-t pt-4" style="border-color: var(--c-border)">
       <div class="flex flex-row items-center gap-3">
-        <p class="text-xl uppercase text-white font-semibold tracking-wide">Want what you have</p>
-        <v-chip size="small" color="#85144B" variant="flat" class="text-white">
+        <p class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">Want what you have</p>
+        <v-chip size="small" color="var(--c-accent)" variant="flat" class="text-white">
           {{ buckets.theyWant.length }}
         </v-chip>
       </div>
@@ -74,7 +74,7 @@ import ProposeTradeDialog from "@/components/ProposeTradeDialog.vue";
       @submitted="onTradeSubmitted"
     />
 
-    <v-snackbar v-model="snackbar.open" :timeout="4000" color="#669911">
+    <v-snackbar v-model="snackbar.open" :timeout="4000" color="var(--c-mutual)">
       {{ snackbar.message }}
     </v-snackbar>
   </div>
