@@ -16,6 +16,7 @@ const emit = defineEmits(['showTraders'])
         class="flex flex-col gap-5 px-10 py-7 rounded-xl"
         style="background-color: var(--c-surface); color: var(--c-text); max-width: 680px"
       >
+        <!-- Card image + data -->
         <div class="flex flex-row gap-5">
           <img alt="image" class="h-72 shrink-0" :src="cardImage(componentCard.id)" />
           <div class="flex flex-col gap-2">
@@ -27,41 +28,42 @@ const emit = defineEmits(['showTraders'])
               <p>{{ componentCard.race }}</p>
             </div>
             <p class="text-justify text-sm" style="color: var(--c-text); opacity: 0.85">{{ componentCard.desc }}</p>
-
-            <!-- Per-print prices -->
-            <div v-if="printPrices.length" class="mt-2 rounded-lg border overflow-hidden" style="border-color: var(--c-border)">
-              <div class="overflow-y-auto" style="max-height: 110px">
-                <div
-                  v-for="s in printPrices" :key="s.set_code"
-                  class="flex items-center gap-2 px-3 py-1.5 border-b last:border-0 text-xs"
-                  style="border-color: var(--c-border)"
-                >
-                  <span class="font-mono font-semibold shrink-0" style="color: var(--c-text)">{{ s.set_code }}</span>
-                  <span class="truncate grow" style="color: var(--c-muted)">{{ s.set_rarity }}</span>
-                  <span class="font-semibold shrink-0" :style="{ color: parseFloat(s.set_price) > 0 ? 'var(--c-accent)' : 'var(--c-muted)' }">
-                    {{ parseFloat(s.set_price) > 0 ? '$' + parseFloat(s.set_price).toFixed(2) : '—' }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Marketplace links -->
-            <div v-if="marketLinks.length" class="flex gap-3 mt-1">
-              <a
-                v-for="m in marketLinks" :key="m.label"
-                :href="m.url"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="text-xs no-underline transition-opacity hover:opacity-70 flex items-center gap-1"
-                style="color: var(--c-muted)"
-              >
-                <v-icon icon="mdi-open-in-new" size="12" />
-                {{ m.label }}
-              </a>
-            </div>
           </div>
         </div>
 
+        <!-- Prices -->
+        <div v-if="printPrices.length" class="flex flex-col gap-1">
+          <div class="rounded-lg border overflow-hidden" style="border-color: var(--c-border)">
+            <div class="overflow-y-auto" style="max-height: 110px">
+              <div
+                v-for="s in printPrices" :key="s.set_code"
+                class="flex items-center gap-2 px-3 py-1.5 border-b last:border-0 text-xs"
+                style="border-color: var(--c-border)"
+              >
+                <span class="font-mono font-semibold shrink-0" style="color: var(--c-text)">{{ s.set_code }}</span>
+                <span class="truncate grow" style="color: var(--c-muted)">{{ s.set_rarity }}</span>
+                <span class="font-semibold shrink-0" :style="{ color: parseFloat(s.set_price) > 0 ? 'var(--c-accent)' : 'var(--c-muted)' }">
+                  {{ parseFloat(s.set_price) > 0 ? '$' + parseFloat(s.set_price).toFixed(2) : '—' }}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <a
+              v-for="m in marketLinks" :key="m.label"
+              :href="m.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-xs no-underline transition-opacity hover:opacity-70 flex items-center gap-1"
+              style="color: var(--c-muted)"
+            >
+              <v-icon icon="mdi-open-in-new" size="12" />
+              {{ m.label }}
+            </a>
+          </div>
+        </div>
+
+        <!-- Buttons -->
         <div class="flex flex-row gap-3">
           <v-btn
             class="grow"
