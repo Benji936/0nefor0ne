@@ -109,13 +109,11 @@
               required
             />
 
-            <template v-if="mode === 'trade'">
-              <v-select density="comfortable" variant="outlined" v-model="language" :items="languages" label="Language" />
-              <div class="flex gap-4 items-center">
-                <v-select density="comfortable" variant="outlined" v-model="condition" :items="conditions" label="Condition" class="grow" />
-                <v-checkbox density="comfortable" label="1st Ed." color="blue-darken-3" v-model="first_edition" hide-details />
-              </div>
-            </template>
+            <v-select density="comfortable" variant="outlined" v-model="language" :items="languages" label="Language" />
+            <div class="flex gap-4 items-center">
+              <v-select density="comfortable" variant="outlined" v-model="condition" :items="conditions" label="Condition" class="grow" />
+              <v-checkbox density="comfortable" label="1st Ed." color="blue-darken-3" v-model="first_edition" hide-details />
+            </div>
 
             <v-number-input
               density="comfortable"
@@ -291,9 +289,9 @@ export default {
         quantity: this.quantity,
         trader: userData.user.id,
         image_id: this.selectedCard.id,
-        language: isWish ? null : this.language,
-        condition: isWish ? "Mint" : this.condition,
-        first_edition: isWish ? false : this.first_edition,
+        language: this.language,
+        condition: this.condition,
+        first_edition: this.first_edition,
       };
 
       const { data: inserted, error } = await supabase.from("Card").insert([row]).select().single();
