@@ -88,23 +88,8 @@ import NavItem from "@/components/NavItem.vue";
 
   <main class="px-10 pt-6 min-h-screen" style="background: var(--c-bg); transition: background 0.3s ease">
 
-      <div class="flex flex-row items-center gap-3 py-4 overflow-x-auto" v-if="page=='search'">
-        <span class="text-xs uppercase tracking-widest shrink-0" style="color: var(--c-muted)">Type</span>
-        <div class="flex flex-row gap-2 flex-nowrap">
-          <button
-            v-for="category in filters.monster_categories"
-            :key="category"
-            @click="addFilter('type', category)"
-            class="px-3 py-1 rounded-full text-xs border transition-all shrink-0 cursor-pointer hover:text-white"
-            :class="filters.monster_category === category ? 'bg-pink-700 border-pink-700 text-white' : ''"
-            :style="filters.monster_category === category ? {} : { borderColor: 'var(--c-border)', color: 'var(--c-muted)' }"
-          >
-            {{ category }}
-          </button>
-        </div>
-      </div>
 
-    <TradeCenter
+<TradeCenter
       v-if="page=='TradeCenter'"
       :login="authenticated"
       :filter-card-name="filterCardName"
@@ -138,14 +123,8 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
           return {
             show_card:null,
             filterCardName: "",
-            api: getUrl()+'cardinfo.php',
-            applied_filters:{},
-            filters:{
-              monster_categories:['Normal','Effect','Ritual Effect','Fusion','Synchro','Xyz','Pendulum Effect','Pendulum Normal','Link','Tuner','Flip','Toon','Spirit','Union Effect','Gemini'],
-              monster_category: "",
-            },
             searchQuery: "",
-            cards:[],
+            cards: {},
             // null when logged out, { user, session } when logged in
             authenticated: null,
             authDialogOpen: false,
@@ -155,37 +134,14 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
           };
       },
       methods: {
-        async update(){
-          let i = 0
-          for (const [key, value] of Object.entries(this.applied_filters)) {
-            if(i==0){
-              this.api += '?'
-            }
-            this.api += key+'='+value
-            if(i>0 || i<Object.entries(this.applied_filters).length-1){
-              this.api += '&'
-            }
-            i++
+        async update() {
+          if (!this.searchQuery.trim()) {
+            this.cards = {};
+            return;
           }
-
-          if(this.searchQuery != ''){
-            if(i==0){
-              this.api += '?' 
-            }else{
-              this.api += '&'
-            }
-            this.api += 'fname='+this.searchQuery
-          }
-
-          const response = await get(this.api)
-          this.cards = response.data
-          this.api = getUrl()+'cardinfo.php'
-        }, 
-        async addFilter(filter,value){
-          this.applied_filters[filter] = value + " Monster"
-          this.filters.monster_category = value
-          this.update()
-        },   
+          const response = await get(getUrl() + 'cardinfo.php?fname=' + encodeURIComponent(this.searchQuery));
+          this.cards = response.data;
+        },
         openLogin() {
           this.authDialogOpen = true;
         },
@@ -205,10 +161,7 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
         },
 
         changePage(name) {
-          console.log(this.page)
-          //this.previousPage = this.page;
           this.page = name;
-          console.log(this.page)
         },
         // Open the TradeCenter (matches page). If a card is passed (from
         // "See traders" on a card tile), pre-filter the matches by that

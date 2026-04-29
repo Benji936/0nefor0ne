@@ -5,6 +5,7 @@ import { computed } from "vue";
 const props = defineProps({
   mode: { type: String, default: "trade", validator: (m) => ["wish", "trade"].includes(m) },
   buttonLabel: { type: String, default: "" },
+  headless: { type: Boolean, default: false },
 });
 
 defineEmits(["added"]);
@@ -18,7 +19,7 @@ const meta = computed(() =>
 
 <template>
   <v-dialog v-model="dialogOpen" max-width="560" scrollable @after-leave="reset">
-    <template #activator="{ props: activatorProps }">
+    <template v-if="!headless" #activator="{ props: activatorProps }">
       <v-btn
         density="comfortable"
         variant="flat"
@@ -34,7 +35,7 @@ const meta = computed(() =>
       <!-- Banner -->
       <div class="flex flex-row items-center gap-3 px-5 py-3" :style="{ backgroundColor: meta.color, color: 'white' }">
         <v-btn
-          v-if="step === 'form'"
+          v-if="step === 'search'"
           icon="mdi-arrow-left"
           variant="text"
           color="white"
@@ -68,7 +69,6 @@ const meta = computed(() =>
         <v-divider />
 
         <div class="overflow-y-auto flex-1" style="max-height: 390px">
-          <!-- Skeleton while searching -->
           <div v-if="searching" class="flex flex-col">
             <div v-for="i in 5" :key="i" class="flex items-center gap-4 px-5 py-3 border-b animate-pulse" style="border-color: var(--c-border)">
               <div class="h-16 w-12 rounded shrink-0" style="background-color: var(--c-skeleton)"></div>
@@ -79,13 +79,11 @@ const meta = computed(() =>
             </div>
           </div>
 
-          <!-- No results / prompt -->
           <div v-else-if="!cards.length" class="flex flex-col items-center justify-center py-16 gap-2" style="color: var(--c-muted)">
             <v-icon icon="mdi-card-search-outline" size="40" color="gray" />
             <p class="text-sm">{{ searched ? 'No cards found.' : 'Type a name and press Enter to search.' }}</p>
           </div>
 
-          <!-- Results list -->
           <div v-else>
             <div
               v-for="card in cards"
@@ -109,7 +107,6 @@ const meta = computed(() =>
       <!-- ── Step 2: Form ── -->
       <template v-else-if="step === 'form'">
         <v-card-text class="pa-5 flex flex-col gap-4">
-          <!-- Card preview -->
           <div class="flex gap-4 p-4 rounded-xl border" style="background-color: var(--c-surface-2); border-color: var(--c-border)">
             <img :src="cardImage(selectedCard.id)" :alt="selectedCard.name" class="h-24 w-[68px] object-contain rounded shrink-0">
             <div class="flex flex-col justify-center gap-1 min-w-0">
@@ -123,7 +120,7 @@ const meta = computed(() =>
             <v-select
               density="comfortable"
               variant="outlined"
-              v-model="extension"
+              v-model="extensionDisplay"
               :items="extensions"
               :rules="[v => !!v || 'Pick an extension']"
               label="Extension & Rarity"
@@ -178,6 +175,7 @@ export default {
   props: {
     mode: { type: String, default: "trade" },
     buttonLabel: { type: String, default: "" },
+    headless: { type: Boolean, default: false },
   },
   emits: ["added"],
   data() {
@@ -193,10 +191,11 @@ export default {
       selectedCard: null,
       loading: false,
       errorMessage: "",
-      extension: null,
-      extensions: [],
+      extensionDisplay: null, // full "CODE | Rarity" string for the dropdown
+      extensionCode: null,    // parsed code for DB
       rarity: null,
       quantity: 1,
+      extensions: [],
       language: "English",
       languages: ["English", "French", "Spanish", "German", "Italian", "Portuguese"],
       condition: "Near Mint",
@@ -212,9 +211,34 @@ export default {
       this.searched = false;
       this.selectedCard = null;
       this.errorMessage = "";
-      this.extension = null;
+      this.extensionDisplay = null;
+      this.extensionCode = null;
+      this.rarity = null;
       this.quantity = 1;
       this.first_edition = false;
+    },
+
+    // Called externally from CardYugi — skips the search step
+    openWith(card, setName = '') {
+      this.selectedCard = card;
+      this.extensions = (card.card_sets ?? []).map(s => `${s.set_code} | ${s.set_rarity}`);
+      this.quantity = 1;
+      this.errorMessage = "";
+      this.extensionDisplay = null;
+      this.extensionCode = null;
+      this.rarity = null;
+
+      if (setName) {
+        const match = (card.card_sets ?? []).find(s => s.set_name === setName);
+        if (match) {
+          this.extensionDisplay = `${match.set_code} | ${match.set_rarity}`;
+          this.extensionCode = match.set_code;
+          this.rarity = match.set_rarity;
+        }
+      }
+
+      this.step = 'form';
+      this.dialogOpen = true;
     },
 
     async update() {
@@ -244,7 +268,8 @@ export default {
     selectCard(card) {
       this.selectedCard = card;
       this.extensions = (card.card_sets ?? []).map(s => `${s.set_code} | ${s.set_rarity}`);
-      this.extension = null;
+      this.extensionDisplay = null;
+      this.extensionCode = null;
       this.rarity = null;
       this.quantity = 1;
       this.errorMessage = "";
@@ -252,8 +277,8 @@ export default {
     },
 
     extensionSelected() {
-      const [ext, rar] = (this.extension ?? "").split("|").map(s => s.trim());
-      this.extension = ext ?? "";
+      const [code, rar] = (this.extensionDisplay ?? "").split("|").map(s => s.trim());
+      this.extensionCode = code ?? "";
       this.rarity = rar ?? "";
     },
 
@@ -275,7 +300,7 @@ export default {
         game: "YGO",
         url: "https://db.ygoprodeck.com/api/v7/cardinfo.php?name=" + this.selectedCard.name,
         name: this.selectedCard.name,
-        extension: this.extension,
+        extension: this.extensionCode,
         rarity: this.rarity,
         quantity: this.quantity,
         trader: userData.user.id,

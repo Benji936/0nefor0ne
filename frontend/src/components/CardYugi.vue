@@ -1,97 +1,94 @@
 <script setup>
 import { cardImage } from '@/lib/cardImage'
 const emit = defineEmits(['showTraders'])
-
 </script>
 
 <template>
-    
+  <v-overlay class="w-50 place-self-center align-center">
+    <template v-slot:activator="{ props: activatorProps }">
+      <div class="hover:outline hover:outline-white cursor-pointer" v-bind="activatorProps">
+        <img alt="image" class="h-48 object-cover rounded" :src="cardImage(componentCard.id)" />
+      </div>
+    </template>
 
-    <v-overlay class=" w-50 place-self-center align-center">
-        <template v-slot:activator="{ props: activatorProps }">
-
-            <div class="hover:outline hover:outline-white" v-bind="activatorProps">
-                <img alt="image" @mouseover="toggle" @mouseleave="toggle" class="h-31 w-22" :src="cardImage(componentCard.id)"/>
+    <template v-slot:default="{ isActive }">
+      <div
+        class="flex flex-col gap-5 px-10 py-7 rounded-xl"
+        style="background-color: var(--c-surface); color: var(--c-text); max-width: 680px"
+      >
+        <div class="flex flex-row gap-5">
+          <img alt="image" class="h-72 w-52 object-cover rounded shrink-0" :src="cardImage(componentCard.id)" />
+          <div class="flex flex-col gap-2">
+            <p class="font-bold text-xl" style="color: var(--c-text)">{{ componentCard.name }}</p>
+            <div class="flex flex-row gap-3 text-lg" style="color: var(--c-muted)">
+              <p v-if="componentCard.atk != null">ATK {{ componentCard.atk }}</p>
+              <p v-if="componentCard.def != null">DEF {{ componentCard.def }}</p>
+              <p v-if="componentCard.level != null">Level {{ componentCard.level }}</p>
+              <p>{{ componentCard.race }}</p>
             </div>
-        </template>
+            <p class="text-justify text-sm" style="color: var(--c-text); opacity: 0.85">{{ componentCard.desc }}</p>
+          </div>
+        </div>
 
-        <template v-slot:default="{ isActive }">
-            <div class="flex flex-col gap-5 text-black-300 bg-white px-10 py-7 rounded-xl">
-                <div class="flex flex-row gap-5">
-                    <img alt="image" class="h-61 w-44" :src="cardImage(componentCard.id)"/>
-                    <div class="flex flex-col gap-2">
-                        <p class="font-bold text-xl">{{ componentCard.name }}</p>
-                        <div class="flex flex-row gap-3 text-lg">
-                            <p v-if="componentCard.atk != null" >ATK {{ componentCard.atk }} </p>
-                            <p v-if="componentCard.def != null" > DEF {{ componentCard.def }}</p>
-                            <p v-if="componentCard.level != null">Level {{ componentCard.level }}</p>
-                            <p>{{ componentCard.race }}</p>
-                            
-                        </div>
-                        <p class="text-justify text-[16px]">{{ componentCard.desc }}</p>
-                    </div>
-                    
-                </div>
-                
+        <div class="flex flex-row gap-3">
+          <v-btn
+            class="grow"
+            variant="flat"
+            :style="{ backgroundColor: 'var(--c-trade)', color: 'white' }"
+            prepend-icon="mdi-plus-box"
+            @click="openTrade"
+          >
+            Add to trade pile
+          </v-btn>
 
-                
-                <div class="d-flex flex-row gap-3">
+          <v-btn
+            class="grow"
+            variant="flat"
+            :style="{ backgroundColor: 'var(--c-accent)', color: 'white' }"
+            prepend-icon="mdi-heart-plus"
+            @click="openWish"
+          >
+            Add to wishlist
+          </v-btn>
 
+          <v-btn
+            class="grow"
+            variant="flat"
+            :style="{ backgroundColor: 'var(--c-mutual)', color: 'white' }"
+            append-icon="mdi-swap-horizontal"
+            @click="emit('showTraders', componentCard)"
+          >
+            See traders
+          </v-btn>
+        </div>
+      </div>
+    </template>
+  </v-overlay>
 
-                    <v-btn
-                        class="grow"
-                        variant="flat"
-                        style="background-color: #669911;"
-                        prepend-icon="mdi-plus"
-                        color="#ffffff">
-                        Add to trade pile
-                    </v-btn>
-
-                    <v-btn
-                        class="grow"
-                        variant="flat"
-                        style="background-color: #116699;"
-                        prepend-icon="mdi-heart-plus"
-                        color="#ffffff">
-                        Add to wishlist
-                    </v-btn>
-
-                    <v-btn
-                        class="grow"
-                        variant="flat"
-                        style="background-color: #85144B;"
-                        append-icon="mdi-swap-horizontal"
-                        color="#ffffff"
-                        @click="emit('showTraders',componentCard)">
-                        See traders
-                    </v-btn>
-                </div>
-
-                
-               
-            </div>
-        </template>
-    </v-overlay>
+  <!-- Headless AddCard dialogs — outside v-overlay to avoid teleport ref issues -->
+  <AddCard ref="tradeAdd" mode="trade" :headless="true" />
+  <AddCard ref="wishAdd" mode="wish" :headless="true" />
 </template>
 
 <script>
-    export default {
-      
-        props: ['componentCard'],
-        data() {
-            return {
-                over: false,
-            };
-        
-        },
-        methods: {
-            toggle(){
-                this.over = !this.over;
-            },
-        },
-        mounted() {
-            
-        },
-  };
+import AddCard from './AddCard.vue';
 
+export default {
+  components: { AddCard },
+  props: {
+    componentCard: { type: Object, required: true },
+    extension: { type: String, default: '' },
+  },
+  data() {
+    return { over: false };
+  },
+  methods: {
+    openTrade() {
+      this.$refs.tradeAdd.openWith(this.componentCard, this.extension);
+    },
+    openWish() {
+      this.$refs.wishAdd.openWith(this.componentCard, this.extension);
+    },
+  },
+};
 </script>

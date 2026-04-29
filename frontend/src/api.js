@@ -36,8 +36,18 @@ export const searchById = (id="") => {
     return response;
 }
 
-export const search = (type='') => {
-    return
+export const getCardSets = () => {
+    return axios.get(API_URL + "cardsets.php").catch((error) => {
+        console.error("Error fetching card sets", error);
+        return { data: [] };
+    });
+}
+
+export const getCardsBySet = (setName = "") => {
+    return axios.get(API_URL + "cardinfo.php?cardset=" + encodeURIComponent(setName)).catch((error) => {
+        console.error("Error fetching cards for set " + setName, error);
+        return { data: { data: [] } };
+    });
 }
 
 export const get = (url="") => {
