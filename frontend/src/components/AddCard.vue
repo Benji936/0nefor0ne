@@ -1,22 +1,3 @@
-<script setup>
-import { cardImage } from "@/lib/cardImage";
-import { computed } from "vue";
-
-const props = defineProps({
-  mode: { type: String, default: "trade", validator: (m) => ["wish", "trade"].includes(m) },
-  buttonLabel: { type: String, default: "" },
-  headless: { type: Boolean, default: false },
-});
-
-defineEmits(["added"]);
-
-const meta = computed(() =>
-  props.mode === "wish"
-    ? { title: "Add to wishlist", subtitle: "Pick a card you're hunting for.", color: "var(--c-accent)", icon: "mdi-heart-plus" }
-    : { title: "Add to trade pile", subtitle: "Pick a card you have to offer.", color: "var(--c-trade)", icon: "mdi-plus-box" }
-);
-</script>
-
 <template>
   <v-dialog v-model="dialogOpen" max-width="560" scrollable @after-leave="reset">
     <template v-if="!headless" #activator="{ props: activatorProps }">
@@ -168,31 +149,37 @@ const meta = computed(() =>
 </template>
 
 <script>
+import { cardImage } from "@/lib/cardImage";
 import { searchCardByName, searchCardBySetCode, searchById } from "@/api";
 import { getClient } from "@/lib/supabaseClient";
 
 export default {
   props: {
-    mode: { type: String, default: "trade" },
+    mode: { type: String, default: "trade", validator: (m) => ["wish", "trade"].includes(m) },
     buttonLabel: { type: String, default: "" },
     headless: { type: Boolean, default: false },
   },
   emits: ["added"],
+  computed: {
+    meta() {
+      return this.mode === "wish"
+        ? { title: "Add to wishlist", subtitle: "Pick a card you're hunting for.", color: "var(--c-accent)", icon: "mdi-heart-plus" }
+        : { title: "Add to trade pile", subtitle: "Pick a card you have to offer.", color: "var(--c-trade)", icon: "mdi-plus-box" };
+    },
+  },
   data() {
     return {
       dialogOpen: false,
       step: "search",
-      // search
       search: "",
       cards: [],
       searching: false,
       searched: false,
-      // form
       selectedCard: null,
       loading: false,
       errorMessage: "",
-      extensionDisplay: null, // full "CODE | Rarity" string for the dropdown
-      extensionCode: null,    // parsed code for DB
+      extensionDisplay: null,
+      extensionCode: null,
       rarity: null,
       quantity: 1,
       extensions: [],
@@ -218,7 +205,6 @@ export default {
       this.first_edition = false;
     },
 
-    // Called externally from CardYugi — skips the search step
     openWith(card, setName = '') {
       this.selectedCard = card;
       this.extensions = (card.card_sets ?? []).map(s => `${s.set_code} | ${s.set_rarity}`);
@@ -321,6 +307,8 @@ export default {
       this.$emit("added", inserted);
       this.dialogOpen = false;
     },
+
+    cardImage,
   },
 };
 </script>
