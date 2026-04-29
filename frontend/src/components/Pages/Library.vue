@@ -15,10 +15,10 @@ import CardElement from '../CardElement.vue';
     </div>
 
 
-    <div class="flex row justify-between gap-10 py-2">
+    <div class="flex flex-col gap-10 py-2">
 
-        <!-- Trade pile (left) -->
-        <div class="flex flex-column gap-4 w-45/100">
+        <!-- Trade pile -->
+        <div class="flex flex-col gap-4">
             <div class="flex flex-row items-center justify-between">
                 <p class="text-left text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">Cards for trade</p>
                 <AddCard mode="trade" @added="onCardAdded"></AddCard>
@@ -48,8 +48,8 @@ import CardElement from '../CardElement.vue';
             </template>
         </div>
 
-        <!-- Wishlist (right) -->
-        <div class="flex flex-column gap-4 w-45/100">
+        <!-- Wishlist -->
+        <div class="flex flex-col gap-4">
             <div class="flex flex-row items-center justify-between">
                 <p class="text-left text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">Wishlist</p>
                 <AddCard mode="wish" @added="onCardAdded"></AddCard>
