@@ -65,6 +65,16 @@ const emit = defineEmits(['showTraders'])
                 <span class="font-semibold shrink-0" :style="{ color: parseFloat(s.set_price) > 0 ? 'var(--c-accent)' : 'var(--c-muted)' }">
                   {{ formatPrice(s.set_price) }}
                 </span>
+                <a
+                  :href="`https://www.cardmarket.com/en/YuGiOh/Cards/${encodeURIComponent(s.set_code)}`"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="shrink-0 transition-opacity hover:opacity-70"
+                  style="color: var(--c-muted)"
+                  title="Cardmarket"
+                >
+                  <v-icon icon="mdi-open-in-new" size="13" />
+                </a>
               </div>
             </div>
           </div>
@@ -163,7 +173,6 @@ export default {
       const name = encodeURIComponent(this.componentCard.name);
       return [
         { label: 'TCGPlayer', url: `https://www.tcgplayer.com/search/yugioh/product?q=${name}` },
-        { label: 'Cardmarket', url: `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${name}` },
         { label: 'eBay', url: `https://www.ebay.com/sch/i.html?_nkw=${name}+yugioh` },
       ];
     },

@@ -116,11 +116,11 @@ function describe(card) {
   return bits.join(" · ");
 }
 
-function marketLinks(name) {
+function marketLinks(name, setCode) {
   const q = encodeURIComponent(name);
   return [
     { label: 'TCGPlayer', url: `https://www.tcgplayer.com/search/yugioh/product?q=${q}` },
-    { label: 'Cardmarket', url: `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${q}` },
+    { label: 'Cardmarket', url: setCode ? `https://www.cardmarket.com/en/YuGiOh/Cards/${encodeURIComponent(setCode)}` : `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${q}` },
     { label: 'eBay', url: `https://www.ebay.com/sch/i.html?_nkw=${q}+yugioh` },
   ];
 }
@@ -226,7 +226,7 @@ function marketLinks(name) {
                 <p class="text-xs truncate" style="color: var(--c-muted)">{{ describe(card) || "—" }}</p>
                 <div class="flex gap-2">
                   <a
-                    v-for="m in marketLinks(card.name)" :key="m.label"
+                    v-for="m in marketLinks(card.name, card.extension)" :key="m.label"
                     :href="m.url"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -303,7 +303,7 @@ function marketLinks(name) {
                 <p class="text-xs truncate" style="color: var(--c-muted)">{{ describe(card) || "—" }}</p>
                 <div class="flex gap-2">
                   <a
-                    v-for="m in marketLinks(card.name)" :key="m.label"
+                    v-for="m in marketLinks(card.name, card.extension)" :key="m.label"
                     :href="m.url"
                     target="_blank"
                     rel="noopener noreferrer"
