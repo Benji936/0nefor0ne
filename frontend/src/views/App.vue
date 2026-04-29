@@ -107,7 +107,7 @@ import NavItem from "@/components/NavItem.vue";
 
 
 <script>
-import { get, getUrl } from "@/api";
+import { searchCardByName, searchCardBySetCode, searchById } from "@/api";
 import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
 
 
@@ -139,8 +139,20 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
             this.cards = {};
             return;
           }
-          const response = await get(getUrl() + 'cardinfo.php?fname=' + encodeURIComponent(this.searchQuery));
-          this.cards = response.data;
+          const response = await searchCardByName(this.searchQuery);
+          if (response.data?.data?.length > 0) {
+            this.cards = response.data;
+          } else if (response.data?.length > 0) {
+            this.cards = { data: response.data };
+          } else {
+            const alt = await searchCardBySetCode(this.searchQuery);
+            if (alt?.data?.id) {
+              const byId = await searchById(alt.data.id);
+              this.cards = byId.data?.data ? byId.data : { data: byId.data ?? [] };
+            } else {
+              this.cards = { data: [] };
+            }
+          }
         },
         openLogin() {
           this.authDialogOpen = true;
