@@ -30,13 +30,16 @@ const emit = defineEmits(['showTraders'])
 
             <!-- Prices -->
             <div v-if="prices" class="flex flex-wrap gap-2 mt-1">
-              <span
+              <a
                 v-for="p in prices" :key="p.label"
-                class="text-xs px-2 py-1 rounded-md border font-medium"
+                :href="p.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-xs px-2 py-1 rounded-md border font-medium no-underline cursor-pointer transition-opacity hover:opacity-70"
                 style="border-color: var(--c-border); background-color: var(--c-surface-2); color: var(--c-text)"
               >
                 {{ p.label }} <span style="color: var(--c-accent)">{{ p.value }}</span>
-              </span>
+              </a>
             </div>
           </div>
         </div>
@@ -94,11 +97,24 @@ export default {
     prices() {
       const p = this.componentCard.card_prices?.[0];
       if (!p) return null;
+      const name = encodeURIComponent(this.componentCard.name);
       const fmt = (v) => v && parseFloat(v) > 0 ? `$${parseFloat(v).toFixed(2)}` : null;
       const entries = [
-        { label: 'TCGPlayer', value: fmt(p.tcgplayer_price) },
-        { label: 'Cardmarket', value: fmt(p.cardmarket_price) },
-        { label: 'eBay', value: fmt(p.ebay_price) },
+        {
+          label: 'TCGPlayer',
+          value: fmt(p.tcgplayer_price),
+          url: `https://www.tcgplayer.com/search/yugioh/product?q=${name}`,
+        },
+        {
+          label: 'Cardmarket',
+          value: fmt(p.cardmarket_price),
+          url: `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${name}`,
+        },
+        {
+          label: 'eBay',
+          value: fmt(p.ebay_price),
+          url: `https://www.ebay.com/sch/i.html?_nkw=${name}+yugioh`,
+        },
       ].filter(e => e.value);
       return entries.length ? entries : null;
     },
