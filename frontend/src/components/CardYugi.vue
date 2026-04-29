@@ -31,72 +31,43 @@ const emit = defineEmits(['showTraders'])
           </div>
         </div>
 
-        <!-- Prices -->
-        <div v-if="printPrices.length" class="flex flex-col gap-1">
-          <!-- Header row: label + currency toggle -->
-          <div class="flex items-center justify-between px-1">
-            <span class="text-xs font-semibold uppercase tracking-wide" style="color: var(--c-muted)">Prices</span>
-            <div class="flex items-center gap-1 rounded-md border overflow-hidden text-xs" style="border-color: var(--c-border)">
-              <button
-                class="px-2 py-0.5 transition-colors cursor-pointer"
-                :style="!showEur ? { backgroundColor: 'var(--c-accent)', color: 'white' } : { color: 'var(--c-muted)' }"
-                @click="showEur = false"
-              >USD</button>
-              <button
-                class="px-2 py-0.5 transition-colors cursor-pointer"
-                :style="showEur ? { backgroundColor: 'var(--c-accent)', color: 'white' } : { color: 'var(--c-muted)' }"
-                @click="fetchEurRate"
-              >
-                <span v-if="loadingRate" class="opacity-50">EUR…</span>
-                <span v-else>EUR</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="rounded-lg border overflow-hidden" style="border-color: var(--c-border)">
-            <div class="overflow-y-auto" style="max-height: 110px">
-              <div
-                v-for="s in printPrices" :key="s.set_code"
-                class="flex items-center gap-2 px-3 py-1.5 border-b last:border-0 text-xs"
-                style="border-color: var(--c-border)"
-              >
-                <span class="font-mono font-semibold shrink-0" style="color: var(--c-text)">{{ s.set_code }}</span>
-                <span class="truncate grow" style="color: var(--c-muted)">{{ s.set_rarity }}</span>
-                <span class="font-semibold shrink-0" :style="{ color: parseFloat(s.set_price) > 0 ? 'var(--c-accent)' : 'var(--c-muted)' }">
-                  {{ formatPrice(s.set_price) }}
-                </span>
-                <a
-                  :href="`https://www.cardmarket.com/en/YuGiOh/Cards/${encodeURIComponent(s.set_code)}`"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="shrink-0 transition-opacity hover:opacity-70"
-                  style="color: var(--c-muted)"
-                  title="Cardmarket"
-                >
-                  <v-icon icon="mdi-open-in-new" size="13" />
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex items-center justify-between">
-            <div class="flex gap-3">
+        <!-- Prints -->
+        <div v-if="printPrices.length" class="rounded-lg border overflow-hidden" style="border-color: var(--c-border)">
+          <div class="overflow-y-auto" style="max-height: 110px">
+            <div
+              v-for="s in printPrices" :key="s.set_code"
+              class="flex items-center gap-2 px-3 py-1.5 border-b last:border-0 text-xs"
+              style="border-color: var(--c-border)"
+            >
+              <span class="font-mono font-semibold shrink-0" style="color: var(--c-text)">{{ s.set_code }}</span>
+              <span class="truncate grow" style="color: var(--c-muted)">{{ s.set_rarity }}</span>
               <a
-                v-for="m in marketLinks" :key="m.label"
-                :href="m.url"
+                :href="`https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${encodeURIComponent(s.set_code)}`"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="text-xs no-underline transition-opacity hover:opacity-70 flex items-center gap-1"
+                class="shrink-0 transition-opacity hover:opacity-70 flex items-center gap-1 no-underline text-xs"
                 style="color: var(--c-muted)"
               >
-                <v-icon icon="mdi-open-in-new" size="12" />
-                {{ m.label }}
+                <v-icon icon="mdi-open-in-new" size="13" />
+                Cardmarket
               </a>
             </div>
-            <span v-if="showEur && eurRate" class="text-xs" style="color: var(--c-muted)">
-              1 USD = {{ eurRate.toFixed(4) }} EUR
-            </span>
           </div>
+        </div>
+
+        <!-- Footer links -->
+        <div class="flex gap-3 -mt-3">
+          <a
+            v-for="m in marketLinks" :key="m.label"
+            :href="m.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-xs no-underline transition-opacity hover:opacity-70 flex items-center gap-1"
+            style="color: var(--c-muted)"
+          >
+            <v-icon icon="mdi-open-in-new" size="12" />
+            {{ m.label }}
+          </a>
         </div>
 
         <!-- Buttons -->
@@ -143,9 +114,6 @@ const emit = defineEmits(['showTraders'])
 <script>
 import AddCard from './AddCard.vue';
 
-// Module-level cache so the rate is fetched at most once per session
-let _eurRateCache = null;
-
 export default {
   components: { AddCard },
   props: {
@@ -153,21 +121,11 @@ export default {
     extension: { type: String, default: '' },
   },
   data() {
-    return {
-      over: false,
-      showEur: false,
-      eurRate: _eurRateCache,
-      loadingRate: false,
-    };
+    return { over: false };
   },
   computed: {
     printPrices() {
-      const sets = this.componentCard.card_sets ?? [];
-      return [...sets].sort((a, b) => {
-        const pa = parseFloat(a.set_price) || 0;
-        const pb = parseFloat(b.set_price) || 0;
-        return pb - pa;
-      });
+      return this.componentCard.card_sets ?? [];
     },
     marketLinks() {
       const name = encodeURIComponent(this.componentCard.name);
@@ -183,30 +141,6 @@ export default {
     },
     openWish() {
       this.$refs.wishAdd.openWith(this.componentCard, this.extension);
-    },
-    async fetchEurRate() {
-      this.showEur = true;
-      if (this.eurRate) return;
-      this.loadingRate = true;
-      try {
-        const res = await fetch('https://api.frankfurter.app/latest?from=USD&to=EUR');
-        const data = await res.json();
-        _eurRateCache = data.rates.EUR;
-        this.eurRate = _eurRateCache;
-      } catch {
-        // silently fall back to USD if fetch fails
-        this.showEur = false;
-      } finally {
-        this.loadingRate = false;
-      }
-    },
-    formatPrice(raw) {
-      const usd = parseFloat(raw);
-      if (!usd || usd <= 0) return '—';
-      if (this.showEur && this.eurRate) {
-        return '€' + (usd * this.eurRate).toFixed(2);
-      }
-      return '$' + usd.toFixed(2);
     },
   },
 };
