@@ -2,6 +2,7 @@
 import { ref, watch, computed } from "vue";
 import { cardImage } from "@/lib/cardImage";
 import { fetchMyTradePile, createTradeProposal } from "@/lib/matches";
+import { searchById } from "@/api";
 import AddCard from "@/components/AddCard.vue";
 
 const props = defineProps({
@@ -120,6 +121,32 @@ function describe(card) {
   return bits.join(" · ");
 }
 
+// Wanted-card picker
+const showWantedPicker = ref(false);
+const wantedFilter = ref('');
+const fetchingCardId = ref(null);
+const addCardRef = ref(null);
+
+const filteredWanted = computed(() => {
+  const q = wantedFilter.value.toLowerCase().trim();
+  return (props.user?.theyWant ?? []).filter(c => !q || c.name.toLowerCase().includes(q));
+});
+
+async function selectWantedCard(item) {
+  fetchingCardId.value = item.id;
+  try {
+    const res = await searchById(item.image_id);
+    const card = res.data?.data?.[0] ?? res.data?.[0] ?? null;
+    if (card) {
+      showWantedPicker.value = false;
+      wantedFilter.value = '';
+      addCardRef.value.openWith(card, item.extension);
+    }
+  } finally {
+    fetchingCardId.value = null;
+  }
+}
+
 function marketLinks(name, setCode) {
   const q = encodeURIComponent(name);
   return [
@@ -196,7 +223,13 @@ function marketLinks(name, setCode) {
                   {{ givePayload.length }}
                 </span>
               </div>
-              <AddCard mode="trade" button-label="Add to offer" @added="onCardAdded" />
+              <v-btn
+                density="comfortable"
+                variant="flat"
+                prepend-icon="mdi-plus-box"
+                :style="{ backgroundColor: 'var(--c-trade)', color: 'white' }"
+                @click="showWantedPicker = true"
+              >Add to offer</v-btn>
             </div>
 
             <p v-if="myOffers.length === 0" class="text-sm py-8 text-center flex flex-col items-center gap-3" style="color: var(--c-muted)">
@@ -374,6 +407,57 @@ function marketLinks(name, setCode) {
       </div>
     </v-card>
   </v-dialog>
+
+  <!-- Wanted-card picker dialog -->
+  <v-dialog v-model="showWantedPicker" max-width="480" scrollable>
+    <v-card style="background-color: var(--c-surface); color: var(--c-text)">
+      <div class="flex items-center gap-3 px-5 py-3" :style="{ backgroundColor: 'var(--c-trade)', color: 'white' }">
+        <v-icon icon="mdi-heart-search" size="20" />
+        <span class="font-bold grow">Cards they want</span>
+        <v-btn icon="mdi-close" variant="text" color="white" density="compact" @click="showWantedPicker = false" />
+      </div>
+
+      <div class="px-4 pt-4 pb-2">
+        <v-text-field
+          v-model="wantedFilter"
+          label="Filter cards"
+          prepend-inner-icon="mdi-magnify"
+          variant="outlined"
+          hide-details
+          autofocus
+          clearable
+          density="comfortable"
+        />
+      </div>
+
+      <v-divider />
+
+      <div class="overflow-y-auto" style="max-height: 400px">
+        <div v-if="!filteredWanted.length" class="flex flex-col items-center justify-center py-12 gap-2" style="color: var(--c-muted)">
+          <v-icon icon="mdi-card-off-outline" size="36" color="gray" />
+          <p class="text-sm">No matching cards.</p>
+        </div>
+        <div
+          v-for="item in filteredWanted"
+          :key="item.id"
+          class="flex items-center gap-4 px-5 py-3 cursor-pointer border-b last:border-0 transition-colors hover:bg-[var(--c-surface-2)]"
+          style="border-color: var(--c-border)"
+          @click="selectWantedCard(item)"
+        >
+          <img :src="cardImage(item.image_id)" :alt="item.name" class="h-16 w-12 object-contain rounded shrink-0">
+          <div class="flex flex-col grow min-w-0 gap-0.5">
+            <p class="font-semibold text-sm truncate" style="color: var(--c-text)">{{ item.name }}</p>
+            <p class="text-xs truncate" style="color: var(--c-muted)">{{ [item.extension, shortenRarity(item.rarity), item.language].filter(Boolean).join(' · ') }}</p>
+          </div>
+          <v-progress-circular v-if="fetchingCardId === item.id" indeterminate size="18" width="2" />
+          <v-icon v-else icon="mdi-chevron-right" color="#ccc" size="20" class="shrink-0" />
+        </div>
+      </div>
+    </v-card>
+  </v-dialog>
+
+  <!-- Headless AddCard opened after selecting a wanted card -->
+  <AddCard ref="addCardRef" mode="trade" :headless="true" @added="onCardAdded" />
 </template>
 
 <style scoped>
