@@ -18,7 +18,7 @@ import { cardImage } from '@/lib/cardImage';
       <div class="flex flex-wrap gap-1 items-center">
         <ConditionTooltip v-if="wish.condition" :condition="wish.condition" />
         <LanguageTooltip v-if="wish.language" :language="wish.language" />
-        <span v-if="wish.rarity" class="px-1 py-0.5 rounded text-[10px] bg-amber-900/50 border border-amber-700/40 text-amber-300 leading-none">{{ wish.rarity }}</span>
+        <span v-if="wish.rarity" class="px-1 py-0.5 rounded text-[10px] bg-amber-900/50 border border-amber-700/40 text-amber-300 leading-none" :title="wish.rarity">{{ shortenRarity(wish.rarity) }}</span>
         <span v-if="wish.extension" class="text-[10px] leading-none" style="color: var(--c-muted)">{{ wish.extension }}</span>
       </div>
     </div>
@@ -49,6 +49,9 @@ export default {
     };
   },
   methods: {
+    shortenRarity(rarity) {
+      return rarity.split(' ').map(w => w[0]).join('');
+    },
     async onQuantityChange() {
       const supabase_client = getClient();
       if (this.quantityCount > 0) {
