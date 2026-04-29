@@ -34,7 +34,7 @@ import CardElement from '../CardElement.vue';
                 </div>
             </template>
             <template v-else>
-                <TransitionGroup name="card-slide" tag="div" class="flex flex-col gap-3">
+                <TransitionGroup name="card-slide" tag="div" class="flex flex-wrap gap-4">
                     <CardElement
                         :wish="trade"
                         v-for="trade in trade_cards.value"
@@ -65,7 +65,7 @@ import CardElement from '../CardElement.vue';
                 </div>
             </template>
             <template v-else>
-                <TransitionGroup name="card-slide" tag="div" class="flex flex-col gap-3">
+                <TransitionGroup name="card-slide" tag="div" class="flex flex-wrap gap-4">
                     <CardElement
                         :wish="wish"
                         v-for="wish in wished_cards.value"
