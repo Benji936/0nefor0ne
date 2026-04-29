@@ -27,6 +27,17 @@ const emit = defineEmits(['showTraders'])
               <p>{{ componentCard.race }}</p>
             </div>
             <p class="text-justify text-sm" style="color: var(--c-text); opacity: 0.85">{{ componentCard.desc }}</p>
+
+            <!-- Prices -->
+            <div v-if="prices" class="flex flex-wrap gap-2 mt-1">
+              <span
+                v-for="p in prices" :key="p.label"
+                class="text-xs px-2 py-1 rounded-md border font-medium"
+                style="border-color: var(--c-border); background-color: var(--c-surface-2); color: var(--c-text)"
+              >
+                {{ p.label }} <span style="color: var(--c-accent)">{{ p.value }}</span>
+              </span>
+            </div>
           </div>
         </div>
 
@@ -78,6 +89,19 @@ export default {
   props: {
     componentCard: { type: Object, required: true },
     extension: { type: String, default: '' },
+  },
+  computed: {
+    prices() {
+      const p = this.componentCard.card_prices?.[0];
+      if (!p) return null;
+      const fmt = (v) => v && parseFloat(v) > 0 ? `$${parseFloat(v).toFixed(2)}` : null;
+      const entries = [
+        { label: 'TCGPlayer', value: fmt(p.tcgplayer_price) },
+        { label: 'Cardmarket', value: fmt(p.cardmarket_price) },
+        { label: 'eBay', value: fmt(p.ebay_price) },
+      ].filter(e => e.value);
+      return entries.length ? entries : null;
+    },
   },
   data() {
     return { over: false };
