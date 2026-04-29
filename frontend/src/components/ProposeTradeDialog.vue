@@ -115,6 +115,15 @@ function describe(card) {
   const bits = [card.extension, card.rarity, card.condition, card.language].filter(Boolean);
   return bits.join(" · ");
 }
+
+function marketLinks(name) {
+  const q = encodeURIComponent(name);
+  return [
+    { label: 'TCGPlayer', url: `https://www.tcgplayer.com/search/yugioh/product?q=${q}` },
+    { label: 'Cardmarket', url: `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${q}` },
+    { label: 'eBay', url: `https://www.ebay.com/sch/i.html?_nkw=${q}+yugioh` },
+  ];
+}
 </script>
 
 <template>
@@ -215,6 +224,20 @@ function describe(card) {
               <div class="flex flex-col grow min-w-0 gap-1">
                 <p class="font-semibold text-sm truncate" style="color: var(--c-text)">{{ card.name }}</p>
                 <p class="text-xs truncate" style="color: var(--c-muted)">{{ describe(card) || "—" }}</p>
+                <div class="flex gap-2">
+                  <a
+                    v-for="m in marketLinks(card.name)" :key="m.label"
+                    :href="m.url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-[11px] no-underline flex items-center gap-0.5 transition-opacity hover:opacity-70"
+                    style="color: var(--c-muted)"
+                    @click.stop
+                  >
+                    <v-icon icon="mdi-open-in-new" size="11" />
+                    {{ m.label }}
+                  </a>
+                </div>
                 <span
                   v-if="card.theyWantThis"
                   class="text-[11px] font-bold text-lime-300 bg-lime-500/15 border border-lime-500/30 px-2 py-0.5 rounded-md w-fit flex items-center gap-1"
@@ -278,6 +301,20 @@ function describe(card) {
               <div class="flex flex-col grow min-w-0 gap-1">
                 <p class="font-semibold text-sm truncate" style="color: var(--c-text)">{{ card.name }}</p>
                 <p class="text-xs truncate" style="color: var(--c-muted)">{{ describe(card) || "—" }}</p>
+                <div class="flex gap-2">
+                  <a
+                    v-for="m in marketLinks(card.name)" :key="m.label"
+                    :href="m.url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-[11px] no-underline flex items-center gap-0.5 transition-opacity hover:opacity-70"
+                    style="color: var(--c-muted)"
+                    @click.stop
+                  >
+                    <v-icon icon="mdi-open-in-new" size="11" />
+                    {{ m.label }}
+                  </a>
+                </div>
               </div>
               <v-number-input
                 v-if="(receiveSelection[card.id] ?? 0) > 0"
