@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch, computed } from "vue";
 import { cardImage } from "@/lib/cardImage";
-import { fetchMyTradePile, createTradeProposal } from "@/lib/matches";
+import { fetchMyTradePile, createTradeProposal, fetchUserWishlist } from "@/lib/matches";
 import { searchById } from "@/api";
 import AddCard from "@/components/AddCard.vue";
 
@@ -126,10 +126,26 @@ const showWantedPicker = ref(false);
 const wantedFilter = ref('');
 const fetchingCardId = ref(null);
 const addCardRef = ref(null);
+const fullWishlist = ref([]);
+const loadingWishlist = ref(false);
+
+async function openWantedPicker() {
+  showWantedPicker.value = true;
+  if (fullWishlist.value.length || !props.user?.id) return;
+  loadingWishlist.value = true;
+  try {
+    fullWishlist.value = await fetchUserWishlist(props.user.id);
+  } finally {
+    loadingWishlist.value = false;
+  }
+}
+
+// Reset wishlist when user changes
+watch(() => props.user?.id, () => { fullWishlist.value = []; });
 
 const filteredWanted = computed(() => {
   const q = wantedFilter.value.toLowerCase().trim();
-  return (props.user?.theyWant ?? []).filter(c => !q || c.name.toLowerCase().includes(q));
+  return fullWishlist.value.filter(c => !q || c.name.toLowerCase().includes(q));
 });
 
 async function selectWantedCard(item) {
@@ -228,7 +244,7 @@ function marketLinks(name, setCode) {
                 variant="flat"
                 prepend-icon="mdi-plus-box"
                 :style="{ backgroundColor: 'var(--c-trade)', color: 'white' }"
-                @click="showWantedPicker = true"
+                @click="openWantedPicker"
               >Add to offer</v-btn>
             </div>
 
@@ -433,7 +449,16 @@ function marketLinks(name, setCode) {
       <v-divider />
 
       <div class="overflow-y-auto" style="max-height: 400px">
-        <div v-if="!filteredWanted.length" class="flex flex-col items-center justify-center py-12 gap-2" style="color: var(--c-muted)">
+        <div v-if="loadingWishlist" class="flex flex-col gap-0">
+          <div v-for="i in 5" :key="i" class="flex items-center gap-4 px-5 py-3 border-b animate-pulse" style="border-color: var(--c-border)">
+            <div class="h-16 w-12 rounded shrink-0" style="background-color: var(--c-skeleton)" />
+            <div class="flex flex-col gap-2 grow">
+              <div class="h-3 rounded w-2/3" style="background-color: var(--c-skeleton)" />
+              <div class="h-3 rounded w-1/3" style="background-color: var(--c-border)" />
+            </div>
+          </div>
+        </div>
+        <div v-else-if="!filteredWanted.length" class="flex flex-col items-center justify-center py-12 gap-2" style="color: var(--c-muted)">
           <v-icon icon="mdi-card-off-outline" size="36" color="gray" />
           <p class="text-sm">No matching cards.</p>
         </div>

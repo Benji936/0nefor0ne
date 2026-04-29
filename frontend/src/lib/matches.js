@@ -154,6 +154,25 @@ export async function fetchMyTradePile(theyWant = []) {
 }
 
 /**
+ * Fetch the full wishlist of any user by their ID.
+ * Used in the trade dialog to show ALL cards they want, not just the intersection.
+ */
+export async function fetchUserWishlist(userId) {
+  const { data, error } = await getClient()
+    .from("Card")
+    .select("id, name, image_id, extension, rarity, condition, language, quantity")
+    .eq("trader", userId)
+    .eq("wish", true)
+    .order("name", { ascending: true });
+
+  if (error) {
+    console.error("fetchUserWishlist failed", error);
+    return [];
+  }
+  return data ?? [];
+}
+
+/**
  * Send a trade proposal. Wraps the create_trade_proposal RPC.
  *
  * @param {string} counterpartyId
