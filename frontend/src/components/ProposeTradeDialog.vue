@@ -111,8 +111,12 @@ async function submit() {
   }
 }
 
+function shortenRarity(rarity) {
+  return rarity ? rarity.split(' ').map(w => w[0]).join('') : '';
+}
+
 function describe(card) {
-  const bits = [card.extension, card.rarity, card.condition, card.language].filter(Boolean);
+  const bits = [card.extension, shortenRarity(card.rarity), card.condition, card.language].filter(Boolean);
   return bits.join(" · ");
 }
 
@@ -120,7 +124,7 @@ function marketLinks(name, setCode) {
   const q = encodeURIComponent(name);
   return [
     { label: 'TCGPlayer', url: `https://www.tcgplayer.com/search/yugioh/product?q=${q}` },
-    { label: 'Cardmarket', url: setCode ? `https://www.cardmarket.com/en/YuGiOh/Cards/${encodeURIComponent(setCode)}` : `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${q}` },
+    { label: 'Cardmarket', url: setCode ? `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${encodeURIComponent(setCode)}` : `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${q}` },
     { label: 'eBay', url: `https://www.ebay.com/sch/i.html?_nkw=${q}+yugioh` },
   ];
 }
