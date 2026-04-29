@@ -33,6 +33,26 @@ const emit = defineEmits(['showTraders'])
 
         <!-- Prices -->
         <div v-if="printPrices.length" class="flex flex-col gap-1">
+          <!-- Header row: label + currency toggle -->
+          <div class="flex items-center justify-between px-1">
+            <span class="text-xs font-semibold uppercase tracking-wide" style="color: var(--c-muted)">Prices</span>
+            <div class="flex items-center gap-1 rounded-md border overflow-hidden text-xs" style="border-color: var(--c-border)">
+              <button
+                class="px-2 py-0.5 transition-colors cursor-pointer"
+                :style="!showEur ? { backgroundColor: 'var(--c-accent)', color: 'white' } : { color: 'var(--c-muted)' }"
+                @click="showEur = false"
+              >USD</button>
+              <button
+                class="px-2 py-0.5 transition-colors cursor-pointer"
+                :style="showEur ? { backgroundColor: 'var(--c-accent)', color: 'white' } : { color: 'var(--c-muted)' }"
+                @click="fetchEurRate"
+              >
+                <span v-if="loadingRate" class="opacity-50">EUR…</span>
+                <span v-else>EUR</span>
+              </button>
+            </div>
+          </div>
+
           <div class="rounded-lg border overflow-hidden" style="border-color: var(--c-border)">
             <div class="overflow-y-auto" style="max-height: 110px">
               <div
@@ -43,23 +63,29 @@ const emit = defineEmits(['showTraders'])
                 <span class="font-mono font-semibold shrink-0" style="color: var(--c-text)">{{ s.set_code }}</span>
                 <span class="truncate grow" style="color: var(--c-muted)">{{ s.set_rarity }}</span>
                 <span class="font-semibold shrink-0" :style="{ color: parseFloat(s.set_price) > 0 ? 'var(--c-accent)' : 'var(--c-muted)' }">
-                  {{ parseFloat(s.set_price) > 0 ? '$' + parseFloat(s.set_price).toFixed(2) : '—' }}
+                  {{ formatPrice(s.set_price) }}
                 </span>
               </div>
             </div>
           </div>
-          <div class="flex gap-3">
-            <a
-              v-for="m in marketLinks" :key="m.label"
-              :href="m.url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-xs no-underline transition-opacity hover:opacity-70 flex items-center gap-1"
-              style="color: var(--c-muted)"
-            >
-              <v-icon icon="mdi-open-in-new" size="12" />
-              {{ m.label }}
-            </a>
+
+          <div class="flex items-center justify-between">
+            <div class="flex gap-3">
+              <a
+                v-for="m in marketLinks" :key="m.label"
+                :href="m.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-xs no-underline transition-opacity hover:opacity-70 flex items-center gap-1"
+                style="color: var(--c-muted)"
+              >
+                <v-icon icon="mdi-open-in-new" size="12" />
+                {{ m.label }}
+              </a>
+            </div>
+            <span v-if="showEur && eurRate" class="text-xs" style="color: var(--c-muted)">
+              1 USD = {{ eurRate.toFixed(4) }} EUR
+            </span>
           </div>
         </div>
 
@@ -107,11 +133,22 @@ const emit = defineEmits(['showTraders'])
 <script>
 import AddCard from './AddCard.vue';
 
+// Module-level cache so the rate is fetched at most once per session
+let _eurRateCache = null;
+
 export default {
   components: { AddCard },
   props: {
     componentCard: { type: Object, required: true },
     extension: { type: String, default: '' },
+  },
+  data() {
+    return {
+      over: false,
+      showEur: false,
+      eurRate: _eurRateCache,
+      loadingRate: false,
+    };
   },
   computed: {
     printPrices() {
@@ -131,15 +168,36 @@ export default {
       ];
     },
   },
-  data() {
-    return { over: false };
-  },
   methods: {
     openTrade() {
       this.$refs.tradeAdd.openWith(this.componentCard, this.extension);
     },
     openWish() {
       this.$refs.wishAdd.openWith(this.componentCard, this.extension);
+    },
+    async fetchEurRate() {
+      this.showEur = true;
+      if (this.eurRate) return;
+      this.loadingRate = true;
+      try {
+        const res = await fetch('https://api.frankfurter.app/latest?from=USD&to=EUR');
+        const data = await res.json();
+        _eurRateCache = data.rates.EUR;
+        this.eurRate = _eurRateCache;
+      } catch {
+        // silently fall back to USD if fetch fails
+        this.showEur = false;
+      } finally {
+        this.loadingRate = false;
+      }
+    },
+    formatPrice(raw) {
+      const usd = parseFloat(raw);
+      if (!usd || usd <= 0) return '—';
+      if (this.showEur && this.eurRate) {
+        return '€' + (usd * this.eurRate).toFixed(2);
+      }
+      return '$' + usd.toFixed(2);
     },
   },
 };
