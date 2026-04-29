@@ -38,7 +38,9 @@ const emit = defineEmits(['showTraders'])
                 >
                   <span class="font-mono font-semibold shrink-0" style="color: var(--c-text)">{{ s.set_code }}</span>
                   <span class="truncate grow" style="color: var(--c-muted)">{{ s.set_rarity }}</span>
-                  <span class="font-semibold shrink-0" style="color: var(--c-accent)">${{ s.set_price }}</span>
+                  <span class="font-semibold shrink-0" :style="{ color: parseFloat(s.set_price) > 0 ? 'var(--c-accent)' : 'var(--c-muted)' }">
+                    {{ parseFloat(s.set_price) > 0 ? '$' + parseFloat(s.set_price).toFixed(2) : '—' }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -111,9 +113,12 @@ export default {
   },
   computed: {
     printPrices() {
-      return (this.componentCard.card_sets ?? [])
-        .filter(s => s.set_price && parseFloat(s.set_price) > 0)
-        .sort((a, b) => parseFloat(b.set_price) - parseFloat(a.set_price));
+      const sets = this.componentCard.card_sets ?? [];
+      return [...sets].sort((a, b) => {
+        const pa = parseFloat(a.set_price) || 0;
+        const pb = parseFloat(b.set_price) || 0;
+        return pb - pa;
+      });
     },
     marketLinks() {
       const name = encodeURIComponent(this.componentCard.name);
