@@ -17,7 +17,7 @@ const emit = defineEmits(['showTraders'])
         style="background-color: var(--c-surface); color: var(--c-text); max-width: 680px"
       >
         <div class="flex flex-row gap-5">
-          <img alt="image" class="h-72 w-52 object-cover rounded shrink-0" :src="cardImage(componentCard.id)" />
+          <img alt="image" class="h-72 shrink-0" :src="cardImage(componentCard.id)" />
           <div class="flex flex-col gap-2">
             <p class="font-bold text-xl" style="color: var(--c-text)">{{ componentCard.name }}</p>
             <div class="flex flex-row gap-3 text-lg" style="color: var(--c-muted)">
@@ -28,17 +28,33 @@ const emit = defineEmits(['showTraders'])
             </div>
             <p class="text-justify text-sm" style="color: var(--c-text); opacity: 0.85">{{ componentCard.desc }}</p>
 
-            <!-- Prices -->
-            <div v-if="prices" class="flex flex-wrap gap-2 mt-1">
+            <!-- Per-print prices -->
+            <div v-if="printPrices.length" class="mt-2 rounded-lg border overflow-hidden" style="border-color: var(--c-border)">
+              <div class="overflow-y-auto" style="max-height: 110px">
+                <div
+                  v-for="s in printPrices" :key="s.set_code"
+                  class="flex items-center gap-2 px-3 py-1.5 border-b last:border-0 text-xs"
+                  style="border-color: var(--c-border)"
+                >
+                  <span class="font-mono font-semibold shrink-0" style="color: var(--c-text)">{{ s.set_code }}</span>
+                  <span class="truncate grow" style="color: var(--c-muted)">{{ s.set_rarity }}</span>
+                  <span class="font-semibold shrink-0" style="color: var(--c-accent)">${{ s.set_price }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Marketplace links -->
+            <div v-if="marketLinks.length" class="flex gap-3 mt-1">
               <a
-                v-for="p in prices" :key="p.label"
-                :href="p.url"
+                v-for="m in marketLinks" :key="m.label"
+                :href="m.url"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="text-xs px-2 py-1 rounded-md border font-medium no-underline cursor-pointer transition-opacity hover:opacity-70"
-                style="border-color: var(--c-border); background-color: var(--c-surface-2); color: var(--c-text)"
+                class="text-xs no-underline transition-opacity hover:opacity-70 flex items-center gap-1"
+                style="color: var(--c-muted)"
               >
-                {{ p.label }} <span style="color: var(--c-accent)">{{ p.value }}</span>
+                <v-icon icon="mdi-open-in-new" size="12" />
+                {{ m.label }}
               </a>
             </div>
           </div>
@@ -94,29 +110,18 @@ export default {
     extension: { type: String, default: '' },
   },
   computed: {
-    prices() {
-      const p = this.componentCard.card_prices?.[0];
-      if (!p) return null;
+    printPrices() {
+      return (this.componentCard.card_sets ?? [])
+        .filter(s => s.set_price && parseFloat(s.set_price) > 0)
+        .sort((a, b) => parseFloat(b.set_price) - parseFloat(a.set_price));
+    },
+    marketLinks() {
       const name = encodeURIComponent(this.componentCard.name);
-      const fmt = (v) => v && parseFloat(v) > 0 ? `$${parseFloat(v).toFixed(2)}` : null;
-      const entries = [
-        {
-          label: 'TCGPlayer',
-          value: fmt(p.tcgplayer_price),
-          url: `https://www.tcgplayer.com/search/yugioh/product?q=${name}`,
-        },
-        {
-          label: 'Cardmarket',
-          value: fmt(p.cardmarket_price),
-          url: `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${name}`,
-        },
-        {
-          label: 'eBay',
-          value: fmt(p.ebay_price),
-          url: `https://www.ebay.com/sch/i.html?_nkw=${name}+yugioh`,
-        },
-      ].filter(e => e.value);
-      return entries.length ? entries : null;
+      return [
+        { label: 'TCGPlayer', url: `https://www.tcgplayer.com/search/yugioh/product?q=${name}` },
+        { label: 'Cardmarket', url: `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${name}` },
+        { label: 'eBay', url: `https://www.ebay.com/sch/i.html?_nkw=${name}+yugioh` },
+      ];
     },
   },
   data() {
