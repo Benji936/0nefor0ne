@@ -278,7 +278,7 @@ function marketLinks(name, setCode) {
               <img
                 :src="cardImage(card.image_id)"
                 :alt="card.name"
-                class="h-[72px] w-[50px] rounded-lg object-contain shrink-0 ring-1 ring-white/10" style="background-color: var(--c-surface-2)"
+                loading="lazy" class="h-[72px] w-[50px] rounded-lg object-contain shrink-0 ring-1 ring-white/10" style="background-color: var(--c-surface-2)"
               />
               <div class="flex flex-col grow min-w-0 gap-1">
                 <p class="font-semibold text-sm truncate" style="color: var(--c-text)">{{ card.name }}</p>
@@ -361,7 +361,7 @@ function marketLinks(name, setCode) {
               <img
                 :src="cardImage(card.image_id)"
                 :alt="card.name"
-                class="h-[72px] w-[50px] rounded-lg object-contain shrink-0 ring-1 ring-white/10" style="background-color: var(--c-surface-2)"
+                loading="lazy" class="h-[72px] w-[50px] rounded-lg object-contain shrink-0 ring-1 ring-white/10" style="background-color: var(--c-surface-2)"
               />
               <div class="flex flex-col grow min-w-0 gap-1">
                 <p class="font-semibold text-sm truncate" style="color: var(--c-text)">{{ card.name }}</p>
@@ -481,7 +481,7 @@ function marketLinks(name, setCode) {
           style="border-color: var(--c-border)"
           @click="selectWantedCard(item)"
         >
-          <img :src="cardImage(item.image_id)" :alt="item.name" class="h-16 w-12 object-contain rounded shrink-0">
+          <img :src="cardImage(item.image_id)" :alt="item.name" loading="lazy" class="h-16 w-12 object-contain rounded shrink-0">
           <div class="flex flex-col grow min-w-0 gap-0.5">
             <p class="font-semibold text-sm truncate" style="color: var(--c-text)">{{ item.name }}</p>
             <p class="text-xs truncate" style="color: var(--c-muted)">{{ [item.extension, shortenRarity(item.rarity), item.language].filter(Boolean).join(' · ') }}</p>
@@ -502,7 +502,9 @@ function marketLinks(name, setCode) {
   border: 1px solid var(--c-border);
 }
 .trade-row {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .skeleton-pulse {
   animation: pulse 1.5s ease-in-out infinite;

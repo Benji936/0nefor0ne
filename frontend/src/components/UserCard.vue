@@ -144,6 +144,7 @@ const kindMeta = computed(() => {
                 :src="cardImage(card.image_id)"
                 :alt="card.name"
                 class="card-thumb h-[84px] w-[58px] object-contain shrink-0 ring-1 ring-white/10 hover:ring-blue-400/50 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20 cursor-pointer"
+                loading="lazy"
                 style="background-color: var(--c-surface-2)"
               />
             </template>
@@ -171,6 +172,7 @@ const kindMeta = computed(() => {
                 :src="cardImage(card.image_id)"
                 :alt="card.name"
                 class="card-thumb h-[84px] w-[58px] object-contain shrink-0 ring-1 ring-white/5 hover:opacity-75 hover:ring-pink-400/40 hover:scale-105 cursor-pointer"
+                loading="lazy"
                 style="background-color: var(--c-surface-2)"
               />
             </template>
@@ -198,7 +200,9 @@ const kindMeta = computed(() => {
 <style scoped>
 .user-card {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   padding: 20px;
 }
 .user-card:hover {
@@ -206,6 +210,9 @@ const kindMeta = computed(() => {
   transform: translateY(-3px);
 }
 .card-thumb {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 </style>

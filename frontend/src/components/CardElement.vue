@@ -10,7 +10,7 @@ import { cardImage } from '@/lib/cardImage';
     style="background-color: transparent; border-color: var(--c-border); width: 160px"
   >
     <!-- Card image -->
-    <img :src="cardImage(wish.image_id)" :alt="wish.name" class="w-full object-cover" style="aspect-ratio: 59/86">
+    <img :src="cardImage(wish.image_id)" :alt="wish.name" loading="lazy" class="w-full object-cover" style="aspect-ratio: 59/86">
 
     <!-- Data -->
     <div class="flex flex-col gap-1.5 px-3 pt-2 pb-1">

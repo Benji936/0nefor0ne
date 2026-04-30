@@ -73,7 +73,7 @@
               style="border-color: var(--c-border)"
               @click="selectCard(card)"
             >
-              <img :src="cardImage(card.id)" :alt="card.name" class="h-16 w-12 object-contain rounded shrink-0">
+              <img :src="cardImage(card.id)" :alt="card.name" loading="lazy" class="h-16 w-12 object-contain rounded shrink-0">
               <div class="flex flex-col grow min-w-0">
                 <p class="font-semibold text-sm truncate" style="color: var(--c-text)">{{ card.name }}</p>
                 <p class="text-xs truncate" style="color: var(--c-muted)">{{ card.type }}<span v-if="card.race"> · {{ card.race }}</span></p>
