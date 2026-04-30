@@ -7,7 +7,7 @@ const emit = defineEmits(['showTraders'])
   <v-overlay class="w-50 place-self-center align-center">
     <template v-slot:activator="{ props: activatorProps }">
       <div class="hover:outline hover:outline-white cursor-pointer" v-bind="activatorProps">
-        <img alt="image" class="h-48 object-cover rounded" :src="cardImage(componentCard.id)" />
+        <img :alt="componentCard.name" class="h-48 object-cover rounded" :src="cardImage(componentCard.id)" />
       </div>
     </template>
 
@@ -18,7 +18,7 @@ const emit = defineEmits(['showTraders'])
       >
         <!-- Card image + data -->
         <div class="flex flex-row gap-5">
-          <img alt="image" class="h-72 shrink-0" :src="cardImage(componentCard.id)" />
+          <img :alt="componentCard.name" class="h-72 shrink-0" :src="cardImage(componentCard.id)" />
           <div class="flex flex-col gap-2">
             <p class="font-bold text-xl" style="color: var(--c-text)">{{ componentCard.name }}</p>
             <div class="flex flex-row gap-3 text-lg" style="color: var(--c-muted)">

@@ -256,12 +256,18 @@ function marketLinks(name, setCode) {
             <div
               v-for="card in myOffers"
               :key="card.id"
+              role="checkbox"
+              :aria-checked="(giveSelection[card.id] ?? 0) > 0"
+              :aria-label="card.name"
+              tabindex="0"
               class="trade-row flex items-center gap-3 rounded-lg py-2 px-3 cursor-pointer select-none"
               :class="(giveSelection[card.id] ?? 0) > 0
                 ? 'border-pink-500/50 bg-pink-950/40 shadow-[inset_0_0_20px_rgba(133,20,75,0.08)]'
                 : 'hover:bg-[var(--c-surface-2)]'"
               :style="(giveSelection[card.id] ?? 0) > 0 ? {} : { borderColor: 'var(--c-border)' }"
               @click="giveSelection[card.id] = (giveSelection[card.id] ?? 0) > 0 ? 0 : 1"
+              @keydown.space.prevent="giveSelection[card.id] = (giveSelection[card.id] ?? 0) > 0 ? 0 : 1"
+              @keydown.enter="giveSelection[card.id] = (giveSelection[card.id] ?? 0) > 0 ? 0 : 1"
             >
               <v-checkbox
                 :model-value="(giveSelection[card.id] ?? 0) > 0"
@@ -333,12 +339,18 @@ function marketLinks(name, setCode) {
             <div
               v-for="card in user.theyHave"
               :key="card.id"
+              role="checkbox"
+              :aria-checked="(receiveSelection[card.id] ?? 0) > 0"
+              :aria-label="card.name"
+              tabindex="0"
               class="trade-row flex items-center gap-3 rounded-lg py-2 px-3 cursor-pointer select-none"
               :class="(receiveSelection[card.id] ?? 0) > 0
                 ? 'border-blue-500/50 bg-blue-950/40 shadow-[inset_0_0_20px_rgba(17,102,153,0.08)]'
                 : 'hover:bg-[var(--c-surface-2)]'"
               :style="(receiveSelection[card.id] ?? 0) > 0 ? {} : { borderColor: 'var(--c-border)' }"
               @click="receiveSelection[card.id] = (receiveSelection[card.id] ?? 0) > 0 ? 0 : 1"
+              @keydown.space.prevent="receiveSelection[card.id] = (receiveSelection[card.id] ?? 0) > 0 ? 0 : 1"
+              @keydown.enter="receiveSelection[card.id] = (receiveSelection[card.id] ?? 0) > 0 ? 0 : 1"
             >
               <v-checkbox
                 :model-value="(receiveSelection[card.id] ?? 0) > 0"

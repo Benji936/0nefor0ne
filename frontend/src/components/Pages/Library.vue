@@ -34,7 +34,7 @@ import CardElement from '../CardElement.vue';
                 </div>
             </template>
             <template v-else>
-                <TransitionGroup name="card-slide" tag="div" class="flex flex-wrap gap-4">
+                <TransitionGroup name="card-slide" tag="div" class="flex flex-wrap gap-3">
                     <CardElement
                         :wish="trade"
                         v-for="trade in trade_cards.value"
@@ -65,7 +65,7 @@ import CardElement from '../CardElement.vue';
                 </div>
             </template>
             <template v-else>
-                <TransitionGroup name="card-slide" tag="div" class="flex flex-wrap gap-4">
+                <TransitionGroup name="card-slide" tag="div" class="flex flex-wrap justify-start gap-3">
                     <CardElement
                         :wish="wish"
                         v-for="wish in wished_cards.value"
@@ -121,7 +121,6 @@ import { ref } from "vue";
             },
         },
         async mounted(){
-            console.log(this.login.user.id)
             const [wishes, trades] = await Promise.all([
                 getClient().from('Card').select('*').eq('wish', true).eq('trader', this.login.user.id),
                 getClient().from('Card').select('*').eq('wish', false).eq('trader', this.login.user.id),
@@ -136,17 +135,14 @@ import { ref } from "vue";
             .on(
             'postgres_changes',
             { event: '*', schema: 'public', table: 'Card' },
-            async (payload) => {
-                console.log('Change received!', payload)
+            async () => {
                 let wish_req = await getClient().from('Card').select('*').eq('wish',true).eq('trader',this.login.user.id)
                 let trade_req = await getClient().from('Card').select('*').eq('wish',false).eq('trader',this.login.user.id)
                 this.wished_cards.value = wish_req.data
                 this.trade_cards.value = trade_req.data
             }
             )
-            .subscribe((status) => {
-                console.log('Channel status:', status)
-            })
+            .subscribe()
             //console.log(this.wished_cards)
         },
 
