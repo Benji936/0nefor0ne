@@ -79,7 +79,7 @@
                 <p class="text-xs truncate" style="color: var(--c-muted)">{{ card.type }}<span v-if="card.race"> · {{ card.race }}</span></p>
                 <p class="text-xs" style="color: var(--c-muted); opacity: 0.7" v-if="card.atk != null">ATK {{ card.atk }} / DEF {{ card.def }}</p>
               </div>
-              <v-icon icon="mdi-chevron-right" color="#ccc" size="20" class="shrink-0" />
+              <v-icon icon="mdi-chevron-right" color="var(--c-muted)" size="20" class="shrink-0" />
             </div>
           </div>
         </div>

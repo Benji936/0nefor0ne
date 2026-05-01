@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-04-30T00:00:00Z",
+  "title": "Design System: TradeMarket",
+  "extensions": {
+    "colorMeta": {
+      "bg":           { "role": "neutral",   "displayName": "Void Indigo",         "canonical": "oklch(11% 0.04 280)",  "tonalRamp": ["#050310","#0C0820","#140E30","#1D1445","#271A5C","#342578","#4A3698","#6B52B8"] },
+      "surface":      { "role": "neutral",   "displayName": "Deep Amethyst",       "canonical": "oklch(16% 0.06 280)",  "tonalRamp": ["#0A0620","#180F3A","#221550","#2D1C68","#3D2880","#5540A0","#7560C0","#9E88DC"] },
+      "surface-2":    { "role": "neutral",   "displayName": "Dark Amethyst",       "canonical": "oklch(21% 0.08 280)",  "tonalRamp": ["#0C0828","#160E40","#221550","#30206A","#422E88","#5E44A8","#8068C8","#A896E0"] },
+      "border":       { "role": "neutral",   "displayName": "Amethyst Border",     "canonical": "oklch(32% 0.12 280)",  "tonalRamp": ["#1A0A40","#2A1260","#3D1F80","#542EA0","#6E42BC","#9068D8","#B498EC","#D8C8FA"] },
+      "text":         { "role": "neutral",   "displayName": "Lavender White",      "canonical": "oklch(93% 0.03 280)",  "tonalRamp": ["#3020A0","#5040C0","#7060D8","#9888EC","#C0B0F8","#D8CCFC","#E8E0FF","#F5F0FF"] },
+      "muted":        { "role": "neutral",   "displayName": "Soft Violet",         "canonical": "oklch(72% 0.12 285)",  "tonalRamp": ["#3A20A0","#5238C0","#6E52D8","#8A72E8","#A78BFA","#C0AAFE","#D8C8FF","#EEE4FF"] },
+      "accent":       { "role": "secondary", "displayName": "Collector's Pink",    "canonical": "oklch(68% 0.28 348)",  "tonalRamp": ["#600020","#900038","#C0004C","#E8185E","#F0487A","#F57098","#FAA0B8","#FDD0DC"] },
+      "trade":        { "role": "primary",   "displayName": "Amethyst Trade",      "canonical": "oklch(70% 0.22 285)",  "tonalRamp": ["#380080","#5400C0","#7800F0","#A040FF","#C084FC","#D0A8FF","#E4C8FF","#F2E4FF"] },
+      "mutual":       { "role": "tertiary",  "displayName": "Trade Match Green",   "canonical": "oklch(74% 0.23 128)",  "tonalRamp": ["#1A3800","#2C6000","#3D8000","#52A800","#84cc16","#AAE040","#C8F068","#E4FAAA"] },
+      "skeleton":     { "role": "neutral",   "displayName": "Skeleton Plum",       "canonical": "oklch(22% 0.08 285)",  "tonalRamp": ["#0E0630","#1A1048","#2A1660","#3C2478","#503096","#6848B4","#8E70D0","#B8A0E8"] }
+    },
+    "typographyMeta": {
+      "title":   { "displayName": "Section Heading", "purpose": "Page section labels, dialog headers. Uppercase + tracking creates catalog hierarchy." },
+      "body":    { "displayName": "Body",            "purpose": "Card descriptions, metadata, explanatory copy. Cap at ~65ch." },
+      "label":   { "displayName": "Label",           "purpose": "Rarity abbreviations, condition tags, language chips. Weight compensates for small size." },
+      "mono":    { "displayName": "Mono / Identifier", "purpose": "Set codes, card extensions, print identifiers. Distinguishes metadata from names visually." }
+    },
+    "shadows": [
+      { "name": "hover-glow-mutual",  "value": "0 12px 40px rgba(132,204,22,0.3), 0 2px 8px rgba(0,0,0,0.3)",   "purpose": "Mutual match UserCard on hover." },
+      { "name": "hover-glow-trade",   "value": "0 12px 40px rgba(17,102,153,0.3), 0 2px 8px rgba(0,0,0,0.3)",   "purpose": "They-have UserCard on hover." },
+      { "name": "hover-glow-accent",  "value": "0 12px 40px rgba(133,20,75,0.3), 0 2px 8px rgba(0,0,0,0.3)",    "purpose": "They-want UserCard on hover." },
+      { "name": "inset-selected-give","value": "inset 0 0 20px rgba(133,20,75,0.08)",                             "purpose": "Selected trade row in 'You give' column." },
+      { "name": "inset-selected-recv","value": "inset 0 0 20px rgba(17,102,153,0.08)",                            "purpose": "Selected trade row in 'You receive' column." }
+    ],
+    "motion": [
+      { "name": "ease-standard",  "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Default easing for state transitions (background, border, shadow)." },
+      { "name": "ease-out-quart", "value": "cubic-bezier(0.25, 1, 0.5, 1)", "purpose": "Hover lift animations, card enter transitions." },
+      { "name": "duration-fast",  "value": "150ms", "purpose": "Icon color, opacity changes." },
+      { "name": "duration-base",  "value": "200ms", "purpose": "Trade row selection, nav item hover." },
+      { "name": "duration-slow",  "value": "300ms", "purpose": "Theme toggle, page background." }
+    ],
+    "breakpoints": [
+      { "name": "sm",  "value": "640px" },
+      { "name": "md",  "value": "768px" },
+      { "name": "lg",  "value": "1024px" },
+      { "name": "xl",  "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Trade Button",
+      "kind": "button",
+      "refersTo": "button-trade",
+      "description": "Primary action for trade pile and propose-trade flows. Amethyst fill, white text.",
+      "html": "<button class=\"ds-btn-trade\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"currentColor\" style=\"flex-shrink:0\"><path d=\"M19 11H7.83l4.88-4.88c.39-.39.39-1.03 0-1.42-.39-.39-1.02-.39-1.41 0l-6.59 6.59c-.39.39-.39 1.02 0 1.41l6.59 6.59c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41L7.83 13H19c.55 0 1-.45 1-1s-.45-1-1-1z\"/></svg> Add to trade pile</button>",
+      "css": ".ds-btn-trade { display: inline-flex; align-items: center; gap: 6px; background: #C084FC; color: #ffffff; border: none; border-radius: 8px; padding: 8px 20px; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s cubic-bezier(0.4,0,0.2,1); } .ds-btn-trade:hover { background: #B56EFF; } .ds-btn-trade:focus-visible { outline: 2px solid #C084FC; outline-offset: 2px; }"
+    },
+    {
+      "name": "Accent Button",
+      "kind": "button",
+      "refersTo": "button-accent",
+      "description": "Wishlist and desire actions. Hot pink fill, white text.",
+      "html": "<button class=\"ds-btn-accent\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"currentColor\" style=\"flex-shrink:0\"><path d=\"M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z\"/></svg> Add to wishlist</button>",
+      "css": ".ds-btn-accent { display: inline-flex; align-items: center; gap: 6px; background: #F0487A; color: #ffffff; border: none; border-radius: 8px; padding: 8px 20px; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s cubic-bezier(0.4,0,0.2,1); } .ds-btn-accent:hover { background: #FF6A9A; } .ds-btn-accent:focus-visible { outline: 2px solid #F0487A; outline-offset: 2px; }"
+    },
+    {
+      "name": "Mutual Chip",
+      "kind": "chip",
+      "refersTo": "chip-mutual",
+      "description": "Mutual match badge. Lime green on dark tinted background. Appears only on confirmed mutual trades.",
+      "html": "<span class=\"ds-chip-mutual\">Mutual match</span>",
+      "css": ".ds-chip-mutual { display: inline-flex; align-items: center; background: rgba(132,204,22,0.15); color: #84cc16; border: 1px solid rgba(132,204,22,0.3); border-radius: 9999px; padding: 4px 10px; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.04em; }"
+    },
+    {
+      "name": "Trade Row",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "Interactive card row in the Propose Trade dialog. Toggles between unselected and selected states.",
+      "html": "<div class=\"ds-trade-row ds-trade-row--selected\" role=\"checkbox\" aria-checked=\"true\" tabindex=\"0\"><span class=\"ds-trade-row__check\">✓</span><img class=\"ds-trade-row__img\" src=\"https://images.ygoprodeck.com/images/cards_small/46986414.jpg\" alt=\"Dark Magician\" /><div class=\"ds-trade-row__info\"><p class=\"ds-trade-row__name\">Dark Magician</p><p class=\"ds-trade-row__meta\"><span class=\"ds-trade-row__code\">LOB-EN005</span> · UR · NM</p></div></div>",
+      "css": ".ds-trade-row { display: flex; align-items: center; gap: 12px; border: 1px solid #3D1F80; border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: background-color 0.2s cubic-bezier(0.4,0,0.2,1), border-color 0.2s cubic-bezier(0.4,0,0.2,1), box-shadow 0.2s cubic-bezier(0.4,0,0.2,1); user-select: none; } .ds-trade-row:hover { background: #221550; } .ds-trade-row--selected { border-color: rgba(240,72,122,0.5); background: rgba(133,20,75,0.15); box-shadow: inset 0 0 20px rgba(133,20,75,0.08); } .ds-trade-row__check { color: #F0487A; font-size: 14px; flex-shrink: 0; } .ds-trade-row__img { height: 72px; width: 50px; object-fit: contain; border-radius: 6px; flex-shrink: 0; } .ds-trade-row__info { display: flex; flex-direction: column; gap: 4px; min-width: 0; } .ds-trade-row__name { font-size: 0.875rem; font-weight: 600; color: #E8E0FF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-trade-row__meta { font-size: 0.75rem; color: #A78BFA; } .ds-trade-row__code { font-family: ui-monospace, monospace; font-weight: 600; }"
+    },
+    {
+      "name": "Card Tile",
+      "kind": "card",
+      "refersTo": "card-surface",
+      "description": "Vertical card tile in Library and Search. Image fills top, metadata + quantity below.",
+      "html": "<div class=\"ds-card-tile\"><img class=\"ds-card-tile__img\" src=\"https://images.ygoprodeck.com/images/cards_small/46986414.jpg\" alt=\"Dark Magician\" loading=\"lazy\" /><div class=\"ds-card-tile__data\"><p class=\"ds-card-tile__name\">Dark Magician</p><div class=\"ds-card-tile__badges\"><span class=\"ds-card-tile__rarity\" title=\"Ultra Rare\">UR</span></div></div></div>",
+      "css": ".ds-card-tile { display: flex; flex-direction: column; border: 1px solid #3D1F80; border-radius: 0 0 8px 8px; overflow: hidden; width: 160px; background: transparent; } .ds-card-tile__img { width: 100%; object-fit: cover; aspect-ratio: 59 / 86; display: block; } .ds-card-tile__data { display: flex; flex-direction: column; gap: 6px; padding: 8px 12px 4px; } .ds-card-tile__name { font-size: 0.75rem; font-weight: 600; color: #E8E0FF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; } .ds-card-tile__badges { display: flex; flex-wrap: wrap; gap: 4px; } .ds-card-tile__rarity { background: rgba(120,53,15,0.5); border: 1px solid rgba(180,120,50,0.4); color: #fcd34d; font-size: 0.625rem; font-weight: 700; padding: 2px 4px; border-radius: 4px; letter-spacing: 0.04em; }"
+    },
+    {
+      "name": "Nav Item",
+      "kind": "nav",
+      "refersTo": null,
+      "description": "Icon-only navigation item with tooltip, hover background, and active underline indicator.",
+      "html": "<div class=\"ds-nav-item ds-nav-item--active\" role=\"button\" tabindex=\"0\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"#F0487A\"><path d=\"M20 6h-2.18c.07-.44.18-.86.18-1.3C18 2.57 15.43 0 12.3 0c-1.8 0-3.37.9-4.3 2.28L12 8.43l4-6.15C14.42.86 13.25 0 12 0 9.24 0 7 2.24 7 5v1H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z\"/></svg><div class=\"ds-nav-item__indicator ds-nav-item__indicator--active\"></div></div>",
+      "css": ".ds-nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background-color 0.15s cubic-bezier(0.4,0,0.2,1); } .ds-nav-item:hover, .ds-nav-item--active { background: #221550; } .ds-nav-item__indicator { height: 2px; width: 16px; border-radius: 9999px; background: transparent; transition: background-color 0.15s; } .ds-nav-item__indicator--active { background: #F0487A; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Card Shop Back Table",
+    "overview": "TradeMarket is built around a specific moment: the back table at a local game store, where two collectors spread their binders and negotiate a trade face to face. That exchange is direct, personal, and driven entirely by mutual need. The UI should feel like that table: honest, focused, slightly dim, with card sleeves glinting under fluorescent light.\n\nThe visual register is dark by default — deep indigo-black backgrounds protect against glare fatigue during long collection-building sessions. Color is used with purpose: amethyst for trading actions, hot pink for desire and wishlists, lime green reserved exclusively for the mutual match.\n\nWhat this system explicitly rejects: the neon maximalism of NFT/crypto marketplaces; the sterile white grid of eBay and TCGPlayer; the sprawling spreadsheet UIs of legacy collection trackers. Cardcluster's functional clarity is the closest public reference.",
+    "keyCharacteristics": [
+      "Dark-first, with a secondary light mode using lavender-tinted whites",
+      "Full palette: three semantic color roles (trade/accent/mutual) used with discipline",
+      "Card images do the visual work; the UI frames and recedes",
+      "Monospace font for set codes and card identifiers",
+      "No decorative chrome — every border, shadow, and badge earns its place",
+      "Interaction hierarchy is tight: primary → secondary → tertiary, never ambiguous"
+    ],
+    "rules": [
+      { "name": "The Three-Role Rule",    "body": "Trade (amethyst), Accent (hot pink), and Mutual (lime) are the only saturated colors in the system. Each maps to exactly one meaning and is never borrowed for decoration.", "section": "colors" },
+      { "name": "The Mutual Scarcity Rule", "body": "Lime green appears only for confirmed mutual matches and 'they want this' signals. Never use it for generic success states, positive alerts, or decoration. Its rarity is the point.", "section": "colors" },
+      { "name": "The No-Gray Rule",       "body": "Pure grays are prohibited. Every neutral is tinted toward the brand hue. Use var(--c-muted) (Soft Violet) for muted text, not a Tailwind gray class.", "section": "colors" },
+      { "name": "The Mono Identifier Rule", "body": "Set codes, card extensions, and print codes are always rendered in monospace. This lets the eye distinguish metadata from card names instantly.", "section": "typography" },
+      { "name": "The Uppercase Section Rule", "body": "Section headers use uppercase + tracking, never sentence case. This creates a catalog-style hierarchy native to the TCG product category.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Surfaces are flat at rest. No card has a shadow unless it is in an interactive hover state. Hover glow uses the element's semantic color at low opacity, never a gray shadow.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use var(--c-trade) for all giving actions, var(--c-accent) for all wanting actions, and var(--c-mutual) only for confirmed mutual matches.",
+      "Do render set codes and card extensions in monospace. The visual difference from card names matters to collectors.",
+      "Do use loading='lazy' and aspect-ratio: 59/86 on every card image to prevent layout shift.",
+      "Do use transition: background-color, border-color, box-shadow — explicit properties only. Never transition: all.",
+      "Do abbreviate rarities to initials in compact contexts and show the full name on hover via title attribute.",
+      "Do keep all interactive elements keyboard-reachable with visible focus rings.",
+      "Do use the three-surface tonal stack (--c-bg → --c-surface → --c-surface-2) for depth instead of shadows at rest."
+    ],
+    "donts": [
+      "Don't use pure gray (#555, #666, text-gray-400, color='#ccc'). Use var(--c-muted) instead.",
+      "Don't use transition: all. Always name the CSS properties explicitly.",
+      "Don't build a loud neon aesthetic — no rainbow gradients, no glowing borders on every element.",
+      "Don't create sterile white product grids. The light mode uses lavender-tinted whites, never clinical white.",
+      "Don't use side-stripe borders (border-left > 1px as a colored accent). Use full borders, background tints, or leading icons instead.",
+      "Don't use background-clip: text with a gradient background. Emphasis through weight and size contrast only.",
+      "Don't render the mutual color for anything other than confirmed mutual matches.",
+      "Don't place headless AddCard components inside Vuetify v-overlay default slots — they teleport out of DOM scope and break $refs.",
+      "Don't mix script setup with Options API methods that need $refs access without defineExpose()."
+    ]
+  }
+}

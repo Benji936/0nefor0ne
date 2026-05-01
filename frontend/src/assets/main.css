@@ -2,31 +2,31 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --c-bg: #FFFFFF;
-  --c-surface: #FAF5FF;
-  --c-surface-2: #F3E8FF;
-  --c-border: #E9D5FF;
-  --c-text: #1E1B4B;
-  --c-muted: #6D28D9;
-  --c-accent: #BE185D;
-  --c-trade: #7E22CE;
-  --c-mutual: #4d7c0f;
-  --c-nav: #FFFFFF;
-  --c-skeleton: #E9D5FF;
+  --c-bg:        #FAFBFF;
+  --c-surface:   #F3F1FF;
+  --c-surface-2: #E8E4FF;
+  --c-border:    #C8C0F0;
+  --c-text:      #0D0B35;
+  --c-muted:     #4A4A9C;
+  --c-accent:    #D01868;
+  --c-trade:     #5B3AF0;
+  --c-mutual:    #0891B2;
+  --c-nav:       #FAFBFF;
+  --c-skeleton:  #DDD8FF;
 }
 
 html.dark {
-  --c-bg: #0D0818;
-  --c-surface: #1A1035;
-  --c-surface-2: #241454;
-  --c-border: #3D2080;
-  --c-text: #EDE9FE;
-  --c-muted: #A78BFA;
-  --c-accent: #EC4899;
-  --c-trade: #A855F7;
-  --c-mutual: #84cc16;
-  --c-nav: #0D0818;
-  --c-skeleton: #2D1B69;
+  --c-bg:        #08071A;
+  --c-surface:   #100E2E;
+  --c-surface-2: #181545;
+  --c-border:    #2D2870;
+  --c-text:      #E0DCFF;
+  --c-muted:     #8B82D4;
+  --c-accent:    #FF2E78;
+  --c-trade:     #9066FF;
+  --c-mutual:    #22D3EE;
+  --c-nav:       #08071A;
+  --c-skeleton:  #1E1A48;
 }
 
 body {

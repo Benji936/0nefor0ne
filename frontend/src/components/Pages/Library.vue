@@ -122,8 +122,8 @@ import { ref } from "vue";
         },
         async mounted(){
             const [wishes, trades] = await Promise.all([
-                getClient().from('Card').select('*').eq('wish', true).eq('trader', this.login.user.id),
-                getClient().from('Card').select('*').eq('wish', false).eq('trader', this.login.user.id),
+                getClient().from('Card').select('*').eq('wish', true).eq('trader', this.login.user.id).neq('status', 'traded'),
+                getClient().from('Card').select('*').eq('wish', false).eq('trader', this.login.user.id).neq('status', 'traded'),
             ])
             this.wished_cards.value = wishes.data
             this.trade_cards.value = trades.data
@@ -136,19 +136,15 @@ import { ref } from "vue";
             'postgres_changes',
             { event: '*', schema: 'public', table: 'Card' },
             async () => {
-                let wish_req = await getClient().from('Card').select('*').eq('wish',true).eq('trader',this.login.user.id)
-                let trade_req = await getClient().from('Card').select('*').eq('wish',false).eq('trader',this.login.user.id)
+                let wish_req = await getClient().from('Card').select('*').eq('wish',true).eq('trader',this.login.user.id).neq('status','traded')
+                let trade_req = await getClient().from('Card').select('*').eq('wish',false).eq('trader',this.login.user.id).neq('status','traded')
                 this.wished_cards.value = wish_req.data
                 this.trade_cards.value = trade_req.data
             }
             )
             .subscribe()
-            //console.log(this.wished_cards)
         },
 
-        async unmounted(){
-
-        }
     };
 
 </script>

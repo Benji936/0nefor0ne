@@ -166,7 +166,7 @@ async function submit() {
       <v-divider />
 
       <v-card-actions class="pa-4 justify-center">
-        <span class="text-sm text-gray-600">
+        <span class="text-sm" style="color: var(--c-muted)">
           {{ mode === "signup" ? "Already have an account?" : "Don't have an account?" }}
         </span>
         <v-btn

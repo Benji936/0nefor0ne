@@ -125,18 +125,31 @@ export function bucketMatches(users) {
  * so the UI can highlight them, and sort matches first.
  */
 export async function fetchMyTradePile(theyWant = []) {
+  return fetchMyLibrary(theyWant);
+}
+
+/**
+ * Fetch ALL non-traded cards from the current user's library (trade pile + wishlist).
+ * Tagged with:
+ *   theyWantThis — card name appears in the counterparty's wishlist (passed as theyWant)
+ *   isWishlist   — card is marked wish=true (user wants it / hasn't listed it for trade)
+ *
+ * Sort order: trade pile first → "they want this" first within each group → alpha.
+ */
+export async function fetchMyLibrary(theyWant = []) {
   const me = (await getClient().auth.getUser()).data?.user?.id;
   if (!me) return [];
 
   const { data, error } = await getClient()
     .from("Card")
-    .select("id, name, image_id, extension, condition, language, quantity, first_edition, rarity")
+    .select("id, name, image_id, extension, condition, language, quantity, first_edition, rarity, status, wish")
     .eq("trader", me)
     .eq("wish", false)
+    .neq("status", "traded")
     .order("name", { ascending: true });
 
   if (error) {
-    console.error("fetchMyTradePile failed", error);
+    console.error("fetchMyLibrary failed", error);
     return [];
   }
 
@@ -144,12 +157,55 @@ export async function fetchMyTradePile(theyWant = []) {
   const rows = (data ?? []).map((c) => ({
     ...c,
     theyWantThis: wantedNames.has(c.name),
+    isWishlist:   c.wish === true,
   }));
-  // Matched first, then alpha. Stable sort by relying on the prior order.
+
   rows.sort((a, b) => {
+    // Trade pile before wishlist
+    if (a.isWishlist !== b.isWishlist) return a.isWishlist ? 1 : -1;
+    // Counterparty-wanted first within each group
     if (a.theyWantThis !== b.theyWantThis) return a.theyWantThis ? -1 : 1;
     return (a.name ?? "").localeCompare(b.name ?? "");
   });
+  return rows;
+}
+
+/**
+ * Fetch the full trade pile of any user by their ID.
+ * Used in the trade dialog so the proposer can browse ALL available cards,
+ * not just the ones that happen to match their wishlist.
+ *
+ * Cards whose name appears in `myWishNames` are tagged `matchesMyWishlist: true`
+ * and sorted to the top.
+ *
+ * @param {string} userId
+ * @param {string[]} myWishNames  — card names from the current user's wishlist
+ */
+export async function fetchUserTradePile(userId, myWishNames = []) {
+  const { data, error } = await getClient()
+    .from("Card")
+    .select("id, name, image_id, extension, condition, language, quantity, first_edition, rarity, status")
+    .eq("trader", userId)
+    .eq("wish", false)
+    .neq("status", "traded")
+    .order("name", { ascending: true });
+
+  if (error) {
+    console.error("fetchUserTradePile failed", error);
+    return [];
+  }
+
+  const wishSet = new Set(myWishNames.filter(Boolean));
+  const rows = (data ?? []).map((c) => ({
+    ...c,
+    matchesMyWishlist: wishSet.has(c.name),
+  }));
+
+  rows.sort((a, b) => {
+    if (a.matchesMyWishlist !== b.matchesMyWishlist) return a.matchesMyWishlist ? -1 : 1;
+    return (a.name ?? "").localeCompare(b.name ?? "");
+  });
+
   return rows;
 }
 
@@ -191,4 +247,140 @@ export async function createTradeProposal(counterpartyId, give, receive) {
     throw error;
   }
   return data;
+}
+
+/**
+ * Fetch all proposals for the current user (sent and received).
+ * Returns an array sorted by created_at desc, each row shaped as:
+ *   { id, status, created_at, counterparty_id, counterparty_name,
+ *     i_am_proposer, i_give: [...cards], i_receive: [...cards] }
+ */
+export async function fetchMyProposals() {
+  const { data, error } = await getClient().rpc("fetch_my_proposals");
+  if (error) {
+    console.error("fetch_my_proposals failed", error);
+    throw error;
+  }
+  return data ?? [];
+}
+
+/**
+ * Update the cards in a pending proposal (proposer only).
+ * Replaces the entire card list; status stays pending.
+ *
+ * @param {number} tradeId
+ * @param {Array<{card_id: number, quantity: number}>} give
+ * @param {Array<{card_id: number, quantity: number}>} receive
+ */
+export async function updateTradeProposal(tradeId, give, receive) {
+  const { error } = await getClient().rpc("update_trade_proposal", {
+    p_trade_id: tradeId,
+    give,
+    receive,
+  });
+  if (error) {
+    console.error("update_trade_proposal failed", error);
+    throw error;
+  }
+}
+
+/**
+ * Update the status of a trade. Enforced by RLS — only participants can call this.
+ * Valid transitions:
+ *   pending  → accepted  (counterparty / user2)
+ *   pending  → declined  (counterparty / user2)
+ *   pending  → cancelled (proposer    / user1)
+ *   accepted → cancelled (either participant)
+ *
+ * @param {number} tradeId
+ * @param {'accepted'|'declined'|'cancelled'} status
+ */
+export async function updateProposalStatus(tradeId, status) {
+  const { error } = await getClient()
+    .from("Trade")
+    .update({ status })
+    .eq("id", tradeId);
+  if (error) {
+    console.error("updateProposalStatus failed", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetch all verification photos for a trade.
+ * Returns [{ id, created_at, uploader, url }] sorted oldest-first.
+ *
+ * @param {number} tradeId
+ */
+export async function fetchTradePhotos(tradeId) {
+  const { data, error } = await getClient()
+    .from("trade_photo")
+    .select("id, created_at, uploader, url")
+    .eq("trade", tradeId)
+    .order("created_at", { ascending: true });
+  if (error) {
+    console.error("fetchTradePhotos failed", error);
+    throw error;
+  }
+  return data ?? [];
+}
+
+/**
+ * Upload a verification photo for an accepted trade.
+ * Stores the file in the trade-verifications bucket and records the URL.
+ *
+ * @param {number} tradeId
+ * @param {string} uploaderId  — auth.uid()
+ * @param {File}   file
+ */
+export async function uploadTradePhoto(tradeId, uploaderId, file) {
+  const ext  = file.name.split(".").pop() ?? "jpg";
+  const path = `${tradeId}/${uploaderId}/${Date.now()}.${ext}`;
+
+  const { error: storageError } = await getClient()
+    .storage.from("trade-verifications")
+    .upload(path, file, { contentType: file.type, upsert: false });
+  if (storageError) throw storageError;
+
+  const { data: urlData } = getClient()
+    .storage.from("trade-verifications")
+    .getPublicUrl(path);
+
+  const { error: dbError } = await getClient()
+    .from("trade_photo")
+    .insert({ trade: tradeId, uploader: uploaderId, url: urlData.publicUrl });
+  if (dbError) throw dbError;
+}
+
+/**
+ * Delete a verification photo by its DB id.
+ * The storage object is removed automatically via the bucket lifecycle,
+ * or the user can clear it via the dashboard. DB record is deleted here.
+ *
+ * @param {number} photoId
+ */
+export async function deleteTradePhoto(photoId) {
+  const { error } = await getClient()
+    .from("trade_photo")
+    .delete()
+    .eq("id", photoId);
+  if (error) {
+    console.error("deleteTradePhoto failed", error);
+    throw error;
+  }
+}
+
+/**
+ * Confirm (complete) an accepted trade.
+ * Reduces card quantities; cards that reach 0 are marked 'traded'.
+ * Sets Trade.status to 'completed'.
+ *
+ * @param {number} tradeId
+ */
+export async function completeTradeProposal(tradeId) {
+  const { error } = await getClient().rpc("complete_trade", { p_trade_id: tradeId });
+  if (error) {
+    console.error("complete_trade failed", error);
+    throw error;
+  }
 }

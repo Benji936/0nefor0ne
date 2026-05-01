@@ -7,18 +7,34 @@ import { cardImage } from '@/lib/cardImage';
 <template>
   <div
     class="flex flex-col rounded-b-lg border overflow-hidden transition-colors"
-    style="background-color: transparent; border-color: var(--c-border); width: 160px"
+    :style="{
+      backgroundColor: 'transparent',
+      borderColor: wish.status === 'reserved' ? 'var(--c-accent)' : 'var(--c-border)',
+      width: '160px',
+      opacity: wish.status === 'reserved' ? '0.7' : '1',
+    }"
   >
     <!-- Card image -->
-    <img :src="cardImage(wish.image_id)" :alt="wish.name" loading="lazy" class="w-full object-cover" style="aspect-ratio: 59/86">
+    <div class="relative">
+      <img :src="cardImage(wish.image_id)" :alt="wish.name" loading="lazy" class="w-full object-cover" style="aspect-ratio: 59/86">
+      <!-- Reserved overlay -->
+      <div
+        v-if="wish.status === 'reserved'"
+        class="absolute inset-0 flex flex-col items-center justify-center gap-1"
+        style="background: rgba(0,0,0,0.55)"
+      >
+        <v-icon icon="mdi-lock" size="22" color="var(--c-accent)" />
+        <span class="text-[10px] font-bold uppercase tracking-wide" style="color: var(--c-accent)">Reserved</span>
+      </div>
+    </div>
 
     <!-- Data -->
-    <div class="flex flex-col gap-1.5 px-3 pt-2 pb-1">
+    <div class="flex flex-col gap-1.5 px-3 pt-2 pb-1" style="background-color: var(--c-surface)">
       <p class="font-semibold text-xs leading-tight truncate" style="color: var(--c-text)">{{ wish.name }}</p>
       <div class="flex flex-wrap gap-3">
         <ConditionTooltip v-if="wish.condition" :condition="wish.condition" />
         <LanguageTooltip v-if="wish.language" :language="wish.language" />
-        <span v-if="wish.rarity" class="px-1 py-0.5 rounded text-[10px] leading-none bg-amber-900/50 border border-amber-700/40 text-amber-300" :title="wish.rarity">{{ shortenRarity(wish.rarity) }}</span>
+        <span v-if="wish.rarity" class="py-1 px-1 rounded text-xs h-fit bg-amber-900/50 text-amber-300" :title="wish.rarity">{{ shortenRarity(wish.rarity) }}</span>
         <a
           :href="`https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${encodeURIComponent(wish.name)}`"
           target="_blank"
@@ -30,7 +46,7 @@ import { cardImage } from '@/lib/cardImage';
     </div>
 
     <!-- Quantity -->
-    <div class="px-2 pb-2">
+    <div class="px-2 pb-2" style="background-color: var(--c-surface)">
       <v-number-input
         hide-details
         density="compact"

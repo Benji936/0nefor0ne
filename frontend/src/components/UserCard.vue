@@ -47,10 +47,10 @@ const kindMeta = computed(() => {
     default:
       return {
         label: "Match",
-        color: "#555",
-        glow: "rgba(85,85,85,0.3)",
-        bg: "bg-gray-800/25",
-        border: "border-gray-500/30",
+        color: "var(--c-muted)",
+        glow: "rgba(109,40,217,0.2)",
+        bg: "bg-violet-900/20",
+        border: "border-violet-500/20",
       };
   }
 });
@@ -87,10 +87,10 @@ const kindMeta = computed(() => {
         </div>
 
         <div class="flex flex-col grow min-w-0">
-          <p class="font-semibold text-[15px] text-gray-50 truncate leading-tight">
+          <p class="font-semibold text-[15px] truncate leading-tight" style="color: var(--c-text)">
             {{ user.name ?? "Anonymous" }}
           </p>
-          <p class="text-xs text-gray-400 truncate mt-0.5 flex items-center gap-1" v-if="location">
+          <p class="text-xs truncate mt-0.5 flex items-center gap-1" style="color: var(--c-muted)" v-if="location">
             <v-icon icon="mdi-map-marker-outline" size="11" class="opacity-50" />
             {{ location }}
           </p>
@@ -112,14 +112,14 @@ const kindMeta = computed(() => {
           v-if="user.theyHaveCount > 0"
           class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20"
         >
-          <v-icon icon="mdi-arrow-down-bold" size="13" color="#5b9bd5" />
+          <v-icon icon="mdi-arrow-down-bold" size="13" color="var(--c-trade)" />
           <span class="text-blue-300 font-semibold">{{ user.theyHaveCount }} for you</span>
         </div>
         <div
           v-if="user.theyWantCount > 0"
           class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-pink-500/10 border border-pink-500/20"
         >
-          <v-icon icon="mdi-arrow-up-bold" size="13" color="#d06b94" />
+          <v-icon icon="mdi-arrow-up-bold" size="13" color="var(--c-accent)" />
           <span class="text-pink-300 font-semibold">{{ user.theyWantCount }} from you</span>
         </div>
       </div>
