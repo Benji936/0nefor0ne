@@ -22,116 +22,114 @@ const kindMeta = computed(() => {
   switch (props.user.kind) {
     case "mutual":
       return {
-        label: "Mutual match",
+        label: "Mutual",
         color: "var(--c-mutual)",
-        glow: "rgba(102,153,17,0.3)",
-        bg: "bg-lime-900/25",
-        border: "border-lime-500/30",
+        glow: "rgba(132,204,22,0.22)",
+        bg: "color-mix(in srgb, var(--c-mutual) 4%, transparent)",
+        borderColor: "color-mix(in srgb, var(--c-mutual) 28%, transparent)",
+        btnText: "#0C0820",
       };
     case "they_have":
       return {
-        label: "Has cards you want",
+        label: "Has your wants",
         color: "var(--c-trade)",
-        glow: "rgba(17,102,153,0.3)",
-        bg: "bg-blue-900/25",
-        border: "border-blue-500/30",
+        glow: "rgba(144,102,255,0.22)",
+        bg: "color-mix(in srgb, var(--c-trade) 4%, transparent)",
+        borderColor: "color-mix(in srgb, var(--c-trade) 28%, transparent)",
+        btnText: "white",
       };
     case "they_want":
       return {
-        label: "Wants your cards",
+        label: "Wants yours",
         color: "var(--c-accent)",
-        glow: "rgba(133,20,75,0.3)",
-        bg: "bg-pink-900/25",
-        border: "border-pink-500/30",
+        glow: "rgba(240,72,122,0.22)",
+        bg: "color-mix(in srgb, var(--c-accent) 4%, transparent)",
+        borderColor: "color-mix(in srgb, var(--c-accent) 28%, transparent)",
+        btnText: "white",
       };
     default:
       return {
         label: "Match",
         color: "var(--c-muted)",
-        glow: "rgba(109,40,217,0.2)",
-        bg: "bg-violet-900/20",
-        border: "border-violet-500/20",
+        glow: "rgba(167,139,250,0.18)",
+        bg: "color-mix(in srgb, var(--c-muted) 4%, transparent)",
+        borderColor: "color-mix(in srgb, var(--c-muted) 20%, transparent)",
+        btnText: "white",
       };
   }
 });
 </script>
 
 <template>
+  <!--
+    Trade-opportunity tile. The two-sided body mirrors the propose dialog:
+    left = they have (amethyst), right = they want (pink).
+    The entire card fires openTrade; the Propose button stops propagation.
+  -->
   <div
-    class="user-card group relative flex flex-col gap-3 rounded-2xl border overflow-hidden"
-    style="background-color: var(--c-surface)"
-    :class="[kindMeta.border]"
-    :style="{ '--kind-glow': kindMeta.glow }"
+    class="user-card group relative flex flex-col rounded-2xl border overflow-hidden cursor-pointer"
+    :style="{
+      '--kind-glow': kindMeta.glow,
+      backgroundColor: kindMeta.bg,
+      borderColor: kindMeta.borderColor,
+    }"
+    @click="emit('openTrade', user)"
   >
-    <!-- Top gradient accent bar -->
+    <!-- Top gradient accent bar (edge-to-edge) -->
     <div
       class="h-[3px] w-full shrink-0"
       :style="{ background: `linear-gradient(90deg, transparent 5%, ${kindMeta.color} 50%, transparent 95%)` }"
     />
 
-    <div class="flex flex-col gap-4 p-4">
-      <!-- Header: Avatar + Name + Badge -->
-      <div class="flex items-center gap-3">
-        <!-- Avatar with hover glow -->
-        <div class="relative shrink-0">
-          <div
-            class="absolute -inset-1 rounded-full blur-md opacity-0 transition-opacity duration-300 group-hover:opacity-50"
-            :style="{ backgroundColor: kindMeta.color }"
-          />
-          <div
-            class="relative size-11 rounded-full flex items-center justify-center text-white font-bold text-sm ring-2 ring-white/10 group-hover:ring-white/20 transition-all duration-300"
-            :style="{ backgroundColor: kindMeta.color }"
-          >
-            {{ initials }}
-          </div>
-        </div>
-
-        <div class="flex flex-col grow min-w-0">
-          <p class="font-semibold text-[15px] truncate leading-tight" style="color: var(--c-text)">
-            {{ user.name ?? "Anonymous" }}
-          </p>
-          <p class="text-xs truncate mt-0.5 flex items-center gap-1" style="color: var(--c-muted)" v-if="location">
-            <v-icon icon="mdi-map-marker-outline" size="11" class="opacity-50" />
-            {{ location }}
-          </p>
-        </div>
-
-        <!-- Kind badge -->
-        <span
-          class="text-[11px] font-semibold px-2 py-1 rounded-lg shrink-0 border"
-          :class="[kindMeta.bg, kindMeta.border]"
-          :style="{ color: kindMeta.color }"
-        >
-          {{ kindMeta.label }}
-        </span>
+    <!-- Header: avatar · name · location · kind badge -->
+    <div class="flex items-center gap-3 px-4 pt-3 pb-2">
+      <div class="relative shrink-0">
+        <div
+          class="absolute -inset-1 rounded-full blur-md opacity-0 transition-opacity duration-300 group-hover:opacity-40"
+          :style="{ backgroundColor: kindMeta.color }"
+        />
+        <div
+          class="relative size-9 rounded-full flex items-center justify-center font-bold text-xs ring-1 ring-white/10"
+          :style="{ backgroundColor: kindMeta.color, color: kindMeta.btnText }"
+        >{{ initials }}</div>
       </div>
 
-      <!-- Count pills -->
-      <div class="flex gap-2.5 text-xs">
-        <div
-          v-if="user.theyHaveCount > 0"
-          class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20"
-        >
-          <v-icon icon="mdi-arrow-down-bold" size="13" color="var(--c-trade)" />
-          <span class="text-blue-300 font-semibold">{{ user.theyHaveCount }} for you</span>
-        </div>
-        <div
-          v-if="user.theyWantCount > 0"
-          class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-pink-500/10 border border-pink-500/20"
-        >
-          <v-icon icon="mdi-arrow-up-bold" size="13" color="var(--c-accent)" />
-          <span class="text-pink-300 font-semibold">{{ user.theyWantCount }} from you</span>
-        </div>
+      <div class="flex flex-col grow min-w-0">
+        <p class="font-bold text-sm truncate leading-tight" style="color: var(--c-text)">
+          {{ user.name ?? "Anonymous" }}
+        </p>
+        <p v-if="location" class="text-[11px] truncate flex items-center gap-1 mt-0.5" style="color: var(--c-muted)">
+          <v-icon icon="mdi-map-marker-outline" size="10" style="opacity: 0.55" />
+          {{ location }}
+        </p>
       </div>
 
-      <!-- They have -->
-      <div v-if="user.theyHave.length > 0" class="flex flex-col gap-3">
-        <div class="flex items-center gap-2">
-          <div class="h-px grow bg-gradient-to-r from-blue-500/30 to-transparent" />
-          <p class="text-[11px] uppercase tracking-widest text-blue-400/70 font-bold shrink-0">They have</p>
-          <div class="h-px grow bg-gradient-to-l from-blue-500/30 to-transparent" />
+      <span
+        class="text-[10px] font-bold px-2 py-0.5 rounded-lg border shrink-0 uppercase tracking-wide"
+        :style="{
+          color: kindMeta.color,
+          backgroundColor: `color-mix(in srgb, ${kindMeta.color} 12%, transparent)`,
+          borderColor: kindMeta.borderColor,
+        }"
+      >{{ kindMeta.label }}</span>
+    </div>
+
+    <!-- Two-sided card body -->
+    <div
+      class="flex mx-4 mb-3 rounded-xl overflow-hidden border"
+      style="border-color: var(--c-border); min-height: 96px"
+    >
+      <!-- They have (amethyst) -->
+      <div
+        class="flex flex-col gap-1.5 flex-1 p-2.5 min-w-0"
+        style="background: color-mix(in srgb, var(--c-trade) 6%, transparent)"
+      >
+        <div class="flex items-center gap-1">
+          <v-icon icon="mdi-arrow-down-bold" size="10" color="var(--c-trade)" />
+          <span class="text-[10px] font-bold uppercase tracking-wider" style="color: var(--c-trade)">They have</span>
+          <span v-if="user.theyHaveCount > 0" class="text-[10px] font-bold ml-auto tabular-nums" style="color: var(--c-trade)">{{ user.theyHaveCount }}</span>
         </div>
-        <div class="flex flex-row flex-wrap gap-2">
+        <div v-if="user.theyHave.length > 0" class="flex flex-wrap gap-1">
           <v-tooltip
             v-for="card in user.theyHave"
             :key="`have-${card.image_id}-${card.extension}`"
@@ -143,23 +141,30 @@ const kindMeta = computed(() => {
                 v-bind="tip"
                 :src="cardImage(card.image_id)"
                 :alt="card.name"
-                class="card-thumb h-[84px] w-[58px] object-contain shrink-0 ring-1 ring-white/10 hover:ring-blue-400/50 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20 cursor-pointer"
+                class="card-thumb rounded object-contain shrink-0"
+                style="height: 60px; width: 43px; background-color: var(--c-surface-2)"
                 loading="lazy"
-                style="background-color: var(--c-surface-2)"
               />
             </template>
           </v-tooltip>
         </div>
+        <p v-else class="text-[11px] italic my-auto" style="color: var(--c-muted)">None</p>
       </div>
 
-      <!-- They want -->
-      <div v-if="user.theyWant.length > 0" class="flex flex-col gap-3">
-        <div class="flex items-center gap-2">
-          <div class="h-px grow bg-gradient-to-r from-pink-500/25 to-transparent" />
-          <p class="text-[11px] uppercase tracking-widest text-pink-400/60 font-bold shrink-0">They want</p>
-          <div class="h-px grow bg-gradient-to-l from-pink-500/25 to-transparent" />
+      <!-- Hairline divider -->
+      <div class="w-px shrink-0 self-stretch" style="background: var(--c-border)" />
+
+      <!-- They want (pink) -->
+      <div
+        class="flex flex-col gap-1.5 flex-1 p-2.5 min-w-0"
+        style="background: color-mix(in srgb, var(--c-accent) 6%, transparent)"
+      >
+        <div class="flex items-center gap-1">
+          <v-icon icon="mdi-arrow-up-bold" size="10" color="var(--c-accent)" />
+          <span class="text-[10px] font-bold uppercase tracking-wider" style="color: var(--c-accent)">They want</span>
+          <span v-if="user.theyWantCount > 0" class="text-[10px] font-bold ml-auto tabular-nums" style="color: var(--c-accent)">{{ user.theyWantCount }}</span>
         </div>
-        <div class="flex flex-row flex-wrap gap-2">
+        <div v-if="user.theyWant.length > 0" class="flex flex-wrap gap-1">
           <v-tooltip
             v-for="card in user.theyWant"
             :key="`want-${card.image_id}-${card.extension}`"
@@ -171,48 +176,70 @@ const kindMeta = computed(() => {
                 v-bind="tip"
                 :src="cardImage(card.image_id)"
                 :alt="card.name"
-                class="card-thumb h-[84px] w-[58px] object-contain shrink-0 ring-1 ring-white/5 hover:opacity-75 hover:ring-pink-400/40 hover:scale-105 cursor-pointer"
+                class="card-thumb rounded object-contain shrink-0"
+                style="height: 60px; width: 43px; background-color: var(--c-surface-2); opacity: 0.85"
                 loading="lazy"
-                style="background-color: var(--c-surface-2)"
               />
             </template>
           </v-tooltip>
         </div>
+        <p v-else class="text-[11px] italic my-auto" style="color: var(--c-muted)">None</p>
       </div>
     </div>
 
-    <!-- CTA Footer -->
-    <div class="mt-auto pb-4 pt-1">
+    <!-- Footer: count pills · Propose CTA -->
+    <div class="flex items-center gap-2 px-4 pb-4">
+      <div class="flex gap-1.5 grow flex-wrap">
+        <span
+          v-if="user.theyHaveCount > 0"
+          class="flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold tabular-nums"
+          style="background: color-mix(in srgb, var(--c-trade) 12%, transparent); color: var(--c-trade)"
+        >
+          <v-icon icon="mdi-arrow-down-bold" size="11" />{{ user.theyHaveCount }}
+        </span>
+        <span
+          v-if="user.theyWantCount > 0"
+          class="flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold tabular-nums"
+          style="background: color-mix(in srgb, var(--c-accent) 12%, transparent); color: var(--c-accent)"
+        >
+          <v-icon icon="mdi-arrow-up-bold" size="11" />{{ user.theyWantCount }}
+        </span>
+      </div>
       <v-btn
-        block
+        size="small"
         variant="flat"
-        :style="{ backgroundColor: kindMeta.color, color: 'white' }"
         prepend-icon="mdi-swap-horizontal"
-        class="!rounded-xl"
-        @click="emit('openTrade', user)"
-      >
-        Propose trade
-      </v-btn>
+        class="!rounded-lg shrink-0"
+        :style="{ backgroundColor: kindMeta.color, color: kindMeta.btnText }"
+        @click.stop="emit('openTrade', user)"
+      >Propose</v-btn>
     </div>
   </div>
 </template>
 
 <style scoped>
 .user-card {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+  transition: box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .user-card:hover {
-  box-shadow: 0 12px 40px var(--kind-glow), 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 14px 44px var(--kind-glow), 0 2px 10px rgba(0, 0, 0, 0.32);
   transform: translateY(-3px);
 }
 .card-thumb {
   will-change: transform;
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.18s ease-out;
+  outline: 1px solid rgba(255, 255, 255, 0.08);
+  outline-offset: 0px;
+}
+.card-thumb:hover {
+  transform: translateY(-2px) scale(1.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  opacity: 1 !important;
+  outline-color: rgba(255, 255, 255, 0.22);
 }
 </style>

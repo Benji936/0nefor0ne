@@ -1,32 +1,35 @@
 <script setup>
 import { ref, watch, computed } from "vue";
 import { cardImage } from "@/lib/cardImage";
-import { fetchMyLibrary, createTradeProposal, updateTradeProposal, fetchUserWishlist, fetchUserTradePile } from "@/lib/matches";
+import { fetchMyLibrary, createTradeProposal, updateTradeProposal, counterTradeProposal, fetchUserWishlist, fetchUserTradePile, fetchMyWishlistNames } from "@/lib/matches";
 import { searchById } from "@/api";
 import AddCard from "@/components/AddCard.vue";
 
 const props = defineProps({
-  modelValue:    { type: Boolean, default: false },
-  // Matched user object — required for new proposals, null when editing
-  user:          { type: Object, default: null },
+  modelValue:      { type: Boolean, default: false },
+  // Matched user object — required for new proposals, null when editing/countering
+  user:            { type: Object, default: null },
   // Existing proposal to edit — when set the dialog opens in edit mode
-  editProposal:  { type: Object, default: null },
+  editProposal:    { type: Object, default: null },
+  // Received proposal to counter — opens counter mode (same columns, new proposal)
+  counterProposal: { type: Object, default: null },
 });
 
-const emit = defineEmits(["update:modelValue", "submitted", "updated"]);
+const emit = defineEmits(["update:modelValue", "submitted", "updated", "countered"]);
 
 // Derived: the counterparty regardless of mode
 const effectiveUser = computed(() => {
   if (props.editProposal) {
-    return {
-      id:   props.editProposal.counterparty_id,
-      name: props.editProposal.counterparty_name,
-    };
+    return { id: props.editProposal.counterparty_id,   name: props.editProposal.counterparty_name };
+  }
+  if (props.counterProposal) {
+    return { id: props.counterProposal.counterparty_id, name: props.counterProposal.counterparty_name };
   }
   return props.user;
 });
 
-const isEditing = computed(() => !!props.editProposal);
+const isEditing   = computed(() => !!props.editProposal);
+const isCountering = computed(() => !!props.counterProposal);
 
 // Internal state
 const myOffers = ref([]);              // My full library (trade pile + wishlist)
@@ -39,6 +42,15 @@ const theirFilter = ref("");           // Search filter for the receive column
 const loading = ref(false);
 const submitting = ref(false);
 const errorMessage = ref("");
+
+// Settlement details
+const settlement = ref({ trade_method: null, hasCash: false, cash_amount: null, cash_payer: 'proposer' });
+
+const METHODS = [
+  { value: 'in_person', label: 'Meet in person', icon: 'mdi-handshake-outline' },
+  { value: 'mail',      label: 'By mail',         icon: 'mdi-package-variant-closed' },
+  { value: 'other',     label: 'Other',            icon: 'mdi-dots-horizontal' },
+];
 
 // Selection: maps card_id -> quantity. 0 means unselected.
 const giveSelection = ref({});     // from myOffers
@@ -59,7 +71,7 @@ async function refreshMyOffers({ autoSelectId } = {}) {
 
 // Reset state and fetch offers whenever the dialog opens or the target changes.
 watch(
-  () => [props.modelValue, props.user?.id, props.editProposal?.id],
+  () => [props.modelValue, props.user?.id, props.editProposal?.id, props.counterProposal?.id],
   async ([open]) => {
     const eu = effectiveUser.value;
     if (!open || !eu?.id) return;
@@ -70,35 +82,71 @@ watch(
     giveFilter.value = "";
     theirFilter.value = "";
 
-    // Receive-column wishlist-match hints
-    const receiveWishNames = isEditing.value
-      ? (props.editProposal.i_receive ?? []).map(c => c.name)
-      : (props.user?.theyHave ?? []).map(c => c.name);
+    // Settlement pre-population
+    const src = props.editProposal ?? props.counterProposal;
+    settlement.value = src ? {
+      trade_method: src.trade_method ?? null,
+      hasCash:      src.cash_amount != null,
+      cash_amount:  src.cash_amount ?? null,
+      cash_payer:   src.cash_payer  ?? 'proposer',
+    } : { trade_method: null, hasCash: false, cash_amount: null, cash_payer: 'proposer' };
 
-    // Fetch counterparty wishlist + their trade pile in parallel first
+    // Fetch counterparty wishlist + their trade pile in parallel.
+    // For the "On your wishlist" tag on counterparty cards we need the
+    // *current user's* actual wishlist names — not the proposal's i_receive,
+    // which was the previous (wrong) source in edit/counter mode.
     loadingTheirs.value = true;
     loadingWishlist.value = true;
     const [wishlist, pile] = await Promise.all([
       fetchUserWishlist(eu.id),
-      fetchUserTradePile(eu.id, receiveWishNames),
+      // In edit/counter mode: fetch real wishlist names from DB.
+      // In new-proposal mode: the matched-user object already carries theyHave
+      // (pre-computed intersection) so we reuse that to avoid an extra round-trip.
+      (async () => {
+        const myWishNames = (isEditing.value || isCountering.value)
+          ? await fetchMyWishlistNames()
+          : (props.user?.theyHave ?? []).map(c => c.name);
+        return fetchUserTradePile(eu.id, myWishNames);
+      })(),
     ]);
     counterpartyWishlist.value = wishlist ?? [];
     theirTradePile.value = pile ?? [];
     loadingTheirs.value = false;
     loadingWishlist.value = false;
 
-    // Now fetch my library tagged with what the counterparty wants
+    // Fetch my library tagged with what the counterparty wants
     await refreshMyOffers();
 
     if (isEditing.value) {
-      // Pre-populate from existing proposal
+      // Cards on this proposal's give side are reserved — override locally
+      const ownedByThisTrade = new Set((props.editProposal.i_give ?? []).map(c => c.id));
+      myOffers.value = myOffers.value.map(card =>
+        ownedByThisTrade.has(card.id) ? { ...card, status: 'available' } : card
+      );
+      // Pre-populate selections
       const giveMap    = new Map((props.editProposal.i_give    ?? []).map(c => [c.id, c.quantity ?? 1]));
       const receiveMap = new Map((props.editProposal.i_receive ?? []).map(c => [c.id, c.quantity ?? 1]));
-      for (const card of myOffers.value)       { if (giveMap.has(card.id))    giveSelection.value[card.id]    = giveMap.get(card.id);    }
-      for (const card of theirTradePile.value)  { if (receiveMap.has(card.id)) receiveSelection.value[card.id] = receiveMap.get(card.id); }
+      for (const card of myOffers.value)      { if (giveMap.has(card.id))    giveSelection.value[card.id]    = giveMap.get(card.id);    }
+      for (const card of theirTradePile.value) { if (receiveMap.has(card.id)) receiveSelection.value[card.id] = receiveMap.get(card.id); }
+
+    } else if (isCountering.value) {
+      // The original proposer's give cards are reserved in the DB.
+      // After cancellation they'll be free — override locally so the user
+      // can keep, add, or remove them in their counter-offer.
+      const inOriginalReceive = new Set((props.counterProposal.i_receive ?? []).map(c => c.id));
+      theirTradePile.value = theirTradePile.value.map(card =>
+        inOriginalReceive.has(card.id) ? { ...card, status: 'available' } : card
+      );
+      // Pre-populate with the same cards as the received proposal
+      const giveMap    = new Map((props.counterProposal.i_give    ?? []).map(c => [c.id, c.quantity ?? 1]));
+      const receiveMap = new Map((props.counterProposal.i_receive ?? []).map(c => [c.id, c.quantity ?? 1]));
+      for (const card of myOffers.value)      { if (giveMap.has(card.id))    giveSelection.value[card.id]    = giveMap.get(card.id);    }
+      for (const card of theirTradePile.value) { if (receiveMap.has(card.id)) receiveSelection.value[card.id] = receiveMap.get(card.id); }
+
     } else {
+      // New proposal — auto-select obvious matches
       for (const card of theirTradePile.value) {
-        if (card.matchesMyWishlist && card.status !== 'reserved') receiveSelection.value[card.id] = 1;
+        if (card.matchesMyWishlist && card.status !== 'locked') receiveSelection.value[card.id] = 1;
       }
       for (const card of myOffers.value) {
         if (card.theyWantThis && !card.isWishlist) giveSelection.value[card.id] = 1;
@@ -164,12 +212,20 @@ async function submit() {
   if (!canSubmit.value) return;
   submitting.value = true;
   errorMessage.value = "";
+  const settlementPayload = {
+    trade_method: settlement.value.trade_method || null,
+    cash_amount:  settlement.value.hasCash && settlement.value.cash_amount > 0 ? settlement.value.cash_amount : null,
+    cash_payer:   settlement.value.hasCash && settlement.value.cash_amount > 0 ? settlement.value.cash_payer : null,
+  };
   try {
     if (isEditing.value) {
-      await updateTradeProposal(props.editProposal.id, givePayload.value, receivePayload.value);
+      await updateTradeProposal(props.editProposal.id, givePayload.value, receivePayload.value, settlementPayload);
       emit("updated", props.editProposal.id);
+    } else if (isCountering.value) {
+      const tradeId = await counterTradeProposal(props.counterProposal.id, givePayload.value, receivePayload.value, settlementPayload);
+      emit("countered", tradeId);
     } else {
-      const tradeId = await createTradeProposal(props.user.id, givePayload.value, receivePayload.value);
+      const tradeId = await createTradeProposal(props.user.id, givePayload.value, receivePayload.value, settlementPayload);
       emit("submitted", tradeId);
     }
     close();
@@ -200,20 +256,28 @@ function openWantedPicker() {
   if (!showWantedPicker.value) wantedFilter.value = '';
 }
 
-// Reset per-user caches when user or editProposal changes
-watch(() => props.user?.id ?? props.editProposal?.id, () => {
+// Reset per-user caches when the counterparty changes
+watch(() => props.user?.id ?? props.editProposal?.id ?? props.counterProposal?.id, () => {
   counterpartyWishlist.value = [];
   theirTradePile.value = [];
 });
 
 const filteredWanted = computed(() => {
   const q = wantedFilter.value.toLowerCase().trim();
-  return counterpartyWishlist.value.filter(c => !q || c.name.toLowerCase().includes(q));
+  return counterpartyWishlist.value.filter(c => {
+    if (q && !c.name.toLowerCase().includes(q)) return false;
+    // Hide cards the user has already committed to giving (avoid the confusion of
+    // a card appearing in both "You give" and "Cards they want" simultaneously)
+    const alreadyOffered = myOffers.value.some(
+      mo => mo.name === c.name && (giveSelection.value[mo.id] ?? 0) > 0
+    );
+    return !alreadyOffered;
+  });
 });
 
 async function selectWantedCard(item) {
   // If the user already has this card in their library, select it and close
-  const existing = myOffers.value.find(c => c.name === item.name && c.status !== 'reserved');
+  const existing = myOffers.value.find(c => c.name === item.name && c.status !== 'locked');
   if (existing) {
     giveSelection.value[existing.id] = Math.max(giveSelection.value[existing.id] ?? 0, 1) || 1;
     showWantedPicker.value = false;
@@ -269,7 +333,7 @@ function marketLinks(name, setCode) {
           </div>
           <div class="flex flex-col grow min-w-0">
             <span class="font-bold text-lg leading-tight" style="color: var(--c-text)">
-              {{ isEditing ? 'Edit proposal' : 'Propose trade' }}
+              {{ isEditing ? 'Edit proposal' : isCountering ? 'Counter-propose' : 'Propose trade' }}
             </span>
             <span class="text-sm mt-0.5" style="color: var(--c-muted)">with {{ effectiveUser.name ?? "Anonymous" }}</span>
           </div>
@@ -373,7 +437,7 @@ function marketLinks(name, setCode) {
                   />
                   <!-- "You have it" dot -->
                   <span
-                    v-if="myOffers.some(c => c.name === item.name && c.status !== 'reserved')"
+                    v-if="myOffers.some(c => c.name === item.name && c.status !== 'locked')"
                     class="absolute -top-1 -right-1 size-3.5 rounded-full border-2 flex items-center justify-center"
                     style="background-color: var(--c-mutual); border-color: var(--c-surface-2)"
                     title="Already in your library"
@@ -416,20 +480,20 @@ function marketLinks(name, setCode) {
                 <div
                   role="checkbox"
                   :aria-checked="(giveSelection[card.id] ?? 0) > 0"
-                  :aria-disabled="card.status === 'reserved'"
+                  :aria-disabled="card.status === 'locked'"
                   :aria-label="card.name"
-                  :tabindex="card.status === 'reserved' ? -1 : 0"
+                  :tabindex="card.status === 'locked' ? -1 : 0"
                   class="trade-row flex items-center gap-3 rounded-lg py-2 px-3 select-none"
                   :class="[
-                    card.status === 'reserved' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
-                    card.status !== 'reserved' && (giveSelection[card.id] ?? 0) > 0
+                    card.status === 'locked' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+                    card.status !== 'locked' && (giveSelection[card.id] ?? 0) > 0
                       ? 'border-pink-500/50 bg-pink-950/40 shadow-[inset_0_0_20px_rgba(133,20,75,0.08)]'
-                      : card.status !== 'reserved' ? 'hover:bg-[var(--c-surface-2)]' : '',
+                      : card.status !== 'locked' ? 'hover:bg-[var(--c-surface-2)]' : '',
                   ]"
-                  :style="card.status !== 'reserved' && (giveSelection[card.id] ?? 0) > 0 ? {} : { borderColor: 'var(--c-border)' }"
-                  @click="card.status !== 'reserved' && (giveSelection[card.id] = (giveSelection[card.id] ?? 0) > 0 ? 0 : 1)"
-                  @keydown.space.prevent="card.status !== 'reserved' && (giveSelection[card.id] = (giveSelection[card.id] ?? 0) > 0 ? 0 : 1)"
-                  @keydown.enter="card.status !== 'reserved' && (giveSelection[card.id] = (giveSelection[card.id] ?? 0) > 0 ? 0 : 1)"
+                  :style="card.status !== 'locked' && (giveSelection[card.id] ?? 0) > 0 ? {} : { borderColor: 'var(--c-border)' }"
+                  @click="card.status !== 'locked' && (giveSelection[card.id] = (giveSelection[card.id] ?? 0) > 0 ? 0 : 1)"
+                  @keydown.space.prevent="card.status !== 'locked' && (giveSelection[card.id] = (giveSelection[card.id] ?? 0) > 0 ? 0 : 1)"
+                  @keydown.enter="card.status !== 'locked' && (giveSelection[card.id] = (giveSelection[card.id] ?? 0) > 0 ? 0 : 1)"
                 >
                   <v-checkbox
                     :model-value="(giveSelection[card.id] ?? 0) > 0"
@@ -458,12 +522,7 @@ function marketLinks(name, setCode) {
                       </a>
                     </div>
                     <span
-                      v-if="card.status === 'reserved'"
-                      class="text-[11px] font-bold px-2 py-0.5 rounded-md w-fit flex items-center gap-1 border"
-                      style="color: var(--c-accent); border-color: var(--c-accent); background-color: color-mix(in srgb, var(--c-accent) 12%, transparent)"
-                    ><v-icon icon="mdi-lock-outline" size="10" color="var(--c-accent)" />Reserved</span>
-                    <span
-                      v-else-if="card.theyWantThis"
+                      v-if="card.theyWantThis"
                       class="text-[11px] font-bold text-lime-300 bg-lime-500/15 border border-lime-500/30 px-2 py-0.5 rounded-md w-fit flex items-center gap-1"
                     ><v-icon icon="mdi-star-four-points" size="10" color="var(--c-mutual)" />They want this</span>
                   </div>
@@ -562,26 +621,26 @@ function marketLinks(name, setCode) {
                   <div
                     role="checkbox"
                     :aria-checked="(receiveSelection[card.id] ?? 0) > 0"
-                    :aria-disabled="card.status === 'reserved'"
+                    :aria-disabled="card.status === 'locked'"
                     :aria-label="card.name"
-                    :tabindex="card.status === 'reserved' ? -1 : 0"
+                    :tabindex="card.status === 'locked' ? -1 : 0"
                     class="trade-row flex items-center gap-3 rounded-lg py-2 px-3 select-none"
                     :class="[
-                      card.status === 'reserved'
+                      card.status === 'locked'
                         ? 'opacity-50 cursor-not-allowed'
                         : 'cursor-pointer',
-                      card.status !== 'reserved' && (receiveSelection[card.id] ?? 0) > 0
+                      card.status !== 'locked' && (receiveSelection[card.id] ?? 0) > 0
                         ? 'border-blue-500/50 bg-blue-950/40 shadow-[inset_0_0_20px_rgba(17,102,153,0.08)]'
-                        : card.status !== 'reserved' ? 'hover:bg-[var(--c-surface-2)]' : '',
+                        : card.status !== 'locked' ? 'hover:bg-[var(--c-surface-2)]' : '',
                     ]"
-                    :style="card.status !== 'reserved' && (receiveSelection[card.id] ?? 0) > 0 ? {} : { borderColor: 'var(--c-border)' }"
-                    @click="card.status !== 'reserved' && (receiveSelection[card.id] = (receiveSelection[card.id] ?? 0) > 0 ? 0 : 1)"
-                    @keydown.space.prevent="card.status !== 'reserved' && (receiveSelection[card.id] = (receiveSelection[card.id] ?? 0) > 0 ? 0 : 1)"
-                    @keydown.enter="card.status !== 'reserved' && (receiveSelection[card.id] = (receiveSelection[card.id] ?? 0) > 0 ? 0 : 1)"
+                    :style="card.status !== 'locked' && (receiveSelection[card.id] ?? 0) > 0 ? {} : { borderColor: 'var(--c-border)' }"
+                    @click="card.status !== 'locked' && (receiveSelection[card.id] = (receiveSelection[card.id] ?? 0) > 0 ? 0 : 1)"
+                    @keydown.space.prevent="card.status !== 'locked' && (receiveSelection[card.id] = (receiveSelection[card.id] ?? 0) > 0 ? 0 : 1)"
+                    @keydown.enter="card.status !== 'locked' && (receiveSelection[card.id] = (receiveSelection[card.id] ?? 0) > 0 ? 0 : 1)"
                   >
                     <v-checkbox
                       :model-value="(receiveSelection[card.id] ?? 0) > 0"
-                      @update:model-value="card.status !== 'reserved' && (receiveSelection[card.id] = $event ? 1 : 0)"
+                      @update:model-value="card.status !== 'locked' && (receiveSelection[card.id] = $event ? 1 : 0)"
                       @click.stop
                       hide-details density="compact" color="var(--c-trade)" class="shrink-0"
                     />
@@ -610,15 +669,7 @@ function marketLinks(name, setCode) {
                         </a>
                       </div>
                       <span
-                        v-if="card.status === 'reserved'"
-                        class="text-[11px] font-bold px-2 py-0.5 rounded-md w-fit flex items-center gap-1 border"
-                        style="color: var(--c-accent); border-color: var(--c-accent); background-color: color-mix(in srgb, var(--c-accent) 12%, transparent)"
-                      >
-                        <v-icon icon="mdi-lock-outline" size="10" color="var(--c-accent)" />
-                        Reserved
-                      </span>
-                      <span
-                        v-else-if="card.matchesMyWishlist"
+                        v-if="card.matchesMyWishlist"
                         class="text-[11px] font-bold px-2 py-0.5 rounded-md w-fit flex items-center gap-1"
                         style="color: var(--c-mutual); background-color: color-mix(in srgb, var(--c-mutual) 15%, transparent); border: 1px solid color-mix(in srgb, var(--c-mutual) 30%, transparent)"
                       >
@@ -643,7 +694,67 @@ function marketLinks(name, setCode) {
           </section>
         </div>
 
-        <v-alert v-if="errorMessage" type="error" variant="tonal" class="mt-6" density="compact">
+        <!-- ── Settlement details ── -->
+        <div class="mt-4 rounded-xl border p-4 flex flex-col gap-3" style="border-color: var(--c-border); background-color: var(--c-surface-2)">
+          <p class="text-[11px] font-bold uppercase tracking-widest" style="color: var(--c-muted)">Settlement details</p>
+
+          <!-- Trade method -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-xs shrink-0" style="color: var(--c-muted)">How:</span>
+            <button
+              v-for="m in METHODS" :key="m.value"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer"
+              :style="settlement.trade_method === m.value
+                ? { backgroundColor: 'var(--c-trade)', borderColor: 'var(--c-trade)', color: 'white' }
+                : { backgroundColor: 'transparent', borderColor: 'var(--c-border)', color: 'var(--c-muted)' }"
+              @click="settlement.trade_method = settlement.trade_method === m.value ? null : m.value"
+            >
+              <v-icon :icon="m.icon" size="14" />
+              {{ m.label }}
+            </button>
+          </div>
+
+          <!-- Cash offset -->
+          <div class="flex items-center gap-3 flex-wrap">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" v-model="settlement.hasCash" class="rounded" style="accent-color: var(--c-trade)" />
+              <span class="text-xs" style="color: var(--c-muted)">Add cash offset</span>
+            </label>
+            <template v-if="settlement.hasCash">
+              <select
+                v-model="settlement.cash_payer"
+                class="rounded-lg px-2 py-1 text-xs border outline-none"
+                :style="{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
+              >
+                <option value="proposer">You pay</option>
+                <option value="counterparty">They pay</option>
+              </select>
+              <div class="relative flex items-center">
+                <span class="absolute left-2.5 text-xs pointer-events-none" style="color: var(--c-muted)">€</span>
+                <input
+                  v-model.number="settlement.cash_amount"
+                  type="number" min="0" step="0.01" placeholder="0.00"
+                  class="pl-6 pr-3 py-1 rounded-lg text-xs border outline-none w-24"
+                  :style="{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
+                />
+              </div>
+              <span v-if="settlement.cash_amount > 0" class="text-xs font-semibold" style="color: var(--c-mutual)">
+                {{ settlement.cash_payer === 'proposer' ? 'You' : effectiveUser?.name ?? 'They' }}
+                pay €{{ Number(settlement.cash_amount).toFixed(2) }}
+              </span>
+            </template>
+          </div>
+
+          <!-- Chat hint -->
+          <div class="flex items-center gap-2 rounded-lg px-3 py-2" style="background-color: color-mix(in srgb, var(--c-trade) 10%, transparent); border: 1px solid color-mix(in srgb, var(--c-trade) 25%, transparent)">
+            <v-icon icon="mdi-message-outline" size="14" color="var(--c-trade)" />
+            <span class="text-xs" style="color: var(--c-muted)">
+              Use the <strong style="color: var(--c-trade)">trade chat</strong> in Review &amp; Verify to discuss meeting points, shipping details, and conditions.
+            </span>
+          </div>
+        </div>
+
+        <v-alert v-if="errorMessage" type="error" variant="tonal" class="mt-4" density="compact">
           {{ errorMessage }}
         </v-alert>
       </v-card-text>
@@ -677,7 +788,7 @@ function marketLinks(name, setCode) {
               :disabled="!canSubmit"
               @click="submit"
             >
-              {{ isEditing ? 'Save changes' : 'Send proposal' }}
+              {{ isEditing ? 'Save changes' : isCountering ? 'Send counter-offer' : 'Send proposal' }}
             </v-btn>
           </div>
         </div>

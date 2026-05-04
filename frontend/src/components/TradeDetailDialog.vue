@@ -1,7 +1,7 @@
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, nextTick } from "vue";
 import { cardImage } from "@/lib/cardImage";
-import { fetchTradePhotos, uploadTradePhoto, deleteTradePhoto } from "@/lib/matches";
+import { fetchTradePhotos, uploadTradePhoto, deleteTradePhoto, fetchTradeMessages, sendTradeMessage } from "@/lib/matches";
 import { getClient } from "@/lib/supabaseClient";
 
 const props = defineProps({
@@ -10,7 +10,55 @@ const props = defineProps({
   currentUserId: { type: String,  default: null },
 });
 
-const emit = defineEmits(["update:modelValue", "accept", "decline", "cancel", "complete"]);
+const emit = defineEmits(["update:modelValue", "accept", "decline", "cancel", "complete", "counter"]);
+
+// ── Message state ────────────────────────────────────────────────────────────
+const messages        = ref([]);
+const loadingMessages = ref(false);
+const newMessage      = ref("");
+const sendingMessage  = ref(false);
+const msgListRef      = ref(null);
+let   msgSub          = null;
+
+async function loadMessages() {
+  if (!props.proposal?.id) return;
+  loadingMessages.value = true;
+  try {
+    messages.value = await fetchTradeMessages(props.proposal.id);
+  } catch { /* silent */ } finally {
+    loadingMessages.value = false;
+    scrollToBottom();
+  }
+}
+
+function scrollToBottom() {
+  nextTick(() => {
+    if (msgListRef.value) msgListRef.value.scrollTop = msgListRef.value.scrollHeight;
+  });
+}
+
+async function sendMessage() {
+  const text = newMessage.value.trim();
+  if (!text || sendingMessage.value || !props.proposal?.id) return;
+  sendingMessage.value = true;
+  newMessage.value = "";
+  try {
+    await sendTradeMessage(props.proposal.id, text);
+    await loadMessages();
+  } catch { newMessage.value = text; } finally {
+    sendingMessage.value = false;
+  }
+}
+
+function formatMsgTime(ts) {
+  if (!ts) return "";
+  const d    = new Date(ts);
+  const diff = Date.now() - d.getTime();
+  if (diff < 60000)    return "just now";
+  if (diff < 3600000)  return `${Math.floor(diff / 60000)}m ago`;
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+  return d.toLocaleDateString();
+}
 
 // ── Photo state ─────────────────────────────────────────────────────────────
 const photos       = ref([]);
@@ -34,19 +82,35 @@ async function loadPhotos() {
 }
 
 watch(() => props.modelValue, (open) => {
-  if (open && props.proposal && ["pending", "accepted"].includes(props.proposal.status)) {
-    loadPhotos();
-    photoSub = getClient()
-      .channel(`trade-photos-${props.proposal.id}`)
+  if (open && props.proposal) {
+    // Photos — only for active trades
+    if (["pending", "accepted"].includes(props.proposal.status)) {
+      loadPhotos();
+      photoSub = getClient()
+        .channel(`trade-photos-${props.proposal.id}`)
+        .on("postgres_changes", {
+          event: "*", schema: "public", table: "trade_photo",
+          filter: `trade=eq.${props.proposal.id}`,
+        }, loadPhotos)
+        .subscribe();
+    }
+
+    // Messages — always shown
+    loadMessages();
+    msgSub = getClient()
+      .channel(`trade-msgs-${props.proposal.id}`)
       .on("postgres_changes", {
-        event: "*", schema: "public", table: "trade_photo",
+        event: "INSERT", schema: "public", table: "trade_message",
         filter: `trade=eq.${props.proposal.id}`,
-      }, loadPhotos)
+      }, loadMessages)
       .subscribe();
   } else {
-    photos.value = [];
+    photos.value   = [];
     uploadError.value = "";
+    messages.value = [];
+    newMessage.value = "";
     if (photoSub) { getClient().removeChannel(photoSub); photoSub = null; }
+    if (msgSub)   { getClient().removeChannel(msgSub);   msgSub   = null; }
   }
 });
 
@@ -95,6 +159,8 @@ const formattedDate = computed(() => {
 const isPending      = computed(() => props.proposal?.status === "pending");
 const isAccepted     = computed(() => props.proposal?.status === "accepted");
 const showPhotoPanel = computed(() => isPending.value || isAccepted.value);
+const iConfirmed     = computed(() => props.proposal?.i_confirmed    ?? false);
+const theyConfirmed  = computed(() => props.proposal?.they_confirmed ?? false);
 
 function shortenRarity(r) {
   return r ? r.split(" ").map(w => w[0]).join("") : "";
@@ -202,9 +268,9 @@ function action(event) { emit(event, props.proposal); close(); }
                 <div class="flex gap-2 mt-0.5">
                   <a v-for="m in marketLinks(card.name, card.extension)" :key="m.label"
                     :href="m.url" target="_blank" rel="noopener noreferrer"
-                    class="text-[10px] flex items-center gap-0.5 no-underline transition-opacity hover:opacity-70"
+                    class="text-[11px] flex items-center gap-0.5 no-underline transition-opacity hover:opacity-70"
                     style="color: var(--c-muted)">
-                    <v-icon icon="mdi-open-in-new" size="10" />{{ m.label }}
+                    <v-icon icon="mdi-open-in-new" size="11" />{{ m.label }}
                   </a>
                 </div>
               </div>
@@ -247,9 +313,9 @@ function action(event) { emit(event, props.proposal); close(); }
                 <div class="flex gap-2 mt-0.5">
                   <a v-for="m in marketLinks(card.name, card.extension)" :key="m.label"
                     :href="m.url" target="_blank" rel="noopener noreferrer"
-                    class="text-[10px] flex items-center gap-0.5 no-underline transition-opacity hover:opacity-70"
+                    class="text-[11px] flex items-center gap-0.5 no-underline transition-opacity hover:opacity-70"
                     style="color: var(--c-muted)">
-                    <v-icon icon="mdi-open-in-new" size="10" />{{ m.label }}
+                    <v-icon icon="mdi-open-in-new" size="11" />{{ m.label }}
                   </a>
                 </div>
               </div>
@@ -396,6 +462,68 @@ function action(event) { emit(event, props.proposal); close(); }
           </div>
         </template>
 
+        <!-- ── Trade chat ───────────────────────────────────────────────────── -->
+        <div class="mt-6 pt-5" style="border-top: 1px solid var(--c-border)">
+          <div class="flex items-center gap-3 mb-3">
+            <v-icon icon="mdi-message-outline" size="20" color="var(--c-muted)" />
+            <span class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">Trade chat</span>
+            <span class="text-[11px] ml-auto" style="color: var(--c-muted)">Visible to both traders</span>
+          </div>
+
+          <!-- Message list -->
+          <div
+            ref="msgListRef"
+            class="flex flex-col gap-2 overflow-y-auto rounded-xl border p-3"
+            style="min-height: 160px; max-height: 240px; border-color: var(--c-border); background-color: var(--c-surface-2)"
+          >
+            <div v-if="loadingMessages" class="flex items-center justify-center flex-1 py-6" style="color: var(--c-muted)">
+              <v-progress-circular indeterminate size="20" width="2" color="var(--c-muted)" />
+            </div>
+            <p v-else-if="messages.length === 0" class="text-xs italic text-center m-auto py-4" style="color: var(--c-muted)">
+              No messages yet. Say something!
+            </p>
+            <template v-else>
+              <div
+                v-for="msg in messages"
+                :key="msg.id"
+                class="flex flex-col max-w-[75%]"
+                :class="msg.sender === currentUserId ? 'self-end items-end' : 'self-start items-start'"
+              >
+                <div
+                  class="rounded-2xl px-3 py-2 text-sm leading-snug"
+                  :style="msg.sender === currentUserId
+                    ? { backgroundColor: 'var(--c-trade)', color: 'white' }
+                    : { backgroundColor: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }"
+                >{{ msg.content }}</div>
+                <span class="text-[10px] mt-0.5 px-1" style="color: var(--c-muted)">{{ formatMsgTime(msg.created_at) }}</span>
+              </div>
+            </template>
+          </div>
+
+          <!-- Input row -->
+          <div v-if="proposal.status === 'pending' || proposal.status === 'accepted'" class="flex gap-2 mt-2">
+            <input
+              v-model="newMessage"
+              placeholder="Type a message…"
+              class="flex-1 rounded-xl px-4 py-2 text-sm border outline-none"
+              :style="{ backgroundColor: 'var(--c-surface-2)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
+              @keydown.enter.prevent="sendMessage"
+            />
+            <v-btn
+              icon="mdi-send"
+              variant="flat"
+              density="comfortable"
+              :loading="sendingMessage"
+              :disabled="!newMessage.trim()"
+              style="background-color: var(--c-trade); color: white; border-radius: 12px"
+              @click="sendMessage"
+            />
+          </div>
+          <p v-else class="text-xs mt-2 italic" style="color: var(--c-muted)">
+            This trade is {{ proposal.status }}. Chat is read-only.
+          </p>
+        </div>
+
       </v-card-text>
 
       <!-- Footer -->
@@ -405,22 +533,60 @@ function action(event) { emit(event, props.proposal); close(); }
 
           <!-- Accepted actions -->
           <template v-if="isAccepted">
-            <span class="text-xs grow" style="color: var(--c-muted)">
-              <template v-if="!bothUploaded">Upload photos on both sides before confirming.</template>
-              <template v-else>Both sides have uploaded — ready to confirm the exchange.</template>
-            </span>
-            <div class="flex gap-2 shrink-0">
-              <v-btn variant="outlined" prepend-icon="mdi-cancel"
-                style="border-color: var(--c-accent); color: var(--c-accent)"
-                @click="action('cancel')"
-              >Cancel trade</v-btn>
-              <v-btn variant="flat" prepend-icon="mdi-handshake-outline"
-                :disabled="!bothUploaded"
-                :style="bothUploaded
-                  ? 'background-color: var(--c-mutual); color: white'
-                  : 'opacity: 0.45'"
-                @click="action('complete')"
-              >Confirm exchange</v-btn>
+            <div class="flex flex-col gap-3 w-full">
+              <!-- Dual confirmation status -->
+              <div class="flex gap-3">
+                <div
+                  class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm flex-1 border"
+                  :style="iConfirmed
+                    ? { background: 'color-mix(in srgb, var(--c-mutual) 10%, transparent)', borderColor: 'color-mix(in srgb, var(--c-mutual) 30%, transparent)' }
+                    : { background: 'var(--c-surface-2)', borderColor: 'var(--c-border)' }"
+                >
+                  <v-icon
+                    :icon="iConfirmed ? 'mdi-check-circle' : 'mdi-circle-outline'"
+                    size="16"
+                    :color="iConfirmed ? 'var(--c-mutual)' : 'var(--c-muted)'"
+                  />
+                  <span class="font-medium" :style="{ color: iConfirmed ? 'var(--c-mutual)' : 'var(--c-muted)' }">You</span>
+                </div>
+                <div
+                  class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm flex-1 border"
+                  :style="theyConfirmed
+                    ? { background: 'color-mix(in srgb, var(--c-mutual) 10%, transparent)', borderColor: 'color-mix(in srgb, var(--c-mutual) 30%, transparent)' }
+                    : { background: 'var(--c-surface-2)', borderColor: 'var(--c-border)' }"
+                >
+                  <v-icon
+                    :icon="theyConfirmed ? 'mdi-check-circle' : 'mdi-clock-outline'"
+                    size="16"
+                    :color="theyConfirmed ? 'var(--c-mutual)' : 'var(--c-muted)'"
+                  />
+                  <span class="font-medium truncate" :style="{ color: theyConfirmed ? 'var(--c-mutual)' : 'var(--c-muted)' }">
+                    {{ proposal.counterparty_name ?? 'Them' }}
+                  </span>
+                </div>
+              </div>
+              <!-- Help text -->
+              <p class="text-xs" style="color: var(--c-muted)">
+                <template v-if="!bothUploaded">Upload photos on both sides before confirming.</template>
+                <template v-else-if="iConfirmed">Waiting for {{ proposal.counterparty_name ?? 'them' }} to confirm the exchange.</template>
+                <template v-else>Both sides have uploaded — confirm when you've received your cards.</template>
+              </p>
+              <!-- Buttons -->
+              <div class="flex gap-2 flex-wrap justify-end">
+                <v-btn variant="outlined" prepend-icon="mdi-cancel"
+                  style="border-color: var(--c-accent); color: var(--c-accent)"
+                  @click="action('cancel')"
+                >Cancel trade</v-btn>
+                <v-btn
+                  v-if="!iConfirmed"
+                  variant="flat" prepend-icon="mdi-handshake-outline"
+                  :disabled="!bothUploaded"
+                  :style="bothUploaded
+                    ? 'background-color: var(--c-mutual); color: #0C0820'
+                    : 'opacity: 0.45'"
+                  @click="action('complete')"
+                >Confirm your side</v-btn>
+              </div>
             </div>
           </template>
 
@@ -443,7 +609,7 @@ function action(event) { emit(event, props.proposal); close(); }
                 Both sides uploaded — waiting for {{ proposal.counterparty_name ?? "them" }} to accept.
               </template>
             </span>
-            <div class="flex gap-2 shrink-0">
+            <div class="flex gap-2 shrink-0 flex-wrap">
               <template v-if="!proposal.i_am_proposer">
                 <v-btn variant="text" prepend-icon="mdi-cancel"
                   style="color: var(--c-muted)"
@@ -453,10 +619,14 @@ function action(event) { emit(event, props.proposal); close(); }
                   style="border-color: var(--c-accent); color: var(--c-accent)"
                   @click="action('decline')"
                 >Decline</v-btn>
+                <v-btn variant="outlined" prepend-icon="mdi-swap-horizontal"
+                  style="border-color: var(--c-trade); color: var(--c-trade)"
+                  @click="emit('counter', proposal); close()"
+                >Counter</v-btn>
                 <v-btn variant="flat" prepend-icon="mdi-check"
                   :disabled="!bothUploaded"
                   :style="bothUploaded
-                    ? 'background-color: var(--c-mutual); color: white'
+                    ? 'background-color: var(--c-mutual); color: #0C0820'
                     : 'opacity: 0.45'"
                   @click="action('accept')"
                 >Accept</v-btn>

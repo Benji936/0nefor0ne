@@ -106,6 +106,21 @@ import { ref } from "vue";
             }
         },
         methods:{
+            /**
+             * Hide original cards that have a locked copy representing them in an accepted trade.
+             * When a trade is accepted, a trigger creates a locked Card copy that points back to
+             * the original via locked_original_card_id. Showing both would be confusing — only
+             * the locked copy (which carries the "Accepted trade" badge) should appear.
+             */
+            filterCovered(cards) {
+                const lockedOriginalIds = new Set(
+                    cards
+                        .filter(c => c.status === 'locked' && c.locked_original_card_id)
+                        .map(c => c.locked_original_card_id)
+                );
+                return cards.filter(c => c.status === 'locked' || !lockedOriginalIds.has(c.id));
+            },
+
             onCardAdded(newCard) {
                 if (newCard.wish) {
                     this.wished_cards.value = [newCard, ...this.wished_cards.value]
@@ -125,10 +140,10 @@ import { ref } from "vue";
                 getClient().from('Card').select('*').eq('wish', true).eq('trader', this.login.user.id).neq('status', 'traded'),
                 getClient().from('Card').select('*').eq('wish', false).eq('trader', this.login.user.id).neq('status', 'traded'),
             ])
-            this.wished_cards.value = wishes.data
-            this.trade_cards.value = trades.data
-            this.wishes_quantity = wishes.data.length
-            this.trades_quantity = trades.data.length
+            this.wished_cards.value = this.filterCovered(wishes.data)
+            this.trade_cards.value  = this.filterCovered(trades.data)
+            this.wishes_quantity = this.wished_cards.value.length
+            this.trades_quantity = this.trade_cards.value.length
             this.loading = false
 
             const subscription = getClient().channel('custom-all-channel')
@@ -136,10 +151,12 @@ import { ref } from "vue";
             'postgres_changes',
             { event: '*', schema: 'public', table: 'Card' },
             async () => {
-                let wish_req = await getClient().from('Card').select('*').eq('wish',true).eq('trader',this.login.user.id).neq('status','traded')
+                let wish_req  = await getClient().from('Card').select('*').eq('wish',true).eq('trader',this.login.user.id).neq('status','traded')
                 let trade_req = await getClient().from('Card').select('*').eq('wish',false).eq('trader',this.login.user.id).neq('status','traded')
-                this.wished_cards.value = wish_req.data
-                this.trade_cards.value = trade_req.data
+                this.wished_cards.value = this.filterCovered(wish_req.data)
+                this.trade_cards.value  = this.filterCovered(trade_req.data)
+                this.wishes_quantity = this.wished_cards.value.length
+                this.trades_quantity = this.trade_cards.value.length
             }
             )
             .subscribe()

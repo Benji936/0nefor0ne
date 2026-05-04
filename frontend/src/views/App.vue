@@ -1,7 +1,8 @@
 <script setup>
 import Search from "@/components/Pages/Search.vue";
 import Library from "@/components/Pages/Library.vue";
-import TradeCenter from "@/components/Pages/TradeCenter.vue"
+import TradeCenter from "@/components/Pages/TradeCenter.vue";
+import Account from "@/components/Pages/Account.vue";
 import AuthDialog from "@/components/AuthDialog.vue";
 import NavItem from "@/components/NavItem.vue";
 </script>
@@ -83,6 +84,7 @@ import NavItem from "@/components/NavItem.vue";
     ></TradeCenter>
     <Search @TradeCenter="openMatches($event)" :searchCards="cards" v-if="page=='search'"></Search>
     <Library v-if="page=='library'" :login="authenticated" />
+    <Account v-if="page=='account'" :login="authenticated" @logout="logout" />
 
     <AuthDialog v-model="authDialogOpen" @authenticated="onAuthenticated" />
 
@@ -147,7 +149,7 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
           // immediately for snappier UI.
           this.authenticated = null;
           // Bounce back to search so we don't leave them on a logged-in page.
-          if (this.page === "library" || this.page === "TradeCenter") {
+          if (["library", "TradeCenter", "account"].includes(this.page)) {
             this.page = "search";
           }
         },

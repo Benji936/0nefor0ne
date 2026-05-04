@@ -146,6 +146,7 @@ export async function fetchMyLibrary(theyWant = []) {
     .eq("trader", me)
     .eq("wish", false)
     .neq("status", "traded")
+    .neq("status", "locked")
     .order("name", { ascending: true });
 
   if (error) {
@@ -188,6 +189,7 @@ export async function fetchUserTradePile(userId, myWishNames = []) {
     .eq("trader", userId)
     .eq("wish", false)
     .neq("status", "traded")
+    .neq("status", "locked")
     .order("name", { ascending: true });
 
   if (error) {
@@ -236,11 +238,15 @@ export async function fetchUserWishlist(userId) {
  * @param {Array<{card_id: number, quantity: number}>} receive
  * @returns {Promise<number>} the new Trade.id
  */
-export async function createTradeProposal(counterpartyId, give, receive) {
+export async function createTradeProposal(counterpartyId, give, receive, settlement = {}) {
   const { data, error } = await getClient().rpc("create_trade_proposal", {
-    counterparty: counterpartyId,
+    counterparty:   counterpartyId,
     give,
     receive,
+    p_trade_method: settlement.trade_method ?? null,
+    p_cash_amount:  settlement.cash_amount  ?? null,
+    p_cash_payer:   settlement.cash_payer   ?? null,
+    p_notes:        settlement.notes        ?? null,
   });
   if (error) {
     console.error("create_trade_proposal failed", error);
@@ -265,18 +271,22 @@ export async function fetchMyProposals() {
 }
 
 /**
- * Update the cards in a pending proposal (proposer only).
- * Replaces the entire card list; status stays pending.
+ * Update the cards and settlement details of a pending proposal (proposer only).
  *
  * @param {number} tradeId
  * @param {Array<{card_id: number, quantity: number}>} give
  * @param {Array<{card_id: number, quantity: number}>} receive
+ * @param {{ trade_method?, cash_amount?, cash_payer?, notes? }} settlement
  */
-export async function updateTradeProposal(tradeId, give, receive) {
+export async function updateTradeProposal(tradeId, give, receive, settlement = {}) {
   const { error } = await getClient().rpc("update_trade_proposal", {
-    p_trade_id: tradeId,
+    p_trade_id:     tradeId,
     give,
     receive,
+    p_trade_method: settlement.trade_method ?? null,
+    p_cash_amount:  settlement.cash_amount  ?? null,
+    p_cash_payer:   settlement.cash_payer   ?? null,
+    p_notes:        settlement.notes        ?? null,
   });
   if (error) {
     console.error("update_trade_proposal failed", error);
@@ -284,17 +294,6 @@ export async function updateTradeProposal(tradeId, give, receive) {
   }
 }
 
-/**
- * Update the status of a trade. Enforced by RLS — only participants can call this.
- * Valid transitions:
- *   pending  → accepted  (counterparty / user2)
- *   pending  → declined  (counterparty / user2)
- *   pending  → cancelled (proposer    / user1)
- *   accepted → cancelled (either participant)
- *
- * @param {number} tradeId
- * @param {'accepted'|'declined'|'cancelled'} status
- */
 export async function updateProposalStatus(tradeId, status) {
   const { error } = await getClient()
     .from("Trade")
@@ -377,10 +376,101 @@ export async function deleteTradePhoto(photoId) {
  *
  * @param {number} tradeId
  */
+/**
+ * Confirm your side of an accepted trade.
+ * Returns { status: 'confirmed' } when only one side has confirmed,
+ * or { status: 'completed' } when both sides have confirmed and the
+ * trade was finalized.
+ *
+ * @param {number} tradeId
+ * @returns {Promise<{ status: 'confirmed' | 'completed' }>}
+ */
 export async function completeTradeProposal(tradeId) {
-  const { error } = await getClient().rpc("complete_trade", { p_trade_id: tradeId });
+  const { data, error } = await getClient().rpc("complete_trade", { p_trade_id: tradeId });
   if (error) {
     console.error("complete_trade failed", error);
+    throw error;
+  }
+  return data ?? { status: 'confirmed' };
+}
+
+/**
+ * Fetch all messages for a trade, sorted oldest-first.
+ *
+ * @param {number} tradeId
+ * @returns {Promise<Array<{id: number, created_at: string, sender: string, content: string}>>}
+ */
+export async function fetchTradeMessages(tradeId) {
+  const { data, error } = await getClient()
+    .from("trade_message")
+    .select("id, created_at, sender, content")
+    .eq("trade", tradeId)
+    .order("created_at", { ascending: true });
+  if (error) {
+    console.error("fetchTradeMessages failed", error);
+    throw error;
+  }
+  return data ?? [];
+}
+
+/**
+ * Fetch the card names on the current user's wishlist.
+ * Used to correctly tag the counterparty's trade pile in edit / counter mode.
+ *
+ * @returns {Promise<string[]>}
+ */
+export async function fetchMyWishlistNames() {
+  const me = (await getClient().auth.getUser()).data?.user?.id;
+  if (!me) return [];
+  const { data } = await getClient()
+    .from("Card")
+    .select("name")
+    .eq("trader", me)
+    .eq("wish", true);
+  return (data ?? []).map(c => c.name).filter(Boolean);
+}
+
+/**
+ * Counter an incoming pending proposal.
+ * Cancels + deletes the original trade, then creates a new one in the opposite direction.
+ *
+ * @param {number} originalTradeId
+ * @param {Array<{card_id: number, quantity: number}>} give
+ * @param {Array<{card_id: number, quantity: number}>} receive
+ * @param {{ trade_method?, cash_amount?, cash_payer? }} settlement
+ * @returns {Promise<number>} the new Trade.id
+ */
+export async function counterTradeProposal(originalTradeId, give, receive, settlement = {}) {
+  const { data, error } = await getClient().rpc("counter_trade_proposal", {
+    p_original_id:  originalTradeId,
+    give,
+    receive,
+    p_trade_method: settlement.trade_method ?? null,
+    p_cash_amount:  settlement.cash_amount  ?? null,
+    p_cash_payer:   settlement.cash_payer   ?? null,
+  });
+  if (error) {
+    console.error("counter_trade_proposal failed", error);
+    throw error;
+  }
+  return data;
+}
+
+/**
+ * Send a message in a trade conversation.
+ *
+ * @param {number} tradeId
+ * @param {string} content
+ */
+export async function sendTradeMessage(tradeId, content) {
+  const me = (await getClient().auth.getUser()).data?.user?.id;
+  if (!me) throw new Error("Not authenticated");
+
+  const { error } = await getClient()
+    .from("trade_message")
+    .insert({ trade: tradeId, sender: me, content: content.trim() });
+  if (error) {
+    console.error("sendTradeMessage failed", error);
     throw error;
   }
 }

@@ -7,110 +7,226 @@ import ProposalRow from "@/components/ProposalRow.vue";
 <template>
   <div class="flex flex-col gap-6 py-6">
 
-    <!-- Tabs -->
-    <div class="flex items-center gap-1 p-1 rounded-xl self-start" style="background: var(--c-surface)">
+    <!-- Text tabs with animated bottom-border indicator -->
+    <div class="flex items-center" style="border-bottom: 1px solid var(--c-border)">
       <button
         v-for="tab in tabs"
         :key="tab.key"
-        class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer"
-        :style="activeTab === tab.key
-          ? 'background: var(--c-surface-2); color: var(--c-text);'
-          : 'color: var(--c-muted);'"
+        class="relative flex items-center gap-2 px-5 py-3 text-sm font-semibold cursor-pointer transition-colors duration-200 whitespace-nowrap"
+        :style="{
+          color: activeTab === tab.key ? 'var(--c-text)' : 'var(--c-muted)',
+          borderBottom: activeTab === tab.key ? '2px solid var(--c-accent)' : '2px solid transparent',
+          marginBottom: '-1px',
+        }"
         @click="activeTab = tab.key"
       >
         <v-icon :icon="tab.icon" size="16" />
         {{ tab.label }}
         <span
           v-if="tab.badge > 0"
-          class="px-1.5 py-0.5 rounded-md text-[11px] font-bold"
-          :style="activeTab === tab.key
-            ? 'background: var(--c-accent); color: white;'
-            : 'background: var(--c-surface-2); color: var(--c-muted);'"
+          class="px-1 py-1 w-6 h-6 rounded-md text-[11px] items-center font-bold tabular-nums"
+          style="background: var(--c-accent); color: white"
         >{{ tab.badge }}</span>
       </button>
     </div>
 
     <!-- ─── MATCHES TAB ─── -->
     <template v-if="activeTab === 'matches'">
-      <div class="flex flex-col gap-1">
-        <p v-if="filterCardName" class="text-sm" style="color: var(--c-muted)">
-          Filtered by card:
-          <span class="font-medium" style="color: var(--c-text)">{{ filterCardName }}</span>
-          <a class="ml-3 cursor-pointer" style="color: var(--c-accent)" @click="$emit('clearFilter')">clear</a>
-        </p>
-        <p v-else class="text-sm" style="color: var(--c-muted)">
-          Traders who overlap with your wishlist or trade pile.
+
+      <!-- Filter notice -->
+      <div v-if="filterCardName" class="flex items-center gap-2 text-sm" style="color: var(--c-muted)">
+        <v-icon icon="mdi-filter-outline" size="15" />
+        Filtered by card:
+        <span class="font-semibold" style="color: var(--c-text)">{{ filterCardName }}</span>
+        <button
+          class="ml-1 cursor-pointer transition-opacity hover:opacity-70"
+          style="color: var(--c-accent)"
+          @click="$emit('clearFilter')"
+        >clear</button>
+      </div>
+
+      <!-- Not logged in -->
+      <div v-if="!login" class="flex flex-col items-center gap-3 py-16 text-center">
+        <v-icon icon="mdi-lock-outline" size="36" color="var(--c-muted)" />
+        <p class="text-sm" style="color: var(--c-muted)">Log in to see your trade matches.</p>
+      </div>
+
+      <!-- Skeleton loading — mirrors UserCard structure -->
+      <template v-else-if="loadingMatches">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div
+            v-for="i in 6"
+            :key="i"
+            class="flex flex-col rounded-2xl border overflow-hidden"
+            :style="{
+              borderColor: 'var(--c-border)',
+              backgroundColor: 'var(--c-surface)',
+              opacity: 1 - (i - 1) * 0.1,
+            }"
+          >
+            <div class="h-[3px] w-full animate-pulse" style="background: var(--c-skeleton)" />
+            <div class="flex items-center gap-3 px-4 pt-3 pb-2">
+              <div class="size-9 rounded-full shrink-0 animate-pulse" style="background: var(--c-skeleton)" />
+              <div class="flex flex-col gap-1.5 grow">
+                <div class="h-3.5 rounded animate-pulse" style="background: var(--c-skeleton); width: 54%" />
+                <div class="h-2.5 rounded animate-pulse" style="background: var(--c-skeleton); width: 38%" />
+              </div>
+              <div class="h-5 w-16 rounded-lg shrink-0 animate-pulse" style="background: var(--c-skeleton)" />
+            </div>
+            <div class="mx-4 mb-3 h-24 rounded-xl animate-pulse" style="background: var(--c-skeleton)" />
+            <div class="flex items-center justify-between px-4 pb-4">
+              <div class="flex gap-1.5">
+                <div class="h-5 w-9 rounded-md animate-pulse" style="background: var(--c-skeleton)" />
+                <div class="h-5 w-9 rounded-md animate-pulse" style="background: var(--c-skeleton)" />
+              </div>
+              <div class="h-8 w-20 rounded-lg animate-pulse" style="background: var(--c-skeleton)" />
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- Empty state -->
+      <div
+        v-else-if="totalMatches === 0"
+        class="flex flex-col items-center gap-3 py-16 text-center"
+      >
+        <div
+          class="size-14 rounded-2xl flex items-center justify-center mb-1"
+          style="background: color-mix(in srgb, var(--c-muted) 12%, transparent)"
+        >
+          <v-icon icon="mdi-account-search-outline" size="28" color="var(--c-muted)" />
+        </div>
+        <p class="text-base font-semibold" style="color: var(--c-text)">No matches yet</p>
+        <p class="text-sm max-w-xs leading-relaxed" style="color: var(--c-muted)">
+          The more cards you add to your trade pile and wishlist, the more traders you'll find here.
         </p>
       </div>
 
-      <p v-if="!login" class="self-center text-lg py-10" style="color: var(--c-muted)">
-        Log in to see your trade matches.
-      </p>
-      <p v-else-if="loadingMatches" class="self-center text-lg py-10" style="color: var(--c-muted)">
-        Looking for matches…
-      </p>
-      <p v-else-if="totalMatches === 0" class="self-center text-lg py-10" style="color: var(--c-muted)">
-        No matches yet. Add cards to your wishlist or trade pile to find traders.
-      </p>
+      <!-- Match sections -->
+      <template v-else>
+        <section v-if="buckets.mutual.length > 0" class="flex flex-col gap-4">
+          <div class="flex items-center gap-3 pb-3" style="border-bottom: 1px solid var(--c-border)">
+            <div class="size-2 rounded-full shrink-0" style="background: var(--c-mutual)" />
+            <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">Mutual matches</h2>
+            <span
+              class="text-[11px] font-bold px-2 py-0.5 rounded-md tabular-nums"
+              style="background: color-mix(in srgb, var(--c-mutual) 15%, transparent); color: var(--c-mutual)"
+            >{{ buckets.mutual.length }}</span>
+          </div>
+          <p class="text-xs -mt-2" style="color: var(--c-muted)">Both sides have something for each other. Start here.</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <UserCard v-for="u in buckets.mutual" :key="u.id" :user="u" @openTrade="onOpenTrade" />
+          </div>
+        </section>
 
-      <section v-if="buckets.mutual.length > 0" class="flex flex-col gap-4">
-        <div class="flex flex-row items-center gap-3">
-          <p class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">Mutual matches</p>
-          <v-chip size="small" color="var(--c-mutual)" variant="flat" class="text-white">
-            {{ buckets.mutual.length }}
-          </v-chip>
-        </div>
-        <p class="text-sm" style="color: var(--c-muted)">Both sides have something for each other. Start here.</p>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          <UserCard v-for="u in buckets.mutual" :key="u.id" :user="u" @openTrade="onOpenTrade" />
-        </div>
-      </section>
+        <section
+          v-if="buckets.theyHave.length > 0"
+          class="flex flex-col gap-4"
+          :class="{ 'border-t pt-6': buckets.mutual.length > 0 }"
+          :style="buckets.mutual.length > 0 ? 'border-color: var(--c-border)' : ''"
+        >
+          <div class="flex items-center gap-3 pb-3" style="border-bottom: 1px solid var(--c-border)">
+            <div class="size-2 rounded-full shrink-0" style="background: var(--c-trade)" />
+            <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">Have what you want</h2>
+            <span
+              class="text-[11px] font-bold px-2 py-0.5 rounded-md tabular-nums"
+              style="background: color-mix(in srgb, var(--c-trade) 15%, transparent); color: var(--c-trade)"
+            >{{ buckets.theyHave.length }}</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <UserCard v-for="u in buckets.theyHave" :key="u.id" :user="u" @openTrade="onOpenTrade" />
+          </div>
+        </section>
 
-      <section v-if="buckets.theyHave.length > 0" class="flex flex-col gap-4">
-        <div class="flex flex-row items-center gap-3">
-          <p class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">Have what you want</p>
-          <v-chip size="small" color="var(--c-trade)" variant="flat" class="text-white">
-            {{ buckets.theyHave.length }}
-          </v-chip>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          <UserCard v-for="u in buckets.theyHave" :key="u.id" :user="u" @openTrade="onOpenTrade" />
-        </div>
-      </section>
-
-      <section v-if="buckets.theyWant.length > 0" class="flex flex-col gap-4 border-t pt-4" style="border-color: var(--c-border)">
-        <div class="flex flex-row items-center gap-3">
-          <p class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">Want what you have</p>
-          <v-chip size="small" color="var(--c-accent)" variant="flat" class="text-white">
-            {{ buckets.theyWant.length }}
-          </v-chip>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          <UserCard v-for="u in buckets.theyWant" :key="u.id" :user="u" @openTrade="onOpenTrade" />
-        </div>
-      </section>
+        <section
+          v-if="buckets.theyWant.length > 0"
+          class="flex flex-col gap-4 border-t pt-6"
+          style="border-color: var(--c-border)"
+        >
+          <div class="flex items-center gap-3 pb-3" style="border-bottom: 1px solid var(--c-border)">
+            <div class="size-2 rounded-full shrink-0" style="background: var(--c-accent)" />
+            <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">Want what you have</h2>
+            <span
+              class="text-[11px] font-bold px-2 py-0.5 rounded-md tabular-nums"
+              style="background: color-mix(in srgb, var(--c-accent) 15%, transparent); color: var(--c-accent)"
+            >{{ buckets.theyWant.length }}</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <UserCard v-for="u in buckets.theyWant" :key="u.id" :user="u" @openTrade="onOpenTrade" />
+          </div>
+        </section>
+      </template>
     </template>
 
     <!-- ─── PROPOSALS TAB ─── -->
     <template v-if="activeTab === 'proposals'">
-      <p v-if="!login" class="self-center text-lg py-10" style="color: var(--c-muted)">
-        Log in to see your proposals.
-      </p>
-      <p v-else-if="loadingProposals" class="self-center text-lg py-10" style="color: var(--c-muted)">
-        Loading proposals…
-      </p>
-      <p v-else-if="proposals.length === 0" class="self-center text-lg py-10" style="color: var(--c-muted)">
-        No proposals yet. Send one from the Matches tab.
-      </p>
 
+      <!-- Not logged in -->
+      <div v-if="!login" class="flex flex-col items-center gap-3 py-16 text-center">
+        <v-icon icon="mdi-lock-outline" size="36" color="var(--c-muted)" />
+        <p class="text-sm" style="color: var(--c-muted)">Log in to see your proposals.</p>
+      </div>
+
+      <!-- Skeleton loading — mirrors ProposalRow structure -->
+      <template v-else-if="loadingProposals">
+        <div class="flex flex-col gap-3">
+          <div
+            v-for="i in 3"
+            :key="i"
+            class="rounded-xl border overflow-hidden"
+            :style="{
+              borderColor: 'var(--c-border)',
+              backgroundColor: 'var(--c-surface)',
+              opacity: 1 - (i - 1) * 0.2,
+            }"
+          >
+            <div class="flex items-center gap-3 px-4 py-3">
+              <div class="size-8 rounded-full shrink-0 animate-pulse" style="background: var(--c-skeleton)" />
+              <div class="flex flex-col gap-1.5 grow">
+                <div class="h-3.5 rounded animate-pulse" style="background: var(--c-skeleton); width: 42%" />
+                <div class="h-2.5 rounded animate-pulse" style="background: var(--c-skeleton); width: 28%" />
+              </div>
+              <div class="h-6 w-20 rounded-lg shrink-0 animate-pulse" style="background: var(--c-skeleton)" />
+            </div>
+            <div
+              class="h-20 animate-pulse"
+              style="background: var(--c-skeleton); border-top: 1px solid var(--c-border)"
+            />
+          </div>
+        </div>
+      </template>
+
+      <!-- Empty state -->
+      <div
+        v-else-if="proposals.length === 0"
+        class="flex flex-col items-center gap-3 py-16 text-center"
+      >
+        <div
+          class="size-14 rounded-2xl flex items-center justify-center mb-1"
+          style="background: color-mix(in srgb, var(--c-muted) 12%, transparent)"
+        >
+          <v-icon icon="mdi-swap-horizontal" size="28" color="var(--c-muted)" />
+        </div>
+        <p class="text-base font-semibold" style="color: var(--c-text)">No proposals yet</p>
+        <p class="text-sm max-w-xs leading-relaxed" style="color: var(--c-muted)">
+          Send one from the Matches tab when you find a trader you want to deal with.
+        </p>
+      </div>
+
+      <!-- Proposal sections -->
       <template v-else>
+
         <!-- Incoming pending -->
         <section v-if="incomingPending.length > 0" class="flex flex-col gap-4">
-          <div class="flex items-center gap-3">
-            <p class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">Incoming</p>
-            <v-chip size="small" color="var(--c-mutual)" variant="flat" class="text-white">{{ incomingPending.length }}</v-chip>
+          <div class="flex items-center gap-3 pb-3" style="border-bottom: 1px solid var(--c-border)">
+            <div class="size-2 rounded-full shrink-0" style="background: var(--c-mutual)" />
+            <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">Incoming</h2>
+            <span
+              class="text-[11px] font-bold px-1 py-1 w-6 h-6 text-center rounded-md tabular-nums"
+              style="background: color-mix(in srgb, var(--c-mutual) 15%, transparent); color: var(--c-mutual)"
+            >{{ incomingPending.length }}</span>
           </div>
-          <p class="text-sm -mt-2" style="color: var(--c-muted)">These traders want to deal with you. Accept or decline.</p>
+          <p class="text-xs -mt-2" style="color: var(--c-muted)">These traders want to deal with you. Accept or decline.</p>
           <div class="flex flex-col gap-3">
             <ProposalRow
               v-for="p in incomingPending"
@@ -121,17 +237,27 @@ import ProposalRow from "@/components/ProposalRow.vue";
               @decline="onDecline"
               @cancel="onCancel"
               @complete="onComplete"
+              @counter="onCounter"
             />
           </div>
         </section>
 
         <!-- Outgoing pending -->
-        <section v-if="outgoingPending.length > 0" class="flex flex-col gap-4" :class="{ 'border-t pt-4': incomingPending.length > 0 }" :style="incomingPending.length > 0 ? 'border-color: var(--c-border)' : ''">
-          <div class="flex items-center gap-3">
-            <p class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">Sent</p>
-            <v-chip size="small" color="var(--c-trade)" variant="flat" class="text-white">{{ outgoingPending.length }}</v-chip>
+        <section
+          v-if="outgoingPending.length > 0"
+          class="flex flex-col gap-4"
+          :class="{ 'border-t pt-6': incomingPending.length > 0 }"
+          :style="incomingPending.length > 0 ? 'border-color: var(--c-border)' : ''"
+        >
+          <div class="flex items-center gap-3 pb-3" style="border-bottom: 1px solid var(--c-border)">
+            <div class="size-2 rounded-full shrink-0" style="background: var(--c-trade)" />
+            <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">Sent</h2>
+            <span
+              class="text-[11px] font-bold px-2 py-0.5 rounded-md tabular-nums"
+              style="background: color-mix(in srgb, var(--c-trade) 15%, transparent); color: var(--c-trade)"
+            >{{ outgoingPending.length }}</span>
           </div>
-          <p class="text-sm -mt-2" style="color: var(--c-muted)">Waiting for the other side to respond.</p>
+          <p class="text-xs -mt-2" style="color: var(--c-muted)">Waiting for the other side to respond.</p>
           <div class="flex flex-col gap-3">
             <ProposalRow
               v-for="p in outgoingPending"
@@ -146,12 +272,16 @@ import ProposalRow from "@/components/ProposalRow.vue";
         </section>
 
         <!-- Accepted — awaiting physical exchange -->
-        <section v-if="acceptedTrades.length > 0" class="flex flex-col gap-4 border-t pt-4" style="border-color: var(--c-border)">
-          <div class="flex items-center gap-3">
-            <p class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">Awaiting exchange</p>
-            <v-chip size="small" color="var(--c-mutual)" variant="flat" class="text-white">{{ acceptedTrades.length }}</v-chip>
+        <section v-if="acceptedTrades.length > 0" class="flex flex-col gap-4 border-t pt-6" style="border-color: var(--c-border)">
+          <div class="flex items-center gap-3 pb-3" style="border-bottom: 1px solid var(--c-border)">
+            <div class="size-2 rounded-full shrink-0" style="background: var(--c-mutual)" />
+            <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">Awaiting exchange</h2>
+            <span
+              class="text-[11px] font-bold px-2 py-0.5 rounded-md tabular-nums"
+              style="background: color-mix(in srgb, var(--c-mutual) 15%, transparent); color: var(--c-mutual)"
+            >{{ acceptedTrades.length }}</span>
           </div>
-          <p class="text-sm -mt-2" style="color: var(--c-muted)">Both sides agreed. Confirm once the physical cards have changed hands, or cancel to release them.</p>
+          <p class="text-xs -mt-2" style="color: var(--c-muted)">Both sides agreed. Confirm once cards have changed hands, or cancel to release them.</p>
           <div class="flex flex-col gap-3">
             <ProposalRow
               v-for="p in acceptedTrades"
@@ -165,8 +295,11 @@ import ProposalRow from "@/components/ProposalRow.vue";
         </section>
 
         <!-- History -->
-        <section v-if="history.length > 0" class="flex flex-col gap-4 border-t pt-4" style="border-color: var(--c-border)">
-          <p class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-muted)">History</p>
+        <section v-if="history.length > 0" class="flex flex-col gap-4 border-t pt-6" style="border-color: var(--c-border)">
+          <div class="flex items-center gap-3 pb-3" style="border-bottom: 1px solid var(--c-border)">
+            <div class="size-2 rounded-full shrink-0" style="background: var(--c-muted)" />
+            <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-muted)">History</h2>
+          </div>
           <div class="flex flex-col gap-3">
             <ProposalRow
               v-for="p in history"
@@ -178,6 +311,7 @@ import ProposalRow from "@/components/ProposalRow.vue";
             />
           </div>
         </section>
+
       </template>
     </template>
 
@@ -186,8 +320,10 @@ import ProposalRow from "@/components/ProposalRow.vue";
       v-model="dialogOpen"
       :user="dialogUser"
       :edit-proposal="editProposal"
+      :counter-proposal="counterProposal"
       @submitted="onTradeSubmitted"
       @updated="onTradeUpdated"
+      @countered="onTradeCountered"
     />
 
     <v-snackbar v-model="snackbar.open" :timeout="4000" :color="snackbar.color ?? 'var(--c-mutual)'">
@@ -220,6 +356,7 @@ export default {
       dialogOpen: false,
       dialogUser: null,
       editProposal: null,
+      counterProposal: null,
       snackbar: { open: false, message: "", color: null },
     };
   },
@@ -280,13 +417,25 @@ export default {
     },
     onOpenTrade(user) {
       this.editProposal = null;
+      this.counterProposal = null;
       this.dialogUser = user;
       this.dialogOpen = true;
     },
     onEdit(proposal) {
       this.dialogUser = null;
+      this.counterProposal = null;
       this.editProposal = proposal;
       this.dialogOpen = true;
+    },
+    onCounter(proposal) {
+      this.dialogUser = null;
+      this.editProposal = null;
+      this.counterProposal = proposal;
+      this.dialogOpen = true;
+    },
+    onTradeCountered(tradeId) {
+      this.snackbar = { open: true, message: `Counter-offer #${tradeId} sent.`, color: "var(--c-mutual)" };
+      this.loadProposals();
     },
     onTradeSubmitted(tradeId) {
       this.snackbar = { open: true, message: `Proposal #${tradeId} sent.`, color: "var(--c-mutual)" };
@@ -300,11 +449,16 @@ export default {
     },
     async onComplete(proposal) {
       try {
-        await completeTradeProposal(proposal.id);
-        this.snackbar = { open: true, message: "Trade completed! Cards updated.", color: "var(--c-mutual)" };
-        await Promise.all([this.loadMatches(), this.loadProposals()]);
+        const result = await completeTradeProposal(proposal.id);
+        if (result?.status === 'completed') {
+          this.snackbar = { open: true, message: "Exchange complete — cards have been updated.", color: "var(--c-mutual)" };
+          await Promise.all([this.loadMatches(), this.loadProposals()]);
+        } else {
+          this.snackbar = { open: true, message: "Your side confirmed. Waiting for the other trader.", color: "var(--c-mutual)" };
+          await this.loadProposals();
+        }
       } catch (err) {
-        this.snackbar = { open: true, message: err.message ?? "Failed to complete trade.", color: "var(--c-accent)" };
+        this.snackbar = { open: true, message: err.message ?? "Failed to confirm.", color: "var(--c-accent)" };
       }
     },
     async onAccept(proposal) {
