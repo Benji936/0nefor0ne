@@ -306,6 +306,35 @@ export async function updateProposalStatus(tradeId, status) {
 }
 
 /**
+ * Cancel a trade (pending or accepted). Records the canceller so only
+ * the other party gets a notification.
+ */
+export async function cancelTradeProposal(tradeId) {
+  const { error } = await getClient().rpc("cancel_trade", { p_trade_id: tradeId });
+  if (error) {
+    console.error("cancel_trade failed", error);
+    throw error;
+  }
+}
+
+/**
+ * Decline an incoming pending proposal with an optional reason.
+ *
+ * @param {number} tradeId
+ * @param {string|null} reason
+ */
+export async function declineTradeProposal(tradeId, reason = null) {
+  const { error } = await getClient().rpc("decline_trade", {
+    p_trade_id: tradeId,
+    p_reason:   reason || null,
+  });
+  if (error) {
+    console.error("decline_trade failed", error);
+    throw error;
+  }
+}
+
+/**
  * Fetch all verification photos for a trade.
  * Returns [{ id, created_at, uploader, url }] sorted oldest-first.
  *

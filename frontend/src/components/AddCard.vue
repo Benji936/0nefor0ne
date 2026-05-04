@@ -97,6 +97,24 @@
             </div>
           </div>
 
+          <!-- Duplicate warning -->
+          <div
+            v-if="duplicates.length > 0"
+            class="flex items-start gap-2.5 rounded-xl px-3 py-2.5 text-sm"
+            style="background: color-mix(in srgb, var(--c-trade) 8%, transparent); border: 1px solid color-mix(in srgb, var(--c-trade) 25%, transparent)"
+          >
+            <v-icon icon="mdi-information-outline" size="16" color="var(--c-trade)" class="shrink-0 mt-0.5" />
+            <div class="flex flex-col gap-0.5 min-w-0">
+              <p class="text-xs font-semibold" style="color: var(--c-trade)">Already in your collection</p>
+              <p class="text-xs leading-snug" style="color: var(--c-muted)">
+                {{ duplicates.length === 1 ? 'You have 1 entry' : `You have ${duplicates.length} entries` }} for this card
+                ({{ duplicates.filter(d => !d.wish).length }} for trade,
+                 {{ duplicates.filter(d => d.wish).length }} on wishlist).
+                You can still add another.
+              </p>
+            </div>
+          </div>
+
           <v-form validate-on="submit lazy" @submit.prevent="submit" class="flex flex-col gap-3">
             <v-select
               density="comfortable"
@@ -176,6 +194,8 @@ export default {
       selectedCard: null,
       loading: false,
       errorMessage: "",
+      duplicates: [],
+      checkingDupes: false,
       extensionDisplay: null,
       extensionCode: null,
       rarity: null,
@@ -201,6 +221,7 @@ export default {
       this.rarity = null;
       this.quantity = 1;
       this.first_edition = false;
+      this.duplicates = [];
     },
 
     openWith(card, setName = '') {
@@ -257,7 +278,23 @@ export default {
       this.rarity = null;
       this.quantity = 1;
       this.errorMessage = "";
+      this.duplicates = [];
       this.step = "form";
+      this.checkDuplicates(card.name);
+    },
+
+    async checkDuplicates(name) {
+      this.checkingDupes = true;
+      const { data: userData } = await getClient().auth.getUser();
+      if (!userData?.user?.id) { this.checkingDupes = false; return; }
+      const { data } = await getClient()
+        .from("Card")
+        .select("id, wish, quantity, condition, language, extension")
+        .eq("name", name)
+        .eq("trader", userData.user.id)
+        .not("status", "in", '("traded","locked")');
+      this.duplicates = data ?? [];
+      this.checkingDupes = false;
     },
 
     extensionSelected() {

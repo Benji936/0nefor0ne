@@ -33,6 +33,27 @@ import ProposalRow from "@/components/ProposalRow.vue";
     <!-- ─── MATCHES TAB ─── -->
     <template v-if="activeTab === 'matches'">
 
+      <!-- Matches search -->
+      <div v-if="!loadingMatches && allMatches.length > 0" class="relative">
+        <v-icon icon="mdi-magnify" size="16" class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" color="var(--c-muted)" />
+        <input
+          v-model="matchSearch"
+          placeholder="Filter by card or trader name…"
+          class="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm border outline-none transition-colors"
+          :style="{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
+          @focus="e => e.target.style.borderColor = 'var(--c-trade)'"
+          @blur="e => e.target.style.borderColor = 'var(--c-border)'"
+        />
+        <button
+          v-if="matchSearch"
+          class="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer transition-opacity hover:opacity-70"
+          style="color: var(--c-muted)"
+          @click="matchSearch = ''"
+        >
+          <v-icon icon="mdi-close" size="14" />
+        </button>
+      </div>
+
       <!-- Filter notice -->
       <div v-if="filterCardName" class="flex items-center gap-2 text-sm" style="color: var(--c-muted)">
         <v-icon icon="mdi-filter-outline" size="15" />
@@ -334,7 +355,7 @@ import ProposalRow from "@/components/ProposalRow.vue";
 
 <script>
 import { getClient } from "@/lib/supabaseClient";
-import { fetchMatches, filterByCardName, bucketMatches, fetchMyProposals, updateProposalStatus, completeTradeProposal } from "@/lib/matches";
+import { fetchMatches, filterByCardName, bucketMatches, fetchMyProposals, updateProposalStatus, completeTradeProposal, cancelTradeProposal, declineTradeProposal } from "@/lib/matches";
 
 export default {
   props: {
@@ -351,6 +372,7 @@ export default {
       // Proposals
       loadingProposals: false,
       proposals: [],
+      matchSearch: "",
       // Shared
       subscription: null,
       dialogOpen: false,
@@ -373,11 +395,21 @@ export default {
     visibleMatches() {
       return filterByCardName(this.allMatches, this.filterCardName);
     },
+    searchedMatches() {
+      const q = this.matchSearch.toLowerCase().trim();
+      if (!q) return this.visibleMatches;
+      return this.visibleMatches.filter(u => {
+        if ((u.name ?? "").toLowerCase().includes(q)) return true;
+        if (u.theyHave.some(c => c.name.toLowerCase().includes(q))) return true;
+        if (u.theyWant.some(c => c.name.toLowerCase().includes(q))) return true;
+        return false;
+      });
+    },
     buckets() {
-      return bucketMatches(this.visibleMatches);
+      return bucketMatches(this.searchedMatches);
     },
     totalMatches() {
-      return this.visibleMatches.length;
+      return this.searchedMatches.length;
     },
     incomingPending() {
       return this.proposals.filter((p) => p.status === "pending" && !p.i_am_proposer);
@@ -470,9 +502,12 @@ export default {
         this.snackbar = { open: true, message: err.message ?? "Failed to accept.", color: "var(--c-accent)" };
       }
     },
-    async onDecline(proposal) {
+    async onDecline(payload) {
+      // payload is either a proposal object or { proposal, reason }
+      const proposal = payload?.proposal ?? payload;
+      const reason   = payload?.reason   ?? null;
       try {
-        await updateProposalStatus(proposal.id, "declined");
+        await declineTradeProposal(proposal.id, reason);
         this.snackbar = { open: true, message: "Trade declined.", color: "var(--c-muted)" };
         await this.loadProposals();
       } catch (err) {
@@ -481,12 +516,15 @@ export default {
     },
     async onCancel(proposal) {
       try {
-        await updateProposalStatus(proposal.id, "cancelled");
-        this.snackbar = { open: true, message: "Proposal cancelled.", color: "var(--c-muted)" };
+        await cancelTradeProposal(proposal.id);
+        this.snackbar = { open: true, message: "Trade cancelled.", color: "var(--c-muted)" };
         await this.loadProposals();
       } catch (err) {
         this.snackbar = { open: true, message: err.message ?? "Failed to cancel.", color: "var(--c-accent)" };
       }
+    },
+    switchToProposals() {
+      this.activeTab = "proposals";
     },
   },
   async mounted() {

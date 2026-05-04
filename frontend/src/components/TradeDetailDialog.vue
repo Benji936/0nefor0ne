@@ -156,6 +156,9 @@ const formattedDate = computed(() => {
     .format(new Date(props.proposal.created_at));
 });
 
+const declining     = ref(false);
+const declineReason = ref("");
+
 const isPending      = computed(() => props.proposal?.status === "pending");
 const isAccepted     = computed(() => props.proposal?.status === "accepted");
 const showPhotoPanel = computed(() => isPending.value || isAccepted.value);
@@ -178,8 +181,16 @@ function marketLinks(name, extension) {
   ];
 }
 
-function close() { emit("update:modelValue", false); }
+function close() {
+  emit("update:modelValue", false);
+  declining.value = false;
+  declineReason.value = "";
+}
 function action(event) { emit(event, props.proposal); close(); }
+function confirmDecline() {
+  emit("decline", { proposal: props.proposal, reason: declineReason.value.trim() || null });
+  close();
+}
 </script>
 
 <template>
@@ -321,6 +332,19 @@ function action(event) { emit(event, props.proposal); close(); }
               </div>
             </div>
           </section>
+        </div>
+
+        <!-- ── Decline reason ─────────────────────────────────────────────────── -->
+        <div
+          v-if="proposal.status === 'declined' && proposal.decline_reason"
+          class="mt-6 flex items-start gap-3 rounded-xl px-4 py-3"
+          style="background: color-mix(in srgb, var(--c-accent) 8%, transparent); border: 1px solid color-mix(in srgb, var(--c-accent) 20%, transparent)"
+        >
+          <v-icon icon="mdi-message-reply-outline" size="16" color="var(--c-accent)" class="shrink-0 mt-0.5" />
+          <div class="flex flex-col gap-0.5 min-w-0">
+            <p class="text-xs font-semibold" style="color: var(--c-accent)">Reason for declining</p>
+            <p class="text-sm leading-snug" style="color: var(--c-text)">{{ proposal.decline_reason }}</p>
+          </div>
         </div>
 
         <!-- ── Verification photos ────────────────────────────────────────────── -->
@@ -609,27 +633,52 @@ function action(event) { emit(event, props.proposal); close(); }
                 Both sides uploaded — waiting for {{ proposal.counterparty_name ?? "them" }} to accept.
               </template>
             </span>
-            <div class="flex gap-2 shrink-0 flex-wrap">
+            <div class="flex gap-2 shrink-0 flex-wrap w-full">
               <template v-if="!proposal.i_am_proposer">
-                <v-btn variant="text" prepend-icon="mdi-cancel"
-                  style="color: var(--c-muted)"
-                  @click="action('cancel')"
-                >Cancel</v-btn>
-                <v-btn variant="outlined" prepend-icon="mdi-close"
-                  style="border-color: var(--c-accent); color: var(--c-accent)"
-                  @click="action('decline')"
-                >Decline</v-btn>
-                <v-btn variant="outlined" prepend-icon="mdi-swap-horizontal"
-                  style="border-color: var(--c-trade); color: var(--c-trade)"
-                  @click="emit('counter', proposal); close()"
-                >Counter</v-btn>
-                <v-btn variant="flat" prepend-icon="mdi-check"
-                  :disabled="!bothUploaded"
-                  :style="bothUploaded
-                    ? 'background-color: var(--c-mutual); color: #0C0820'
-                    : 'opacity: 0.45'"
-                  @click="action('accept')"
-                >Accept</v-btn>
+                <!-- Decline reason form -->
+                <template v-if="declining">
+                  <div class="flex flex-col gap-2 w-full gap-5">
+                    <textarea
+                      v-model="declineReason"
+                      placeholder="Optional — let them know why you're declining…"
+                      rows="2"
+                      class="w-full rounded-xl px-3 py-3 text-sm border outline-none resize-none"
+                      :style="{ backgroundColor: 'var(--c-surface-2)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
+                      autofocus
+                    />
+                    <div class="flex gap-2 justify-end">
+                      <v-btn size="small" variant="text" style="color: var(--c-muted)" @click="declining = false">
+                        Back
+                      </v-btn>
+                      <v-btn size="small" variant="flat"
+                        style="background-color: var(--c-accent); color: white"
+                        @click="confirmDecline"
+                      >Confirm decline</v-btn>
+                    </div>
+                  </div>
+                </template>
+
+                <template v-else>
+                  <v-btn variant="text" prepend-icon="mdi-cancel"
+                    style="color: var(--c-muted)"
+                    @click="action('cancel')"
+                  >Cancel</v-btn>
+                  <v-btn variant="outlined" prepend-icon="mdi-close"
+                    style="border-color: var(--c-accent); color: var(--c-accent)"
+                    @click="declining = true"
+                  >Decline</v-btn>
+                  <v-btn variant="outlined" prepend-icon="mdi-swap-horizontal"
+                    style="border-color: var(--c-trade); color: var(--c-trade)"
+                    @click="emit('counter', proposal); close()"
+                  >Counter</v-btn>
+                  <v-btn variant="flat" prepend-icon="mdi-check"
+                    :disabled="!bothUploaded"
+                    :style="bothUploaded
+                      ? 'background-color: var(--c-mutual); color: #0C0820'
+                      : 'opacity: 0.45'"
+                    @click="action('accept')"
+                  >Accept</v-btn>
+                </template>
               </template>
               <v-btn v-else variant="text" prepend-icon="mdi-cancel"
                 style="color: var(--c-muted)"

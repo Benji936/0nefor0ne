@@ -5,6 +5,7 @@ import TradeCenter from "@/components/Pages/TradeCenter.vue";
 import Account from "@/components/Pages/Account.vue";
 import AuthDialog from "@/components/AuthDialog.vue";
 import NavItem from "@/components/NavItem.vue";
+import NotificationBell from "@/components/NotificationBell.vue";
 </script>
 
 <template>
@@ -50,6 +51,8 @@ import NavItem from "@/components/NavItem.vue";
               @click="openMatches()"
             />
 
+            
+
             <NavItem
               v-if="authenticated"
               tooltip="Account"
@@ -65,6 +68,12 @@ import NavItem from "@/components/NavItem.vue";
               @click="toggleTheme"
             />
 
+            <NotificationBell
+              v-if="authenticated"
+              :login="authenticated"
+              @navigate="openProposals"
+            />
+
             <NavItem
               :tooltip="authenticated ? 'Logout' : 'Login / Sign up'"
               :icon="authenticated ? 'mdi-logout' : 'mdi-login'"
@@ -78,6 +87,7 @@ import NavItem from "@/components/NavItem.vue";
   <main class="px-10 pt-6 min-h-screen" style="background: var(--c-bg); transition: background 0.3s ease">
     <TradeCenter
       v-if="page=='TradeCenter'"
+      ref="tradeCenter"
       :login="authenticated"
       :filter-card-name="filterCardName"
       @clear-filter="filterCardName = ''"
@@ -157,12 +167,13 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
         changePage(name) {
           this.page = name;
         },
-        // Open the TradeCenter (matches page). If a card is passed (from
-        // "See traders" on a card tile), pre-filter the matches by that
-        // card's name. Without an arg, opens the global view.
         openMatches(card = null) {
           this.filterCardName = card?.name ?? "";
           this.page = "TradeCenter";
+        },
+        openProposals() {
+          this.page = "TradeCenter";
+          this.$nextTick(() => this.$refs.tradeCenter?.switchToProposals?.());
         },
         toggleTheme() {
           const isDark = this.$vuetify.theme.global.name === 'neonDusk';

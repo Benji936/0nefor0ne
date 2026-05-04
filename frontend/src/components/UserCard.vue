@@ -116,12 +116,12 @@ const kindMeta = computed(() => {
 
     <!-- Two-sided card body -->
     <div
-      class="flex mx-4 mb-3 rounded-xl overflow-hidden border"
+      class="flex mx-4 mb-3 rounded-lg overflow-hidden"
       style="border-color: var(--c-border); min-height: 96px"
     >
       <!-- They have (amethyst) -->
       <div
-        class="flex flex-col gap-1.5 flex-1 p-2.5 min-w-0"
+        class="flex flex-col gap-2 flex-1 px-3 py-3 min-w-0"
         style="background: color-mix(in srgb, var(--c-trade) 6%, transparent)"
       >
         <div class="flex items-center gap-1">
@@ -156,7 +156,7 @@ const kindMeta = computed(() => {
 
       <!-- They want (pink) -->
       <div
-        class="flex flex-col gap-1.5 flex-1 p-2.5 min-w-0"
+        class="flex flex-col gap-2 flex-1 px-3 py-3 min-w-0"
         style="background: color-mix(in srgb, var(--c-accent) 6%, transparent)"
       >
         <div class="flex items-center gap-1">

@@ -695,7 +695,7 @@ function marketLinks(name, setCode) {
         </div>
 
         <!-- ── Settlement details ── -->
-        <div class="mt-4 rounded-xl border p-4 flex flex-col gap-3" style="border-color: var(--c-border); background-color: var(--c-surface-2)">
+        <div class="mt-4 rounded-xl border py-4 px-4 flex flex-col gap-3" style="border-color: var(--c-border); background-color: var(--c-surface-2)">
           <p class="text-[11px] font-bold uppercase tracking-widest" style="color: var(--c-muted)">Settlement details</p>
 
           <!-- Trade method -->
@@ -715,11 +715,10 @@ function marketLinks(name, setCode) {
           </div>
 
           <!-- Cash offset -->
-          <div class="flex items-center gap-3 flex-wrap">
-            <label class="flex items-center gap-2 cursor-pointer select-none">
-              <input type="checkbox" v-model="settlement.hasCash" class="rounded" style="accent-color: var(--c-trade)" />
-              <span class="text-xs" style="color: var(--c-muted)">Add cash offset</span>
-            </label>
+          <div class="flex gap-3 items-center flex-wrap">
+
+            <v-checkbox label="Add cash offset" v-model="settlement.hasCash" style="accent-color: var(--c-trade); height: 55px;" />
+
             <template v-if="settlement.hasCash">
               <select
                 v-model="settlement.cash_payer"
