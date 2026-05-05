@@ -6,7 +6,7 @@ const props = defineProps({
   user: { type: Object, required: true },
 });
 
-const emit = defineEmits(["openTrade"]);
+const emit = defineEmits(["openTrade", "openProfile"]);
 
 const initials = computed(() => {
   const name = props.user.name?.trim();
@@ -83,19 +83,36 @@ const kindMeta = computed(() => {
 
     <!-- Header: avatar · name · location · kind badge -->
     <div class="flex items-center gap-3 px-4 pt-3 pb-2">
-      <div class="relative shrink-0">
+      <!-- Avatar — clicking opens profile -->
+      <div
+        class="relative shrink-0 cursor-pointer"
+        title="View profile"
+        @click.stop="emit('openProfile', user.id)"
+      >
         <div
           class="absolute -inset-1 rounded-full blur-md opacity-0 transition-opacity duration-300 group-hover:opacity-40"
           :style="{ backgroundColor: kindMeta.color }"
         />
         <div
-          class="relative size-9 rounded-full flex items-center justify-center font-bold text-xs ring-1 ring-white/10"
+          class="relative size-9 rounded-full flex items-center justify-center font-bold text-xs ring-1 ring-white/10 overflow-hidden"
           :style="{ backgroundColor: kindMeta.color, color: kindMeta.btnText }"
-        >{{ initials }}</div>
+        >
+          <img
+            v-if="user.avatarUrl"
+            :src="user.avatarUrl"
+            :alt="user.name ?? 'Avatar'"
+            class="w-full h-full object-cover"
+          />
+          <span v-else>{{ initials }}</span>
+        </div>
       </div>
 
-      <div class="flex flex-col grow min-w-0">
-        <p class="font-bold text-sm truncate leading-tight" style="color: var(--c-text)">
+      <!-- Name + location — clicking opens profile -->
+      <div
+        class="flex flex-col grow min-w-0 cursor-pointer"
+        @click.stop="emit('openProfile', user.id)"
+      >
+        <p class="font-bold text-sm truncate leading-tight hover:underline underline-offset-2" style="color: var(--c-text)">
           {{ user.name ?? "Anonymous" }}
         </p>
         <p v-if="location" class="text-[11px] truncate flex items-center gap-1 mt-0.5" style="color: var(--c-muted)">

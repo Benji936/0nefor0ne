@@ -8,7 +8,7 @@ const props = defineProps({
   currentUserId: { type: String, default: null },
 });
 
-const emit = defineEmits(["accept", "decline", "cancel", "complete", "edit", "counter"]);
+const emit = defineEmits(["accept", "decline", "cancel", "complete", "edit", "counter", "openProfile"]);
 
 const statusMeta = computed(() => {
   const map = {
@@ -58,17 +58,30 @@ const detailOpen = ref(false);
     <!-- Header: avatar · name · context · time · status pill · detail -->
     <div class="flex items-center gap-3 px-4 py-3">
       <div
-        class="size-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+        class="size-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 cursor-pointer overflow-hidden"
         :style="{
           backgroundColor: proposal.i_am_proposer
             ? 'color-mix(in srgb, var(--c-trade) 18%, transparent)'
             : 'color-mix(in srgb, var(--c-accent) 18%, transparent)',
           color: proposal.i_am_proposer ? 'var(--c-trade)' : 'var(--c-accent)',
         }"
-      >{{ initials }}</div>
+        title="View profile"
+        @click.stop="emit('openProfile', proposal.counterparty_id)"
+      >
+        <img
+          v-if="proposal.counterparty_avatar_url"
+          :src="proposal.counterparty_avatar_url"
+          :alt="proposal.counterparty_name ?? 'Avatar'"
+          class="w-full h-full object-cover"
+        />
+        <span v-else>{{ initials }}</span>
+      </div>
 
-      <div class="flex flex-col grow min-w-0">
-        <span class="font-semibold text-sm truncate" style="color: var(--c-text)">
+      <div
+        class="flex flex-col grow min-w-0 cursor-pointer"
+        @click.stop="emit('openProfile', proposal.counterparty_id)"
+      >
+        <span class="font-semibold text-sm truncate hover:underline underline-offset-2" style="color: var(--c-text)">
           {{ proposal.counterparty_name ?? "Anonymous" }}
         </span>
         <span class="text-[11px]" style="color: var(--c-muted)">
@@ -104,7 +117,7 @@ const detailOpen = ref(false);
 
       <!-- You give (accent/pink tint) -->
       <div
-        class="flex flex-col p-4 md:flex-1 min-w-0"
+        class="flex flex-col p-4 md:flex-1 min-w-0 align-center justify-center"
         style="background: color-mix(in srgb, var(--c-accent) 4%, transparent)"
       >
         <div v-if="proposal.i_give?.length" class="card-fan">
@@ -147,7 +160,7 @@ const detailOpen = ref(false);
 
       <!-- You receive (amethyst tint) -->
       <div
-        class="flex flex-col p-4 md:flex-1 min-w-0"
+        class="flex flex-col p-4 md:flex-1 min-w-0 items-center"
         style="background: color-mix(in srgb, var(--c-trade) 4%, transparent)"
       >
         <div v-if="proposal.i_receive?.length" class="card-fan">
@@ -175,8 +188,9 @@ const detailOpen = ref(false);
           <div v-if="proposal.i_receive.length > 5" class="card-fan-extra">
             +{{ proposal.i_receive.length - 5 }}
           </div>
+          
         </div>
-        <span v-else class="text-xs italic" style="color: var(--c-muted)">None</span>
+        <span v-else class="text-xs italic self-center" style="color: var(--c-muted)">None</span>
       </div>
     </div>
 

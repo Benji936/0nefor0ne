@@ -1,8 +1,3 @@
-<script setup>
-import CardYugi from '../CardYugi.vue';
-const emit = defineEmits(['TradeCenter']);
-</script>
-
 <template>
   <div class="flex flex-col gap-10 py-6">
 
@@ -16,7 +11,7 @@ const emit = defineEmits(['TradeCenter']);
       </div>
       <div class="flex flex-wrap gap-4">
         <div v-for="card in searchCards.data" :key="card.id" style="width: 136px; flex-shrink: 0">
-          <CardYugi :componentCard="card" @showTraders="emit('TradeCenter', $event)" />
+          <CardYugi :componentCard="card" @showTraders="$emit('TradeCenter', $event)" />
         </div>
       </div>
       <div class="h-px w-full mt-10" style="background-color: var(--c-border)" />
@@ -58,7 +53,7 @@ const emit = defineEmits(['TradeCenter']);
 
         <div v-else class="flex gap-3 overflow-x-auto pb-3">
           <div v-for="card in set.cards" :key="card.id" style="width: 136px; flex-shrink: 0">
-            <CardYugi :componentCard="card" :extension="set.set_name" @showTraders="emit('TradeCenter', $event)" />
+            <CardYugi :componentCard="card" :extension="set.set_name" @showTraders="$emit('TradeCenter', $event)" />
           </div>
         </div>
       </section>
@@ -68,9 +63,12 @@ const emit = defineEmits(['TradeCenter']);
 </template>
 
 <script>
+import CardYugi from '../CardYugi.vue';
 import { getCardSets, getCardsBySet } from "@/api";
 
 export default {
+  components: { CardYugi },
+  emits: ['TradeCenter'],
   props: ['searchCards'],
   data() {
     return {

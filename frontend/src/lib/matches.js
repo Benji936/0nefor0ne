@@ -57,6 +57,7 @@ export async function fetchMatches() {
       name: row.match_user_name,
       city: row.match_user_city,
       country: row.match_user_country,
+      avatarUrl: row.match_avatar_url ?? null,
       theyHaveCount,
       theyWantCount,
       theyHave: row.they_have ?? [],

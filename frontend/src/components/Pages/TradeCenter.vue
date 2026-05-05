@@ -2,10 +2,62 @@
 import UserCard from "@/components/UserCard.vue";
 import ProposeTradeDialog from "@/components/ProposeTradeDialog.vue";
 import ProposalRow from "@/components/ProposalRow.vue";
+import TraderProfileDialog from "@/components/TraderProfileDialog.vue";
 </script>
 
 <template>
   <div class="flex flex-col gap-6 py-6">
+
+    <!-- ── Recent notifications ────────────────────────────────────────── -->
+    <div
+      v-if="login && recentNotifs.length > 0"
+      class="flex flex-col rounded-2xl border overflow-hidden"
+      style="background: var(--c-surface); border-color: var(--c-border)"
+    >
+      <!-- Header -->
+      <div class="flex items-center justify-between px-4 py-3" style="border-bottom: 1px solid var(--c-border)">
+        <div class="flex items-center gap-2">
+          <v-icon icon="mdi-bell-outline" size="14" style="color: var(--c-muted)" />
+          <span class="text-[11px] font-bold uppercase tracking-widest" style="color: var(--c-muted)">Recent activity</span>
+        </div>
+      </div>
+
+      <!-- Rows -->
+      <button
+        v-for="n in recentNotifs"
+        :key="n.id"
+        class="notif-row flex items-center gap-3 px-4 py-3 w-full text-left cursor-pointer transition-colors"
+        :style="{ backgroundColor: n.read ? 'transparent' : `color-mix(in srgb, ${notifMeta(n).color} 5%, transparent)` }"
+        @click="onNotifClick"
+      >
+        <!-- Icon -->
+        <div
+          class="size-7 rounded-full shrink-0 flex items-center justify-center"
+          :style="{ background: `color-mix(in srgb, ${notifMeta(n).color} 14%, transparent)` }"
+        >
+          <v-icon :icon="notifMeta(n).icon" size="14" :color="notifMeta(n).color" />
+        </div>
+
+        <!-- Text -->
+        <span
+          class="text-sm grow truncate"
+          :style="{
+            color: n.read ? 'var(--c-muted)' : 'var(--c-text)',
+            fontWeight: n.read ? '400' : '500',
+          }"
+        >{{ notifText(n) }}</span>
+
+        <!-- Time + unread dot -->
+        <div class="flex items-center gap-2 shrink-0">
+          <span class="text-[11px] tabular-nums" style="color: var(--c-muted)">{{ notifTimeAgo(n.created_at) }}</span>
+          <span
+            v-if="!n.read"
+            class="size-2 rounded-full"
+            :style="{ backgroundColor: notifMeta(n).color }"
+          />
+        </div>
+      </button>
+    </div>
 
     <!-- Text tabs with animated bottom-border indicator -->
     <div class="flex items-center" style="border-bottom: 1px solid var(--c-border)">
@@ -39,7 +91,7 @@ import ProposalRow from "@/components/ProposalRow.vue";
         <input
           v-model="matchSearch"
           placeholder="Filter by card or trader name…"
-          class="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm border outline-none transition-colors"
+          class="w-full rounded-xl pl-9 pr-4 py-3 text-sm border outline-none transition-colors"
           :style="{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
           @focus="e => e.target.style.borderColor = 'var(--c-trade)'"
           @blur="e => e.target.style.borderColor = 'var(--c-border)'"
@@ -88,15 +140,15 @@ import ProposalRow from "@/components/ProposalRow.vue";
             <div class="h-[3px] w-full animate-pulse" style="background: var(--c-skeleton)" />
             <div class="flex items-center gap-3 px-4 pt-3 pb-2">
               <div class="size-9 rounded-full shrink-0 animate-pulse" style="background: var(--c-skeleton)" />
-              <div class="flex flex-col gap-1.5 grow">
-                <div class="h-3.5 rounded animate-pulse" style="background: var(--c-skeleton); width: 54%" />
-                <div class="h-2.5 rounded animate-pulse" style="background: var(--c-skeleton); width: 38%" />
+              <div class="flex flex-col gap-2 grow">
+                <div class="h-4 rounded animate-pulse" style="background: var(--c-skeleton); width: 54%" />
+                <div class="h-3 rounded animate-pulse" style="background: var(--c-skeleton); width: 38%" />
               </div>
               <div class="h-5 w-16 rounded-lg shrink-0 animate-pulse" style="background: var(--c-skeleton)" />
             </div>
             <div class="mx-4 mb-3 h-24 rounded-xl animate-pulse" style="background: var(--c-skeleton)" />
             <div class="flex items-center justify-between px-4 pb-4">
-              <div class="flex gap-1.5">
+              <div class="flex gap-2">
                 <div class="h-5 w-9 rounded-md animate-pulse" style="background: var(--c-skeleton)" />
                 <div class="h-5 w-9 rounded-md animate-pulse" style="background: var(--c-skeleton)" />
               </div>
@@ -130,13 +182,13 @@ import ProposalRow from "@/components/ProposalRow.vue";
             <div class="size-2 rounded-full shrink-0" style="background: var(--c-mutual)" />
             <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">Mutual matches</h2>
             <span
-              class="text-[11px] font-bold px-2 py-0.5 rounded-md tabular-nums"
+              class="text-[11px] font-bold px-2 py-1 rounded-md tabular-nums"
               style="background: color-mix(in srgb, var(--c-mutual) 15%, transparent); color: var(--c-mutual)"
             >{{ buckets.mutual.length }}</span>
           </div>
           <p class="text-xs -mt-2" style="color: var(--c-muted)">Both sides have something for each other. Start here.</p>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            <UserCard v-for="u in buckets.mutual" :key="u.id" :user="u" @openTrade="onOpenTrade" />
+            <UserCard v-for="u in buckets.mutual" :key="u.id" :user="u" @openTrade="onOpenTrade" @openProfile="onOpenProfile" />
           </div>
         </section>
 
@@ -150,12 +202,12 @@ import ProposalRow from "@/components/ProposalRow.vue";
             <div class="size-2 rounded-full shrink-0" style="background: var(--c-trade)" />
             <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">Have what you want</h2>
             <span
-              class="text-[11px] font-bold px-2 py-0.5 rounded-md tabular-nums"
+              class="text-[11px] font-bold px-2 py-1 rounded-md tabular-nums"
               style="background: color-mix(in srgb, var(--c-trade) 15%, transparent); color: var(--c-trade)"
             >{{ buckets.theyHave.length }}</span>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            <UserCard v-for="u in buckets.theyHave" :key="u.id" :user="u" @openTrade="onOpenTrade" />
+            <UserCard v-for="u in buckets.theyHave" :key="u.id" :user="u" @openTrade="onOpenTrade" @openProfile="onOpenProfile" />
           </div>
         </section>
 
@@ -168,12 +220,12 @@ import ProposalRow from "@/components/ProposalRow.vue";
             <div class="size-2 rounded-full shrink-0" style="background: var(--c-accent)" />
             <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">Want what you have</h2>
             <span
-              class="text-[11px] font-bold px-2 py-0.5 rounded-md tabular-nums"
+              class="text-[11px] font-bold px-2 py-1 rounded-md tabular-nums"
               style="background: color-mix(in srgb, var(--c-accent) 15%, transparent); color: var(--c-accent)"
             >{{ buckets.theyWant.length }}</span>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            <UserCard v-for="u in buckets.theyWant" :key="u.id" :user="u" @openTrade="onOpenTrade" />
+            <UserCard v-for="u in buckets.theyWant" :key="u.id" :user="u" @openTrade="onOpenTrade" @openProfile="onOpenProfile" />
           </div>
         </section>
       </template>
@@ -203,9 +255,9 @@ import ProposalRow from "@/components/ProposalRow.vue";
           >
             <div class="flex items-center gap-3 px-4 py-3">
               <div class="size-8 rounded-full shrink-0 animate-pulse" style="background: var(--c-skeleton)" />
-              <div class="flex flex-col gap-1.5 grow">
-                <div class="h-3.5 rounded animate-pulse" style="background: var(--c-skeleton); width: 42%" />
-                <div class="h-2.5 rounded animate-pulse" style="background: var(--c-skeleton); width: 28%" />
+              <div class="flex flex-col gap-2 grow">
+                <div class="h-4 rounded animate-pulse" style="background: var(--c-skeleton); width: 42%" />
+                <div class="h-3 rounded animate-pulse" style="background: var(--c-skeleton); width: 28%" />
               </div>
               <div class="h-6 w-20 rounded-lg shrink-0 animate-pulse" style="background: var(--c-skeleton)" />
             </div>
@@ -259,6 +311,7 @@ import ProposalRow from "@/components/ProposalRow.vue";
               @cancel="onCancel"
               @complete="onComplete"
               @counter="onCounter"
+              @openProfile="onOpenProfile"
             />
           </div>
         </section>
@@ -274,7 +327,7 @@ import ProposalRow from "@/components/ProposalRow.vue";
             <div class="size-2 rounded-full shrink-0" style="background: var(--c-trade)" />
             <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">Sent</h2>
             <span
-              class="text-[11px] font-bold px-2 py-0.5 rounded-md tabular-nums"
+              class="text-[11px] font-bold px-2 py-1 rounded-md tabular-nums"
               style="background: color-mix(in srgb, var(--c-trade) 15%, transparent); color: var(--c-trade)"
             >{{ outgoingPending.length }}</span>
           </div>
@@ -288,6 +341,7 @@ import ProposalRow from "@/components/ProposalRow.vue";
               @edit="onEdit"
               @cancel="onCancel"
               @complete="onComplete"
+              @openProfile="onOpenProfile"
             />
           </div>
         </section>
@@ -298,7 +352,7 @@ import ProposalRow from "@/components/ProposalRow.vue";
             <div class="size-2 rounded-full shrink-0" style="background: var(--c-mutual)" />
             <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">Awaiting exchange</h2>
             <span
-              class="text-[11px] font-bold px-2 py-0.5 rounded-md tabular-nums"
+              class="text-[11px] font-bold px-2 py-1 rounded-md tabular-nums"
               style="background: color-mix(in srgb, var(--c-mutual) 15%, transparent); color: var(--c-mutual)"
             >{{ acceptedTrades.length }}</span>
           </div>
@@ -311,6 +365,7 @@ import ProposalRow from "@/components/ProposalRow.vue";
               :current-user-id="login?.user?.id"
               @cancel="onCancel"
               @complete="onComplete"
+              @openProfile="onOpenProfile"
             />
           </div>
         </section>
@@ -329,6 +384,7 @@ import ProposalRow from "@/components/ProposalRow.vue";
               :current-user-id="login?.user?.id"
               @cancel="onCancel"
               @complete="onComplete"
+              @openProfile="onOpenProfile"
             />
           </div>
         </section>
@@ -345,6 +401,13 @@ import ProposalRow from "@/components/ProposalRow.vue";
       @submitted="onTradeSubmitted"
       @updated="onTradeUpdated"
       @countered="onTradeCountered"
+    />
+
+    <TraderProfileDialog
+      v-model="profileDialogOpen"
+      :trader-id="profileTraderId"
+      :current-user-id="login?.user?.id"
+      @propose="onProposeFromProfile"
     />
 
     <v-snackbar v-model="snackbar.open" :timeout="4000" :color="snackbar.color ?? 'var(--c-mutual)'">
@@ -373,6 +436,12 @@ export default {
       loadingProposals: false,
       proposals: [],
       matchSearch: "",
+      // Profile dialog
+      profileDialogOpen: false,
+      profileTraderId:   null,
+      // Recent notifications
+      recentNotifs: [],
+      notifSub: null,
       // Shared
       subscription: null,
       dialogOpen: false,
@@ -523,18 +592,80 @@ export default {
         this.snackbar = { open: true, message: err.message ?? "Failed to cancel.", color: "var(--c-accent)" };
       }
     },
+    onOpenProfile(traderId) {
+      this.profileTraderId  = traderId;
+      this.profileDialogOpen = true;
+    },
+    onProposeFromProfile(traderId) {
+      // Find the match entry if it exists (gives us theyWant for card tagging)
+      const existing = this.allMatches.find(u => u.id === traderId);
+      this.editProposal    = null;
+      this.counterProposal = null;
+      this.dialogUser      = existing ?? { id: traderId, name: null, theyWant: [], theyHave: [] };
+      this.dialogOpen      = true;
+    },
     switchToProposals() {
+      this.activeTab = "proposals";
+    },
+    // ── Notifications ────────────────────────────────────────────────────
+    notifMeta(n) {
+      const MAP = {
+        proposal_received:  { icon: "mdi-swap-horizontal",      color: "var(--c-trade)"  },
+        proposal_accepted:  { icon: "mdi-check-circle-outline", color: "var(--c-mutual)" },
+        proposal_declined:  { icon: "mdi-close-circle-outline", color: "var(--c-accent)" },
+        proposal_cancelled: { icon: "mdi-cancel",               color: "var(--c-muted)"  },
+        side_confirmed:     { icon: "mdi-handshake-outline",    color: "var(--c-mutual)" },
+        trade_completed:    { icon: "mdi-handshake",            color: "var(--c-mutual)" },
+      };
+      return MAP[n.kind] ?? { icon: "mdi-bell-outline", color: "var(--c-muted)" };
+    },
+    notifText(n) {
+      const MAP = {
+        proposal_received:  n => `${n.counterparty_name ?? "Someone"} sent you a trade proposal`,
+        proposal_accepted:  n => `${n.counterparty_name ?? "They"} accepted your proposal`,
+        proposal_declined:  n => `${n.counterparty_name ?? "They"} declined your proposal`,
+        proposal_cancelled: n => `Trade with ${n.counterparty_name ?? "them"} was cancelled`,
+        side_confirmed:     n => `${n.counterparty_name ?? "They"} confirmed the exchange`,
+        trade_completed:    n => `Exchange with ${n.counterparty_name ?? "them"} complete`,
+      };
+      return (MAP[n.kind] ?? (() => "Notification"))(n);
+    },
+    notifTimeAgo(ts) {
+      if (!ts) return "";
+      const diff = Date.now() - new Date(ts).getTime();
+      const m = Math.floor(diff / 60000);
+      if (m < 1)  return "just now";
+      if (m < 60) return `${m}m`;
+      const h = Math.floor(m / 60);
+      if (h < 24) return `${h}h`;
+      return `${Math.floor(h / 24)}d`;
+    },
+    async loadRecentNotifs() {
+      if (!this.login?.user?.id) return;
+      const { data } = await getClient()
+        .from("notification")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(3);
+      this.recentNotifs = data ?? [];
+    },
+    onNotifClick() {
       this.activeTab = "proposals";
     },
   },
   async mounted() {
-    await Promise.all([this.loadMatches(), this.loadProposals()]);
+    await Promise.all([this.loadMatches(), this.loadProposals(), this.loadRecentNotifs()]);
 
-    // Live updates on both Card and Trade changes
+    // Live updates on Card, Trade, and Notification changes
     this.subscription = getClient()
       .channel("trade-center-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "Card" }, () => this.loadMatches())
-      .on("postgres_changes", { event: "*", schema: "public", table: "Trade" }, () => this.loadProposals())
+      .on("postgres_changes", { event: "*",    schema: "public", table: "Card" },         () => this.loadMatches())
+      .on("postgres_changes", { event: "*",    schema: "public", table: "Trade" },        () => this.loadProposals())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notification",
+          filter: `user_id=eq.${this.login?.user?.id}` },
+        (payload) => {
+          this.recentNotifs = [payload.new, ...this.recentNotifs].slice(0, 3);
+        })
       .subscribe();
   },
   beforeUnmount() {
@@ -544,3 +675,12 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.notif-row:not(:last-child) {
+  border-bottom: 1px solid var(--c-border);
+}
+.notif-row:hover {
+  background-color: var(--c-surface-2) !important;
+}
+</style>

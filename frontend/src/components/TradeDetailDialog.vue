@@ -497,7 +497,7 @@ function confirmDecline() {
           <!-- Message list -->
           <div
             ref="msgListRef"
-            class="flex flex-col gap-2 overflow-y-auto rounded-xl border p-3"
+            class="flex flex-col gap-2 overflow-y-auto rounded-xl border px-3 py-3"
             style="min-height: 160px; max-height: 240px; border-color: var(--c-border); background-color: var(--c-surface-2)"
           >
             <div v-if="loadingMessages" class="flex items-center justify-center flex-1 py-6" style="color: var(--c-muted)">

@@ -1,33 +1,104 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ── LIGHT THEME ── Variation A: Amethyst Nights
+   White base · deep grape-purple text · rose-pink accent
+   ─────────────────────────────────────────────────────── */
 :root {
-  --c-bg:        #FAFBFF;
-  --c-surface:   #F3F1FF;
-  --c-surface-2: #E8E4FF;
-  --c-border:    #C8C0F0;
-  --c-text:      #0D0B35;
-  --c-muted:     #4A4A9C;
-  --c-accent:    #D01868;
-  --c-trade:     #5B3AF0;
-  --c-mutual:    #0891B2;
-  --c-nav:       #FAFBFF;
-  --c-skeleton:  #DDD8FF;
+  --c-bg:        #FFFFFF;
+  --c-surface:   #F7F2FF;
+  --c-surface-2: #EDE0FF;
+  --c-border:    #C5ABED;
+  --c-text:      #1C0852;
+  --c-muted:     #6830A8;
+  --c-accent:    #C9185A;
+  --c-trade:     #6B20D9;
+  --c-mutual:    #0882A8;
+  --c-nav:       #FFFFFF;
+  --c-skeleton:  #E2D2F8;
 }
 
+/* ── DARK THEME ── Variation A: Amethyst Nights
+   Deep grape · amethyst surfaces · hot magenta-pink accent
+   ──────────────────────────────────────────────────────── */
 html.dark {
-  --c-bg:        #08071A;
-  --c-surface:   #100E2E;
-  --c-surface-2: #181545;
-  --c-border:    #2D2870;
-  --c-text:      #E0DCFF;
-  --c-muted:     #8B82D4;
-  --c-accent:    #FF2E78;
-  --c-trade:     #9066FF;
-  --c-mutual:    #22D3EE;
-  --c-nav:       #08071A;
-  --c-skeleton:  #1E1A48;
+  --c-bg:        #0B0617;
+  --c-surface:   #13092A;
+  --c-surface-2: #1C1040;
+  --c-border:    #3A206E;
+  --c-text:      #EDE8FF;
+  --c-muted:     #A890D0;
+  --c-accent:    #F42D87;
+  --c-trade:     #9A52F5;
+  --c-mutual:    #2DD4BF;
+  --c-nav:       #0B0617;
+  --c-skeleton:  #1E1248;
 }
+
+/* ── VARIATION B: Orchid ──────────────────────────────────
+   (swap above variables with these to enable)
+
+   Light: blush-tinted surfaces · saturated violet · fuchsia
+   :root {
+     --c-bg:        #FFFFFF;
+     --c-surface:   #FEF3FF;
+     --c-surface-2: #FAE3FF;
+     --c-border:    #D8A8EE;
+     --c-text:      #2D0847;
+     --c-muted:     #842FA3;
+     --c-accent:    #C026D3;
+     --c-trade:     #8B30E0;
+     --c-mutual:    #0891B2;
+     --c-nav:       #FFFFFF;
+     --c-skeleton:  #F0D5FC;
+   }
+
+   Dark: warm rose-purple tones · electric fuchsia
+   html.dark {
+     --c-bg:        #0D0618;
+     --c-surface:   #18082E;
+     --c-surface-2: #230E42;
+     --c-border:    #4A1878;
+     --c-text:      #F5E8FF;
+     --c-muted:     #C07EEE;
+     --c-accent:    #E040FB;
+     --c-trade:     #A855F7;
+     --c-mutual:    #34D399;
+     --c-nav:       #0D0618;
+     --c-skeleton:  #280D48;
+   }
+
+   ── VARIATION C: Velvet Crush ─────────────────────────────
+   Light: stark white · near-black purple · vivid hot-pink
+   :root {
+     --c-bg:        #FFFFFF;
+     --c-surface:   #F5F0FF;
+     --c-surface-2: #E8D5FF;
+     --c-border:    #BF9EEA;
+     --c-text:      #13003A;
+     --c-muted:     #5B18A8;
+     --c-accent:    #D9006E;
+     --c-trade:     #5E20C0;
+     --c-mutual:    #0F766E;
+     --c-nav:       #FFFFFF;
+     --c-skeleton:  #DCCBF8;
+   }
+
+   Dark: near-black · bright violet · electric hot-pink
+   html.dark {
+     --c-bg:        #070412;
+     --c-surface:   #0E0822;
+     --c-surface-2: #160D35;
+     --c-border:    #431C88;
+     --c-text:      #F2EAFF;
+     --c-muted:     #B57FE8;
+     --c-accent:    #FF1A77;
+     --c-trade:     #B060FF;
+     --c-mutual:    #2DD4BF;
+     --c-nav:       #070412;
+     --c-skeleton:  #1A0E3A;
+   }
+──────────────────────────────────────────────────────── */
 
 body {
   background-color: var(--c-bg);

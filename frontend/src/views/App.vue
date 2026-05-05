@@ -6,6 +6,7 @@ import Account from "@/components/Pages/Account.vue";
 import AuthDialog from "@/components/AuthDialog.vue";
 import NavItem from "@/components/NavItem.vue";
 import NotificationBell from "@/components/NotificationBell.vue";
+import UserMenuChip from "@/components/UserMenuChip.vue";
 </script>
 
 <template>
@@ -54,14 +55,6 @@ import NotificationBell from "@/components/NotificationBell.vue";
             
 
             <NavItem
-              v-if="authenticated"
-              tooltip="Account"
-              icon="mdi-account-circle-outline"
-              :active="page === 'account'"
-              @click="changePage('account')"
-            />
-
-            <NavItem
               :tooltip="isDarkTheme ? 'Light mode' : 'Dark mode'"
               :icon="isDarkTheme ? 'mdi-white-balance-sunny' : 'mdi-moon-waning-crescent'"
               :indicator="false"
@@ -74,11 +67,21 @@ import NotificationBell from "@/components/NotificationBell.vue";
               @navigate="openProposals"
             />
 
+            <!-- Authenticated: user chip with dropdown -->
+            <UserMenuChip
+              v-if="authenticated"
+              :login="authenticated"
+              @navigate="changePage"
+              @logout="logout"
+            />
+
+            <!-- Guest: login button -->
             <NavItem
-              :tooltip="authenticated ? 'Logout' : 'Login / Sign up'"
-              :icon="authenticated ? 'mdi-logout' : 'mdi-login'"
+              v-else
+              tooltip="Login / Sign up"
+              icon="mdi-login"
               :indicator="false"
-              @click="authenticated ? logout() : openLogin()"
+              @click="openLogin()"
             />
 
         </div>
