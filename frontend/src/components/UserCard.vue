@@ -223,10 +223,10 @@ const kindMeta = computed(() => {
         </span>
       </div>
       <v-btn
-        size="small"
         variant="flat"
         prepend-icon="mdi-swap-horizontal"
         class="!rounded-lg shrink-0"
+        style="min-height: 44px; font-size: 13px"
         :style="{ backgroundColor: kindMeta.color, color: kindMeta.btnText }"
         @click.stop="emit('openTrade', user)"
       >Propose</v-btn>

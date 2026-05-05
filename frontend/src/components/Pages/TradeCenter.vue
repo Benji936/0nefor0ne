@@ -3,6 +3,7 @@ import UserCard from "@/components/UserCard.vue";
 import ProposeTradeDialog from "@/components/ProposeTradeDialog.vue";
 import ProposalRow from "@/components/ProposalRow.vue";
 import TraderProfileDialog from "@/components/TraderProfileDialog.vue";
+import { notifMeta, notifText, timeAgo } from '@/lib/notifications';
 </script>
 
 <template>
@@ -49,7 +50,7 @@ import TraderProfileDialog from "@/components/TraderProfileDialog.vue";
 
         <!-- Time + unread dot -->
         <div class="flex items-center gap-2 shrink-0">
-          <span class="text-[11px] tabular-nums" style="color: var(--c-muted)">{{ notifTimeAgo(n.created_at) }}</span>
+          <span class="text-[11px] tabular-nums" style="color: var(--c-muted)">{{ timeAgo(n.created_at, { short: true }) }}</span>
           <span
             v-if="!n.read"
             class="size-2 rounded-full"
@@ -441,7 +442,6 @@ export default {
       profileTraderId:   null,
       // Recent notifications
       recentNotifs: [],
-      notifSub: null,
       // Shared
       subscription: null,
       dialogOpen: false,
@@ -606,39 +606,6 @@ export default {
     },
     switchToProposals() {
       this.activeTab = "proposals";
-    },
-    // ── Notifications ────────────────────────────────────────────────────
-    notifMeta(n) {
-      const MAP = {
-        proposal_received:  { icon: "mdi-swap-horizontal",      color: "var(--c-trade)"  },
-        proposal_accepted:  { icon: "mdi-check-circle-outline", color: "var(--c-mutual)" },
-        proposal_declined:  { icon: "mdi-close-circle-outline", color: "var(--c-accent)" },
-        proposal_cancelled: { icon: "mdi-cancel",               color: "var(--c-muted)"  },
-        side_confirmed:     { icon: "mdi-handshake-outline",    color: "var(--c-mutual)" },
-        trade_completed:    { icon: "mdi-handshake",            color: "var(--c-mutual)" },
-      };
-      return MAP[n.kind] ?? { icon: "mdi-bell-outline", color: "var(--c-muted)" };
-    },
-    notifText(n) {
-      const MAP = {
-        proposal_received:  n => `${n.counterparty_name ?? "Someone"} sent you a trade proposal`,
-        proposal_accepted:  n => `${n.counterparty_name ?? "They"} accepted your proposal`,
-        proposal_declined:  n => `${n.counterparty_name ?? "They"} declined your proposal`,
-        proposal_cancelled: n => `Trade with ${n.counterparty_name ?? "them"} was cancelled`,
-        side_confirmed:     n => `${n.counterparty_name ?? "They"} confirmed the exchange`,
-        trade_completed:    n => `Exchange with ${n.counterparty_name ?? "them"} complete`,
-      };
-      return (MAP[n.kind] ?? (() => "Notification"))(n);
-    },
-    notifTimeAgo(ts) {
-      if (!ts) return "";
-      const diff = Date.now() - new Date(ts).getTime();
-      const m = Math.floor(diff / 60000);
-      if (m < 1)  return "just now";
-      if (m < 60) return `${m}m`;
-      const h = Math.floor(m / 60);
-      if (h < 24) return `${h}h`;
-      return `${Math.floor(h / 24)}d`;
     },
     async loadRecentNotifs() {
       if (!this.login?.user?.id) return;

@@ -104,6 +104,18 @@ body {
   background-color: var(--c-bg);
   color: var(--c-text);
   transition: background-color 0.3s ease, color 0.3s ease;
+  /* Prevent iOS double-tap-to-zoom on interactive elements */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Kill the 300ms tap delay on all interactive elements */
+a, button, [role="button"], input, select, textarea, label {
+  touch-action: manipulation;
+}
+
+/* Prevent scroll-pull-to-refresh interference inside scrollable panels */
+.overflow-y-auto, .overflow-x-auto {
+  overscroll-behavior: contain;
 }
 
 .hidden { display: none; }

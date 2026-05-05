@@ -76,10 +76,3 @@ export function onAuthChange(callback) {
 export function getClient() {
     return supabase
 }
-
-export async function insert(values) {
-    const { data, error } = await supabase
-        .from('Card')
-        .insert([values])
-        .select()
-}

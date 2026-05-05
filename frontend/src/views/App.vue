@@ -10,84 +10,98 @@ import UserMenuChip from "@/components/UserMenuChip.vue";
 </script>
 
 <template>
+  <!-- ── Top navbar ── -->
   <nav
-    class="flex flex-row py-3 px-5 flex-shrink gap-6 shadow-xs place-items-center justify-between"
+    class="flex flex-row py-2 px-3 md:py-3 md:px-5 gap-2 md:gap-6 shadow-xs items-center justify-between sticky top-0 z-30"
     style="background: var(--c-nav); border-bottom: 1px solid var(--c-border); transition: background 0.3s ease"
   >
+    <!-- Search bar — full width on mobile, 2/3 on desktop -->
+    <div
+      class="flex flex-1 md:flex-none md:w-2/3 my-1 rounded-lg has-[input:focus-within]:outline-2"
+      style="background: var(--c-surface-2); outline-color: var(--c-accent)"
+    >
+      <input
+        v-model="searchQuery"
+        @focus="changePage('search')"
+        @keyup.enter="update"
+        class="placeholder:opacity-50 outline-none bg-transparent w-full"
+        style="color: var(--c-text); font-size: 16px; font-weight: 500; padding: 10px 14px; letter-spacing: 0.01em;"
+        placeholder="Search cards or set codes…"
+        type="text"
+        name="search"
+        inputmode="search"
+      />
+    </div>
 
-        <div
-        class="flex my-2 w-2/3 rounded-lg has-[input:focus-within]:outline-2"
-          style="background: var(--c-surface-2); outline-color: var(--c-accent)">
-          
-          <input
-            v-model="searchQuery"
-            @focus="changePage('search')"
-            @keyup.enter="update"
-            class="placeholder:opacity-50 outline-none bg-transparent w-full"
-            style="color: var(--c-text); font-size: 18px; font-weight: 500; padding: 12px 18px; letter-spacing: 0.01em;"
-            placeholder="Search cards or set codes…"
-            type="text"
-            name="search"
-          />
-        </div>
+    <div class="flex items-center gap-1">
+      <div v-if="authenticated" class="flex max-md:hidden items-center gap-1">
+        <NavItem
+          tooltip="Collection"
+          icon="mdi-cards"
+          img-src="/src/assets/library.svg"
+          :active="page === 'library'"
+          @click="changePage('library')"
+        />
+        <NavItem
+          tooltip="Trade matches"
+          icon="mdi-swap-horizontal-bold"
+          :active="page === 'TradeCenter'"
+          @click="openMatches()"
+        />
+      </div>
 
-          
+      <NavItem
+        :tooltip="isDarkTheme ? 'Light mode' : 'Dark mode'"
+        :icon="isDarkTheme ? 'mdi-white-balance-sunny' : 'mdi-moon-waning-crescent'"
+        :indicator="false"
+        @click="toggleTheme"
+      />
 
-          <div class="flex row items-center justify-around w-fit gap-1">
+      <NotificationBell
+        v-if="authenticated"
+        :login="authenticated"
+        @navigate="openProposals"
+      />
 
-            <NavItem
-              v-if="authenticated"
-              tooltip="Collection"
-              icon="mdi-cards"
-              img-src="/src/assets/library.svg"
-              :active="page === 'library'"
-              @click="changePage('library')"
-            />
+      <!-- Authenticated: user chip with dropdown -->
+      <UserMenuChip
+        v-if="authenticated"
+        :login="authenticated"
+        @navigate="changePage"
+        @logout="logout"
+      />
 
-            <NavItem
-              v-if="authenticated"
-              tooltip="Trade matches"
-              icon="mdi-swap-horizontal-bold"
-              :active="page === 'TradeCenter'"
-              @click="openMatches()"
-            />
-
-            
-
-            <NavItem
-              :tooltip="isDarkTheme ? 'Light mode' : 'Dark mode'"
-              :icon="isDarkTheme ? 'mdi-white-balance-sunny' : 'mdi-moon-waning-crescent'"
-              :indicator="false"
-              @click="toggleTheme"
-            />
-
-            <NotificationBell
-              v-if="authenticated"
-              :login="authenticated"
-              @navigate="openProposals"
-            />
-
-            <!-- Authenticated: user chip with dropdown -->
-            <UserMenuChip
-              v-if="authenticated"
-              :login="authenticated"
-              @navigate="changePage"
-              @logout="logout"
-            />
-
-            <!-- Guest: login button -->
-            <NavItem
-              v-else
-              tooltip="Login / Sign up"
-              icon="mdi-login"
-              :indicator="false"
-              @click="openLogin()"
-            />
-
-        </div>
+      <!-- Guest: login button -->
+      <NavItem
+        v-else
+        tooltip="Login / Sign up"
+        icon="mdi-login"
+        :indicator="false"
+        @click="openLogin()"
+      />
+    </div>
   </nav>
 
-  <main class="px-10 pt-6 min-h-screen" style="background: var(--c-bg); transition: background 0.3s ease">
+  <!-- ── Mobile bottom tab bar (authenticated only, phones < 640 px) ── -->
+  <nav
+    v-if="authenticated"
+    class="fixed bottom-0 left-0 right-0 z-40 flex sm:hidden items-stretch"
+    style="background: var(--c-nav); border-top: 1px solid var(--c-border); touch-action: manipulation"
+  >
+    <button
+      v-for="tab in mobileTabs"
+      :key="tab.key"
+      class="flex flex-col items-center justify-center gap-0.5 flex-1 py-2 cursor-pointer transition-colors"
+      style="min-height: 56px"
+      :style="{ color: page === tab.key ? 'var(--c-accent)' : 'var(--c-muted)' }"
+      @click="tab.action()"
+    >
+      <v-icon :icon="page === tab.key ? tab.iconActive : tab.icon" size="22" />
+      <span class="text-[10px] font-semibold">{{ tab.label }}</span>
+    </button>
+  </nav>
+
+  <main class="px-4 md:px-10 pt-4 md:pt-6 min-h-screen pb-20 sm:pb-0" style="background: var(--c-bg); transition: background 0.3s ease">
     <TradeCenter
       v-if="page=='TradeCenter'"
       ref="tradeCenter"
@@ -114,6 +128,14 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
     computed: {
         isDarkTheme() {
           return this.$vuetify.theme.global.name === 'neonDusk';
+        },
+        mobileTabs() {
+          return [
+            { key: 'search',      label: 'Search',  icon: 'mdi-magnify',                iconActive: 'mdi-magnify',                action: () => this.changePage('search') },
+            { key: 'library',     label: 'Library', icon: 'mdi-cards-outline',           iconActive: 'mdi-cards',                  action: () => this.changePage('library') },
+            { key: 'TradeCenter', label: 'Trades',  icon: 'mdi-swap-horizontal',         iconActive: 'mdi-swap-horizontal-bold',   action: () => this.openMatches() },
+            { key: 'account',     label: 'Account', icon: 'mdi-account-circle-outline',  iconActive: 'mdi-account-circle',         action: () => this.changePage('account') },
+          ];
         },
       },
       data() {

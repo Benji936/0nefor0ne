@@ -118,18 +118,6 @@ export function bucketMatches(users) {
 }
 
 /**
- * For the "You give" side of the trade dialog: fetch all of MY cards in
- * the trade pile (wish=false) so the user can offer anything, not just
- * cards matching the counterparty's wishlist.
- *
- * If `theyWant` is provided we tag matched rows with `theyWantThis: true`
- * so the UI can highlight them, and sort matches first.
- */
-export async function fetchMyTradePile(theyWant = []) {
-  return fetchMyLibrary(theyWant);
-}
-
-/**
  * Fetch ALL non-traded cards from the current user's library (trade pile + wishlist).
  * Tagged with:
  *   theyWantThis — card name appears in the counterparty's wishlist (passed as theyWant)

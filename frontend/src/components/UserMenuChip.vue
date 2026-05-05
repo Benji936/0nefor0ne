@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { getClient } from '@/lib/supabaseClient';
 
 const props = defineProps({
@@ -25,8 +25,7 @@ async function loadProfile(userId) {
   }
 }
 
-onMounted(() => loadProfile(props.login?.user?.id));
-watch(() => props.login?.user?.id, id => loadProfile(id));
+watch(() => props.login?.user?.id, id => loadProfile(id), { immediate: true });
 
 const initials = computed(() => {
   const raw = traderName.value?.trim() || props.login?.user?.email || '?';
@@ -52,11 +51,8 @@ const menuItems = [
 
 function handleAction(action) {
   menuOpen.value = false;
-  if (action === 'logout') {
-    emit('logout');
-  } else {
-    emit('navigate', action);
-  }
+  if (action === 'logout') return emit('logout');
+  emit('navigate', action);
 }
 </script>
 
@@ -86,16 +82,16 @@ function handleAction(action) {
           <span v-else>{{ initials }}</span>
         </div>
 
-        <!-- Name -->
-        <span class="text-sm font-semibold leading-none max-w-[96px] truncate" style="color: var(--c-text)">
+        <!-- Name — hidden on small screens -->
+        <span class="hidden md:inline text-sm font-semibold leading-none max-w-[96px] truncate" style="color: var(--c-text)">
           {{ displayName }}
         </span>
 
-        <!-- Chevron -->
+        <!-- Chevron — hidden on small screens -->
         <v-icon
           icon="mdi-chevron-down"
           size="16"
-          class="chip-chevron transition-transform duration-200 shrink-0"
+          class="hidden md:flex chip-chevron transition-transform duration-200 shrink-0"
           :class="{ 'rotate-180': menuOpen }"
           style="color: var(--c-muted)"
         />
@@ -159,16 +155,6 @@ function handleAction(action) {
 </template>
 
 <style scoped>
-.user-chip {
-  background: var(--c-surface-2);
-  border-color: var(--c-border);
-}
-.user-chip:hover,
-.user-chip.chip-open {
-  background: color-mix(in srgb, var(--c-trade) 10%, var(--c-surface-2));
-  border-color: color-mix(in srgb, var(--c-trade) 35%, transparent);
-}
-
 .avatar-ring {
   background: color-mix(in srgb, var(--c-trade) 20%, transparent);
   color: var(--c-trade);
@@ -182,7 +168,4 @@ function handleAction(action) {
   background: color-mix(in srgb, var(--c-accent) 8%, transparent);
 }
 
-.chip-chevron {
-  display: flex;
-}
 </style>

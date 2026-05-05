@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { getClient } from '@/lib/supabaseClient';
+import { notifMeta, notifText, timeAgo } from '@/lib/notifications';
 
 const props = defineProps({
   login: { type: Object, default: null },
@@ -15,29 +16,6 @@ let   sub           = null;
 
 const unreadCount = computed(() => notifications.value.filter(n => !n.read).length);
 
-const META = {
-  proposal_received:  { icon: 'mdi-swap-horizontal',       color: 'var(--c-trade)',  text: n => `${n.counterparty_name ?? 'Someone'} sent you a trade proposal` },
-  proposal_accepted:  { icon: 'mdi-check-circle-outline',  color: 'var(--c-mutual)', text: n => `${n.counterparty_name ?? 'They'} accepted your proposal` },
-  proposal_declined:  { icon: 'mdi-close-circle-outline',  color: 'var(--c-accent)', text: n => `${n.counterparty_name ?? 'They'} declined your proposal` },
-  proposal_cancelled: { icon: 'mdi-cancel',                color: 'var(--c-muted)',  text: n => `Trade with ${n.counterparty_name ?? 'them'} was cancelled` },
-  side_confirmed:     { icon: 'mdi-handshake-outline',     color: 'var(--c-mutual)', text: n => `${n.counterparty_name ?? 'They'} confirmed the exchange` },
-  trade_completed:    { icon: 'mdi-handshake',             color: 'var(--c-mutual)', text: n => `Exchange with ${n.counterparty_name ?? 'them'} complete` },
-};
-
-function meta(n) {
-  return META[n.kind] ?? { icon: 'mdi-bell-outline', color: 'var(--c-muted)', text: () => 'Notification' };
-}
-
-function timeAgo(ts) {
-  if (!ts) return '';
-  const diff = Date.now() - new Date(ts).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1)  return 'just now';
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
-}
 
 async function load() {
   if (!props.login?.user?.id) return;
@@ -131,7 +109,7 @@ onBeforeUnmount(() => {
         v-if="open"
         class="absolute right-0 mt-2 rounded-2xl border shadow-2xl overflow-hidden"
         style="
-          width: 320px;
+          width: min(320px, calc(100vw - 24px));
           top: 100%;
           background: var(--c-surface);
           border-color: var(--c-border);
@@ -180,21 +158,21 @@ onBeforeUnmount(() => {
               @click="onItemClick"
             >
               <v-icon
-                :icon="meta(n).icon"
+                :icon="notifMeta(n).icon"
                 size="17"
-                :color="meta(n).color"
+                :color="notifMeta(n).color"
                 class="shrink-0 mt-0.5"
               />
               <div class="flex flex-col min-w-0 grow gap-0.5">
                 <p class="text-xs leading-snug" :style="{ color: n.read ? 'var(--c-muted)' : 'var(--c-text)', fontWeight: n.read ? '400' : '500' }">
-                  {{ meta(n).text(n) }}
+                  {{ notifText(n) }}
                 </p>
                 <p class="text-[11px]" style="color: var(--c-muted)">{{ timeAgo(n.created_at) }}</p>
               </div>
               <span
                 v-if="!n.read"
                 class="size-1.5 rounded-full shrink-0 mt-1.5"
-                :style="{ backgroundColor: meta(n).color }"
+                :style="{ backgroundColor: notifMeta(n).color }"
               />
             </button>
           </div>

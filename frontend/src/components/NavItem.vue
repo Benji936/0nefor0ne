@@ -17,7 +17,7 @@ const emit = defineEmits(["click"]);
     <template #activator="{ props: tip }">
       <div
         v-bind="tip"
-        class="nav-item flex flex-col items-center gap-0.5 cursor-pointer px-2 py-1 rounded-md transition-all"
+        class="nav-item flex flex-col items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition-all"
         :style="active ? { backgroundColor: 'var(--c-surface-2)' } : {}"
         @click="emit('click')"
       >
