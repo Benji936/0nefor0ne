@@ -15,9 +15,19 @@ import UserMenuChip from "@/components/UserMenuChip.vue";
     class="flex flex-row py-2 px-3 md:py-3 md:px-5 gap-2 md:gap-6 shadow-xs items-center justify-between sticky top-0 z-30"
     style="background: var(--c-nav); border-bottom: 1px solid var(--c-border); transition: background 0.3s ease"
   >
-    <!-- Search bar — full width on mobile, 2/3 on desktop -->
+
+  <div class="flex flex-row justify-start w-2/3 gap-3">
+    <!-- Logo -->
+    <img
+      src="/logo.png"
+      alt="One for One"
+      class="shrink-0 cursor-pointer select-none align-center max-md:hidden"
+      style="height: 55px; width: 55px; object-fit: contain"
+      @click="changePage('search')"
+    />
+
     <div
-      class="flex flex-1 md:flex-none md:w-2/3 my-1 rounded-lg has-[input:focus-within]:outline-2"
+      class="flex flex-1 rounded-lg md:flex-none my-1 w-full has-[input:focus-within]:outline-2"
       style="background: var(--c-surface-2); outline-color: var(--c-accent)"
     >
       <input
@@ -32,6 +42,12 @@ import UserMenuChip from "@/components/UserMenuChip.vue";
         inputmode="search"
       />
     </div>
+  </div>
+    
+
+
+    <!-- Search bar — full width on mobile, 2/3 on desktop -->
+    
 
     <div class="flex items-center gap-1">
       <div v-if="authenticated" class="flex max-md:hidden items-center gap-1">

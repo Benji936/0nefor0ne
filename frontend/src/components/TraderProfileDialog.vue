@@ -18,7 +18,8 @@ const loading     = ref(false);
 const profile     = ref(null);   // from get_trader_public_profile
 const tradePile   = ref([]);
 const wishlist    = ref([]);
-const activeTab   = ref('pile'); // 'pile' | 'wish'
+const reviews     = ref([]);
+const activeTab   = ref('pile'); // 'pile' | 'wish' | 'reviews'
 
 // ── Derived ──────────────────────────────────────────────────────────────
 const open = computed({
@@ -44,6 +45,18 @@ const scopeMeta = computed(() => ({
   worldwide: { label: 'Worldwide',      icon: 'mdi-earth',         color: 'var(--c-muted)' },
 }[profile.value?.trade_scope ?? 'worldwide']));
 
+// ── Helpers ───────────────────────────────────────────────────────────────
+function timeAgo(ts) {
+  if (!ts) return '';
+  const diff = Date.now() - new Date(ts).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1)  return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
 // ── Load ─────────────────────────────────────────────────────────────────
 async function load(id) {
   if (!id) return;
@@ -51,18 +64,26 @@ async function load(id) {
   profile.value = null;
   tradePile.value = [];
   wishlist.value  = [];
+  reviews.value   = [];
   activeTab.value = 'pile';
 
-  const [profileRes, pile, wish] = await Promise.all([
+  const [profileRes, pile, wish, reviewsRes] = await Promise.all([
     getClient().rpc('get_trader_public_profile', { p_trader_id: id }),
     fetchUserTradePile(id),
     fetchUserWishlist(id),
+    getClient()
+      .from('trader_rating')
+      .select('score, comment, created_at, rater_id')
+      .eq('ratee_id', id)
+      .order('created_at', { ascending: false })
+      .limit(20),
   ]);
 
   if (profileRes.error) console.error('get_trader_public_profile failed', profileRes.error);
   profile.value   = profileRes.data?.[0] ?? null;
   tradePile.value = pile;
   wishlist.value  = wish;
+  reviews.value   = reviewsRes.data ?? [];
   loading.value   = false;
 }
 
@@ -119,8 +140,8 @@ function propose() {
             </div>
           </div>
           <!-- Stats skeleton -->
-          <div class="grid grid-cols-3 gap-3">
-            <div v-for="i in 3" :key="i" class="h-16 rounded-xl animate-pulse" style="background: var(--c-skeleton)" />
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div v-for="i in 4" :key="i" class="h-16 rounded-xl animate-pulse" style="background: var(--c-skeleton)" />
           </div>
           <!-- Cards skeleton -->
           <div class="flex gap-2 flex-wrap">
@@ -174,12 +195,13 @@ function propose() {
             </div>
 
             <!-- Stats -->
-            <div class="grid grid-cols-3 gap-3">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div
                 v-for="stat in [
-                  { label: 'For trade',  icon: 'mdi-cards-outline',    color: 'var(--c-trade)',  value: profile.trade_pile_count },
-                  { label: 'Wishlist',   icon: 'mdi-heart-outline',     color: 'var(--c-accent)', value: profile.wishlist_count },
-                  { label: 'Completed',  icon: 'mdi-handshake-outline', color: 'var(--c-mutual)', value: profile.completed_trades },
+                  { label: 'For trade',  icon: 'mdi-cards-outline',    color: 'var(--c-trade)',  value: profile.trade_pile_count, sub: null },
+                  { label: 'Wishlist',   icon: 'mdi-heart-outline',     color: 'var(--c-accent)', value: profile.wishlist_count, sub: null },
+                  { label: 'Completed',  icon: 'mdi-handshake-outline', color: 'var(--c-mutual)', value: profile.completed_trades, sub: null },
+                  { label: 'Rating',     icon: 'mdi-star',              color: 'var(--c-mutual)', value: profile.avg_rating ? `${profile.avg_rating}★` : '—', sub: profile.rating_count > 0 ? `${profile.rating_count} review${profile.rating_count > 1 ? 's' : ''}` : null },
                 ]"
                 :key="stat.label"
                 class="flex flex-col gap-1 rounded-xl border px-3 py-3"
@@ -190,6 +212,7 @@ function propose() {
                   <span class="text-[10px] font-semibold uppercase tracking-wide" :style="{ color: stat.color }">{{ stat.label }}</span>
                 </div>
                 <span class="text-xl font-bold tabular-nums leading-tight" style="color: var(--c-text)">{{ stat.value }}</span>
+                <span v-if="stat.sub" class="text-[10px]" style="color: var(--c-muted)">{{ stat.sub }}</span>
               </div>
             </div>
 
@@ -197,8 +220,9 @@ function propose() {
             <div class="flex gap-0" style="border-bottom: 1px solid var(--c-border)">
               <button
                 v-for="tab in [
-                  { key: 'pile', label: 'Trade pile', count: tradePile.length },
-                  { key: 'wish', label: 'Wishlist',   count: wishlist.length  },
+                  { key: 'pile',    label: 'Trade pile', count: tradePile.length },
+                  { key: 'wish',    label: 'Wishlist',   count: wishlist.length  },
+                  { key: 'reviews', label: 'Reviews',    count: Number(profile.rating_count ?? 0) },
                 ]"
                 :key="tab.key"
                 class="flex items-center gap-2 px-4 py-3 text-sm font-semibold cursor-pointer transition-colors"
@@ -265,6 +289,30 @@ function propose() {
                 </v-tooltip>
               </div>
               <p v-else class="text-sm py-4 text-center" style="color: var(--c-muted)">Wishlist is empty.</p>
+            </div>
+
+            <!-- Reviews tab -->
+            <div v-else-if="activeTab === 'reviews'">
+              <div v-if="reviews.length > 0" class="flex flex-col divide-y" style="border-color: var(--c-border)">
+                <div
+                  v-for="r in reviews" :key="r.rater_id + r.created_at"
+                  class="flex flex-col gap-1 py-3"
+                >
+                  <div class="flex items-center gap-2">
+                    <div class="flex gap-0.5">
+                      <v-icon
+                        v-for="s in 5" :key="s"
+                        :icon="s <= r.score ? 'mdi-star' : 'mdi-star-outline'"
+                        size="13"
+                        style="color: var(--c-mutual)"
+                      />
+                    </div>
+                    <span class="text-[11px] ml-auto" style="color: var(--c-muted)">{{ timeAgo(r.created_at) }}</span>
+                  </div>
+                  <p v-if="r.comment" class="text-xs leading-relaxed" style="color: var(--c-text)">{{ r.comment }}</p>
+                </div>
+              </div>
+              <p v-else class="text-sm py-4 text-center" style="color: var(--c-muted)">No reviews yet.</p>
             </div>
 
           </div>

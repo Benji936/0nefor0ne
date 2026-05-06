@@ -112,9 +112,19 @@ const kindMeta = computed(() => {
         class="flex flex-col grow min-w-0 cursor-pointer"
         @click.stop="emit('openProfile', user.id)"
       >
-        <p class="font-bold text-sm truncate leading-tight hover:underline underline-offset-2" style="color: var(--c-text)">
-          {{ user.name ?? "Anonymous" }}
-        </p>
+        <div class="flex items-center gap-1.5 min-w-0">
+          <p class="font-bold text-sm truncate leading-tight hover:underline underline-offset-2" style="color: var(--c-text)">
+            {{ user.name ?? "Anonymous" }}
+          </p>
+          <span
+            v-if="user.avgRating"
+            class="flex items-center gap-0.5 text-[10px] font-bold shrink-0 tabular-nums"
+            style="color: var(--c-mutual)"
+          >
+            <v-icon icon="mdi-star" size="10" style="color: var(--c-mutual)" />
+            {{ user.avgRating }}
+          </span>
+        </div>
         <p v-if="location" class="text-[11px] truncate flex items-center gap-1 mt-0.5" style="color: var(--c-muted)">
           <v-icon icon="mdi-map-marker-outline" size="10" style="opacity: 0.55" />
           {{ location }}

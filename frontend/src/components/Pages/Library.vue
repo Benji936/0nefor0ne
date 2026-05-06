@@ -40,6 +40,7 @@ import CardElement from '../CardElement.vue';
                         v-for="trade in trade_cards.value"
                         :key="trade.id"
                         :class="newCardId === trade.id ? 'ring-2 ring-blue-400' : ''"
+                        @deleted="onCardDeleted"
                     ></CardElement>
                 </TransitionGroup>
                 <p class="self-center text-sm py-6" style="color: var(--c-muted)" v-if="trades_quantity < 1">
@@ -71,6 +72,7 @@ import CardElement from '../CardElement.vue';
                         v-for="wish in wished_cards.value"
                         :key="wish.id"
                         :class="newCardId === wish.id ? 'ring-2 ring-pink-400' : ''"
+                        @deleted="onCardDeleted"
                     ></CardElement>
                 </TransitionGroup>
                 <p class="self-center text-sm py-6" style="color: var(--c-muted)" v-if="wishes_quantity < 1">
@@ -121,6 +123,13 @@ import { ref } from "vue";
                 return cards.filter(c => c.status === 'locked' || !lockedOriginalIds.has(c.id));
             },
 
+            onCardDeleted(cardId) {
+                this.trade_cards.value  = this.trade_cards.value.filter(c => c.id !== cardId);
+                this.wished_cards.value = this.wished_cards.value.filter(c => c.id !== cardId);
+                this.trades_quantity = this.trade_cards.value.length;
+                this.wishes_quantity = this.wished_cards.value.length;
+            },
+
             onCardAdded(newCard) {
                 if (newCard.wish) {
                     this.wished_cards.value = [newCard, ...this.wished_cards.value]
@@ -140,8 +149,14 @@ import { ref } from "vue";
                 getClient().from('Card').select('*').eq('wish', true).eq('trader', this.login.user.id).neq('status', 'traded'),
                 getClient().from('Card').select('*').eq('wish', false).eq('trader', this.login.user.id).neq('status', 'traded'),
             ])
-            this.wished_cards.value = this.filterCovered(wishes.data)
-            this.trade_cards.value  = this.filterCovered(trades.data)
+
+            // Purge any stranded zero-quantity cards (shouldn't exist, but clean up if they do)
+            const allLoaded = [...(wishes.data ?? []), ...(trades.data ?? [])];
+            const zeroes = allLoaded.filter(c => (c.quantity ?? 0) <= 0 && c.status !== 'locked').map(c => c.id);
+            if (zeroes.length) await getClient().from('Card').delete().in('id', zeroes);
+
+            this.wished_cards.value = this.filterCovered((wishes.data ?? []).filter(c => (c.quantity ?? 0) > 0 || c.status === 'locked'))
+            this.trade_cards.value  = this.filterCovered((trades.data ?? []).filter(c => (c.quantity ?? 0) > 0 || c.status === 'locked'))
             this.wishes_quantity = this.wished_cards.value.length
             this.trades_quantity = this.trade_cards.value.length
             this.loading = false

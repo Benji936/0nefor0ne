@@ -529,14 +529,14 @@ function confirmDecline() {
             <input
               v-model="newMessage"
               placeholder="Type a message…"
-              class="flex-1 rounded-xl px-4 py-2 text-sm border outline-none"
+              class="flex-1 rounded-lg px-4 py-2 text-sm border outline-none"
               :style="{ backgroundColor: 'var(--c-surface-2)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
               @keydown.enter.prevent="sendMessage"
             />
             <v-btn
               icon="mdi-send"
               variant="flat"
-              density="comfortable"
+              density="default"
               :loading="sendingMessage"
               :disabled="!newMessage.trim()"
               style="background-color: var(--c-trade); color: white; border-radius: 12px"

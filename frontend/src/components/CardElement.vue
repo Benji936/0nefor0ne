@@ -2,6 +2,7 @@
 import LanguageTooltip from './tooltips/LanguageTooltip.vue';
 import ConditionTooltip from './tooltips/ConditionTooltip.vue';
 import { cardImage } from '@/lib/cardImage';
+defineEmits(['deleted']);
 </script>
 
 <template>
@@ -38,7 +39,11 @@ import { cardImage } from '@/lib/cardImage';
       <div class="flex flex-wrap gap-3">
         <ConditionTooltip v-if="wish.condition" :condition="wish.condition" />
         <LanguageTooltip v-if="wish.language" :language="wish.language" />
-        <span v-if="wish.rarity" class="py-1 px-1 rounded text-xs h-fit bg-amber-900/50 text-amber-300" :title="wish.rarity">{{ shortenRarity(wish.rarity) }}</span>
+        <v-tooltip v-if="wish.rarity" :text="wish.rarity" location="top">
+          <template #activator="{ props: tip }">
+            <span v-bind="tip" class="py-1 px-1 rounded text-xs h-fit bg-amber-900/50 text-amber-300 cursor-default">{{ shortenRarity(wish.rarity) }}</span>
+          </template>
+        </v-tooltip>
         <a
           :href="`https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${encodeURIComponent(wish.name)}`"
           target="_blank"
@@ -138,7 +143,6 @@ export default {
     },
 
     async onQuantityChange() {
-      // Safety guard: never persist a quantity below the reserved floor
       if (this.quantityCount < this.minQuantity) {
         this.quantityCount = this.minQuantity;
         return;
@@ -148,8 +152,8 @@ export default {
       if (this.quantityCount > 0) {
         await supabase_client.from('Card').update({ quantity: this.quantityCount }).eq('id', this.wish.id);
       } else {
-        // quantityCount === 0 and minQuantity === 0 (no reservation) → delete
         await supabase_client.from('Card').delete().eq('id', this.wish.id);
+        this.$emit('deleted', this.wish.id);
       }
     },
   },

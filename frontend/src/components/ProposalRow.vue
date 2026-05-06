@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import { cardImage } from "@/lib/cardImage";
+import { getClient } from "@/lib/supabaseClient";
 import TradeDetailDialog from "@/components/TradeDetailDialog.vue";
 
 const props = defineProps({
@@ -39,6 +40,54 @@ const theyConfirmed = computed(() => props.proposal.they_confirmed ?? false);
 const initials      = computed(() => (props.proposal.counterparty_name ?? "?")[0].toUpperCase());
 
 const detailOpen = ref(false);
+
+// Rating state
+const myRating       = ref(null);
+const ratingLoading  = ref(false);
+const hoverStar      = ref(0);
+const pendingScore   = ref(0);
+const ratingComment  = ref('');
+const ratingSubmitting = ref(false);
+
+async function loadMyRating() {
+  if (props.proposal.status !== 'completed' || !props.currentUserId) return;
+  ratingLoading.value = true;
+  const { data } = await getClient()
+    .from('trader_rating')
+    .select('score, comment')
+    .eq('trade_id', props.proposal.id)
+    .eq('rater_id', props.currentUserId)
+    .maybeSingle();
+  myRating.value = data ?? null;
+  ratingLoading.value = false;
+}
+loadMyRating();
+
+async function submitRating() {
+  if (!pendingScore.value || !props.currentUserId) return;
+  ratingSubmitting.value = true;
+  const { data } = await getClient()
+    .from('trader_rating')
+    .insert({
+      trade_id: props.proposal.id,
+      rater_id: props.currentUserId,
+      ratee_id: props.proposal.counterparty_id,
+      score: pendingScore.value,
+      comment: ratingComment.value.trim() || null,
+    })
+    .select('score, comment')
+    .single();
+  myRating.value = data;
+  ratingSubmitting.value = false;
+  pendingScore.value = 0;
+  ratingComment.value = '';
+}
+
+function cancelRating() {
+  pendingScore.value = 0;
+  ratingComment.value = '';
+  hoverStar.value = 0;
+}
 </script>
 
 <template>
@@ -311,6 +360,77 @@ const detailOpen = ref(false);
               style="border-color: var(--c-accent); color: var(--c-accent)"
               @click="emit('cancel', proposal)"
             >Cancel trade</v-btn>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <!-- Rating — completed trades only -->
+    <div
+      v-if="proposal.status === 'completed'"
+      class="flex flex-col gap-2 px-4 py-3"
+      style="border-top: 1px solid var(--c-border)"
+    >
+      <!-- Already rated -->
+      <div v-if="myRating" class="flex items-center gap-2">
+        <div class="flex gap-0.5">
+          <v-icon
+            v-for="s in 5" :key="s"
+            :icon="s <= myRating.score ? 'mdi-star' : 'mdi-star-outline'"
+            size="14"
+            style="color: var(--c-mutual)"
+          />
+        </div>
+        <span class="text-xs truncate" style="color: var(--c-muted)">
+          {{ myRating.comment || 'You rated this trade' }}
+        </span>
+      </div>
+
+      <!-- Not yet rated -->
+      <template v-else>
+        <div class="flex items-center gap-3 flex-wrap">
+          <span class="text-xs" style="color: var(--c-muted)">
+            Rate {{ proposal.counterparty_name ?? 'this trader' }}:
+          </span>
+          <div class="flex gap-0.5">
+            <button
+              v-for="s in 5" :key="s"
+              class="cursor-pointer transition-transform hover:scale-110"
+              style="touch-action: manipulation"
+              @click="pendingScore = s"
+              @mouseenter="hoverStar = s"
+              @mouseleave="hoverStar = 0"
+            >
+              <v-icon
+                :icon="s <= (hoverStar || pendingScore) ? 'mdi-star' : 'mdi-star-outline'"
+                size="20"
+                :style="{ color: s <= (hoverStar || pendingScore) ? 'var(--c-mutual)' : 'var(--c-muted)' }"
+              />
+            </button>
+          </div>
+        </div>
+
+        <div v-if="pendingScore > 0" class="flex flex-col gap-2">
+          <input
+            v-model="ratingComment"
+            maxlength="140"
+            placeholder="Optional note… (140 chars max)"
+            class="w-full text-xs rounded-lg px-3 py-2 border outline-none transition-colors"
+            :style="{ backgroundColor: 'var(--c-surface-2)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
+            @focus="e => e.target.style.borderColor = 'var(--c-mutual)'"
+            @blur="e => e.target.style.borderColor = 'var(--c-border)'"
+          />
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[11px]" style="color: var(--c-muted)">{{ 140 - ratingComment.length }} chars left</span>
+            <div class="flex gap-2">
+              <button class="text-xs cursor-pointer transition-opacity hover:opacity-70" style="color: var(--c-muted)" @click="cancelRating">Cancel</button>
+              <v-btn
+                size="x-small" variant="flat"
+                style="background: var(--c-mutual); color: #0C0820; min-height: 28px"
+                :loading="ratingSubmitting"
+                @click="submitRating"
+              >Submit</v-btn>
+            </div>
           </div>
         </div>
       </template>
