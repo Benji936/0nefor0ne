@@ -81,6 +81,54 @@ export async function fetchMatches() {
 }
 
 /**
+ * Fetch ALL traders who have a specific card in their trade pile.
+ * Unlike fetchMatches(), this is not limited to the current user's matches —
+ * it returns every trader with that card available, plus detects "they want"
+ * overlap with the current user's trade pile.
+ *
+ * @param {string} cardName
+ * @returns {Promise<MatchedUser[]>}
+ */
+export async function fetchTradersWithCard(cardName) {
+  const { data, error } = await getClient().rpc("find_traders_with_card", { p_card_name: cardName });
+  if (error) {
+    console.error("find_traders_with_card RPC failed", error);
+    throw error;
+  }
+
+  const users = (data ?? []).map((row) => {
+    const theyHaveCount = Number(row.they_have_count ?? 0);
+    const theyWantCount = Number(row.they_want_count ?? 0);
+    const kind =
+      theyHaveCount > 0 && theyWantCount > 0 ? "mutual"
+      : theyWantCount > 0 ? "they_want"
+      : "they_have";
+    return {
+      id:            row.match_user_id,
+      name:          row.match_user_name,
+      city:          row.match_user_city,
+      country:       row.match_user_country,
+      avatarUrl:     row.match_avatar_url ?? null,
+      avgRating:     row.avg_rating ?? null,
+      theyHaveCount,
+      theyWantCount,
+      theyHave:      row.they_have ?? [],
+      theyWant:      row.they_want ?? [],
+      kind,
+    };
+  });
+
+  // Mutual first (they have the card AND want something back), then by name
+  const order = { mutual: 0, they_have: 1, they_want: 2 };
+  users.sort((a, b) => {
+    if (order[a.kind] !== order[b.kind]) return order[a.kind] - order[b.kind];
+    return (a.name ?? "").localeCompare(b.name ?? "");
+  });
+
+  return users;
+}
+
+/**
  * Filter a match list to only entries that involve a given card name.
  * Used when arriving from the per-card "See traders" flow.
  */

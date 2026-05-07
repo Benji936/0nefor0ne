@@ -125,7 +125,7 @@ import UserMenuChip from "@/components/UserMenuChip.vue";
       :filter-card-name="filterCardName"
       @clear-filter="filterCardName = ''"
     ></TradeCenter>
-    <Search @TradeCenter="openMatches($event)" :searchCards="cards" v-if="page=='search'"></Search>
+    <Search @TradeCenter="openMatches($event)" @requireAuth="openLogin()" :searchCards="cards" v-if="page=='search'"></Search>
     <Library v-if="page=='library'" :login="authenticated" />
     <Account v-if="page=='account'" :login="authenticated" @logout="logout" />
 

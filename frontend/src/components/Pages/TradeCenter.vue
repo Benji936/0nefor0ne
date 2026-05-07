@@ -109,8 +109,8 @@ import { notifMeta, notifText, timeAgo } from '@/lib/notifications';
 
       <!-- Filter notice -->
       <div v-if="filterCardName" class="flex items-center gap-2 text-sm" style="color: var(--c-muted)">
-        <v-icon icon="mdi-filter-outline" size="15" />
-        Filtered by card:
+        <v-icon icon="mdi-magnify" size="15" />
+        Traders with:
         <span class="font-semibold" style="color: var(--c-text)">{{ filterCardName }}</span>
         <button
           class="ml-1 cursor-pointer transition-opacity hover:opacity-70"
@@ -126,7 +126,7 @@ import { notifMeta, notifText, timeAgo } from '@/lib/notifications';
       </div>
 
       <!-- Skeleton loading — mirrors UserCard structure -->
-      <template v-else-if="loadingMatches">
+      <template v-else-if="isLoadingVisible">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           <div
             v-for="i in 6"
@@ -419,7 +419,7 @@ import { notifMeta, notifText, timeAgo } from '@/lib/notifications';
 
 <script>
 import { getClient } from "@/lib/supabaseClient";
-import { fetchMatches, filterByCardName, bucketMatches, fetchMyProposals, updateProposalStatus, completeTradeProposal, cancelTradeProposal, declineTradeProposal } from "@/lib/matches";
+import { fetchMatches, fetchTradersWithCard, filterByCardName, bucketMatches, fetchMyProposals, updateProposalStatus, completeTradeProposal, cancelTradeProposal, declineTradeProposal } from "@/lib/matches";
 
 export default {
   props: {
@@ -433,6 +433,9 @@ export default {
       // Matches
       loadingMatches: false,
       allMatches: [],
+      // Card-search traders (populated by "See traders" button)
+      loadingCardTraders: false,
+      cardTraders: [],
       // Proposals
       loadingProposals: false,
       proposals: [],
@@ -462,7 +465,8 @@ export default {
       ];
     },
     visibleMatches() {
-      return filterByCardName(this.allMatches, this.filterCardName);
+      // When a card filter is active, show the full card-search results instead of filtering matches
+      return this.filterCardName ? this.cardTraders : this.allMatches;
     },
     searchedMatches() {
       const q = this.matchSearch.toLowerCase().trim();
@@ -479,6 +483,9 @@ export default {
     },
     totalMatches() {
       return this.searchedMatches.length;
+    },
+    isLoadingVisible() {
+      return this.filterCardName ? this.loadingCardTraders : this.loadingMatches;
     },
     incomingPending() {
       return this.proposals.filter((p) => p.status === "pending" && !p.i_am_proposer);
@@ -619,8 +626,29 @@ export default {
     onNotifClick() {
       this.activeTab = "proposals";
     },
+    async loadCardTraders(cardName) {
+      if (!cardName) { this.cardTraders = []; return; }
+      this.loadingCardTraders = true;
+      try {
+        this.cardTraders = await fetchTradersWithCard(cardName);
+      } catch (err) {
+        console.error(err);
+        this.cardTraders = [];
+      } finally {
+        this.loadingCardTraders = false;
+      }
+    },
+  },
+  watch: {
+    filterCardName(val) {
+      this.loadCardTraders(val);
+    },
   },
   async mounted() {
+    // If we arrive with a card filter already set (e.g. from "See traders"),
+    // kick off the card search immediately — the watcher won't fire for the
+    // initial prop value since the component is freshly mounted.
+    if (this.filterCardName) this.loadCardTraders(this.filterCardName);
     await Promise.all([this.loadMatches(), this.loadProposals(), this.loadRecentNotifs()]);
 
     // Live updates on Card, Trade, and Notification changes

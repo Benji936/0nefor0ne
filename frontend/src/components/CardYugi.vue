@@ -1,6 +1,6 @@
 <script setup>
 import { cardImage } from '@/lib/cardImage'
-const emit = defineEmits(['showTraders'])
+const emit = defineEmits(['showTraders', 'requireAuth'])
 </script>
 
 <template>
@@ -107,6 +107,7 @@ const emit = defineEmits(['showTraders'])
 
 <script>
 import AddCard from './AddCard.vue';
+import { getClient } from '@/lib/supabaseClient';
 
 export default {
   components: { AddCard },
@@ -130,10 +131,14 @@ export default {
     },
   },
   methods: {
-    openTrade() {
+    async openTrade() {
+      const { data } = await getClient().auth.getUser();
+      if (!data?.user) { this.$emit('requireAuth'); return; }
       this.$refs.tradeAdd.openWith(this.componentCard, this.extension);
     },
-    openWish() {
+    async openWish() {
+      const { data } = await getClient().auth.getUser();
+      if (!data?.user) { this.$emit('requireAuth'); return; }
       this.$refs.wishAdd.openWith(this.componentCard, this.extension);
     },
   },

@@ -1,8 +1,9 @@
 <script setup>
 import { ref, watch, computed } from "vue";
 import { cardImage } from "@/lib/cardImage";
-import { fetchMyLibrary, createTradeProposal, updateTradeProposal, counterTradeProposal, fetchUserWishlist, fetchUserTradePile, fetchMyWishlistNames } from "@/lib/matches";
+import { fetchMyLibrary, createTradeProposal, updateTradeProposal, counterTradeProposal, fetchUserWishlist, fetchUserTradePile, fetchMyWishlistNames, uploadTradePhoto } from "@/lib/matches";
 import { searchById } from "@/api";
+import { getClient } from "@/lib/supabaseClient";
 import AddCard from "@/components/AddCard.vue";
 
 const props = defineProps({
@@ -81,6 +82,7 @@ watch(
     receiveSelection.value = {};
     giveFilter.value = "";
     theirFilter.value = "";
+    removePhoto();
 
     // Settlement pre-population
     const src = props.editProposal ?? props.counterProposal;
@@ -218,15 +220,22 @@ async function submit() {
     cash_payer:   settlement.value.hasCash && settlement.value.cash_amount > 0 ? settlement.value.cash_payer : null,
   };
   try {
+    const me = (await getClient().auth.getUser()).data?.user?.id;
+    let tradeId;
     if (isEditing.value) {
-      await updateTradeProposal(props.editProposal.id, givePayload.value, receivePayload.value, settlementPayload);
-      emit("updated", props.editProposal.id);
+      tradeId = props.editProposal.id;
+      await updateTradeProposal(tradeId, givePayload.value, receivePayload.value, settlementPayload);
+      emit("updated", tradeId);
     } else if (isCountering.value) {
-      const tradeId = await counterTradeProposal(props.counterProposal.id, givePayload.value, receivePayload.value, settlementPayload);
+      tradeId = await counterTradeProposal(props.counterProposal.id, givePayload.value, receivePayload.value, settlementPayload);
       emit("countered", tradeId);
     } else {
-      const tradeId = await createTradeProposal(props.user.id, givePayload.value, receivePayload.value, settlementPayload);
+      tradeId = await createTradeProposal(props.user.id, givePayload.value, receivePayload.value, settlementPayload);
       emit("submitted", tradeId);
+    }
+    // Upload verification photo if one was selected
+    if (photoFile.value && tradeId && me) {
+      await uploadTradePhoto(tradeId, me, photoFile.value);
     }
     close();
   } catch (err) {
@@ -243,6 +252,24 @@ function shortenRarity(rarity) {
 function describe(card) {
   const bits = [card.extension, shortenRarity(card.rarity), card.condition, card.language].filter(Boolean);
   return bits.join(" · ");
+}
+
+// Photo upload
+const photoFile    = ref(null);
+const photoPreview = ref(null);
+const photoInput   = ref(null);
+
+function onPhotoSelected(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  photoFile.value = file;
+  photoPreview.value = URL.createObjectURL(file);
+}
+function removePhoto() {
+  photoFile.value = null;
+  if (photoPreview.value) URL.revokeObjectURL(photoPreview.value);
+  photoPreview.value = null;
+  if (photoInput.value) photoInput.value.value = "";
 }
 
 // Inline "add to offer" suggestions panel (counterparty's wishlist)
@@ -313,11 +340,12 @@ function marketLinks(name, setCode) {
   <v-dialog
     :model-value="modelValue"
     @update:model-value="emit('update:modelValue', $event)"
-    max-width="1400"
-    width="92vw"
+    max-width="100vw"
+    width="100vw"
+    height="100dvh"
     scrollable
   >
-    <v-card v-if="effectiveUser" theme="dark" class="trade-dialog !rounded-2xl overflow-hidden" style="background-color: var(--c-surface); color: var(--c-text)">
+    <v-card v-if="effectiveUser" theme="dark" class="trade-dialog !rounded-none overflow-hidden" style="background-color: var(--c-surface); color: var(--c-text); height: 100dvh; display: flex; flex-direction: column">
       <!-- Header -->
       <div class="relative">
         <div class="flex items-center gap-4 px-6 py-4">
@@ -343,7 +371,7 @@ function marketLinks(name, setCode) {
         <div class="h-[2px] w-full" style="background: linear-gradient(90deg, var(--c-accent), transparent 40%, transparent 60%, var(--c-trade))" />
       </div>
 
-      <v-card-text class="pa-5" style="overflow: hidden; display: flex; flex-direction: column; min-height: 0; height: 68vh;">
+      <v-card-text class="pa-5" style="overflow: hidden; display: flex; flex-direction: column; min-height: 0; flex: 1;">
         <!-- Loading skeletons -->
         <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
           <div v-for="col in 2" :key="col" class="flex flex-col gap-4">
@@ -695,61 +723,102 @@ function marketLinks(name, setCode) {
         </div>
 
         <!-- ── Settlement details ── -->
-        <div class="mt-4 rounded-xl border py-4 px-4 flex flex-col gap-3" style="border-color: var(--c-border); background-color: var(--c-surface-2)">
-          <p class="text-[11px] font-bold uppercase tracking-widest" style="color: var(--c-muted)">Settlement details</p>
+        <div class="flex flex-row justify-between mt-4 rounded-xl border py-4 px-4 "  style="border-color: var(--c-border); background-color: var(--c-surface-2)">
+          <div class="flex flex-col gap-3">
+            <p class="text-[11px] font-bold uppercase tracking-widest" style="color: var(--c-muted)">Settlement details</p>
 
-          <!-- Trade method -->
-          <div class="flex items-center gap-2 flex-wrap">
-            <span class="text-xs shrink-0" style="color: var(--c-muted)">How:</span>
-            <button
-              v-for="m in METHODS" :key="m.value"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer"
-              :style="settlement.trade_method === m.value
-                ? { backgroundColor: 'var(--c-trade)', borderColor: 'var(--c-trade)', color: 'white' }
-                : { backgroundColor: 'transparent', borderColor: 'var(--c-border)', color: 'var(--c-muted)' }"
-              @click="settlement.trade_method = settlement.trade_method === m.value ? null : m.value"
-            >
-              <v-icon :icon="m.icon" size="14" />
-              {{ m.label }}
-            </button>
-          </div>
-
-          <!-- Cash offset -->
-          <div class="flex gap-3 items-center flex-wrap">
-
-            <v-checkbox label="Add cash offset" v-model="settlement.hasCash" style="accent-color: var(--c-trade); height: 55px;" />
-
-            <template v-if="settlement.hasCash">
-              <select
-                v-model="settlement.cash_payer"
-                class="rounded-lg px-2 py-1 text-xs border outline-none"
-                :style="{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
+            <!-- Trade method -->
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs shrink-0" style="color: var(--c-muted)">How:</span>
+              <button
+                v-for="m in METHODS" :key="m.value"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer"
+                :style="settlement.trade_method === m.value
+                  ? { backgroundColor: 'var(--c-trade)', borderColor: 'var(--c-trade)', color: 'white' }
+                  : { backgroundColor: 'transparent', borderColor: 'var(--c-border)', color: 'var(--c-muted)' }"
+                @click="settlement.trade_method = settlement.trade_method === m.value ? null : m.value"
               >
-                <option value="proposer">You pay</option>
-                <option value="counterparty">They pay</option>
-              </select>
-              <div class="relative flex items-center">
-                <span class="absolute left-2.5 text-xs pointer-events-none" style="color: var(--c-muted)">€</span>
-                <input
-                  v-model.number="settlement.cash_amount"
-                  type="number" min="0" step="0.01" placeholder="0.00"
-                  class="pl-6 pr-3 py-1 rounded-lg text-xs border outline-none w-24"
+                <v-icon :icon="m.icon" size="14" />
+                {{ m.label }}
+              </button>
+            </div>
+
+            <!-- Cash offset -->
+            <div class="flex gap-3 items-center flex-wrap">
+
+              <v-checkbox label="Add cash offset" v-model="settlement.hasCash" style="accent-color: var(--c-trade); height: 55px;" />
+
+              <template v-if="settlement.hasCash">
+                <select
+                  v-model="settlement.cash_payer"
+                  class="rounded-lg px-2 py-1 text-xs border outline-none"
                   :style="{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
-                />
-              </div>
-              <span v-if="settlement.cash_amount > 0" class="text-xs font-semibold" style="color: var(--c-mutual)">
-                {{ settlement.cash_payer === 'proposer' ? 'You' : effectiveUser?.name ?? 'They' }}
-                pay €{{ Number(settlement.cash_amount).toFixed(2) }}
-              </span>
-            </template>
+                >
+                  <option value="proposer">You pay</option>
+                  <option value="counterparty">They pay</option>
+                </select>
+                <div class="relative flex items-center">
+                  <span class="absolute left-2.5 text-xs pointer-events-none" style="color: var(--c-muted)">€</span>
+                  <input
+                    v-model.number="settlement.cash_amount"
+                    type="number" min="0" step="0.01" placeholder="0.00"
+                    class="pl-6 pr-3 py-1 rounded-lg text-xs border outline-none w-24"
+                    :style="{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
+                  />
+                </div>
+                <span v-if="settlement.cash_amount > 0" class="text-xs font-semibold" style="color: var(--c-mutual)">
+                  {{ settlement.cash_payer === 'proposer' ? 'You' : effectiveUser?.name ?? 'They' }}
+                  pay €{{ Number(settlement.cash_amount).toFixed(2) }}
+                </span>
+              </template>
+            </div>
           </div>
 
-          <!-- Chat hint -->
-          <div class="flex items-center gap-2 rounded-lg px-3 py-2" style="background-color: color-mix(in srgb, var(--c-trade) 10%, transparent); border: 1px solid color-mix(in srgb, var(--c-trade) 25%, transparent)">
-            <v-icon icon="mdi-message-outline" size="14" color="var(--c-trade)" />
-            <span class="text-xs" style="color: var(--c-muted)">
-              Use the <strong style="color: var(--c-trade)">trade chat</strong> in Review &amp; Verify to discuss meeting points, shipping details, and conditions.
-            </span>
+          <!-- Verification photo -->
+          <div class="flex flex-col gap-2">
+            <p class="text-[11px] font-bold uppercase tracking-widest" style="color: var(--c-muted)">Verification photo</p>
+            <p class="text-xs" style="color: var(--c-muted)">Attach a photo of your cards so the other party can verify the condition before accepting.</p>
+
+            <div class="flex items-center gap-3 flex-wrap">
+              <!-- Preview thumbnail -->
+              <div v-if="photoPreview" class="relative shrink-0">
+                <img
+                  :src="photoPreview"
+                  alt="Preview"
+                  class="h-20 w-20 object-cover rounded-lg ring-1"
+                  style="ring-color: var(--c-border)"
+                />
+                <button
+                  class="absolute -top-1.5 -right-1.5 size-5 rounded-full flex items-center justify-center cursor-pointer"
+                  style="background-color: var(--c-accent)"
+                  @click="removePhoto"
+                  title="Remove photo"
+                >
+                  <v-icon icon="mdi-close" size="12" color="white" />
+                </button>
+              </div>
+
+              <!-- Upload button -->
+              <button
+                class="flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-semibold cursor-pointer transition-colors"
+                :style="{
+                  borderColor: photoFile ? 'var(--c-mutual)' : 'var(--c-border)',
+                  color: photoFile ? 'var(--c-mutual)' : 'var(--c-muted)',
+                  backgroundColor: photoFile ? 'color-mix(in srgb, var(--c-mutual) 8%, transparent)' : 'transparent',
+                }"
+                @click="photoInput.click()"
+              >
+                <v-icon icon="mdi-camera-plus-outline" size="15" />
+                {{ photoFile ? 'Change photo' : 'Add photo' }}
+              </button>
+              <input
+                ref="photoInput"
+                type="file"
+                accept="image/*"
+                class="hidden"
+                @change="onPhotoSelected"
+              />
+            </div>
           </div>
         </div>
 
@@ -801,7 +870,7 @@ function marketLinks(name, setCode) {
 
 <style scoped>
 .trade-dialog {
-  border: 1px solid var(--c-border);
+  border: none;
 }
 .column-scroll {
   scrollbar-width: thin;
