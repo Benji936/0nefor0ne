@@ -2,6 +2,7 @@
 import { ref, computed } from "vue";
 import { cardImage } from "@/lib/cardImage";
 import { getClient } from "@/lib/supabaseClient";
+import { timeAgo } from "@/lib/notifications";
 import TradeDetailDialog from "@/components/TradeDetailDialog.vue";
 
 const props = defineProps({
@@ -20,17 +21,6 @@ const statusMeta = computed(() => {
     completed: { label: "Completed", color: "var(--c-mutual)", icon: "mdi-handshake-outline" },
   };
   return map[props.proposal.status] ?? map.pending;
-});
-
-const timeAgo = computed(() => {
-  if (!props.proposal.created_at) return "";
-  const diff = Date.now() - new Date(props.proposal.created_at).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1)  return "just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
 });
 
 const isPending     = computed(() => props.proposal.status === "pending");
@@ -134,7 +124,7 @@ function cancelRating() {
           {{ proposal.counterparty_name ?? "Anonymous" }}
         </span>
         <span class="text-[11px]" style="color: var(--c-muted)">
-          {{ proposal.i_am_proposer ? "You proposed" : "Proposed to you" }} · {{ timeAgo }}
+          {{ proposal.i_am_proposer ? "You proposed" : "Proposed to you" }} · {{ timeAgo(proposal.created_at) }}
         </span>
       </div>
 

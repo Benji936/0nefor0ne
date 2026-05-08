@@ -6,7 +6,7 @@ const emit = defineEmits(['showTraders', 'requireAuth'])
 <template>
   <v-overlay class="align-center justify-center rounded-lg" :opacity="0" transition="scale-transition" @click.self="$emit('close')">
     <template v-slot:activator="{ props: activatorProps }">
-      <div class="hover:outline hover:outline-white cursor-pointer" v-bind="activatorProps">
+      <div class="hover:outline hover:outline-white cursor-pointer w-fit" v-bind="activatorProps">
         <img :alt="componentCard.name" loading="lazy" class="h-48 object-cover rounded" style="aspect-ratio: 59/86" :src="cardImage(componentCard.id)" />
       </div>
     </template>
@@ -18,7 +18,7 @@ const emit = defineEmits(['showTraders', 'requireAuth'])
       >
         <!-- Card image + data -->
         <div class="flex flex-col sm:flex-row gap-4 sm:gap-5">
-          <img :alt="componentCard.name" loading="lazy" class="h-52 sm:h-72 shrink-0 mx-auto sm:mx-0 rounded" :src="cardImage(componentCard.id)" />
+          <img :alt="componentCard.name" loading="lazy" class="h-26 sm:h-52 shrink-0 mx-auto sm:mx-0 rounded" :src="cardImage(componentCard.id)" />
           <div class="flex flex-col gap-2">
             <p class="font-bold text-xl" style="color: var(--c-text)">{{ componentCard.name }}</p>
             <div class="flex flex-wrap gap-3 text-base" style="color: var(--c-muted)">
@@ -115,9 +115,6 @@ export default {
     componentCard: { type: Object, required: true },
     extension: { type: String, default: '' },
   },
-  data() {
-    return { over: false };
-  },
   computed: {
     printPrices() {
       return this.componentCard.card_sets ?? [];
@@ -131,14 +128,17 @@ export default {
     },
   },
   methods: {
+    async _requireAuth() {
+      const { data } = await getClient().auth.getSession();
+      if (!data?.session) { this.$emit('requireAuth'); return false; }
+      return true;
+    },
     async openTrade() {
-      const { data } = await getClient().auth.getUser();
-      if (!data?.user) { this.$emit('requireAuth'); return; }
+      if (!await this._requireAuth()) return;
       this.$refs.tradeAdd.openWith(this.componentCard, this.extension);
     },
     async openWish() {
-      const { data } = await getClient().auth.getUser();
-      if (!data?.user) { this.$emit('requireAuth'); return; }
+      if (!await this._requireAuth()) return;
       this.$refs.wishAdd.openWith(this.componentCard, this.extension);
     },
   },

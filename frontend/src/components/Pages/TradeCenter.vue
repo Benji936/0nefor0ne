@@ -7,7 +7,7 @@ import { notifMeta, notifText, timeAgo } from '@/lib/notifications';
 </script>
 
 <template>
-  <div class="flex flex-col gap-6 py-6">
+  <div class="flex flex-col gap-6 py-15 px-15">
 
     <!-- ── Recent notifications ────────────────────────────────────────── -->
     <div
@@ -15,49 +15,66 @@ import { notifMeta, notifText, timeAgo } from '@/lib/notifications';
       class="flex flex-col rounded-2xl border overflow-hidden"
       style="background: var(--c-surface); border-color: var(--c-border)"
     >
-      <!-- Header -->
-      <div class="flex items-center justify-between px-4 py-3" style="border-bottom: 1px solid var(--c-border)">
+      <!-- Header — clickable to collapse -->
+      <button
+        class="flex items-center justify-between px-4 py-3 w-full text-left cursor-pointer transition-colors hover:bg-white/5"
+        :style="notifExpanded ? 'border-bottom: 1px solid var(--c-border)' : ''"
+        @click="notifExpanded = !notifExpanded"
+      >
         <div class="flex items-center gap-2">
           <v-icon icon="mdi-bell-outline" size="14" style="color: var(--c-muted)" />
           <span class="text-[11px] font-bold uppercase tracking-widest" style="color: var(--c-muted)">Recent activity</span>
-        </div>
-      </div>
-
-      <!-- Rows -->
-      <button
-        v-for="n in recentNotifs"
-        :key="n.id"
-        class="notif-row flex items-center gap-3 px-4 py-3 w-full text-left cursor-pointer transition-colors"
-        :style="{ backgroundColor: n.read ? 'transparent' : `color-mix(in srgb, ${notifMeta(n).color} 5%, transparent)` }"
-        @click="onNotifClick"
-      >
-        <!-- Icon -->
-        <div
-          class="size-7 rounded-full shrink-0 flex items-center justify-center"
-          :style="{ background: `color-mix(in srgb, ${notifMeta(n).color} 14%, transparent)` }"
-        >
-          <v-icon :icon="notifMeta(n).icon" size="14" :color="notifMeta(n).color" />
-        </div>
-
-        <!-- Text -->
-        <span
-          class="text-sm grow truncate"
-          :style="{
-            color: n.read ? 'var(--c-muted)' : 'var(--c-text)',
-            fontWeight: n.read ? '400' : '500',
-          }"
-        >{{ notifText(n) }}</span>
-
-        <!-- Time + unread dot -->
-        <div class="flex items-center gap-2 shrink-0">
-          <span class="text-[11px] tabular-nums" style="color: var(--c-muted)">{{ timeAgo(n.created_at, { short: true }) }}</span>
+          <!-- Unread count badge -->
           <span
-            v-if="!n.read"
-            class="size-2 rounded-full"
-            :style="{ backgroundColor: notifMeta(n).color }"
-          />
+            v-if="recentNotifs.some(n => !n.read)"
+            class="size-4 rounded-full flex items-center justify-center text-[10px] font-bold tabular-nums"
+            style="background: var(--c-accent); color: white"
+          >{{ recentNotifs.filter(n => !n.read).length }}</span>
         </div>
+        <v-icon
+          :icon="notifExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+          size="16"
+          style="color: var(--c-muted)"
+        />
       </button>
+
+      <!-- Rows — collapsible -->
+      <template v-if="notifExpanded">
+        <button
+          v-for="n in recentNotifs"
+          :key="n.id"
+          class="notif-row flex items-center gap-3 px-4 py-3 w-full text-left cursor-pointer transition-colors"
+          :style="{ backgroundColor: n.read ? 'transparent' : `color-mix(in srgb, ${notifMeta(n).color} 5%, transparent)` }"
+          @click="onNotifClick"
+        >
+          <!-- Icon -->
+          <div
+            class="size-7 rounded-full shrink-0 flex items-center justify-center"
+            :style="{ background: `color-mix(in srgb, ${notifMeta(n).color} 14%, transparent)` }"
+          >
+            <v-icon :icon="notifMeta(n).icon" size="14" :color="notifMeta(n).color" />
+          </div>
+
+          <!-- Text -->
+          <span
+            class="text-sm grow truncate"
+            :style="{
+              color: n.read ? 'var(--c-muted)' : 'var(--c-text)',
+              fontWeight: n.read ? '400' : '500',
+            }"
+          >{{ notifText(n) }}</span>
+
+          <!-- Time + unread dot -->
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="text-[11px] tabular-nums" style="color: var(--c-muted)">{{ timeAgo(n.created_at, { short: true }) }}</span>
+            <span
+              v-if="!n.read"
+              class="size-2 rounded-full"
+              :style="{ backgroundColor: notifMeta(n).color }"
+            />
+          </div>
+        </button>
+      </template>
     </div>
 
     <!-- Text tabs with animated bottom-border indicator -->
@@ -105,6 +122,41 @@ import { notifMeta, notifText, timeAgo } from '@/lib/notifications';
         >
           <v-icon icon="mdi-close" size="14" />
         </button>
+      </div>
+
+      <!-- Location + favourites filters -->
+      <div v-if="!loadingMatches && allMatches.length > 0" class="flex flex-wrap items-center gap-2">
+        <!-- Country -->
+        <select
+          v-model="locationCountry"
+          class="rounded-xl px-3 py-2 text-sm border outline-none transition-colors cursor-pointer"
+          :style="{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: locationCountry ? 'var(--c-text)' : 'var(--c-muted)' }"
+        >
+          <option value="">All countries</option>
+          <option v-for="c in availableCountries" :key="c" :value="c">{{ c }}</option>
+        </select>
+
+        <!-- City -->
+        <div class="relative">
+          <v-icon icon="mdi-city-variant-outline" size="14" class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" color="var(--c-muted)" />
+          <input
+            v-model="locationCity"
+            placeholder="City…"
+            class="rounded-xl pl-8 pr-3 py-2 text-sm border outline-none transition-colors"
+            style="width: 130px"
+            :style="{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
+            @focus="e => e.target.style.borderColor = 'var(--c-trade)'"
+            @blur="e => e.target.style.borderColor = 'var(--c-border)'"
+          />
+        </div>
+
+        <!-- Clear filters -->
+        <button
+          v-if="locationCountry || locationCity"
+          class="text-xs transition-opacity hover:opacity-70 cursor-pointer"
+          style="color: var(--c-accent)"
+          @click="locationCountry = ''; locationCity = ''"
+        >clear filters</button>
       </div>
 
       <!-- Filter notice -->
@@ -419,7 +471,8 @@ import { notifMeta, notifText, timeAgo } from '@/lib/notifications';
 
 <script>
 import { getClient } from "@/lib/supabaseClient";
-import { fetchMatches, fetchTradersWithCard, filterByCardName, bucketMatches, fetchMyProposals, updateProposalStatus, completeTradeProposal, cancelTradeProposal, declineTradeProposal } from "@/lib/matches";
+import { fetchMatches, fetchTradersWithCard, filterByCardName, bucketMatches } from "@/lib/matches";
+import { fetchMyProposals, updateProposalStatus, completeTradeProposal, cancelTradeProposal, declineTradeProposal } from "@/lib/proposals";
 
 export default {
   props: {
@@ -440,11 +493,15 @@ export default {
       loadingProposals: false,
       proposals: [],
       matchSearch: "",
+      // Location filter
+      locationCountry: "",
+      locationCity: "",
       // Profile dialog
       profileDialogOpen: false,
       profileTraderId:   null,
       // Recent notifications
       recentNotifs: [],
+      notifExpanded: false,
       // Shared
       subscription: null,
       dialogOpen: false,
@@ -478,11 +535,25 @@ export default {
         return false;
       });
     },
+    availableCountries() {
+      return [...new Set(this.visibleMatches.map(u => u.country).filter(Boolean))].sort();
+    },
+    filteredMatches() {
+      let result = this.searchedMatches;
+      if (this.locationCountry) {
+        result = result.filter(u => u.country === this.locationCountry);
+      }
+      if (this.locationCity.trim()) {
+        const city = this.locationCity.trim().toLowerCase();
+        result = result.filter(u => (u.city ?? "").toLowerCase().includes(city));
+      }
+      return result;
+    },
     buckets() {
-      return bucketMatches(this.searchedMatches);
+      return bucketMatches(this.filteredMatches);
     },
     totalMatches() {
-      return this.searchedMatches.length;
+      return this.filteredMatches.length;
     },
     isLoadingVisible() {
       return this.filterCardName ? this.loadingCardTraders : this.loadingMatches;
@@ -622,6 +693,7 @@ export default {
         .order("created_at", { ascending: false })
         .limit(3);
       this.recentNotifs = data ?? [];
+      this.notifExpanded = this.recentNotifs.some(n => !n.read);
     },
     onNotifClick() {
       this.activeTab = "proposals";
@@ -648,18 +720,21 @@ export default {
     // If we arrive with a card filter already set (e.g. from "See traders"),
     // kick off the card search immediately — the watcher won't fire for the
     // initial prop value since the component is freshly mounted.
-    if (this.filterCardName) this.loadCardTraders(this.filterCardName);
-    await Promise.all([this.loadMatches(), this.loadProposals(), this.loadRecentNotifs()]);
+    const matchesLoad = this.filterCardName
+      ? this.loadCardTraders(this.filterCardName)
+      : this.loadMatches();
+    await Promise.all([matchesLoad, this.loadProposals(), this.loadRecentNotifs()]);
 
     // Live updates on Card, Trade, and Notification changes
     this.subscription = getClient()
       .channel("trade-center-live")
-      .on("postgres_changes", { event: "*",    schema: "public", table: "Card" },         () => this.loadMatches())
+      .on("postgres_changes", { event: "*",    schema: "public", table: "Card" },         () => { if (!this.filterCardName) this.loadMatches(); })
       .on("postgres_changes", { event: "*",    schema: "public", table: "Trade" },        () => this.loadProposals())
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "notification",
           filter: `user_id=eq.${this.login?.user?.id}` },
         (payload) => {
           this.recentNotifs = [payload.new, ...this.recentNotifs].slice(0, 3);
+          this.notifExpanded = true;
         })
       .subscribe();
   },

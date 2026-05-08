@@ -4,6 +4,7 @@ import { getClient } from '@/lib/supabaseClient';
 import { cardImage } from '@/lib/cardImage';
 import { countryByCode } from '@/lib/countries';
 import { fetchUserTradePile, fetchUserWishlist } from '@/lib/matches';
+import { timeAgo } from '@/lib/notifications';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -44,18 +45,6 @@ const scopeMeta = computed(() => ({
   national:  { label: 'National only',  icon: 'mdi-flag-outline',  color: 'var(--c-trade)' },
   worldwide: { label: 'Worldwide',      icon: 'mdi-earth',         color: 'var(--c-muted)' },
 }[profile.value?.trade_scope ?? 'worldwide']));
-
-// ── Helpers ───────────────────────────────────────────────────────────────
-function timeAgo(ts) {
-  if (!ts) return '';
-  const diff = Date.now() - new Date(ts).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1)  return 'just now';
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
-}
 
 // ── Load ─────────────────────────────────────────────────────────────────
 async function load(id) {

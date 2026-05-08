@@ -43,11 +43,6 @@ import UserMenuChip from "@/components/UserMenuChip.vue";
       />
     </div>
   </div>
-    
-
-
-    <!-- Search bar — full width on mobile, 2/3 on desktop -->
-    
 
     <div class="flex items-center gap-1">
       <div v-if="authenticated" class="flex max-md:hidden items-center gap-1">
@@ -117,7 +112,7 @@ import UserMenuChip from "@/components/UserMenuChip.vue";
     </button>
   </nav>
 
-  <main class="px-4 md:px-10 pt-4 md:pt-6 min-h-screen pb-20 sm:pb-0" style="background: var(--c-bg); transition: background 0.3s ease">
+  <main class="px-5 md:px-16 pt-5 md:pt-8 min-h-screen pb-20 sm:pb-0" style="background: var(--c-bg); transition: background 0.3s ease">
     <TradeCenter
       v-if="page=='TradeCenter'"
       ref="tradeCenter"

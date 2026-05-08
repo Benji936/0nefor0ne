@@ -1,7 +1,8 @@
 <script setup>
 import { ref, watch, computed } from "vue";
 import { cardImage } from "@/lib/cardImage";
-import { fetchMyLibrary, createTradeProposal, updateTradeProposal, counterTradeProposal, fetchUserWishlist, fetchUserTradePile, fetchMyWishlistNames, uploadTradePhoto } from "@/lib/matches";
+import { fetchMyLibrary, fetchUserWishlist, fetchUserTradePile, fetchMyWishlistNames } from "@/lib/matches";
+import { createTradeProposal, updateTradeProposal, counterTradeProposal, uploadTradePhoto } from "@/lib/proposals";
 import { searchById } from "@/api";
 import { getClient } from "@/lib/supabaseClient";
 import AddCard from "@/components/AddCard.vue";
@@ -207,6 +208,7 @@ const userInitials = computed(() => {
 });
 
 function close() {
+  removePhoto();
   emit("update:modelValue", false);
 }
 
@@ -220,7 +222,7 @@ async function submit() {
     cash_payer:   settlement.value.hasCash && settlement.value.cash_amount > 0 ? settlement.value.cash_payer : null,
   };
   try {
-    const me = (await getClient().auth.getUser()).data?.user?.id;
+    const me = (await getClient().auth.getSession()).data?.session?.user?.id;
     let tradeId;
     if (isEditing.value) {
       tradeId = props.editProposal.id;

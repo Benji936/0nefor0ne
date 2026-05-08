@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col gap-10 py-6">
+  <div class="flex flex-col gap-10 px-15 py-15">
 
     <!-- ── Search results ── -->
     <section v-if="hasSearchResults">
@@ -9,12 +9,59 @@
           {{ searchCards.data.length }} cards
         </span>
       </div>
-      <div class="flex flex-wrap gap-4">
+      <div class="flex flex-wrap gap-5">
         <div v-for="card in searchCards.data" :key="card.id" style="width: 136px; flex-shrink: 0">
           <CardYugi :componentCard="card" @showTraders="$emit('TradeCenter', $event)" @requireAuth="$emit('requireAuth')" />
         </div>
       </div>
       <div class="h-px w-full mt-10" style="background-color: var(--c-border)" />
+    </section>
+
+    <!-- ── Trending cards ── -->
+    <section v-if="loadingTrending || trendingCards.length > 0" class="flex flex-col gap-4">
+      <div class="flex items-center gap-3">
+        <v-icon icon="mdi-fire" size="18" style="color: var(--c-accent)" />
+        <p class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">Trending</p>
+        <span class="text-xs px-2 py-0.5 rounded border" style="color: var(--c-muted); border-color: var(--c-border)">last 30 days</span>
+      </div>
+
+      <!-- Skeleton -->
+      <div v-if="loadingTrending" class="flex gap-3 overflow-x-auto pb-2">
+        <div
+          v-for="j in 8" :key="j"
+          class="rounded-lg animate-pulse shrink-0"
+          :style="{ width: '90px', height: '128px', backgroundColor: 'var(--c-skeleton)', animationDelay: `${j * 50}ms` }"
+        />
+      </div>
+
+      <!-- Trending chips row -->
+      <div v-else class="flex gap-3 overflow-x-auto pb-2">
+        <button
+          v-for="card in trendingCards"
+          :key="`${card.image_id}-${card.extension}`"
+          class="trending-chip relative shrink-0 overflow-hidden cursor-pointer border"
+          style="width: 90px; border-color: var(--c-border)"
+          :title="`${card.name} · ${card.extension ?? ''}`"
+          @click="$emit('TradeCenter', card.name)"
+        >
+          <img
+            :src="cardImage(card.image_id)"
+            :alt="card.name"
+            class="w-full object-contain"
+            style="height: 128px; background: var(--c-surface-2)"
+            loading="lazy"
+          />
+          <!-- Heat badge -->
+          <span
+            class="absolute top-1 right-1 flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold tabular-nums"
+            style="background: color-mix(in srgb, var(--c-accent) 85%, black); color: white"
+          >
+            <v-icon icon="mdi-fire" size="9" />{{ card.trade_count }}
+          </span>
+        </button>
+      </div>
+
+      <div class="h-px w-full" style="background-color: var(--c-border)" />
     </section>
 
     <!-- ── Browse by extension ── -->
@@ -43,7 +90,7 @@
         @update:model-value="onSetSelected"
       >
         <template #item="{ item, props: itemProps }">
-          <v-list-item v-bind="itemProps" :subtitle="item.raw.set_code" density="compact">
+          <v-list-item v-bind="itemProps" :subtitle="item.raw.set_code">
             <template #append>
               <span class="text-xs tabular-nums" style="color: var(--c-muted)">{{ item.raw.num_of_cards }} cards</span>
             </template>
@@ -130,6 +177,8 @@
 <script>
 import CardYugi from '../CardYugi.vue';
 import { getCardSets, getCardsBySet } from "@/api";
+import { fetchTrendingCards } from "@/lib/matches";
+import { cardImage } from "@/lib/cardImage";
 
 export default {
   components: { CardYugi },
@@ -144,8 +193,12 @@ export default {
       selectedSet: null,
       setCards: [],
       loadingSetCards: false,
+      _setReqId: 0,
       // Latest releases
       latestSets: [],
+      // Trending cards
+      trendingCards: [],
+      loadingTrending: true,
     };
   },
   computed: {
@@ -154,6 +207,7 @@ export default {
     },
   },
   methods: {
+    cardImage,
     filterSet(value, query, item) {
       const q = query.toLowerCase();
       return (
@@ -164,18 +218,26 @@ export default {
     async onSetSelected(setName) {
       this.setCards = [];
       if (!setName) return;
+      const reqId = ++this._setReqId;
       this.loadingSetCards = true;
       try {
         const r = await getCardsBySet(setName);
+        if (reqId !== this._setReqId) return;
         this.setCards = r.data?.data ?? [];
       } catch {
-        this.setCards = [];
+        if (reqId === this._setReqId) this.setCards = [];
       } finally {
-        this.loadingSetCards = false;
+        if (reqId === this._setReqId) this.loadingSetCards = false;
       }
     },
   },
   async mounted() {
+    // Load trending cards in the background
+    fetchTrendingCards(10).then(data => {
+      this.trendingCards = data;
+      this.loadingTrending = false;
+    }).catch(() => { this.loadingTrending = false; });
+
     const res = await getCardSets();
     this.allSets = (res.data ?? []).sort((a, b) => a.set_name.localeCompare(b.set_name));
 
@@ -201,3 +263,14 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.trending-chip {
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.trending-chip:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+</style>

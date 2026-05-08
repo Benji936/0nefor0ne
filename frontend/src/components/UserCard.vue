@@ -18,6 +18,8 @@ const location = computed(() => {
   return [props.user.city, props.user.country].filter(Boolean).join(", ");
 });
 
+const verified = computed(() => (props.user.avgRating ?? 0) >= 4.0);
+
 const kindMeta = computed(() => {
   switch (props.user.kind) {
     case "mutual":
@@ -116,6 +118,13 @@ const kindMeta = computed(() => {
           <p class="font-bold text-sm truncate leading-tight hover:underline underline-offset-2" style="color: var(--c-text)">
             {{ user.name ?? "Anonymous" }}
           </p>
+          <v-icon
+            v-if="verified"
+            icon="mdi-check-decagram"
+            size="13"
+            title="Verified trader"
+            style="color: var(--c-mutual); flex-shrink: 0"
+          />
           <span
             v-if="user.avgRating"
             class="flex items-center gap-0.5 text-[10px] font-bold shrink-0 tabular-nums"
@@ -131,7 +140,7 @@ const kindMeta = computed(() => {
         </p>
       </div>
 
-      <span
+<span
         class="text-[10px] font-bold px-2 py-0.5 rounded-lg border shrink-0 uppercase tracking-wide"
         :style="{
           color: kindMeta.color,
