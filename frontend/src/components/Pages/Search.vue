@@ -54,7 +54,7 @@ const HOW_IT_WORKS = [
         </h1>
         <p class="text-base md:text-lg leading-relaxed" style="color: var(--c-muted)">
           One for One connects Yu-Gi-Oh! collectors who have what each other wants.
-          No fees, no auctions — just direct peer-to-peer trades.
+          No fees, no auctions just direct peer-to-peer trades.
         </p>
         <div class="flex flex-wrap gap-3 mt-1">
           <v-btn
@@ -75,7 +75,7 @@ const HOW_IT_WORKS = [
           <div
             v-for="step in HOW_IT_WORKS"
             :key="step.n"
-            class="flex flex-col gap-2 rounded-xl p-4"
+            class="flex flex-col gap-2 rounded-xl py-4 px-4"
             style="background: var(--c-surface); border: 1px solid var(--c-border)"
           >
             <span class="text-xs font-black tabular-nums" style="color: var(--c-trade)">{{ step.n }}</span>
