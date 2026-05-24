@@ -26,7 +26,15 @@ const hasSearchResults = (searchCards) =>
         </span>
       </div>
       <div class="flex flex-wrap gap-5">
-        <div v-for="card in searchCards.data" :key="card.id" style="width: 136px; flex-shrink: 0">
+        <div v-for="card in searchCards.data" :key="card.id" class="relative" style="width: 136px; flex-shrink: 0">
+          <!-- SEO anchor: gives crawlers a followable link to the card permalink -->
+          <a
+            :href="`/card/${card.id}`"
+            :aria-label="card.name"
+            class="absolute inset-0 z-0"
+            tabindex="-1"
+            @click.prevent
+          />
           <CardYugi :componentCard="card" @showTraders="$emit('TradeCenter', $event)" @requireAuth="$emit('requireAuth')" />
         </div>
       </div>

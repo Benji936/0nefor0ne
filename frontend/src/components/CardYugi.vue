@@ -55,6 +55,16 @@ const emit = defineEmits(['showTraders', 'requireAuth'])
           </div>
         </div>
 
+        <!-- Permalink -->
+        <router-link
+          :to="`/card/${componentCard.id}`"
+          class="text-xs no-underline flex items-center gap-1 transition-opacity hover:opacity-70 -mt-2 w-fit"
+          style="color: var(--c-muted)"
+        >
+          <v-icon icon="mdi-link-variant" size="13" />
+          Permalink
+        </router-link>
+
         <!-- Footer links -->
         <div class="flex gap-3 -mt-3">
           <a
