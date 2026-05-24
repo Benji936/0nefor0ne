@@ -140,6 +140,18 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Bottom tab bar grows to cover the home indicator on notched phones */
+.mobile-bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Main content: clear the fixed tab bar including home indicator */
+@media (max-width: 639px) {
+  .main-content-mobile-pb {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 16px) + 8px);
+  }
+}
+
 /* Kill the 300ms tap delay on all interactive elements */
 a, button, [role="button"], input, select, textarea, label {
   touch-action: manipulation;

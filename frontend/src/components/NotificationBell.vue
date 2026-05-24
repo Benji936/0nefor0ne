@@ -93,7 +93,7 @@ onBeforeUnmount(() => {
       <!-- Unread badge -->
       <span
         v-if="unreadCount > 0"
-        class="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full flex items-center justify-center text-[10px] font-bold px-1 pointer-events-none"
+        class="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full flex items-center justify-center text-[10px] font-bold px-1 pointer-events-none"
         style="background: var(--c-accent); color: white; line-height: 1"
       >{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
     </button>
@@ -134,10 +134,10 @@ onBeforeUnmount(() => {
           <!-- Loading -->
           <div v-if="loading" class="flex flex-col divide-y" style="border-color: var(--c-border)">
             <div v-for="i in 4" :key="i" class="flex items-start gap-3 px-4 py-3 animate-pulse">
-              <div class="size-5 rounded-full shrink-0 mt-0.5" style="background: var(--c-skeleton)" />
-              <div class="flex flex-col gap-1.5 grow">
+              <div class="size-5 rounded-full shrink-0 mt-1" style="background: var(--c-skeleton)" />
+              <div class="flex flex-col gap-2 grow">
                 <div class="h-3 rounded w-4/5" style="background: var(--c-skeleton)" />
-                <div class="h-2.5 rounded w-1/3" style="background: var(--c-skeleton)" />
+                <div class="h-3 rounded w-1/3" style="background: var(--c-skeleton)" />
               </div>
             </div>
           </div>
@@ -161,9 +161,9 @@ onBeforeUnmount(() => {
                 :icon="notifMeta(n).icon"
                 size="17"
                 :color="notifMeta(n).color"
-                class="shrink-0 mt-0.5"
+                class="shrink-0 mt-1"
               />
-              <div class="flex flex-col min-w-0 grow gap-0.5">
+              <div class="flex flex-col min-w-0 grow gap-1">
                 <p class="text-xs leading-snug" :style="{ color: n.read ? 'var(--c-muted)' : 'var(--c-text)', fontWeight: n.read ? '400' : '500' }">
                   {{ notifText(n) }}
                 </p>
@@ -171,7 +171,7 @@ onBeforeUnmount(() => {
               </div>
               <span
                 v-if="!n.read"
-                class="size-1.5 rounded-full shrink-0 mt-1.5"
+                class="size-2 rounded-full shrink-0 mt-2"
                 :style="{ backgroundColor: notifMeta(n).color }"
               />
             </button>

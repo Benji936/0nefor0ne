@@ -3,14 +3,14 @@
 
     <!-- Profile card -->
     <div class="rounded-2xl border overflow-hidden" style="background: var(--c-surface); border-color: var(--c-border)">
-      <div class="h-1.5 w-full" style="background: linear-gradient(90deg, var(--c-accent), var(--c-trade))" />
+      <div class="h-2 w-full" style="background: linear-gradient(90deg, var(--c-accent), var(--c-trade))" />
 
-      <div class="flex flex-col gap-6 px-6 py-5">
+      <div class="flex flex-col gap-4 sm:gap-6 px-4 sm:px-6 py-4 sm:py-5">
 
         <!-- Avatar + identity -->
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3">
           <div
-            class="relative size-16 rounded-2xl shrink-0 overflow-hidden flex items-center justify-center select-none"
+            class="relative size-13 sm:size-16 rounded-2xl shrink-0 overflow-hidden flex items-center justify-center select-none"
             style="background: color-mix(in srgb, var(--c-trade) 18%, transparent); color: var(--c-trade); border: 1.5px solid color-mix(in srgb, var(--c-trade) 30%, transparent)"
           >
             <template v-if="editing ? (avatarPreview || draft.avatar_url) : profile.avatar_url">
@@ -20,7 +20,7 @@
                 class="w-full h-full object-cover"
               />
             </template>
-            <span v-else class="text-2xl font-bold">{{ initials }}</span>
+            <span v-else class="text-xl font-bold">{{ initials }}</span>
 
             <template v-if="editing">
               <input
@@ -44,10 +44,10 @@
           </div>
 
           <div class="flex flex-col grow min-w-0">
-            <span class="font-bold text-lg leading-tight truncate" style="color: var(--c-text)">
+            <span class="font-bold text-base sm:text-lg leading-tight truncate" style="color: var(--c-text)">
               {{ profile.Name || 'No name set' }}
             </span>
-            <span class="text-sm mt-0.5 flex items-center gap-1.5 flex-wrap" style="color: var(--c-muted)">
+            <span class="text-sm mt-1 flex items-center gap-2 flex-wrap" style="color: var(--c-muted)">
               <template v-if="profileCountry">
                 <span>{{ profileCountry.flag }}</span>
                 <span>{{ [profile.City, profileCountry.name].filter(Boolean).join(', ') }}</span>
@@ -203,19 +203,19 @@
         <div
           v-for="stat in stats"
           :key="stat.label"
-          class="flex flex-col gap-1 rounded-xl border px-4 py-3"
+          class="flex flex-col gap-1 rounded-xl border px-2 sm:px-4 py-2 sm:py-3"
           style="background: var(--c-surface); border-color: var(--c-border)"
         >
-          <div class="flex items-center gap-1.5">
+          <div class="flex items-center gap-2">
             <v-icon :icon="stat.icon" size="14" :color="stat.color" />
-            <span class="text-[11px] font-semibold uppercase tracking-wide" :style="{ color: stat.color }">{{ stat.label }}</span>
+            <span class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-tight sm:tracking-wide" :style="{ color: stat.color }">{{ stat.label }}</span>
           </div>
           <span
             v-if="loadingStats"
-            class="h-6 w-10 rounded animate-pulse mt-0.5"
+            class="h-6 w-10 rounded animate-pulse mt-1"
             style="background: var(--c-skeleton); display: block"
           />
-          <span v-else class="text-2xl font-bold tabular-nums leading-tight" style="color: var(--c-text)">{{ stat.value }}</span>
+          <span v-else class="text-xl sm:text-2xl font-bold tabular-nums leading-tight" style="color: var(--c-text)">{{ stat.value }}</span>
         </div>
       </div>
     </div>

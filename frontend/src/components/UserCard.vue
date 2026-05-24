@@ -114,7 +114,7 @@ const kindMeta = computed(() => {
         class="flex flex-col grow min-w-0 cursor-pointer"
         @click.stop="emit('openProfile', user.id)"
       >
-        <div class="flex items-center gap-1.5 min-w-0">
+        <div class="flex items-center gap-2 min-w-0">
           <p class="font-bold text-sm truncate leading-tight hover:underline underline-offset-2" style="color: var(--c-text)">
             {{ user.name ?? "Anonymous" }}
           </p>
@@ -127,21 +127,21 @@ const kindMeta = computed(() => {
           />
           <span
             v-if="user.avgRating"
-            class="flex items-center gap-0.5 text-[10px] font-bold shrink-0 tabular-nums"
+            class="flex items-center gap-1 text-[10px] font-bold shrink-0 tabular-nums"
             style="color: var(--c-mutual)"
           >
             <v-icon icon="mdi-star" size="10" style="color: var(--c-mutual)" />
             {{ user.avgRating }}
           </span>
         </div>
-        <p v-if="location" class="text-[11px] truncate flex items-center gap-1 mt-0.5" style="color: var(--c-muted)">
+        <p v-if="location" class="text-[11px] truncate flex items-center gap-1 mt-1" style="color: var(--c-muted)">
           <v-icon icon="mdi-map-marker-outline" size="10" style="opacity: 0.55" />
           {{ location }}
         </p>
       </div>
 
 <span
-        class="text-[10px] font-bold px-2 py-0.5 rounded-lg border shrink-0 uppercase tracking-wide"
+        class="text-[10px] font-bold px-2 py-1 rounded-lg border shrink-0 uppercase tracking-wide"
         :style="{
           color: kindMeta.color,
           backgroundColor: `color-mix(in srgb, ${kindMeta.color} 12%, transparent)`,
@@ -225,17 +225,17 @@ const kindMeta = computed(() => {
 
     <!-- Footer: count pills · Propose CTA -->
     <div class="flex items-center gap-2 px-4 pb-4">
-      <div class="flex gap-1.5 grow flex-wrap">
+      <div class="flex gap-2 grow flex-wrap">
         <span
           v-if="user.theyHaveCount > 0"
-          class="flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold tabular-nums"
+          class="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold tabular-nums"
           style="background: color-mix(in srgb, var(--c-trade) 12%, transparent); color: var(--c-trade)"
         >
           <v-icon icon="mdi-arrow-down-bold" size="11" />{{ user.theyHaveCount }}
         </span>
         <span
           v-if="user.theyWantCount > 0"
-          class="flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold tabular-nums"
+          class="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold tabular-nums"
           style="background: color-mix(in srgb, var(--c-accent) 12%, transparent); color: var(--c-accent)"
         >
           <v-icon icon="mdi-arrow-up-bold" size="11" />{{ user.theyWantCount }}
@@ -245,7 +245,7 @@ const kindMeta = computed(() => {
         variant="flat"
         prepend-icon="mdi-swap-horizontal"
         class="!rounded-lg shrink-0"
-        style="min-height: 44px; font-size: 13px"
+        style="min-height: 44px; font-size: 13px; min-width: 0"
         :style="{ backgroundColor: kindMeta.color, color: kindMeta.btnText }"
         @click.stop="emit('openTrade', user)"
       >Propose</v-btn>

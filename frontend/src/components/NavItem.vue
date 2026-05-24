@@ -26,7 +26,7 @@ const emit = defineEmits(["click"]);
 
         <div
           v-if="indicator"
-          class="h-0.5 w-4 rounded-full transition-all"
+          class="h-1 w-4 rounded-full transition-all"
           :style="active ? { backgroundColor: 'var(--c-accent)' } : { backgroundColor: 'transparent' }"
         />
       </div>

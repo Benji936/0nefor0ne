@@ -190,7 +190,7 @@ function cancelRating() {
 
       <!-- Divider: horizontal on mobile, vertical on desktop -->
       <div
-        class="flex items-center justify-center py-1.5 md:py-0 md:w-8 shrink-0"
+        class="flex items-center justify-center py-2 md:py-0 md:w-8 shrink-0"
         
         style="background: var(--c-surface)"
       >
@@ -306,7 +306,7 @@ function cancelRating() {
           <!-- Dual confirmation status -->
           <div class="flex gap-2">
             <div
-              class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs flex-1 border"
+              class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs flex-1 border"
               :style="iConfirmed
                 ? { background: 'color-mix(in srgb, var(--c-mutual) 12%, transparent)', borderColor: 'color-mix(in srgb, var(--c-mutual) 35%, transparent)' }
                 : { background: 'var(--c-surface-2)', borderColor: 'var(--c-border)' }"
@@ -319,7 +319,7 @@ function cancelRating() {
               <span class="font-medium" :style="{ color: iConfirmed ? 'var(--c-mutual)' : 'var(--c-muted)' }">You</span>
             </div>
             <div
-              class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs flex-1 border"
+              class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs flex-1 border"
               :style="theyConfirmed
                 ? { background: 'color-mix(in srgb, var(--c-mutual) 12%, transparent)', borderColor: 'color-mix(in srgb, var(--c-mutual) 35%, transparent)' }
                 : { background: 'var(--c-surface-2)', borderColor: 'var(--c-border)' }"
@@ -363,7 +363,7 @@ function cancelRating() {
     >
       <!-- Already rated -->
       <div v-if="myRating" class="flex items-center gap-2">
-        <div class="flex gap-0.5">
+        <div class="flex gap-1">
           <v-icon
             v-for="s in 5" :key="s"
             :icon="s <= myRating.score ? 'mdi-star' : 'mdi-star-outline'"
@@ -382,7 +382,7 @@ function cancelRating() {
           <span class="text-xs" style="color: var(--c-muted)">
             Rate {{ proposal.counterparty_name ?? 'this trader' }}:
           </span>
-          <div class="flex gap-0.5">
+          <div class="flex gap-1">
             <button
               v-for="s in 5" :key="s"
               class="cursor-pointer transition-transform hover:scale-110"

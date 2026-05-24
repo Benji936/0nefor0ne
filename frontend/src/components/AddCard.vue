@@ -100,11 +100,11 @@
           <!-- Duplicate warning -->
           <div
             v-if="duplicates.length > 0"
-            class="flex items-start gap-2.5 rounded-xl px-3 py-2.5 text-sm"
+            class="flex items-start gap-3 rounded-xl px-3 py-3 text-sm"
             style="background: color-mix(in srgb, var(--c-trade) 8%, transparent); border: 1px solid color-mix(in srgb, var(--c-trade) 25%, transparent)"
           >
-            <v-icon icon="mdi-information-outline" size="16" color="var(--c-trade)" class="shrink-0 mt-0.5" />
-            <div class="flex flex-col gap-0.5 min-w-0">
+            <v-icon icon="mdi-information-outline" size="16" color="var(--c-trade)" class="shrink-0 mt-1" />
+            <div class="flex flex-col gap-1 min-w-0">
               <p class="text-xs font-semibold" style="color: var(--c-trade)">Already in your collection</p>
               <p class="text-xs leading-snug" style="color: var(--c-muted)">
                 {{ duplicates.length === 1 ? 'You have 1 entry' : `You have ${duplicates.length} entries` }} for this card

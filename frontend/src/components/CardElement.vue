@@ -7,13 +7,12 @@ defineEmits(['deleted']);
 
 <template>
   <div
-    class="flex flex-col rounded-b-lg border overflow-hidden transition-colors"
+    class="card-element flex flex-col rounded-b-lg border overflow-hidden transition-colors"
     :style="{
       backgroundColor: 'transparent',
       borderColor: wish.status === 'locked'
         ? 'color-mix(in srgb, var(--c-mutual) 60%, transparent)'
         : 'var(--c-border)',
-      width: '160px',
       opacity: wish.status === 'locked' ? '0.8' : '1',
     }"
   >
@@ -24,7 +23,7 @@ defineEmits(['deleted']);
       <!-- Locked overlay (accepted trade) -->
       <div
         v-if="wish.status === 'locked'"
-        class="absolute inset-0 flex flex-col items-center justify-center gap-1.5"
+        class="absolute inset-0 flex flex-col items-center justify-center gap-2"
         style="background: rgba(0,0,0,0.6)"
       >
         <v-icon icon="mdi-handshake" size="22" color="var(--c-mutual)" />
@@ -34,7 +33,7 @@ defineEmits(['deleted']);
     </div>
 
     <!-- Data -->
-    <div class="flex flex-col gap-1.5 px-3 pt-2 pb-1" style="background-color: var(--c-surface)">
+    <div class="flex flex-col gap-2 px-3 pt-2 pb-1" style="background-color: var(--c-surface)">
       <p class="font-semibold text-xs leading-tight truncate" style="color: var(--c-text)">{{ wish.name }}</p>
       <div class="flex flex-wrap gap-3">
         <ConditionTooltip v-if="wish.condition" :condition="wish.condition" />
@@ -60,7 +59,7 @@ defineEmits(['deleted']);
       <!-- Locked card: static quantity display, no controls -->
       <div
         v-if="wish.status === 'locked'"
-        class="flex items-center justify-center gap-1.5 rounded-md py-1.5"
+        class="flex items-center justify-center gap-2 rounded-md py-2"
         style="background: color-mix(in srgb, var(--c-mutual) 10%, transparent); border: 1px solid color-mix(in srgb, var(--c-mutual) 30%, transparent)"
       >
         <v-icon icon="mdi-lock-outline" size="13" color="var(--c-mutual)" />
@@ -159,3 +158,12 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.card-element {
+  width: 160px;
+}
+@media (max-width: 639px) {
+  .card-element { width: 100%; }
+}
+</style>

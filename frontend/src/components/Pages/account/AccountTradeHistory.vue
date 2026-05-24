@@ -44,9 +44,9 @@ onMounted(async () => {
         :style="{ background: 'var(--c-surface)', borderColor: 'var(--c-border)', opacity: 1 - (i-1)*0.15 }"
       >
         <div class="size-7 rounded-full shrink-0" style="background: var(--c-skeleton)" />
-        <div class="flex flex-col gap-1.5 grow">
+        <div class="flex flex-col gap-2 grow">
           <div class="h-3 rounded w-1/3" style="background: var(--c-skeleton)" />
-          <div class="h-2.5 rounded w-1/5" style="background: var(--c-skeleton)" />
+          <div class="h-3 rounded w-1/5" style="background: var(--c-skeleton)" />
         </div>
         <div class="h-5 w-16 rounded-lg" style="background: var(--c-skeleton)" />
       </div>
@@ -87,7 +87,7 @@ onMounted(async () => {
         </div>
 
         <span
-          class="text-[11px] font-semibold px-2 py-0.5 rounded-md border shrink-0 tabular-nums"
+          class="text-[11px] font-semibold px-2 py-1 rounded-md border shrink-0 tabular-nums"
           :style="{
             color: meta(trade.status).color,
             borderColor: `color-mix(in srgb, ${meta(trade.status).color} 30%, transparent)`,

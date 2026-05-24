@@ -13,14 +13,32 @@ export const supabase = createClient(supabaseUrl, supabasePublishableKey)
  * Note: depending on your Auth settings, signups may require email
  * confirmation, in which case `data.session` will be null.
  */
-export async function signUpNewUser(email, password) {
+export async function signUpNewUser(email, password, metadata = {}) {
     return await supabase.auth.signUp({
         email,
         password,
         options: {
             emailRedirectTo: window.location.origin,
+            data: metadata,
         },
     })
+}
+
+/**
+ * Upsert the current user's trader profile fields.
+ * Called after signup (when a session is available) or from the Account page.
+ */
+export async function updateTraderProfile(userId, { name, countryCode, country, city, tradeScope }) {
+    return await supabase
+        .from('Trader')
+        .update({
+            Name:         name        ?? undefined,
+            country_code: countryCode ?? undefined,
+            Country:      country     ?? undefined,
+            City:         city        ?? undefined,
+            trade_scope:  tradeScope  ?? undefined,
+        })
+        .eq('id', userId);
 }
 
 /**

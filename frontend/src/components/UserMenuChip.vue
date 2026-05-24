@@ -100,7 +100,7 @@ function handleAction(action) {
 
     <!-- ── Dropdown ── -->
     <div
-      class="menu-panel flex flex-col rounded-2xl overflow-hidden py-1.5 min-w-[180px]"
+      class="menu-panel flex flex-col rounded-2xl overflow-hidden py-2 min-w-[180px]"
       style="
         background: var(--c-surface);
         border: 1px solid var(--c-border);
