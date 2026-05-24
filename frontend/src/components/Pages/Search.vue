@@ -6,16 +6,86 @@ import SearchLatestReleases  from "./search/SearchLatestReleases.vue";
 
 defineProps({
   searchCards: { type: Object, default: null },
+  login:       { type: Object, default: null },
 });
 
 defineEmits(["TradeCenter", "requireAuth"]);
 
 const hasSearchResults = (searchCards) =>
   Array.isArray(searchCards?.data) && searchCards.data.length > 0;
+
+// A handful of iconic cards used purely as visual texture in the hero
+const HERO_CARDS = [46986414, 89631139, 53129443, 14558127, 38033121, 55144522];
+const cardThumb = (id) => `https://images.ygoprodeck.com/images/cards_small/${id}.jpg`;
 </script>
 
 <template>
   <div class="flex flex-col gap-6 md:gap-10 py-15">
+
+    <!-- ── Hero (logged-out, no search active) ───────────────────────────── -->
+    <section
+      v-if="!login && !hasSearchResults(searchCards)"
+      class="flex flex-col gap-10 py-6 md:py-12"
+    >
+      <!-- Card image strip — visual proof the database is real -->
+      <div class="flex gap-2 overflow-hidden" style="mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent)">
+        <img
+          v-for="id in HERO_CARDS"
+          :key="id"
+          :src="cardThumb(id)"
+          alt=""
+          aria-hidden="true"
+          class="rounded-md shrink-0 opacity-80"
+          style="width: 88px; height: 128px; object-fit: cover"
+        />
+      </div>
+
+      <!-- Headline block -->
+      <div class="flex flex-col gap-4 max-w-xl">
+        <h1 class="text-3xl md:text-4xl font-black leading-tight tracking-tight" style="color: var(--c-text)">
+          Trade duplicates.<br>Hunt your targets.
+        </h1>
+        <p class="text-base md:text-lg leading-relaxed" style="color: var(--c-muted)">
+          One for One connects Yu-Gi-Oh! collectors who have what each other wants.
+          No fees, no auctions — just direct peer-to-peer trades.
+        </p>
+        <div class="flex flex-wrap gap-3 mt-1">
+          <v-btn
+            size="large"
+            variant="flat"
+            :style="{ background: 'var(--c-trade)', color: 'white', fontWeight: 700, minHeight: '48px', paddingInline: '28px' }"
+            @click="$emit('requireAuth')"
+          >
+            Get started — it's free
+          </v-btn>
+        </div>
+      </div>
+
+      <!-- How it works -->
+      <div class="flex flex-col gap-3">
+        <p class="text-xs font-bold uppercase tracking-widest" style="color: var(--c-muted)">How it works</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+          <div
+            v-for="step in [
+              { n: '01', title: 'Build your trade pile',  body: 'List cards you're ready to trade away.' },
+              { n: '02', title: 'Add your wishlist',      body: 'Mark every card you're hunting for.' },
+              { n: '03', title: 'Find your match',        body: 'We surface traders who want yours and have yours.' },
+              { n: '04', title: 'Propose & confirm',      body: 'Send a proposal, chat, and close the trade.' },
+            ]"
+            :key="step.n"
+            class="flex flex-col gap-2 rounded-xl p-4"
+            style="background: var(--c-surface); border: 1px solid var(--c-border)"
+          >
+            <span class="text-xs font-black tabular-nums" style="color: var(--c-trade)">{{ step.n }}</span>
+            <p class="text-sm font-bold" style="color: var(--c-text)">{{ step.title }}</p>
+            <p class="text-xs leading-relaxed" style="color: var(--c-muted)">{{ step.body }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Divider before trending -->
+      <div class="h-px w-full" style="background: var(--c-border)" />
+    </section>
 
     <!-- Search results -->
     <section v-if="hasSearchResults(searchCards)">
