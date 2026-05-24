@@ -27,13 +27,14 @@ const hasSearchResults = (searchCards) =>
       </div>
       <div class="flex flex-wrap gap-5">
         <div v-for="card in searchCards.data" :key="card.id" class="relative" style="width: 136px; flex-shrink: 0">
-          <!-- SEO anchor: gives crawlers a followable link to the card permalink -->
+          <!-- SEO anchor: gives crawlers a followable link to the card permalink.
+               pointer-events-none keeps it invisible to mouse/touch so the
+               CardYugi overlay activator receives clicks normally. -->
           <a
             :href="`/card/${card.id}`"
             :aria-label="card.name"
-            class="absolute inset-0 z-0"
+            class="absolute inset-0 z-0 pointer-events-none"
             tabindex="-1"
-            @click.prevent
           />
           <CardYugi :componentCard="card" @showTraders="$emit('TradeCenter', $event)" @requireAuth="$emit('requireAuth')" />
         </div>
