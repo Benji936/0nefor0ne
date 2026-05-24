@@ -88,7 +88,7 @@ watch(() => props.open, (open) => {
       <v-icon icon="mdi-camera-outline" size="20" color="var(--c-muted)" />
       <span class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">Verification photos</span>
       <span
-        class="ml-auto flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-lg border"
+        class="ml-auto flex items-center gap-2 text-[11px] font-bold px-3 py-1 rounded-lg border"
         :style="bothUploaded
           ? { color: 'var(--c-mutual)', borderColor: 'var(--c-mutual)', backgroundColor: 'color-mix(in srgb, var(--c-mutual) 15%, transparent)' }
           : { color: 'var(--c-trade)',  borderColor: 'var(--c-trade)',  backgroundColor: 'color-mix(in srgb, var(--c-trade)  15%, transparent)' }"
@@ -116,7 +116,7 @@ watch(() => props.open, (open) => {
       <div class="flex flex-col gap-3">
         <div class="flex items-center gap-2">
           <span class="text-xs font-semibold uppercase tracking-wide" style="color: var(--c-accent)">Your photos</span>
-          <span v-if="myPhotos.length" class="text-[11px] px-1.5 py-0.5 rounded font-semibold"
+          <span v-if="myPhotos.length" class="text-[11px] px-2 py-1 rounded font-semibold"
             style="background: color-mix(in srgb, var(--c-accent) 15%, transparent); color: var(--c-accent)">
             {{ myPhotos.length }}
           </span>
@@ -174,7 +174,7 @@ watch(() => props.open, (open) => {
       <div class="flex flex-col gap-3">
         <div class="flex items-center gap-2">
           <span class="text-xs font-semibold uppercase tracking-wide" style="color: var(--c-trade)">Their photos</span>
-          <span v-if="theirPhotos.length" class="text-[11px] px-1.5 py-0.5 rounded font-semibold"
+          <span v-if="theirPhotos.length" class="text-[11px] px-2 py-1 rounded font-semibold"
             style="background: color-mix(in srgb, var(--c-trade) 15%, transparent); color: var(--c-trade)">
             {{ theirPhotos.length }}
           </span>

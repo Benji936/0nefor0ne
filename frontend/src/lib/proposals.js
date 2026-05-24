@@ -72,13 +72,17 @@ export async function updateTradeProposal(tradeId, give, receive, settlement = {
   }
 }
 
-export async function updateProposalStatus(tradeId, status) {
-  const { error } = await getClient()
-    .from("Trade")
-    .update({ status })
-    .eq("id", tradeId);
+/**
+ * Accept an incoming pending proposal (counterparty only).
+ * Uses the accept_trade RPC which enforces server-side that the caller
+ * is the counterparty and the trade is still pending.
+ *
+ * @param {number} tradeId
+ */
+export async function acceptTradeProposal(tradeId) {
+  const { error } = await getClient().rpc("accept_trade", { p_trade_id: tradeId });
   if (error) {
-    console.error("updateProposalStatus failed", error);
+    console.error("accept_trade failed", error);
     throw error;
   }
 }
@@ -234,6 +238,28 @@ export async function fetchTradeMessages(tradeId) {
   }
   return data ?? [];
 }
+
+// ── Activity log ───────────────────────────────────────────────────────────
+
+/**
+ * Fetch the full audit log for a trade, oldest-first.
+ * Uses the fetch_trade_events RPC which enforces participant-only access.
+ *
+ * @param {number} tradeId
+ * @returns {Promise<Array<{id, event_type, actor_id, from_status, to_status, notes, created_at}>>}
+ */
+export async function fetchTradeEvents(tradeId) {
+  const { data, error } = await getClient().rpc("fetch_trade_events", {
+    p_trade_id: tradeId,
+  });
+  if (error) {
+    console.error("fetch_trade_events failed", error);
+    return [];
+  }
+  return data ?? [];
+}
+
+// ── Messages ───────────────────────────────────────────────────────────────
 
 /**
  * Send a message in a trade conversation.

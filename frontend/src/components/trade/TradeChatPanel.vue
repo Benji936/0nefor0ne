@@ -7,6 +7,7 @@ const props = defineProps({
   open:          { type: Boolean, default: false },
   proposal:      { type: Object,  default: null  },
   currentUserId: { type: String,  default: null  },
+  standalone:    { type: Boolean, default: false },
 });
 
 // ── State ─────────────────────────────────────────────────────────────────
@@ -78,18 +79,17 @@ watch(() => props.open, (open) => {
     newMessage.value = "";
     if (msgSub) { getClient().removeChannel(msgSub); msgSub = null; }
   }
-});
+}, { immediate: true });
 </script>
 
 <template>
-  <div class="mt-6 pt-5" style="border-top: 1px solid var(--c-border)">
+  <!-- Embedded mode: shown inside TradeDetailDialog with its own header/border -->
+  <div v-if="!standalone" class="mt-6 pt-5 px-4 " style="border-top: 1px solid var(--c-border)">
     <div class="flex items-center gap-3 mb-3">
       <v-icon icon="mdi-message-outline" size="20" color="var(--c-muted)" />
       <span class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">Trade chat</span>
       <span class="text-[11px] ml-auto" style="color: var(--c-muted)">Visible to both traders</span>
     </div>
-
-    <!-- Message list -->
     <div
       ref="msgListRef"
       class="flex flex-col gap-2 overflow-y-auto rounded-xl border px-3 py-3"
@@ -114,12 +114,10 @@ watch(() => props.open, (open) => {
               ? { backgroundColor: 'var(--c-trade)', color: 'white' }
               : { backgroundColor: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }"
           >{{ msg.content }}</div>
-          <span class="text-[10px] mt-0.5 px-1" style="color: var(--c-muted)">{{ formatMsgTime(msg.created_at) }}</span>
+          <span class="text-[10px] mt-1 px-1" style="color: var(--c-muted)">{{ formatMsgTime(msg.created_at) }}</span>
         </div>
       </template>
     </div>
-
-    <!-- Input -->
     <div v-if="proposal?.status === 'pending' || proposal?.status === 'accepted'" class="flex gap-2 mt-2">
       <input
         v-model="newMessage"
@@ -128,18 +126,66 @@ watch(() => props.open, (open) => {
         :style="{ backgroundColor: 'var(--c-surface-2)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
         @keydown.enter.prevent="sendMessage"
       />
-      <v-btn
-        icon="mdi-send"
-        variant="flat"
-        density="default"
-        :loading="sendingMessage"
+      <v-btn icon="mdi-send" variant="flat"  density="default" :loading="sendingMessage"
         :disabled="!newMessage.trim()"
         style="background-color: var(--c-trade); color: white; border-radius: 12px"
-        @click="sendMessage"
-      />
+        @click="sendMessage"/>
     </div>
     <p v-else class="text-xs mt-2 italic" style="color: var(--c-muted)">
       This trade is {{ proposal?.status }}. Chat is read-only.
     </p>
+  </div>
+
+  <!-- Standalone mode: fills the parent container (used inside TradeChatDialog) -->
+  <div v-else class="flex flex-col h-full">
+    <!-- Message list fills all available space -->
+    <div
+      ref="msgListRef"
+      class="flex flex-col gap-2 overflow-y-auto px-4 py-3 grow"
+      style="background-color: var(--c-surface)"
+    >
+      <div v-if="loadingMessages" class="flex items-center justify-center flex-1 py-6" style="color: var(--c-muted)">
+        <v-progress-circular indeterminate size="20" width="2" color="var(--c-muted)" />
+      </div>
+      <p v-else-if="messages.length === 0" class="text-xs italic text-center m-auto py-4" style="color: var(--c-muted)">
+        No messages yet. Say something!
+      </p>
+      <template v-else>
+        <div
+          v-for="msg in messages"
+          :key="msg.id"
+          class="flex flex-col max-w-[75%]"
+          :class="msg.sender === currentUserId ? 'self-end items-end' : 'self-start items-start'"
+        >
+          <div
+            class="rounded-2xl px-3 py-2 text-sm leading-snug"
+            :style="msg.sender === currentUserId
+              ? { backgroundColor: 'var(--c-trade)', color: 'white' }
+              : { backgroundColor: 'var(--c-surface-2)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }"
+          >{{ msg.content }}</div>
+          <span class="text-[10px] mt-1 px-1" style="color: var(--c-muted)">{{ formatMsgTime(msg.created_at) }}</span>
+        </div>
+      </template>
+    </div>
+
+    <!-- Input area -->
+    <div class="shrink-0 px-4 py-3" style="border-top: 1px solid var(--c-border)">
+      <div v-if="proposal?.status === 'pending' || proposal?.status === 'accepted'" class="flex gap-2">
+        <input
+          v-model="newMessage"
+          placeholder="Type a message…"
+          class="flex-1 rounded-xl px-4 py-2 text-sm border outline-none"
+          :style="{ backgroundColor: 'var(--c-surface-2)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
+          @keydown.enter.prevent="sendMessage"
+        />
+        <v-btn icon="mdi-send" variant="flat" size="small" density="default" :loading="sendingMessage"
+          :disabled="!newMessage.trim()"
+          style="background-color: var(--c-trade); color: white; border-radius: 12px; padding: 5px;"
+          @click="sendMessage" />
+      </div>
+      <p v-else class="text-xs italic" style="color: var(--c-muted)">
+        This trade is {{ proposal?.status }}. Chat is read-only.
+      </p>
+    </div>
   </div>
 </template>

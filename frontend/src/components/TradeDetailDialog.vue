@@ -1,7 +1,8 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { cardImage } from "@/lib/cardImage";
-import TradeChatPanel    from "@/components/trade/TradeChatPanel.vue";
+import { fetchTradeEvents } from "@/lib/proposals";
+import TradeChatDialog   from "@/components/trade/TradeChatDialog.vue";
 import TradePhotosPanel  from "@/components/trade/TradePhotosPanel.vue";
 
 const props = defineProps({
@@ -14,6 +15,9 @@ const emit = defineEmits(["update:modelValue", "accept", "decline", "cancel", "c
 
 // ── Photos status (lifted from TradePhotosPanel via v-model) ─────────────
 const bothUploaded = ref(false);
+
+// ── Chat overlay ──────────────────────────────────────────────────────────
+const chatOpen = ref(false);
 
 // ── Decline flow ──────────────────────────────────────────────────────────
 const declining     = ref(false);
@@ -61,8 +65,56 @@ function marketLinks(name, extension) {
   ];
 }
 
+// ── Activity log ─────────────────────────────────────────────────────────
+const events        = ref([]);
+const loadingEvents = ref(false);
+
+watch(
+  () => [props.modelValue, props.proposal?.id],
+  async ([open]) => {
+    if (!open || !props.proposal?.id) { events.value = []; return; }
+    loadingEvents.value = true;
+    try {
+      events.value = await fetchTradeEvents(props.proposal.id);
+    } finally {
+      loadingEvents.value = false;
+    }
+  },
+  { immediate: true },
+);
+
+const EVENT_META = {
+  created:   { icon: "mdi-plus-circle-outline",  color: "var(--c-trade)",  label: "Trade proposed"  },
+  accepted:  { icon: "mdi-check-circle-outline",  color: "var(--c-mutual)", label: "Accepted"         },
+  declined:  { icon: "mdi-close-circle-outline",  color: "var(--c-accent)", label: "Declined"         },
+  cancelled: { icon: "mdi-cancel",                color: "var(--c-muted)",  label: "Cancelled"        },
+  completed: { icon: "mdi-handshake-outline",     color: "var(--c-mutual)", label: "Completed"        },
+  updated:   { icon: "mdi-pencil-circle-outline", color: "var(--c-muted)",  label: "Proposal edited"  },
+};
+
+function eventMeta(type) {
+  return EVENT_META[type] ?? { icon: "mdi-information-outline", color: "var(--c-muted)", label: type };
+}
+
+function actorLabel(actorId) {
+  if (!actorId) return "—";
+  return actorId === props.currentUserId ? "You" : (props.proposal?.counterparty_name ?? "Counterparty");
+}
+
+function timeAgo(ts) {
+  if (!ts) return "";
+  const d    = new Date(ts);
+  const diff = Date.now() - d.getTime();
+  if (diff < 60_000)         return "just now";
+  if (diff < 3_600_000)      return `${Math.floor(diff / 60_000)}m ago`;
+  if (diff < 86_400_000)     return `${Math.floor(diff / 3_600_000)}h ago`;
+  if (diff < 86_400_000 * 7) return `${Math.floor(diff / 86_400_000)}d ago`;
+  return d.toLocaleDateString();
+}
+
 // ── Actions ───────────────────────────────────────────────────────────────
 function close() {
+  chatOpen.value = false;
   emit("update:modelValue", false);
   declining.value = false;
   declineReason.value = "";
@@ -80,8 +132,8 @@ function confirmDecline() {
   <v-dialog
     :model-value="modelValue"
     @update:model-value="emit('update:modelValue', $event)"
-    max-width="900"
-    width="92vw"
+    max-width="1100"
+    width="95vw"
     scrollable
   >
     <v-card
@@ -91,37 +143,45 @@ function confirmDecline() {
     >
       <!-- Header -->
       <div>
-        <div class="flex items-center gap-4 px-6 py-4">
+        <div class="flex items-center gap-2 md:gap-4 px-4 md:px-6 py-3 md:py-4">
           <div class="relative shrink-0">
             <div class="absolute -inset-1 rounded-full blur-md opacity-35"
               :style="{ backgroundColor: proposal.i_am_proposer ? 'var(--c-trade)' : 'var(--c-accent)' }" />
             <div
-              class="relative size-11 rounded-full flex items-center justify-center font-bold text-sm text-white ring-2 ring-white/10"
+              class="relative size-9 md:size-11 rounded-full flex items-center justify-center font-bold text-sm text-white ring-2 ring-white/10"
               :style="{ backgroundColor: proposal.i_am_proposer ? 'var(--c-trade)' : 'var(--c-accent)' }"
             >{{ (proposal.counterparty_name ?? "?")[0].toUpperCase() }}</div>
           </div>
           <div class="flex flex-col grow min-w-0">
-            <span class="font-bold text-lg leading-tight" style="color: var(--c-text)">
+            <span class="font-bold text-sm md:text-lg leading-tight truncate" style="color: var(--c-text)">
               Trade #{{ proposal.id }} · {{ proposal.counterparty_name ?? "Anonymous" }}
             </span>
-            <span class="text-sm mt-0.5" style="color: var(--c-muted)">
+            <span class="text-xs md:text-sm mt-1 truncate" style="color: var(--c-muted)">
               {{ proposal.i_am_proposer ? "You proposed" : "Proposed to you" }} · {{ formattedDate }}
             </span>
           </div>
           <span
-            class="flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-lg border shrink-0"
+            class="hidden sm:flex items-center gap-2 text-xs font-bold px-3 py-1 rounded-lg border shrink-0"
             :style="{ color: statusMeta.color, borderColor: statusMeta.color + '60', backgroundColor: statusMeta.color + '18' }"
           >
             <v-icon :icon="statusMeta.icon" size="14" :color="statusMeta.color" />
             {{ statusMeta.label }}
           </span>
+          <v-btn
+            icon="mdi-message-outline"
+            variant="text"
+            density="compact"
+            style="color: var(--c-muted)"
+            title="Open trade chat"
+            @click="chatOpen = true"
+          />
           <v-btn icon="mdi-close" variant="text" density="compact" style="color: var(--c-muted)" @click="close" />
         </div>
         <div class="h-px w-full" style="background: linear-gradient(90deg, var(--c-accent), transparent 40%, transparent 60%, var(--c-trade))" />
       </div>
 
       <!-- Body -->
-      <v-card-text class="pa-6" style="overflow-y: auto">
+      <v-card-text class="!pa-4 md:!pa-6" style="overflow-y: auto">
 
         <!-- Card columns -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -132,38 +192,38 @@ function confirmDecline() {
             <div class="flex items-center gap-2 pb-1" style="border-bottom: 1px solid var(--c-border)">
               <v-icon :icon="side.icon" size="18" :color="side.color" />
               <span class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">{{ side.label }}</span>
-              <span v-if="side.cards?.length" class="ml-auto text-[11px] font-semibold px-2 py-0.5 rounded-md"
+              <span v-if="side.cards?.length" class="ml-auto text-[11px] font-semibold px-2 py-1 rounded-md"
                 :style="{ background: `color-mix(in srgb, ${side.color} 15%, transparent)`, color: side.color }">
                 {{ side.cards.length }} card{{ side.cards.length !== 1 ? "s" : "" }}
               </span>
             </div>
             <p v-if="!side.cards?.length" class="text-sm italic py-4 text-center" style="color: var(--c-muted)">Nothing on this side</p>
             <div v-for="card in side.cards" :key="card.id"
-              class="flex gap-3 rounded-lg p-3"
+              class="flex gap-3 rounded-lg px-3 py-3"
               style="background-color: var(--c-surface-2); border: 1px solid var(--c-border)">
               <img :src="cardImage(card.image_id)" :alt="card.name" loading="lazy"
                 class="rounded-md object-contain shrink-0 ring-1 ring-white/10"
                 style="width: 62px; height: 88px; background-color: var(--c-surface)" />
-              <div class="flex flex-col gap-1.5 min-w-0 grow">
+              <div class="flex flex-col gap-2 min-w-0 grow">
                 <p class="font-semibold text-sm leading-tight" style="color: var(--c-text)">{{ card.name }}</p>
-                <div class="flex flex-wrap gap-1.5">
-                  <span v-if="card.extension" class="text-[11px] px-1.5 py-0.5 rounded font-mono"
+                <div class="flex flex-wrap gap-2">
+                  <span v-if="card.extension" class="text-[11px] px-2 py-1 rounded font-mono"
                     style="background: color-mix(in srgb, var(--c-trade) 15%, transparent); color: var(--c-trade)">{{ card.extension }}</span>
-                  <span v-if="card.rarity" class="text-[11px] px-1.5 py-0.5 rounded"
+                  <span v-if="card.rarity" class="text-[11px] px-2 py-1 rounded"
                     style="background: color-mix(in srgb, var(--c-muted) 15%, transparent); color: var(--c-text)"
                     :title="card.rarity">{{ shortenRarity(card.rarity) }}</span>
-                  <span v-if="card.condition" class="text-[11px] px-1.5 py-0.5 rounded"
+                  <span v-if="card.condition" class="text-[11px] px-2 py-1 rounded"
                     style="background: color-mix(in srgb, var(--c-muted) 12%, transparent); color: var(--c-muted)">{{ card.condition }}</span>
-                  <span v-if="card.language" class="text-[11px] px-1.5 py-0.5 rounded"
+                  <span v-if="card.language" class="text-[11px] px-2 py-1 rounded"
                     style="background: color-mix(in srgb, var(--c-muted) 12%, transparent); color: var(--c-muted)">{{ card.language }}</span>
                 </div>
                 <p class="text-xs font-semibold mt-auto" style="color: var(--c-text)">
                   Qty: <span :style="{ color: side.qtyColor }">{{ card.quantity }}</span>
                 </p>
-                <div class="flex gap-2 mt-0.5">
+                <div class="flex gap-2 mt-1">
                   <a v-for="m in marketLinks(card.name, card.extension)" :key="m.label"
                     :href="m.url" target="_blank" rel="noopener noreferrer"
-                    class="text-[11px] flex items-center gap-0.5 no-underline transition-opacity hover:opacity-70"
+                    class="text-[11px] flex items-center gap-1 no-underline transition-opacity hover:opacity-70"
                     style="color: var(--c-muted)">
                     <v-icon icon="mdi-open-in-new" size="11" />{{ m.label }}
                   </a>
@@ -179,8 +239,8 @@ function confirmDecline() {
           class="mt-6 flex items-start gap-3 rounded-xl px-4 py-3"
           style="background: color-mix(in srgb, var(--c-accent) 8%, transparent); border: 1px solid color-mix(in srgb, var(--c-accent) 20%, transparent)"
         >
-          <v-icon icon="mdi-message-reply-outline" size="16" color="var(--c-accent)" class="shrink-0 mt-0.5" />
-          <div class="flex flex-col gap-0.5 min-w-0">
+          <v-icon icon="mdi-message-reply-outline" size="16" color="var(--c-accent)" class="shrink-0 mt-1" />
+          <div class="flex flex-col gap-1 min-w-0">
             <p class="text-xs font-semibold" style="color: var(--c-accent)">Reason for declining</p>
             <p class="text-sm leading-snug" style="color: var(--c-text)">{{ proposal.decline_reason }}</p>
           </div>
@@ -195,12 +255,83 @@ function confirmDecline() {
           v-model:both-uploaded="bothUploaded"
         />
 
-        <!-- Trade chat -->
-        <TradeChatPanel
-          :open="modelValue"
-          :proposal="proposal"
-          :current-user-id="currentUserId"
-        />
+        <!-- ── Activity log ── -->
+        <div class="mt-6 pt-5" style="border-top: 1px solid var(--c-border)">
+          <div class="flex items-center gap-2 mb-4">
+            <v-icon icon="mdi-timeline-clock-outline" size="16" color="var(--c-muted)" />
+            <span class="text-xs font-bold uppercase tracking-wide" style="color: var(--c-muted)">Activity log</span>
+          </div>
+
+          <!-- Loading -->
+          <div v-if="loadingEvents" class="flex items-center gap-3 py-2" style="color: var(--c-muted)">
+            <v-progress-circular indeterminate size="16" width="2" color="var(--c-muted)" />
+            <span class="text-xs">Loading…</span>
+          </div>
+
+          <!-- Empty (old trades before this feature was added) -->
+          <p v-else-if="events.length === 0" class="text-xs italic py-2" style="color: var(--c-muted)">
+            No events recorded — this trade predates the audit log.
+          </p>
+
+          <!-- Timeline -->
+          <div v-else class="flex flex-col">
+            <div
+              v-for="(evt, i) in events"
+              :key="evt.id"
+              class="flex gap-3 items-start py-2 relative"
+            >
+              <!-- Connector line to next event -->
+              <div
+                v-if="i < events.length - 1"
+                class="absolute w-px"
+                style="left: 11px; top: 22px; bottom: -8px; background-color: var(--c-border)"
+              />
+
+              <!-- Status icon -->
+              <v-icon
+                :icon="eventMeta(evt.event_type).icon"
+                size="16"
+                :color="eventMeta(evt.event_type).color"
+                class="shrink-0 mt-[3px]"
+              />
+
+              <!-- Content -->
+              <div class="flex flex-col min-w-0 grow gap-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-sm font-semibold leading-tight" style="color: var(--c-text)">
+                    {{ eventMeta(evt.event_type).label }}
+                  </span>
+
+                  <!-- Actor badge -->
+                  <span
+                    class="text-[11px] px-2 py-0.5 rounded-full font-semibold"
+                    :style="{
+                      color: eventMeta(evt.event_type).color,
+                      background: `color-mix(in srgb, ${eventMeta(evt.event_type).color} 12%, transparent)`,
+                    }"
+                  >{{ actorLabel(evt.actor_id) }}</span>
+
+                  <!-- Timestamp -->
+                  <span class="text-[11px] ml-auto shrink-0" style="color: var(--c-muted)">
+                    {{ timeAgo(evt.created_at) }}
+                  </span>
+                </div>
+
+                <!-- Transition label (e.g. pending → accepted) -->
+                <p v-if="evt.from_status" class="text-[11px]" style="color: var(--c-muted)">
+                  {{ evt.from_status }} → {{ evt.to_status }}
+                </p>
+
+                <!-- Notes (e.g. decline reason) -->
+                <p
+                  v-if="evt.notes"
+                  class="text-xs leading-snug italic mt-0.5 px-2 py-1.5 rounded-lg"
+                  style="background: color-mix(in srgb, var(--c-muted) 8%, transparent); color: var(--c-text)"
+                >"{{ evt.notes }}"</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
       </v-card-text>
 
@@ -305,4 +436,11 @@ function confirmDecline() {
       </div>
     </v-card>
   </v-dialog>
+
+  <!-- Floating chat overlay — opens on top of the trade dialog, no backdrop -->
+  <TradeChatDialog
+    v-model="chatOpen"
+    :proposal="proposal"
+    :current-user-id="currentUserId"
+  />
 </template>

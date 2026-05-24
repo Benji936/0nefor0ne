@@ -4,7 +4,7 @@ import { cardImage } from "@/lib/cardImage";
 import { fetchMyLibrary, fetchUserWishlist, fetchUserTradePile, fetchMyWishlistNames } from "@/lib/matches";
 import { createTradeProposal, updateTradeProposal, counterTradeProposal, uploadTradePhoto } from "@/lib/proposals";
 import { searchById } from "@/api";
-import { getClient } from "@/lib/supabaseClient";
+import { getClient, getCurrentSession } from "@/lib/supabaseClient";
 import AddCard from "@/components/AddCard.vue";
 
 const props = defineProps({
@@ -58,6 +58,11 @@ const METHODS = [
 const giveSelection = ref({});     // from myOffers
 const receiveSelection = ref({});  // from user.theyHave
 
+// Must be declared BEFORE watch() — the immediate watcher fires synchronously
+// during the watch() call, so anything accessed in the callback must already
+// be out of the Temporal Dead Zone.
+let _watchToken = 0;
+
 async function refreshMyOffers({ autoSelectId } = {}) {
   loading.value = true;
   try {
@@ -77,6 +82,8 @@ watch(
   async ([open]) => {
     const eu = effectiveUser.value;
     if (!open || !eu?.id) return;
+
+    const token = ++_watchToken;
 
     errorMessage.value = "";
     giveSelection.value = {};
@@ -112,6 +119,7 @@ watch(
         return fetchUserTradePile(eu.id, myWishNames);
       })(),
     ]);
+    if (token !== _watchToken) return; // stale — dialog switched to a different counterparty
     counterpartyWishlist.value = wishlist ?? [];
     theirTradePile.value = pile ?? [];
     loadingTheirs.value = false;
@@ -119,6 +127,7 @@ watch(
 
     // Fetch my library tagged with what the counterparty wants
     await refreshMyOffers();
+    if (token !== _watchToken) return;
 
     if (isEditing.value) {
       // Cards on this proposal's give side are reserved — override locally
@@ -222,7 +231,7 @@ async function submit() {
     cash_payer:   settlement.value.hasCash && settlement.value.cash_amount > 0 ? settlement.value.cash_payer : null,
   };
   try {
-    const me = (await getClient().auth.getSession()).data?.session?.user?.id;
+    const me = (await getCurrentSession())?.user?.id;
     let tradeId;
     if (isEditing.value) {
       tradeId = props.editProposal.id;
@@ -305,6 +314,7 @@ const filteredWanted = computed(() => {
 });
 
 async function selectWantedCard(item) {
+  if (fetchingCardId.value) return; // prevent double-tap while fetch in flight
   // If the user already has this card in their library, select it and close
   const existing = myOffers.value.find(c => c.name === item.name && c.status !== 'locked');
   if (existing) {
@@ -350,22 +360,22 @@ function marketLinks(name, setCode) {
     <v-card v-if="effectiveUser" theme="dark" class="trade-dialog !rounded-none overflow-hidden" style="background-color: var(--c-surface); color: var(--c-text); height: 100dvh; display: flex; flex-direction: column">
       <!-- Header -->
       <div class="relative">
-        <div class="flex items-center gap-4 px-6 py-4">
+        <div class="flex items-center gap-3 px-4 sm:px-6 py-3 sm:py-4">
           <!-- User avatar -->
           <div class="relative shrink-0">
             <div class="absolute -inset-1 rounded-full blur-md opacity-40" style="background-color: var(--c-accent)" />
             <div
-              class="relative size-11 rounded-full flex items-center justify-center font-bold text-sm text-white ring-2 ring-white/10"
+              class="relative size-9 sm:size-11 rounded-full flex items-center justify-center font-bold text-sm text-white ring-2 ring-white/10"
               style="background-color: var(--c-accent)"
             >
               {{ userInitials }}
             </div>
           </div>
           <div class="flex flex-col grow min-w-0">
-            <span class="font-bold text-lg leading-tight" style="color: var(--c-text)">
+            <span class="font-bold text-base sm:text-lg leading-tight" style="color: var(--c-text)">
               {{ isEditing ? 'Edit proposal' : isCountering ? 'Counter-propose' : 'Propose trade' }}
             </span>
-            <span class="text-sm mt-0.5" style="color: var(--c-muted)">with {{ effectiveUser.name ?? "Anonymous" }}</span>
+            <span class="text-xs sm:text-sm mt-1 truncate" style="color: var(--c-muted)">with {{ effectiveUser.name ?? "Anonymous" }}</span>
           </div>
           <v-btn icon="mdi-close" variant="text" color="white" density="compact" @click="close" />
         </div>
@@ -373,7 +383,7 @@ function marketLinks(name, setCode) {
         <div class="h-[2px] w-full" style="background: linear-gradient(90deg, var(--c-accent), transparent 40%, transparent 60%, var(--c-trade))" />
       </div>
 
-      <v-card-text class="pa-5" style="overflow: hidden; display: flex; flex-direction: column; min-height: 0; flex: 1;">
+      <v-card-text class="!pa-3 sm:!pa-5" style="overflow: hidden; display: flex; flex-direction: column; min-height: 0; flex: 1;">
         <!-- Loading skeletons -->
         <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
           <div v-for="col in 2" :key="col" class="flex flex-col gap-4">
@@ -385,15 +395,16 @@ function marketLinks(name, setCode) {
               :style="{ animationDelay: `${i * 150}ms`, borderColor: 'var(--c-border)' }"
             >
               <div class="h-[72px] w-[50px] rounded-lg shrink-0" style="background-color: var(--c-skeleton)" />
-              <div class="flex flex-col gap-2.5 grow pt-2">
-                <div class="h-3.5 rounded w-3/4" style="background-color: var(--c-skeleton)" />
+              <div class="flex flex-col gap-3 grow pt-2">
+                <div class="h-4 rounded w-3/4" style="background-color: var(--c-skeleton)" />
                 <div class="h-3 rounded w-1/2" style="background-color: var(--c-border)" />
               </div>
             </div>
           </div>
         </div>
 
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6 h-full min-h-0">
+        <template v-else>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:h-full min-h-0">
           <!-- ── You give ── -->
           <section class="flex flex-col gap-3 min-h-0">
             <!-- Header -->
@@ -403,7 +414,7 @@ function marketLinks(name, setCode) {
                 <p class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">You give</p>
                 <span
                   v-if="givePayload.length > 0"
-                  class="text-[11px] px-2 py-0.5 rounded-md bg-pink-500/15 text-pink-300 border border-pink-500/30 font-semibold"
+                  class="text-[11px] px-2 py-1 rounded-md bg-pink-500/15 text-pink-300 border border-pink-500/30 font-semibold"
                 >{{ givePayload.length }}</span>
               </div>
               <v-btn
@@ -427,11 +438,11 @@ function marketLinks(name, setCode) {
               <!-- Search -->
               <div class="px-3 pt-2 pb-1">
                 <div class="relative">
-                  <v-icon icon="mdi-magnify" size="14" class="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" color="var(--c-muted)" />
+                  <v-icon icon="mdi-magnify" size="14" class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" color="var(--c-muted)" />
                   <input
                     v-model="wantedFilter"
                     placeholder="Filter…"
-                    class="w-full rounded-lg pl-7 pr-2 py-1.5 text-xs outline-none border"
+                    class="w-full rounded-lg pl-7 pr-2 py-2 text-xs outline-none border"
                     :style="{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
                     autofocus
                   />
@@ -468,14 +479,14 @@ function marketLinks(name, setCode) {
                   <!-- "You have it" dot -->
                   <span
                     v-if="myOffers.some(c => c.name === item.name && c.status !== 'locked')"
-                    class="absolute -top-1 -right-1 size-3.5 rounded-full border-2 flex items-center justify-center"
+                    class="absolute -top-1 -right-1 size-4 rounded-full border-2 flex items-center justify-center"
                     style="background-color: var(--c-mutual); border-color: var(--c-surface-2)"
                     title="Already in your library"
                   />
                   <v-progress-circular v-if="fetchingCardId === item.id" indeterminate size="14" width="2" class="absolute inset-0 m-auto" />
                   <!-- Name tooltip on hover -->
                   <div
-                    class="absolute -bottom-0.5 left-0 right-0 rounded-b-lg px-0.5 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                    class="absolute -bottom-1 left-0 right-0 rounded-b-lg px-0.5 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
                     style="background: linear-gradient(to top, rgba(0,0,0,0.85), transparent)"
                   >
                     <p class="text-[8px] text-white leading-tight line-clamp-2">{{ item.name }}</p>
@@ -545,7 +556,7 @@ function marketLinks(name, setCode) {
                       <a
                         v-for="m in marketLinks(card.name, card.extension)" :key="m.label"
                         :href="m.url" target="_blank" rel="noopener noreferrer"
-                        class="text-[11px] no-underline flex items-center gap-0.5 transition-opacity hover:opacity-70"
+                        class="text-[11px] no-underline flex items-center gap-1 transition-opacity hover:opacity-70"
                         style="color: var(--c-muted)" @click.stop
                       >
                         <v-icon icon="mdi-open-in-new" size="11" />{{ m.label }}
@@ -553,7 +564,7 @@ function marketLinks(name, setCode) {
                     </div>
                     <span
                       v-if="card.theyWantThis"
-                      class="text-[11px] font-bold text-lime-300 bg-lime-500/15 border border-lime-500/30 px-2 py-0.5 rounded-md w-fit flex items-center gap-1"
+                      class="text-[11px] font-bold text-lime-300 bg-lime-500/15 border border-lime-500/30 px-2 py-1 rounded-md w-fit flex items-center gap-1"
                     ><v-icon icon="mdi-star-four-points" size="10" color="var(--c-mutual)" />They want this</span>
                   </div>
                   <v-number-input
@@ -577,7 +588,7 @@ function marketLinks(name, setCode) {
               <p class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">You receive</p>
               <span
                 v-if="receivePayload.length > 0"
-                class="text-[11px] px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-300 border border-blue-500/30 font-semibold"
+                class="text-[11px] px-2 py-1 rounded-md bg-blue-500/15 text-blue-300 border border-blue-500/30 font-semibold"
               >
                 {{ receivePayload.length }}
               </span>
@@ -611,8 +622,8 @@ function marketLinks(name, setCode) {
                   :style="{ animationDelay: `${i * 120}ms`, borderColor: 'var(--c-border)' }"
                 >
                   <div class="h-[72px] w-[50px] rounded-lg shrink-0" style="background-color: var(--c-skeleton)" />
-                  <div class="flex flex-col gap-2.5 grow pt-2">
-                    <div class="h-3.5 rounded w-3/4" style="background-color: var(--c-skeleton)" />
+                  <div class="flex flex-col gap-3 grow pt-2">
+                    <div class="h-4 rounded w-3/4" style="background-color: var(--c-skeleton)" />
                     <div class="h-3 rounded w-1/2" style="background-color: var(--c-border)" />
                   </div>
                 </div>
@@ -632,7 +643,7 @@ function marketLinks(name, setCode) {
                 <!-- Wishlist match divider -->
                 <p
                   v-if="filteredTheirPile.some(c => c.matchesMyWishlist) && filteredTheirPile.some(c => !c.matchesMyWishlist)"
-                  class="text-[10px] font-bold uppercase tracking-widest pt-1 pb-0.5"
+                  class="text-[10px] font-bold uppercase tracking-widest pt-1 pb-1"
                   style="color: var(--c-muted)"
                 >
                   Matches your wishlist
@@ -642,7 +653,7 @@ function marketLinks(name, setCode) {
                   <!-- Section break between wishlist matches and extras -->
                   <p
                     v-if="idx > 0 && !card.matchesMyWishlist && filteredTheirPile[idx - 1].matchesMyWishlist"
-                    class="text-[10px] font-bold uppercase tracking-widest pt-2 pb-0.5"
+                    class="text-[10px] font-bold uppercase tracking-widest pt-2 pb-1"
                     style="color: var(--c-muted)"
                   >
                     Their full trade pile
@@ -690,7 +701,7 @@ function marketLinks(name, setCode) {
                           :href="m.url"
                           target="_blank"
                           rel="noopener noreferrer"
-                          class="text-[11px] no-underline flex items-center gap-0.5 transition-opacity hover:opacity-70"
+                          class="text-[11px] no-underline flex items-center gap-1 transition-opacity hover:opacity-70"
                           style="color: var(--c-muted)"
                           @click.stop
                         >
@@ -700,7 +711,7 @@ function marketLinks(name, setCode) {
                       </div>
                       <span
                         v-if="card.matchesMyWishlist"
-                        class="text-[11px] font-bold px-2 py-0.5 rounded-md w-fit flex items-center gap-1"
+                        class="text-[11px] font-bold px-2 py-1 rounded-md w-fit flex items-center gap-1"
                         style="color: var(--c-mutual); background-color: color-mix(in srgb, var(--c-mutual) 15%, transparent); border: 1px solid color-mix(in srgb, var(--c-mutual) 30%, transparent)"
                       >
                         <v-icon icon="mdi-star-four-points" size="10" :color="'var(--c-mutual)'" />
@@ -722,10 +733,11 @@ function marketLinks(name, setCode) {
 
             </div><!-- /column-scroll receive -->
           </section>
-        </div>
+        </div><!-- /grid -->
+        </template><!-- /v-else loading -->
 
         <!-- ── Settlement details ── -->
-        <div class="flex flex-row justify-between mt-4 rounded-xl border py-4 px-4 "  style="border-color: var(--c-border); background-color: var(--c-surface-2)">
+        <div class="flex flex-col sm:flex-row sm:justify-between gap-4 mt-4 rounded-xl border py-4 px-4" style="border-color: var(--c-border); background-color: var(--c-surface-2)">
           <div class="flex flex-col gap-3">
             <p class="text-[11px] font-bold uppercase tracking-widest" style="color: var(--c-muted)">Settlement details</p>
 
@@ -734,7 +746,7 @@ function marketLinks(name, setCode) {
               <span class="text-xs shrink-0" style="color: var(--c-muted)">How:</span>
               <button
                 v-for="m in METHODS" :key="m.value"
-                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer"
+                class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer"
                 :style="settlement.trade_method === m.value
                   ? { backgroundColor: 'var(--c-trade)', borderColor: 'var(--c-trade)', color: 'white' }
                   : { backgroundColor: 'transparent', borderColor: 'var(--c-border)', color: 'var(--c-muted)' }"
@@ -760,7 +772,7 @@ function marketLinks(name, setCode) {
                   <option value="counterparty">They pay</option>
                 </select>
                 <div class="relative flex items-center">
-                  <span class="absolute left-2.5 text-xs pointer-events-none" style="color: var(--c-muted)">€</span>
+                  <span class="absolute left-3 text-xs pointer-events-none" style="color: var(--c-muted)">€</span>
                   <input
                     v-model.number="settlement.cash_amount"
                     type="number" min="0" step="0.01" placeholder="0.00"
@@ -791,7 +803,7 @@ function marketLinks(name, setCode) {
                   style="ring-color: var(--c-border)"
                 />
                 <button
-                  class="absolute -top-1.5 -right-1.5 size-5 rounded-full flex items-center justify-center cursor-pointer"
+                  class="absolute -top-2 -right-2 size-5 rounded-full flex items-center justify-center cursor-pointer"
                   style="background-color: var(--c-accent)"
                   @click="removePhoto"
                   title="Remove photo"
@@ -832,33 +844,34 @@ function marketLinks(name, setCode) {
       <!-- Footer -->
       <div class="relative">
         <div class="h-[2px] w-full" style="background: linear-gradient(90deg, var(--c-accent), transparent 40%, transparent 60%, var(--c-trade))" />
-        <div class="flex items-center justify-between px-6 py-4">
-          <div class="text-sm flex items-center gap-4" style="color: var(--c-muted)">
-            <span v-if="givePayload.length > 0 || receivePayload.length > 0" class="flex items-center gap-4">
-              <span class="flex items-center gap-1.5">
+        <div class="flex items-center justify-between gap-3 px-4 sm:px-6 py-3 sm:py-4">
+          <div class="text-sm flex items-center gap-3" style="color: var(--c-muted)">
+            <span v-if="givePayload.length > 0 || receivePayload.length > 0" class="flex items-center gap-3">
+              <span class="flex items-center gap-2">
                 <v-icon icon="mdi-arrow-up-bold" size="14" color="var(--c-accent)" />
                 <span class="text-pink-300 font-semibold">{{ givePayload.length }}</span>
               </span>
               <v-icon icon="mdi-swap-horizontal" size="16" color="var(--c-muted)" />
-              <span class="flex items-center gap-1.5">
+              <span class="flex items-center gap-2">
                 <v-icon icon="mdi-arrow-down-bold" size="14" color="var(--c-trade)" />
                 <span class="text-blue-300 font-semibold">{{ receivePayload.length }}</span>
               </span>
             </span>
-            <span v-else style="color: var(--c-muted)">Select cards to include in the proposal.</span>
+            <span v-else class="text-xs sm:text-sm hidden sm:block" style="color: var(--c-muted)">Select cards to include.</span>
           </div>
-          <div class="flex gap-3">
-            <v-btn variant="text" color="gray" @click="close" :disabled="submitting">Cancel</v-btn>
+          <div class="flex gap-2">
+            <v-btn variant="text" color="gray" size="small" @click="close" :disabled="submitting">Cancel</v-btn>
             <v-btn
               variant="flat"
               style="background-color: var(--c-accent); color: white"
               :prepend-icon="isEditing ? 'mdi-content-save-outline' : 'mdi-send'"
               class="!rounded-xl"
+              size="small"
               :loading="submitting"
               :disabled="!canSubmit"
               @click="submit"
             >
-              {{ isEditing ? 'Save changes' : isCountering ? 'Send counter-offer' : 'Send proposal' }}
+              {{ isEditing ? 'Save' : isCountering ? 'Counter' : 'Send' }}
             </v-btn>
           </div>
         </div>
