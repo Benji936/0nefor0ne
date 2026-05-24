@@ -17,6 +17,13 @@ const hasSearchResults = (searchCards) =>
 // A handful of iconic cards used purely as visual texture in the hero
 const HERO_CARDS = [46986414, 89631139, 53129443, 14558127, 38033121, 55144522];
 const cardThumb = (id) => `https://images.ygoprodeck.com/images/cards_small/${id}.jpg`;
+
+const HOW_IT_WORKS = [
+  { n: "01", title: "Build your trade pile",  body: "List cards you're ready to trade away." },
+  { n: "02", title: "Add your wishlist",      body: "Mark every card you're hunting for." },
+  { n: "03", title: "Find your match",        body: "We surface traders who want yours and have yours." },
+  { n: "04", title: "Propose & confirm",      body: "Send a proposal, chat, and close the trade." },
+];
 </script>
 
 <template>
@@ -66,12 +73,7 @@ const cardThumb = (id) => `https://images.ygoprodeck.com/images/cards_small/${id
         <p class="text-xs font-bold uppercase tracking-widest" style="color: var(--c-muted)">How it works</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           <div
-            v-for="step in [
-              { n: '01', title: 'Build your trade pile',  body: 'List cards you're ready to trade away.' },
-              { n: '02', title: 'Add your wishlist',      body: 'Mark every card you're hunting for.' },
-              { n: '03', title: 'Find your match',        body: 'We surface traders who want yours and have yours.' },
-              { n: '04', title: 'Propose & confirm',      body: 'Send a proposal, chat, and close the trade.' },
-            ]"
+            v-for="step in HOW_IT_WORKS"
             :key="step.n"
             class="flex flex-col gap-2 rounded-xl p-4"
             style="background: var(--c-surface); border: 1px solid var(--c-border)"
