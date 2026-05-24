@@ -131,6 +131,19 @@ import UserMenuChip from "@/components/UserMenuChip.vue";
     <AuthDialog v-model="authDialogOpen" @authenticated="onAuthenticated" />
 
   </main>
+
+  <!-- ── Footer ── -->
+  <footer
+    class="flex flex-wrap items-center justify-between gap-3 px-5 md:px-16 py-5 text-xs sm:pb-5"
+    style="border-top: 1px solid var(--c-border); color: var(--c-muted)"
+    :class="authenticated ? 'pb-20' : 'pb-5'"
+  >
+    <span>© {{ new Date().getFullYear() }} One for One</span>
+    <nav class="flex items-center gap-4">
+      <router-link to="/privacy" class="no-underline transition-opacity hover:opacity-70" style="color: var(--c-muted)">Privacy Policy</router-link>
+      <a href="mailto:hello@0nefor.one" class="no-underline transition-opacity hover:opacity-70" style="color: var(--c-muted)">Contact</a>
+    </nav>
+  </footer>
 </template>
 
 
@@ -191,7 +204,7 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
                 ? `${q} — Yu-Gi-Oh! Trading | ${BASE}`
                 : `${BASE} — Yu-Gi-Oh! Card Trading`,
               desc:  q
-                ? `Find traders for ${q} on One for One — the free Yu-Gi-Oh! card trading platform.`
+                ? `Find traders for ${q} on One for One the free Yu-Gi-Oh! card trading platform.`
                 : 'Trade Yu-Gi-Oh! cards directly with other collectors. List your trade pile, build your wishlist, and find perfect one-for-one matches near you.',
               image: 'https://0nefor.one/logo.png',
             },

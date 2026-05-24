@@ -50,9 +50,23 @@ const emit = defineEmits(["added", "deleted"]);
           @deleted="emit('deleted', $event)"
         />
       </TransitionGroup>
-      <p v-if="cards.length === 0" class="self-center text-sm py-6" style="color: var(--c-muted)">
-        {{ emptyText }}
-      </p>
+      <div v-if="cards.length === 0" class="flex flex-col items-center gap-3 py-10 text-center">
+        <div
+          class="size-12 rounded-2xl flex items-center justify-center"
+          style="background: color-mix(in srgb, var(--c-muted) 10%, transparent)"
+        >
+          <v-icon :icon="mode === 'trade' ? 'mdi-cards-outline' : 'mdi-heart-outline'" size="24" color="var(--c-muted)" />
+        </div>
+        <p class="text-sm max-w-xs leading-relaxed" style="color: var(--c-muted)">{{ emptyText }}</p>
+        <router-link
+          to="/"
+          class="text-xs font-semibold no-underline flex items-center gap-1 transition-opacity hover:opacity-70"
+          style="color: var(--c-trade)"
+        >
+          <v-icon icon="mdi-magnify" size="14" />
+          Search for cards to add
+        </router-link>
+      </div>
     </template>
   </div>
 </template>

@@ -139,6 +139,14 @@ const emit = defineEmits([
       <p class="text-sm max-w-xs leading-relaxed" style="color: var(--c-muted)">
         The more cards you add to your trade pile and wishlist, the more traders you'll find here.
       </p>
+      <router-link
+        to="/library"
+        class="text-xs font-semibold no-underline flex items-center gap-1 mt-1 transition-opacity hover:opacity-70"
+        style="color: var(--c-trade)"
+      >
+        <v-icon icon="mdi-cards-outline" size="14" />
+        Go to My Collection to add cards
+      </router-link>
     </div>
 
     <!-- Match sections -->

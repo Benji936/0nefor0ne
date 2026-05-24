@@ -4,14 +4,15 @@ import Library     from "@/components/Pages/Library.vue";
 import TradeCenter from "@/components/Pages/TradeCenter.vue";
 import Account     from "@/components/Pages/Account.vue";
 import CardPage    from "@/components/Pages/CardPage.vue";
+import PrivacyPage from "@/components/Pages/PrivacyPage.vue";
 
 const routes = [
   { path: "/",           name: "search",      component: Search      },
   { path: "/library",    name: "library",     component: Library     },
   { path: "/trade",      name: "TradeCenter", component: TradeCenter },
   { path: "/account",    name: "account",     component: Account     },
-  // Permalink for every card — crawlable by Google, shareable link
   { path: "/card/:id",   name: "card",        component: CardPage    },
+  { path: "/privacy",    name: "privacy",     component: PrivacyPage },
   // Catch-all: redirect unknown paths to search
   { path: "/:pathMatch(.*)*", redirect: "/" },
 ];
