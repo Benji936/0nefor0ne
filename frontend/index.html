@@ -15,6 +15,12 @@
     <!-- Canonical -->
     <link rel="canonical" href="https://0nefor.one/">
 
+    <!-- Preconnect: card image CDN — opens TCP+TLS early so first card images load faster -->
+    <link rel="preconnect" href="https://images.ygoprodeck.com" crossorigin>
+    <link rel="dns-prefetch" href="https://images.ygoprodeck.com">
+    <link rel="preconnect" href="https://db.ygoprodeck.com" crossorigin>
+    <link rel="dns-prefetch" href="https://db.ygoprodeck.com">
+
     <!-- Favicon / touch icons -->
     <link rel="icon" type="image/png" href="/logo.png">
     <link rel="apple-touch-icon" href="/logo.png">
@@ -38,9 +44,64 @@
 
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9846108092898163"
      crossorigin="anonymous"></script>
+
+    <!-- Structured data: WebApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "One for One",
+      "url": "https://0nefor.one/",
+      "description": "Trade Yu-Gi-Oh! cards directly with other collectors. List your trade pile, build your wishlist, and find perfect one-for-one matches near you.",
+      "applicationCategory": "GameApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "author": {
+        "@type": "Organization",
+        "name": "One for One",
+        "url": "https://0nefor.one/"
+      }
+    }
+    </script>
   </head>
   <body class="relative">
     <div id="app" class=""></div>
     <script type="module" src="/src/main.js"></script>
+
+    <!-- Fallback content for crawlers and users with JS disabled -->
+    <noscript>
+      <style>
+        body { font-family: sans-serif; max-width: 680px; margin: 40px auto; padding: 0 20px; color: #1a1a2e; }
+        h1 { font-size: 1.8rem; } h2 { font-size: 1.2rem; margin-top: 2rem; }
+        p, li { line-height: 1.6; }
+        a { color: #6B20D9; }
+      </style>
+      <h1>One for One — Yu-Gi-Oh! Card Trading</h1>
+      <p>
+        One for One is a free platform for Yu-Gi-Oh! collectors to trade cards directly with
+        each other. List your trade pile, build your wishlist, and find perfect card-for-card
+        matches with traders near you.
+      </p>
+      <h2>How it works</h2>
+      <ul>
+        <li>Search any card by name or set code</li>
+        <li>Add cards to your trade pile (cards you offer) or wishlist (cards you want)</li>
+        <li>Browse matched traders who have what you want and want what you have</li>
+        <li>Send a trade proposal and chat directly with your trading partner</li>
+        <li>Confirm the exchange once both sides are happy</li>
+      </ul>
+      <h2>Sections</h2>
+      <ul>
+        <li><a href="/">Card Search</a> — Search the full Yu-Gi-Oh! card database</li>
+        <li><a href="/library">My Collection</a> — Manage your trade pile and wishlist</li>
+        <li><a href="/trade">Trade Center</a> — Browse matches and manage proposals</li>
+        <li><a href="/account">My Account</a> — Update your profile and location</li>
+      </ul>
+      <p>JavaScript is required to use the full One for One application.</p>
+    </noscript>
 </body>
 </html>

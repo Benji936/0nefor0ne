@@ -4,8 +4,33 @@
   <!-- Homepage / card search -->
   <url>
     <loc>https://0nefor.one/</loc>
+    <lastmod>2026-05-24</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
+  </url>
+
+  <!-- Collection manager -->
+  <url>
+    <loc>https://0nefor.one/library</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Trade Center -->
+  <url>
+    <loc>https://0nefor.one/trade</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Account / profile -->
+  <url>
+    <loc>https://0nefor.one/account</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
   </url>
 
 </urlset>

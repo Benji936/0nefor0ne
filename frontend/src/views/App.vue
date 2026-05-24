@@ -96,13 +96,13 @@ import UserMenuChip from "@/components/UserMenuChip.vue";
   <!-- ── Mobile bottom tab bar (authenticated only, phones < 640 px) ── -->
   <nav
     v-if="authenticated"
-    class="fixed bottom-0 left-0 right-0 z-40 flex sm:hidden items-stretch"
+    class="mobile-bottom-nav fixed bottom-0 left-0 right-0 z-40 flex sm:hidden items-stretch"
     style="background: var(--c-nav); border-top: 1px solid var(--c-border); touch-action: manipulation"
   >
     <button
       v-for="tab in mobileTabs"
       :key="tab.key"
-      class="flex flex-col items-center justify-center gap-0.5 flex-1 py-2 cursor-pointer transition-colors"
+      class="flex flex-col items-center justify-center gap-1 flex-1 py-2 cursor-pointer transition-colors"
       style="min-height: 56px"
       :style="{ color: page === tab.key ? 'var(--c-accent)' : 'var(--c-muted)' }"
       @click="tab.action()"
@@ -112,17 +112,21 @@ import UserMenuChip from "@/components/UserMenuChip.vue";
     </button>
   </nav>
 
-  <main class="px-5 md:px-16 pt-5 md:pt-8 min-h-screen pb-20 sm:pb-0" style="background: var(--c-bg); transition: background 0.3s ease">
-    <TradeCenter
-      v-if="page=='TradeCenter'"
-      ref="tradeCenter"
-      :login="authenticated"
-      :filter-card-name="filterCardName"
-      @clear-filter="filterCardName = ''"
-    ></TradeCenter>
-    <Search @TradeCenter="openMatches($event)" @requireAuth="openLogin()" :searchCards="cards" v-if="page=='search'"></Search>
-    <Library v-if="page=='library'" :login="authenticated" />
-    <Account v-if="page=='account'" :login="authenticated" @logout="logout" />
+  <main class="main-content-mobile-pb px-5 md:px-16 pt-5 md:pt-8 min-h-screen sm:pb-0" style="background: var(--c-bg); transition: background 0.3s ease">
+    <!-- RouterView renders the active page component; props are forwarded via slot -->
+    <RouterView v-slot="{ Component }">
+      <component
+        :is="Component"
+        ref="pageRef"
+        :login="authenticated"
+        :search-cards="cards"
+        :filter-card-name="filterCardName"
+        @TradeCenter="openMatches($event)"
+        @requireAuth="openLogin()"
+        @logout="logout"
+        @clear-filter="filterCardName = ''"
+      />
+    </RouterView>
 
     <AuthDialog v-model="authDialogOpen" @authenticated="onAuthenticated" />
 
@@ -140,6 +144,10 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
         isDarkTheme() {
           return this.$vuetify.theme.global.name === 'neonDusk';
         },
+        /** Current page name — derived from the active route so the URL is the source of truth. */
+        page() {
+          return this.$route.name ?? 'search';
+        },
         mobileTabs() {
           return [
             { key: 'search',      label: 'Search',  icon: 'mdi-magnify',                iconActive: 'mdi-magnify',                action: () => this.changePage('search') },
@@ -154,32 +162,122 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
             filterCardName: "",
             searchQuery: "",
             cards: {},
-            // null when logged out, { user, session } when logged in
             authenticated: null,
             authDialogOpen: false,
             authUnsubscribe: null,
-            page:"search",
+            _searchTimer: null,
           };
       },
-      methods: {
-        async update() {
-          if (!this.searchQuery.trim()) {
-            this.cards = {};
-            return;
+      watch: {
+        $route()      { this._updateMeta(); },
+        searchQuery() { if (this.page === 'search') this._updateMeta(); },
+        // Sync URL ?q= back into the input when the user navigates back/forward
+        '$route.query.q'(q) {
+          if (this.page === 'search' && q !== this.searchQuery) {
+            this.searchQuery = q ?? '';
+            if (q) this._doSearch(q);
+            else this.cards = {};
           }
-          const response = await searchCardByName(this.searchQuery);
-          if (response.data?.data?.length > 0) {
-            this.cards = response.data;
-          } else if (response.data?.length > 0) {
-            this.cards = { data: response.data };
-          } else {
-            const alt = await searchCardBySetCode(this.searchQuery);
-            if (alt?.data?.id) {
-              const byId = await searchById(alt.data.id);
-              this.cards = byId.data?.data ? byId.data : { data: byId.data ?? [] };
+        },
+      },
+      methods: {
+        _updateMeta(overrides = {}) {
+          const BASE = 'One for One';
+          const q    = this.searchQuery.trim();
+
+          const defaults = {
+            search: {
+              title: q
+                ? `${q} — Yu-Gi-Oh! Trading | ${BASE}`
+                : `${BASE} — Yu-Gi-Oh! Card Trading`,
+              desc:  q
+                ? `Find traders for ${q} on One for One — the free Yu-Gi-Oh! card trading platform.`
+                : 'Trade Yu-Gi-Oh! cards directly with other collectors. List your trade pile, build your wishlist, and find perfect one-for-one matches near you.',
+              image: 'https://0nefor.one/logo.png',
+            },
+            library: {
+              title: `My Collection — ${BASE}`,
+              desc:  'Manage your Yu-Gi-Oh! card collection, trade pile, and wishlist on One for One.',
+              image: 'https://0nefor.one/logo.png',
+            },
+            TradeCenter: {
+              title: `Trade Center — ${BASE}`,
+              desc:  'Browse your trade matches, send proposals, and complete card trades on One for One.',
+              image: 'https://0nefor.one/logo.png',
+            },
+            account: {
+              title: `My Account — ${BASE}`,
+              desc:  'Manage your One for One profile, location, and trade preferences.',
+              image: 'https://0nefor.one/logo.png',
+            },
+          };
+
+          const meta = { ...defaults[this.page] ?? defaults.search, ...overrides };
+
+          // <title>
+          document.title = meta.title;
+
+          // <meta name="description">
+          this._setMeta('name', 'description', meta.desc);
+
+          // Open Graph
+          this._setMeta('property', 'og:title',       meta.title);
+          this._setMeta('property', 'og:description',  meta.desc);
+          this._setMeta('property', 'og:image',        meta.image);
+
+          // Twitter / X
+          this._setMeta('name', 'twitter:title',       meta.title);
+          this._setMeta('name', 'twitter:description', meta.desc);
+          this._setMeta('name', 'twitter:image',       meta.image);
+
+          // <link rel="canonical"> — reflects the real URL for this route
+          const canonical = document.head.querySelector('link[rel="canonical"]');
+          if (canonical) {
+            canonical.setAttribute('href', `https://0nefor.one${this.$route?.fullPath ?? '/'}`);
+          }
+        },
+
+        /** Upsert a <meta> tag by its attribute selector. */
+        _setMeta(attr, key, value) {
+          let el = document.head.querySelector(`meta[${attr}="${key}"]`);
+          if (!el) {
+            el = document.createElement('meta');
+            el.setAttribute(attr, key);
+            document.head.appendChild(el);
+          }
+          el.setAttribute('content', value);
+        },
+        update() {
+          clearTimeout(this._searchTimer);
+          this._searchTimer = setTimeout(() => this._doSearch(this.searchQuery), 300);
+        },
+        async _doSearch(query) {
+          if (!query.trim()) { this.cards = {}; return; }
+          try {
+            const response = await searchCardByName(query);
+            if (query !== this.searchQuery) return; // stale
+            if (response.data?.data?.length > 0) {
+              this.cards = response.data;
+            } else if (response.data?.length > 0) {
+              this.cards = { data: response.data };
             } else {
-              this.cards = { data: [] };
+              const alt = await searchCardBySetCode(query);
+              if (query !== this.searchQuery) return;
+              if (alt?.data?.id) {
+                const byId = await searchById(alt.data.id);
+                if (query !== this.searchQuery) return;
+                this.cards = byId.data?.data ? byId.data : { data: byId.data ?? [] };
+              } else {
+                this.cards = { data: [] };
+              }
             }
+            // Reflect the query in the URL so the link is shareable / bookmarkable
+            const q = query.trim();
+            if (this.$route.name === 'search' && this.$route.query.q !== q) {
+              this.$router.replace({ name: 'search', query: q ? { q } : undefined });
+            }
+          } catch (err) {
+            console.error('Search failed', err);
           }
         },
         openLogin() {
@@ -201,18 +299,20 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
         },
 
         changePage(name) {
-          this.page = name;
+          const routeMap = { search: '/', library: '/library', TradeCenter: '/trade', account: '/account' };
+          this.$router.push(routeMap[name] ?? '/');
         },
         openMatches(card = null) {
           this.filterCardName = card?.name ?? "";
-          this.page = "TradeCenter";
+          this.$router.push('/trade');
         },
         openProposals() {
-          this.page = "TradeCenter";
-          this.$nextTick(() => this.$refs.tradeCenter?.switchToProposals?.());
+          this.$router.push('/trade').then(() => {
+            this.$nextTick(() => this.$refs.pageRef?.switchToProposals?.());
+          });
         },
         toggleTheme() {
-          const isDark = this.$vuetify.theme.global.name === 'neonDusk';
+          const isDark = this.isDarkTheme;
           this.$vuetify.theme.global.name = isDark ? 'neonDuskLight' : 'neonDusk';
           document.documentElement.classList.toggle('dark', !isDark);
           localStorage.setItem('theme', isDark ? 'light' : 'dark');
@@ -225,6 +325,14 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
         this.$vuetify.theme.global.name = isDark ? 'neonDusk' : 'neonDuskLight';
         document.documentElement.classList.toggle('dark', isDark);
 
+        // Restore search query from URL on first load (e.g. shared link /?q=Dark+Magician)
+        const initialQuery = this.$route.query.q;
+        if (initialQuery) {
+          this.searchQuery = initialQuery;
+          this._doSearch(initialQuery);
+        }
+
+        this._updateMeta();
         this.authenticated = await getCurrentSession();
 
         // Stay in sync if the token refreshes or the user signs in/out from
