@@ -1,10 +1,12 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRoute } from "vue-router";
 import CardYugi from "@/components/CardYugi.vue";
 import { getCardSets, getCardsBySet } from "@/api";
 
-const { t } = useI18n();
+const { t }  = useI18n();
+const route  = useRoute();
 
 const emit = defineEmits(["showTraders", "requireAuth"]);
 
@@ -29,7 +31,7 @@ async function onSetSelected(setName) {
   const id = ++_reqId;
   loadingSetCards.value = true;
   try {
-    const r = await getCardsBySet(setName);
+    const r = await getCardsBySet(setName, route.params.locale || "en");
     if (id !== _reqId) return;
     setCards.value = r.data?.data ?? [];
   } catch {

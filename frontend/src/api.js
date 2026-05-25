@@ -29,11 +29,23 @@ export const searchCardBySetCode = (code = "") => {
     });
 };
 
-export const searchById = (id = "", locale = "en") => {
-    return axios.get(`${API_URL}cardinfo.php?id=${id}${langParam(locale)}`).catch((error) => {
-        console.error("Error fetching card with " + id, error);
+export const searchById = async (id = "", locale = "en") => {
+    try {
+        const res = await axios.get(`${API_URL}cardinfo.php?id=${id}${langParam(locale)}`);
+        // Some cards lack translations — if the API returned nothing, fall back to English
+        const hasData = res.data?.data?.length > 0 || (Array.isArray(res.data) && res.data.length > 0);
+        if (!hasData && locale !== "en") {
+            return axios.get(`${API_URL}cardinfo.php?id=${id}`).catch(() => ({ data: [] }));
+        }
+        return res;
+    } catch {
+        if (locale !== "en") {
+            // Retry without language param (card may lack a translation)
+            return axios.get(`${API_URL}cardinfo.php?id=${id}`).catch(() => ({ data: [] }));
+        }
+        console.error("Error fetching card with " + id);
         return { data: [] };
-    });
+    }
 };
 
 export const getCardSets = () => {

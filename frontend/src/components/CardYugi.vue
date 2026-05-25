@@ -57,7 +57,7 @@ const emit = defineEmits(['showTraders', 'requireAuth'])
 
         <!-- Permalink -->
         <router-link
-          :to="`/card/${componentCard.id}`"
+          :to="`/${$route.params.locale || 'en'}/card/${componentCard.id}`"
           class="text-xs no-underline flex items-center gap-1 transition-opacity hover:opacity-70 -mt-2 w-fit"
           style="color: var(--c-muted)"
         >

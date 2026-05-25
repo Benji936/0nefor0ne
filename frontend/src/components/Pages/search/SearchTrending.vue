@@ -1,11 +1,13 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRoute } from "vue-router";
 import { fetchTrendingCards } from "@/lib/matches";
 import { searchById } from "@/api";
 import CardYugi from "@/components/CardYugi.vue";
 
 const { t } = useI18n();
+const route  = useRoute();
 
 const emit = defineEmits(["showTraders", "requireAuth"]);
 
@@ -26,7 +28,7 @@ onMounted(async () => {
     const enriched = await Promise.all(
       trending.map(async card => {
         try {
-          const res = await searchById(card.image_id);
+          const res = await searchById(card.image_id, route.params.locale || "en");
           const api = res.data?.data?.[0] ?? null;
           if (!api) return { ...card, id: card.image_id, card_sets: [] };
           // Keep our image_id as `id` and preserve Supabase-specific fields

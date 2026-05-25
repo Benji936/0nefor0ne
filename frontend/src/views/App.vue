@@ -242,6 +242,12 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
       watch: {
         $route()      { this._updateMeta(); },
         searchQuery() { if (this.page === 'search') this._updateMeta(); },
+        // Re-fetch search results when the user switches language
+        '$route.params.locale'(newLocale, oldLocale) {
+          if (newLocale !== oldLocale && this.searchQuery.trim() && this.page === 'search') {
+            this._doSearch(this.searchQuery);
+          }
+        },
         // Sync URL ?q= back into the input when the user navigates back/forward
         '$route.query.q'(q) {
           if (this.page === 'search' && q !== this.searchQuery) {
