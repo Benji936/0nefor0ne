@@ -239,7 +239,15 @@
     "tradeProposed": "Tausch vorgeschlagen",
     "proposalEdited": "Vorschlag bearbeitet",
     "noEvents": "Noch keine Ereignisse aufgezeichnet.",
-    "anonymous": "Anonym"
+    "anonymous": "Anonym",
+    "cardCount": "0 Karten | 1 Karte | {count} Karten",
+    "uploadBothBeforeConfirm": "Beide Seiten müssen Fotos hochladen, bevor bestätigt werden kann.",
+    "waitingForConfirmDetail": "Warten auf {name}, zu bestätigen.",
+    "bothUploadedConfirmHint": "Beide haben hochgeladen — bestätige, wenn du deine Karten erhalten hast.",
+    "uploadBothToAccept": "Beide Seiten müssen Fotos hochladen, um annehmen zu können.",
+    "photosVerifiedCanAccept": "Fotos verifiziert — du kannst jetzt annehmen.",
+    "waitingForReview": "Warten auf {name}, zu prüfen und anzunehmen.",
+    "declinePlaceholder": "Optional — teile mit, warum du ablehnst…"
   },
   "traderProfile": {
     "wishlistEmpty": "Wunschliste ist leer.",

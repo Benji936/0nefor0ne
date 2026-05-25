@@ -1,9 +1,12 @@
 <script setup>
 import { ref, computed, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { cardImage } from "@/lib/cardImage";
 import { fetchTradeEvents } from "@/lib/proposals";
 import TradeChatDialog   from "@/components/trade/TradeChatDialog.vue";
 import TradePhotosPanel  from "@/components/trade/TradePhotosPanel.vue";
+
+const { t } = useI18n();
 
 const props = defineProps({
   modelValue:    { type: Boolean, default: false },
@@ -27,11 +30,11 @@ const declineReason = ref("");
 const statusMeta = computed(() => {
   if (!props.proposal) return {};
   const map = {
-    pending:   { label: "Pending",   color: "var(--c-trade)",  icon: "mdi-clock-outline" },
-    accepted:  { label: "Accepted",  color: "var(--c-mutual)", icon: "mdi-check-circle-outline" },
-    declined:  { label: "Declined",  color: "var(--c-accent)", icon: "mdi-close-circle-outline" },
-    cancelled: { label: "Cancelled", color: "var(--c-muted)",  icon: "mdi-cancel" },
-    completed: { label: "Completed", color: "var(--c-mutual)", icon: "mdi-handshake-outline" },
+    pending:   { label: t('proposal.pending'),   color: "var(--c-trade)",  icon: "mdi-clock-outline" },
+    accepted:  { label: t('proposal.accepted'),  color: "var(--c-mutual)", icon: "mdi-check-circle-outline" },
+    declined:  { label: t('proposal.declined'),  color: "var(--c-accent)", icon: "mdi-close-circle-outline" },
+    cancelled: { label: t('proposal.cancelled'), color: "var(--c-muted)",  icon: "mdi-cancel" },
+    completed: { label: t('proposal.completed'), color: "var(--c-mutual)", icon: "mdi-handshake-outline" },
   };
   return map[props.proposal.status] ?? map.pending;
 });
@@ -83,33 +86,43 @@ watch(
   { immediate: true },
 );
 
-const EVENT_META = {
-  created:   { icon: "mdi-plus-circle-outline",  color: "var(--c-trade)",  label: "Trade proposed"  },
-  accepted:  { icon: "mdi-check-circle-outline",  color: "var(--c-mutual)", label: "Accepted"         },
-  declined:  { icon: "mdi-close-circle-outline",  color: "var(--c-accent)", label: "Declined"         },
-  cancelled: { icon: "mdi-cancel",                color: "var(--c-muted)",  label: "Cancelled"        },
-  completed: { icon: "mdi-handshake-outline",     color: "var(--c-mutual)", label: "Completed"        },
-  updated:   { icon: "mdi-pencil-circle-outline", color: "var(--c-muted)",  label: "Proposal edited"  },
-};
-
 function eventMeta(type) {
-  return EVENT_META[type] ?? { icon: "mdi-information-outline", color: "var(--c-muted)", label: type };
+  const map = {
+    created:   { icon: "mdi-plus-circle-outline",  color: "var(--c-trade)",  label: t('tradeDetail.tradeProposed') },
+    accepted:  { icon: "mdi-check-circle-outline",  color: "var(--c-mutual)", label: t('proposal.accepted')         },
+    declined:  { icon: "mdi-close-circle-outline",  color: "var(--c-accent)", label: t('proposal.declined')         },
+    cancelled: { icon: "mdi-cancel",                color: "var(--c-muted)",  label: t('proposal.cancelled')        },
+    completed: { icon: "mdi-handshake-outline",     color: "var(--c-mutual)", label: t('proposal.completed')        },
+    updated:   { icon: "mdi-pencil-circle-outline", color: "var(--c-muted)",  label: t('tradeDetail.proposalEdited')},
+  };
+  return map[type] ?? { icon: "mdi-information-outline", color: "var(--c-muted)", label: type };
 }
 
 function actorLabel(actorId) {
   if (!actorId) return "—";
-  return actorId === props.currentUserId ? "You" : (props.proposal?.counterparty_name ?? "Counterparty");
+  return actorId === props.currentUserId ? t('tradeDetail.you') : (props.proposal?.counterparty_name ?? t('tradeDetail.counterparty'));
 }
 
 function timeAgo(ts) {
   if (!ts) return "";
   const d    = new Date(ts);
   const diff = Date.now() - d.getTime();
-  if (diff < 60_000)         return "just now";
-  if (diff < 3_600_000)      return `${Math.floor(diff / 60_000)}m ago`;
-  if (diff < 86_400_000)     return `${Math.floor(diff / 3_600_000)}h ago`;
-  if (diff < 86_400_000 * 7) return `${Math.floor(diff / 86_400_000)}d ago`;
+  if (diff < 60_000)         return t('notifications.justNow', {}, { missingWarn: false }) || 'just now';
+  if (diff < 3_600_000)      return `${Math.floor(diff / 60_000)}m`;
+  if (diff < 86_400_000)     return `${Math.floor(diff / 3_600_000)}h`;
+  if (diff < 86_400_000 * 7) return `${Math.floor(diff / 86_400_000)}d`;
   return d.toLocaleDateString();
+}
+
+function statusLabel(status) {
+  const map = {
+    pending:   t('proposal.pending'),
+    accepted:  t('proposal.accepted'),
+    declined:  t('proposal.declined'),
+    cancelled: t('proposal.cancelled'),
+    completed: t('proposal.completed'),
+  };
+  return map[status] ?? status;
 }
 
 // ── Actions ───────────────────────────────────────────────────────────────
@@ -154,10 +167,10 @@ function confirmDecline() {
           </div>
           <div class="flex flex-col grow min-w-0">
             <span class="font-bold text-sm md:text-lg leading-tight truncate" style="color: var(--c-text)">
-              Trade #{{ proposal.id }} · {{ proposal.counterparty_name ?? "Anonymous" }}
+              Trade #{{ proposal.id }} · {{ proposal.counterparty_name ?? t('tradeDetail.anonymous') }}
             </span>
             <span class="text-xs md:text-sm mt-1 truncate" style="color: var(--c-muted)">
-              {{ proposal.i_am_proposer ? "You proposed" : "Proposed to you" }} · {{ formattedDate }}
+              {{ proposal.i_am_proposer ? t('proposal.youProposed') : t('proposal.proposedToYou') }} · {{ formattedDate }}
             </span>
           </div>
           <span
@@ -172,7 +185,7 @@ function confirmDecline() {
             variant="text"
             density="compact"
             style="color: var(--c-muted)"
-            title="Open trade chat"
+            :title="t('tradeDetail.openChat')"
             @click="chatOpen = true"
           />
           <v-btn icon="mdi-close" variant="text" density="compact" style="color: var(--c-muted)" @click="close" />
@@ -186,18 +199,18 @@ function confirmDecline() {
         <!-- Card columns -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <section v-for="side in [
-            { label: 'You give',    icon: 'mdi-arrow-up-circle',   color: 'var(--c-accent)', cards: proposal.i_give,    qtyColor: 'var(--c-accent)' },
-            { label: 'You receive', icon: 'mdi-arrow-down-circle', color: 'var(--c-trade)',  cards: proposal.i_receive, qtyColor: 'var(--c-trade)' },
+            { label: t('tradeDetail.youGive'),    icon: 'mdi-arrow-up-circle',   color: 'var(--c-accent)', cards: proposal.i_give,    qtyColor: 'var(--c-accent)' },
+            { label: t('tradeDetail.youReceive'), icon: 'mdi-arrow-down-circle', color: 'var(--c-trade)',  cards: proposal.i_receive, qtyColor: 'var(--c-trade)' },
           ]" :key="side.label" class="flex flex-col gap-3">
             <div class="flex items-center gap-2 pb-1" style="border-bottom: 1px solid var(--c-border)">
               <v-icon :icon="side.icon" size="18" :color="side.color" />
               <span class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">{{ side.label }}</span>
               <span v-if="side.cards?.length" class="ml-auto text-[11px] font-semibold px-2 py-1 rounded-md"
                 :style="{ background: `color-mix(in srgb, ${side.color} 15%, transparent)`, color: side.color }">
-                {{ side.cards.length }} card{{ side.cards.length !== 1 ? "s" : "" }}
+                {{ t('tradeDetail.cardCount', side.cards.length) }}
               </span>
             </div>
-            <p v-if="!side.cards?.length" class="text-sm italic py-4 text-center" style="color: var(--c-muted)">Nothing on this side</p>
+            <p v-if="!side.cards?.length" class="text-sm italic py-4 text-center" style="color: var(--c-muted)">{{ t('tradeDetail.nothingOnThisSide') }}</p>
             <div v-for="card in side.cards" :key="card.id"
               class="flex gap-3 rounded-lg px-3 py-3"
               style="background-color: var(--c-surface-2); border: 1px solid var(--c-border)">
@@ -218,7 +231,7 @@ function confirmDecline() {
                     style="background: color-mix(in srgb, var(--c-muted) 12%, transparent); color: var(--c-muted)">{{ card.language }}</span>
                 </div>
                 <p class="text-xs font-semibold mt-auto" style="color: var(--c-text)">
-                  Qty: <span :style="{ color: side.qtyColor }">{{ card.quantity }}</span>
+                  {{ t('tradeDetail.qty') }} <span :style="{ color: side.qtyColor }">{{ card.quantity }}</span>
                 </p>
                 <div class="flex gap-2 mt-1">
                   <a v-for="m in marketLinks(card.name, card.extension)" :key="m.label"
@@ -241,7 +254,7 @@ function confirmDecline() {
         >
           <v-icon icon="mdi-message-reply-outline" size="16" color="var(--c-accent)" class="shrink-0 mt-1" />
           <div class="flex flex-col gap-1 min-w-0">
-            <p class="text-xs font-semibold" style="color: var(--c-accent)">Reason for declining</p>
+            <p class="text-xs font-semibold" style="color: var(--c-accent)">{{ t('tradeDetail.declineReason') }}</p>
             <p class="text-sm leading-snug" style="color: var(--c-text)">{{ proposal.decline_reason }}</p>
           </div>
         </div>
@@ -259,18 +272,18 @@ function confirmDecline() {
         <div class="mt-6 pt-5" style="border-top: 1px solid var(--c-border)">
           <div class="flex items-center gap-2 mb-4">
             <v-icon icon="mdi-timeline-clock-outline" size="16" color="var(--c-muted)" />
-            <span class="text-xs font-bold uppercase tracking-wide" style="color: var(--c-muted)">Activity log</span>
+            <span class="text-xs font-bold uppercase tracking-wide" style="color: var(--c-muted)">{{ t('tradeDetail.activityLog') }}</span>
           </div>
 
           <!-- Loading -->
           <div v-if="loadingEvents" class="flex items-center gap-3 py-2" style="color: var(--c-muted)">
             <v-progress-circular indeterminate size="16" width="2" color="var(--c-muted)" />
-            <span class="text-xs">Loading…</span>
+            <span class="text-xs">{{ t('common.loading') }}</span>
           </div>
 
           <!-- Empty (old trades before this feature was added) -->
           <p v-else-if="events.length === 0" class="text-xs italic py-2" style="color: var(--c-muted)">
-            No events recorded — this trade predates the audit log.
+            {{ t('tradeDetail.noEvents') }}
           </p>
 
           <!-- Timeline -->
@@ -319,7 +332,7 @@ function confirmDecline() {
 
                 <!-- Transition label (e.g. pending → accepted) -->
                 <p v-if="evt.from_status" class="text-[11px]" style="color: var(--c-muted)">
-                  {{ evt.from_status }} → {{ evt.to_status }}
+                  {{ statusLabel(evt.from_status) }} → {{ statusLabel(evt.to_status) }}
                 </p>
 
                 <!-- Notes (e.g. decline reason) -->
@@ -346,8 +359,8 @@ function confirmDecline() {
               <div class="flex gap-3">
                 <div
                   v-for="side in [
-                    { confirmed: iConfirmed,    label: 'You',                                     icon: iConfirmed    ? 'mdi-check-circle' : 'mdi-circle-outline' },
-                    { confirmed: theyConfirmed, label: proposal.counterparty_name ?? 'Them',       icon: theyConfirmed ? 'mdi-check-circle' : 'mdi-clock-outline'  },
+                    { confirmed: iConfirmed,    label: t('tradeDetail.you'),                              icon: iConfirmed    ? 'mdi-check-circle' : 'mdi-circle-outline' },
+                    { confirmed: theyConfirmed, label: proposal.counterparty_name ?? t('tradeDetail.counterparty'), icon: theyConfirmed ? 'mdi-check-circle' : 'mdi-clock-outline'  },
                   ]"
                   :key="side.label"
                   class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm flex-1 border"
@@ -360,20 +373,20 @@ function confirmDecline() {
                 </div>
               </div>
               <p class="text-xs" style="color: var(--c-muted)">
-                <template v-if="!bothUploaded">Upload photos on both sides before confirming.</template>
-                <template v-else-if="iConfirmed">Waiting for {{ proposal.counterparty_name ?? 'them' }} to confirm.</template>
-                <template v-else>Both sides have uploaded — confirm when you've received your cards.</template>
+                <template v-if="!bothUploaded">{{ t('tradeDetail.uploadBothBeforeConfirm') }}</template>
+                <template v-else-if="iConfirmed">{{ t('tradeDetail.waitingForConfirmDetail', { name: proposal.counterparty_name ?? t('proposal.them') }) }}</template>
+                <template v-else>{{ t('tradeDetail.bothUploadedConfirmHint') }}</template>
               </p>
               <div class="flex gap-2 flex-wrap justify-end">
                 <v-btn variant="outlined" prepend-icon="mdi-cancel"
                   style="border-color: var(--c-accent); color: var(--c-accent)"
-                  @click="action('cancel')">Cancel trade</v-btn>
+                  @click="action('cancel')">{{ t('proposal.cancelTrade') }}</v-btn>
                 <v-btn
                   v-if="!iConfirmed"
                   variant="flat" prepend-icon="mdi-handshake-outline"
                   :disabled="!bothUploaded"
                   :style="bothUploaded ? 'background-color: var(--c-mutual); color: #0C0820' : 'opacity: 0.45'"
-                  @click="action('complete')">Confirm your side</v-btn>
+                  @click="action('complete')">{{ t('proposal.confirmYourSide') }}</v-btn>
               </div>
             </div>
           </template>
@@ -381,9 +394,9 @@ function confirmDecline() {
           <!-- Pending actions -->
           <template v-else-if="isPending">
             <span class="text-xs grow" style="color: var(--c-muted)">
-              <template v-if="!proposal.i_am_proposer && !bothUploaded">Upload photos on both sides to enable accepting.</template>
-              <template v-else-if="!proposal.i_am_proposer && bothUploaded">Photos verified — you can now accept.</template>
-              <template v-else-if="proposal.i_am_proposer">Waiting for {{ proposal.counterparty_name ?? "them" }} to review and accept.</template>
+              <template v-if="!proposal.i_am_proposer && !bothUploaded">{{ t('tradeDetail.uploadBothToAccept') }}</template>
+              <template v-else-if="!proposal.i_am_proposer && bothUploaded">{{ t('tradeDetail.photosVerifiedCanAccept') }}</template>
+              <template v-else-if="proposal.i_am_proposer">{{ t('tradeDetail.waitingForReview', { name: proposal.counterparty_name ?? t('proposal.them') }) }}</template>
             </span>
             <div class="flex gap-2 shrink-0 flex-wrap w-full">
               <template v-if="!proposal.i_am_proposer">
@@ -391,44 +404,44 @@ function confirmDecline() {
                   <div class="flex flex-col gap-2 w-full gap-5">
                     <textarea
                       v-model="declineReason"
-                      placeholder="Optional — let them know why you're declining…"
+                      :placeholder="t('tradeDetail.declinePlaceholder')"
                       rows="2"
                       class="w-full rounded-xl px-3 py-3 text-sm border outline-none resize-none"
                       :style="{ backgroundColor: 'var(--c-surface-2)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
                       autofocus
                     />
                     <div class="flex gap-2 justify-end">
-                      <v-btn size="small" variant="text" style="color: var(--c-muted)" @click="declining = false">Back</v-btn>
+                      <v-btn size="small" variant="text" style="color: var(--c-muted)" @click="declining = false">{{ t('common.back') }}</v-btn>
                       <v-btn size="small" variant="flat"
                         style="background-color: var(--c-accent); color: white"
-                        @click="confirmDecline">Confirm decline</v-btn>
+                        @click="confirmDecline">{{ t('common.confirm') }}</v-btn>
                     </div>
                   </div>
                 </template>
                 <template v-else>
-                  <v-btn variant="text" prepend-icon="mdi-cancel" style="color: var(--c-muted)" @click="action('cancel')">Cancel</v-btn>
+                  <v-btn variant="text" prepend-icon="mdi-cancel" style="color: var(--c-muted)" @click="action('cancel')">{{ t('proposal.cancel') }}</v-btn>
                   <v-btn variant="outlined" prepend-icon="mdi-close"
                     style="border-color: var(--c-accent); color: var(--c-accent)"
-                    @click="declining = true">Decline</v-btn>
+                    @click="declining = true">{{ t('proposal.decline') }}</v-btn>
                   <v-btn variant="outlined" prepend-icon="mdi-swap-horizontal"
                     style="border-color: var(--c-trade); color: var(--c-trade)"
-                    @click="emit('counter', proposal); close()">Counter</v-btn>
+                    @click="emit('counter', proposal); close()">{{ t('proposal.counter') }}</v-btn>
                   <v-btn variant="flat" prepend-icon="mdi-check"
                     :disabled="!bothUploaded"
                     :style="bothUploaded ? 'background-color: var(--c-mutual); color: #0C0820' : 'opacity: 0.45'"
-                    @click="action('accept')">Accept</v-btn>
+                    @click="action('accept')">{{ t('proposal.accept') }}</v-btn>
                 </template>
               </template>
               <v-btn v-else variant="text" prepend-icon="mdi-cancel"
                 style="color: var(--c-muted)"
-                @click="action('cancel')">Cancel proposal</v-btn>
+                @click="action('cancel')">{{ t('proposal.cancel') }}</v-btn>
             </div>
           </template>
 
           <!-- Read-only -->
           <template v-else>
             <div class="ml-auto">
-              <v-btn variant="text" style="color: var(--c-muted)" @click="close">Close</v-btn>
+              <v-btn variant="text" style="color: var(--c-muted)" @click="close">{{ t('common.close') }}</v-btn>
             </div>
           </template>
 

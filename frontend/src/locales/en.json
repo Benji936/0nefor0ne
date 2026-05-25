@@ -239,7 +239,15 @@
     "tradeProposed": "Trade proposed",
     "proposalEdited": "Proposal edited",
     "noEvents": "No events recorded yet.",
-    "anonymous": "Anonymous"
+    "anonymous": "Anonymous",
+    "cardCount": "0 cards | 1 card | {count} cards",
+    "uploadBothBeforeConfirm": "Upload photos on both sides before confirming.",
+    "waitingForConfirmDetail": "Waiting for {name} to confirm.",
+    "bothUploadedConfirmHint": "Both sides have uploaded — confirm when you've received your cards.",
+    "uploadBothToAccept": "Upload photos on both sides to enable accepting.",
+    "photosVerifiedCanAccept": "Photos verified — you can now accept.",
+    "waitingForReview": "Waiting for {name} to review and accept.",
+    "declinePlaceholder": "Optional — let them know why you're declining…"
   },
   "traderProfile": {
     "wishlistEmpty": "Wishlist is empty.",

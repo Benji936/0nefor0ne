@@ -239,7 +239,15 @@
     "tradeProposed": "Échange proposé",
     "proposalEdited": "Proposition modifiée",
     "noEvents": "Aucun événement enregistré.",
-    "anonymous": "Anonyme"
+    "anonymous": "Anonyme",
+    "cardCount": "0 carte | 1 carte | {count} cartes",
+    "uploadBothBeforeConfirm": "Les deux parties doivent envoyer leurs photos avant de confirmer.",
+    "waitingForConfirmDetail": "En attente que {name} confirme.",
+    "bothUploadedConfirmHint": "Les deux photos sont envoyées — confirmez quand vous avez reçu vos cartes.",
+    "uploadBothToAccept": "Les deux parties doivent envoyer leurs photos pour pouvoir accepter.",
+    "photosVerifiedCanAccept": "Photos vérifiées — vous pouvez maintenant accepter.",
+    "waitingForReview": "En attente que {name} examine et accepte.",
+    "declinePlaceholder": "Optionnel — expliquez pourquoi vous refusez…"
   },
   "traderProfile": {
     "wishlistEmpty": "Liste de souhaits vide.",
