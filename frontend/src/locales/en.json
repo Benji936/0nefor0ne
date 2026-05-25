@@ -143,6 +143,7 @@
     "loginRequired": "Log in to see your proposals.",
     "noProposalsTitle": "No proposals yet",
     "noProposalsDesc": "Send one from the Matches tab when you find a trader you want to deal with.",
+    "all": "All",
     "incoming": "Incoming",
     "incomingDesc": "These traders want to deal with you. Accept or decline.",
     "outgoing": "Outgoing",

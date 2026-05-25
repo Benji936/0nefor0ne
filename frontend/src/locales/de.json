@@ -143,6 +143,7 @@
     "loginRequired": "Melde dich an, um deine Vorschläge zu sehen.",
     "noProposalsTitle": "Noch keine Vorschläge",
     "noProposalsDesc": "Sende einen aus dem Matches-Tab, wenn du einen Trader gefunden hast.",
+    "all": "Alle",
     "incoming": "Eingehend",
     "incomingDesc": "Diese Trader möchten mit dir tauschen. Annehmen oder ablehnen.",
     "outgoing": "Ausgehend",

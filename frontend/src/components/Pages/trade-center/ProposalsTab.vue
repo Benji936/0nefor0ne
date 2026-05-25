@@ -1,10 +1,11 @@
 <script setup>
+import { ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import ProposalRow from "@/components/ProposalRow.vue";
 
 const { t } = useI18n();
 
-defineProps({
+const props = defineProps({
   login:           { type: Object,  default: null },
   loading:         { type: Boolean, default: false },
   incomingPending: { type: Array,   default: () => [] },
@@ -15,6 +16,22 @@ defineProps({
 });
 
 const emit = defineEmits(["accept", "decline", "cancel", "complete", "counter", "edit", "openProfile"]);
+
+const activeFilter = ref("all");
+
+const total = computed(() =>
+  props.incomingPending.length + props.outgoingPending.length + props.acceptedTrades.length + props.history.length
+);
+
+const filters = computed(() => [
+  { key: "all",      label: t("proposals.all"),      count: total.value,                    color: "var(--c-text)",   bg: "var(--c-surface-2)" },
+  { key: "incoming", label: t("proposals.incoming"), count: props.incomingPending.length,   color: "var(--c-mutual)", bg: `color-mix(in srgb, var(--c-mutual) 14%, transparent)`, show: props.incomingPending.length > 0 },
+  { key: "outgoing", label: t("proposals.outgoing"), count: props.outgoingPending.length,   color: "var(--c-trade)",  bg: `color-mix(in srgb, var(--c-trade) 14%, transparent)`,  show: props.outgoingPending.length > 0 },
+  { key: "accepted", label: t("proposals.accepted"), count: props.acceptedTrades.length,    color: "var(--c-mutual)", bg: `color-mix(in srgb, var(--c-mutual) 14%, transparent)`, show: props.acceptedTrades.length > 0 },
+  { key: "history",  label: t("proposals.history"),  count: props.history.length,           color: "var(--c-muted)",  bg: `color-mix(in srgb, var(--c-muted) 10%, transparent)`,  show: props.history.length > 0 },
+].filter(f => f.key === "all" || f.show));
+
+const show = (key) => activeFilter.value === "all" || activeFilter.value === key;
 </script>
 
 <template>
@@ -47,7 +64,7 @@ const emit = defineEmits(["accept", "decline", "cancel", "complete", "counter", 
 
   <!-- Empty state -->
   <div
-    v-else-if="incomingPending.length + outgoingPending.length + acceptedTrades.length + history.length === 0"
+    v-else-if="total === 0"
     class="flex flex-col items-center gap-3 py-16 text-center"
   >
     <div
@@ -57,19 +74,39 @@ const emit = defineEmits(["accept", "decline", "cancel", "complete", "counter", 
       <v-icon icon="mdi-swap-horizontal" size="28" color="var(--c-muted)" />
     </div>
     <p class="text-base font-semibold" style="color: var(--c-text)">{{ t('proposals.noProposalsTitle') }}</p>
-    <p class="text-sm max-w-xs leading-relaxed" style="color: var(--c-muted)">
-      {{ t('proposals.noProposalsDesc') }}
-    </p>
+    <p class="text-sm max-w-xs leading-relaxed" style="color: var(--c-muted)">{{ t('proposals.noProposalsDesc') }}</p>
   </div>
 
-  <!-- Proposal sections -->
+  <!-- Proposals -->
   <template v-else>
 
-    <section v-if="incomingPending.length > 0" class="flex flex-col gap-4">
+    <!-- Filter chips -->
+    <div v-if="filters.length > 1" class="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+      <button
+        v-for="f in filters"
+        :key="f.key"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0"
+        :style="activeFilter === f.key
+          ? { background: f.bg, color: f.color, boxShadow: `0 0 0 1.5px ${f.color}` }
+          : { background: 'var(--c-surface-2)', color: 'var(--c-muted)', boxShadow: '0 0 0 1px var(--c-border)' }"
+        @click="activeFilter = f.key"
+      >
+        {{ f.label }}
+        <span
+          class="tabular-nums text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+          :style="activeFilter === f.key
+            ? { background: `color-mix(in srgb, ${f.color} 20%, transparent)`, color: f.color }
+            : { background: 'var(--c-border)', color: 'var(--c-muted)' }"
+        >{{ f.count }}</span>
+      </button>
+    </div>
+
+    <!-- Sections -->
+    <section v-if="show('incoming') && incomingPending.length > 0" class="flex flex-col gap-4">
       <div class="flex items-center gap-3 pb-3" style="border-bottom: 1px solid var(--c-border)">
         <div class="size-2 rounded-full shrink-0" style="background: var(--c-mutual)" />
         <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">{{ t('proposals.incoming') }}</h2>
-        <span class="text-[11px] font-bold px-1 py-1 w-6 h-6 text-center rounded-md tabular-nums" style="background: color-mix(in srgb, var(--c-mutual) 15%, transparent); color: var(--c-mutual)">{{ incomingPending.length }}</span>
+        <span class="text-[11px] font-bold px-2 py-1 rounded-md tabular-nums" style="background: color-mix(in srgb, var(--c-mutual) 15%, transparent); color: var(--c-mutual)">{{ incomingPending.length }}</span>
       </div>
       <p class="text-xs -mt-2" style="color: var(--c-muted)">{{ t('proposals.incomingDesc') }}</p>
       <div class="flex flex-col gap-3">
@@ -83,10 +120,10 @@ const emit = defineEmits(["accept", "decline", "cancel", "complete", "counter", 
     </section>
 
     <section
-      v-if="outgoingPending.length > 0"
+      v-if="show('outgoing') && outgoingPending.length > 0"
       class="flex flex-col gap-4"
-      :class="{ 'border-t pt-6': incomingPending.length > 0 }"
-      :style="incomingPending.length > 0 ? 'border-color: var(--c-border)' : ''"
+      :class="{ 'border-t pt-6': show('incoming') && incomingPending.length > 0 }"
+      :style="show('incoming') && incomingPending.length > 0 ? 'border-color: var(--c-border)' : ''"
     >
       <div class="flex items-center gap-3 pb-3" style="border-bottom: 1px solid var(--c-border)">
         <div class="size-2 rounded-full shrink-0" style="background: var(--c-trade)" />
@@ -104,7 +141,11 @@ const emit = defineEmits(["accept", "decline", "cancel", "complete", "counter", 
       </div>
     </section>
 
-    <section v-if="acceptedTrades.length > 0" class="flex flex-col gap-4 border-t pt-6" style="border-color: var(--c-border)">
+    <section
+      v-if="show('accepted') && acceptedTrades.length > 0"
+      class="flex flex-col gap-4 border-t pt-6"
+      style="border-color: var(--c-border)"
+    >
       <div class="flex items-center gap-3 pb-3" style="border-bottom: 1px solid var(--c-border)">
         <div class="size-2 rounded-full shrink-0" style="background: var(--c-mutual)" />
         <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">{{ t('proposals.accepted') }}</h2>
@@ -120,7 +161,11 @@ const emit = defineEmits(["accept", "decline", "cancel", "complete", "counter", 
       </div>
     </section>
 
-    <section v-if="history.length > 0" class="flex flex-col gap-4 border-t pt-6" style="border-color: var(--c-border)">
+    <section
+      v-if="show('history') && history.length > 0"
+      class="flex flex-col gap-4 border-t pt-6"
+      style="border-color: var(--c-border)"
+    >
       <div class="flex items-center gap-3 pb-3" style="border-bottom: 1px solid var(--c-border)">
         <div class="size-2 rounded-full shrink-0" style="background: var(--c-muted)" />
         <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-muted)">{{ t('proposals.history') }}</h2>

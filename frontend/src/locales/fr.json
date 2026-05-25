@@ -143,6 +143,7 @@
     "loginRequired": "Connectez-vous pour voir vos propositions.",
     "noProposalsTitle": "Aucune proposition pour l'instant",
     "noProposalsDesc": "Envoyez-en une depuis l'onglet Correspondances lorsque vous trouvez un joueur qui vous intéresse.",
+    "all": "Toutes",
     "incoming": "Reçues",
     "incomingDesc": "Ces joueurs souhaitent échanger avec vous. Acceptez ou refusez.",
     "outgoing": "Envoyées",
