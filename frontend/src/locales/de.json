@@ -1,0 +1,201 @@
+{
+  "nav": {
+    "searchPlaceholder": "Karten oder Set-Codes suchen…",
+    "collection": "Sammlung",
+    "tradeMatches": "Tauschpartner",
+    "lightMode": "Helles Design",
+    "darkMode": "Dunkles Design",
+    "loginSignup": "Anmelden / Registrieren",
+    "search": "Suche",
+    "library": "Sammlung",
+    "trades": "Tausche",
+    "account": "Konto"
+  },
+  "footer": {
+    "copyright": "© {year} One for One",
+    "privacy": "Datenschutzerklärung",
+    "contact": "Kontakt"
+  },
+  "hero": {
+    "headline": "Tausche Yu-Gi-Oh! Karten direkt mit anderen Sammlern.",
+    "subheadline": "Keine Gebühren, keine Auktionen — nur direkte Peer-to-Peer-Tausche.",
+    "cta": "Jetzt tauschen",
+    "learnMore": "So funktioniert es",
+    "steps": {
+      "01": { "title": "Tauschstapel aufbauen", "body": "Liste Karten auf, die du tauschen möchtest." },
+      "02": { "title": "Wunschliste erstellen", "body": "Markiere jede Karte, die du suchst." },
+      "03": { "title": "Deinen Match finden", "body": "Wir zeigen dir Trader, die deine Karten wollen und deine gesuchten haben." },
+      "04": { "title": "Vorschlagen & bestätigen", "body": "Schicke einen Vorschlag, chatte und schließe den Tausch ab." }
+    }
+  },
+  "auth": {
+    "signIn": "Anmelden",
+    "createAccount": "Konto erstellen",
+    "createAccountShort": "Konto erstellen",
+    "displayName": "Anzeigename",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "whereDoYouTrade": "Wo tauschst du?",
+    "country": "Land (optional)",
+    "city": "Stadt (optional)",
+    "tradingRange": "Tauschbereich",
+    "alreadyHaveAccount": "Hast du bereits ein Konto?",
+    "noAccount": "Noch kein Konto?",
+    "createOne": "Jetzt erstellen",
+    "emailPasswordRequired": "E-Mail und Passwort sind erforderlich.",
+    "displayNameRequired": "Anzeigename ist erforderlich.",
+    "signUpFailed": "Registrierung fehlgeschlagen.",
+    "signInFailed": "Anmeldung fehlgeschlagen.",
+    "confirmEmail": "Konto erstellt! Überprüfe deine E-Mail zur Bestätigung und melde dich dann an.",
+    "noSession": "Keine Sitzung zurückgegeben. Bitte versuche es erneut.",
+    "unexpectedError": "Unerwarteter Fehler.",
+    "scopes": {
+      "local": "Lokal",
+      "national": "National",
+      "worldwide": "Weltweit"
+    }
+  },
+  "userMenu": {
+    "accountProfile": "Konto & Profil",
+    "signOut": "Abmelden"
+  },
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "empty": "Alles erledigt",
+    "emptyDesc": "Neue Tauschvorschläge und Updates erscheinen hier.",
+    "viewAll": "Im Trade Center ansehen"
+  },
+  "library": {
+    "tradePile": "Tauschstapel",
+    "wishlist": "Wunschliste",
+    "tradePileEmpty": "Noch keine Karten zum Tauschen. Füge welche hinzu, um loszulegen.",
+    "wishlistEmpty": "Deine Wunschliste ist leer. Füge Karten hinzu, die du suchst.",
+    "searchCards": "Karten suchen zum Hinzufügen"
+  },
+  "addCard": {
+    "addToTrade": "Zum Tauschstapel hinzufügen",
+    "addToWishlist": "Zur Wunschliste hinzufügen",
+    "search": "Karte suchen…",
+    "add": "Hinzufügen",
+    "adding": "Wird hinzugefügt…",
+    "alreadyAdded": "Bereits in deiner Liste",
+    "cardAdded": "Karte hinzugefügt!"
+  },
+  "tradeCenter": {
+    "matches": "Matches",
+    "proposals": "Vorschläge"
+  },
+  "matches": {
+    "loginRequired": "Melde dich an, um deine Tauschpartner zu sehen.",
+    "filterPlaceholder": "Nach Karte oder Trader-Name filtern…",
+    "allCountries": "Alle Länder",
+    "city": "Stadt",
+    "clearFilters": "Filter löschen",
+    "tradersWith": "Trader mit:",
+    "clear": "löschen",
+    "mutualMatches": "Gegenseitige Matches",
+    "mutualDesc": "Beide Seiten haben etwas füreinander. Hier anfangen.",
+    "theyHave": "Haben, was du willst",
+    "theyWant": "Wollen, was du hast",
+    "noMatchesTitle": "Noch keine Matches",
+    "noMatchesDesc": "Je mehr Karten du in deinen Tauschstapel und deine Wunschliste aufnimmst, desto mehr Trader findest du hier.",
+    "goToCollection": "Zur Sammlung, um Karten hinzuzufügen"
+  },
+  "proposals": {
+    "loginRequired": "Melde dich an, um deine Vorschläge zu sehen.",
+    "noProposalsTitle": "Noch keine Vorschläge",
+    "noProposalsDesc": "Sende einen aus dem Matches-Tab, wenn du einen Trader gefunden hast.",
+    "incoming": "Eingehend",
+    "incomingDesc": "Diese Trader möchten mit dir tauschen. Annehmen oder ablehnen.",
+    "outgoing": "Ausgehend",
+    "outgoingDesc": "Warte auf Antwort der anderen Seite.",
+    "accepted": "In Bearbeitung",
+    "acceptedDesc": "Beide Seiten haben zugestimmt. Koordiniere und schließe den Tausch ab.",
+    "history": "Verlauf"
+  },
+  "proposal": {
+    "accept": "Annehmen",
+    "decline": "Ablehnen",
+    "cancel": "Abbrechen",
+    "complete": "Abschließen",
+    "counter": "Gegenangebot",
+    "pending": "Ausstehend",
+    "accepted": "Angenommen",
+    "completed": "Abgeschlossen",
+    "declined": "Abgelehnt",
+    "cancelled": "Abgebrochen",
+    "theySend": "Er/Sie sendet",
+    "youSend": "Du sendest",
+    "viewProfile": "Profil anzeigen",
+    "openTrade": "Tausch öffnen"
+  },
+  "account": {
+    "title": "Mein Konto",
+    "profile": "Profil",
+    "displayName": "Anzeigename",
+    "location": "Standort",
+    "country": "Land (optional)",
+    "city": "Stadt (optional)",
+    "tradingRange": "Tauschbereich",
+    "save": "Änderungen speichern",
+    "saving": "Wird gespeichert…",
+    "saved": "Gespeichert!",
+    "deleteAccount": "Konto löschen",
+    "deleteConfirm": "Bist du sicher? Dadurch werden dein Konto und alle deine Daten dauerhaft gelöscht.",
+    "noNameSet": "Kein Name gesetzt",
+    "locationNotSet": "Standort nicht angegeben",
+    "nationalOnly": "Nur national",
+    "localOnly": "Nur lokal",
+    "changePhoto": "Foto ändern",
+    "uploading": "Wird hochgeladen…",
+    "tradeHistory": "Tauschverlauf",
+    "noHistory": "Noch kein Tauschverlauf.",
+    "status": {
+      "pending": "Ausstehend",
+      "accepted": "Angenommen",
+      "completed": "Abgeschlossen",
+      "declined": "Abgelehnt",
+      "cancelled": "Abgebrochen"
+    },
+    "scopes": {
+      "local": "Lokal",
+      "national": "National",
+      "worldwide": "Weltweit"
+    }
+  },
+  "cardPage": {
+    "back": "Zurück",
+    "traders": "Trader mit dieser Karte",
+    "noTraders": "Noch kein Trader hat diese Karte.",
+    "addToWishlist": "Zur Wunschliste hinzufügen",
+    "addToTrade": "Zum Tauschstapel hinzufügen",
+    "printings": "Drucke",
+    "setCode": "Set-Code",
+    "rarity": "Seltenheit"
+  },
+  "privacy": {
+    "title": "Datenschutzerklärung",
+    "updated": "Zuletzt aktualisiert: Mai 2026",
+    "intro": "One for One ist eine kostenlose Peer-to-Peer-Tauschplattform für Yu-Gi-Oh! Karten. Diese Richtlinie erklärt, welche Daten wir erheben, warum und was wir damit machen.",
+    "contact": "Fragen? Schreib uns an"
+  },
+  "common": {
+    "loading": "Wird geladen…",
+    "error": "Etwas ist schiefgelaufen.",
+    "retry": "Erneut versuchen",
+    "close": "Schließen",
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen",
+    "back": "Zurück",
+    "viewMore": "Mehr anzeigen",
+    "propose": "Tausch vorschlagen",
+    "openProfile": "Profil anzeigen"
+  },
+  "language": {
+    "label": "Sprache",
+    "en": "English",
+    "fr": "Français",
+    "de": "Deutsch",
+    "it": "Italiano"
+  }
+}

@@ -1,0 +1,201 @@
+{
+  "nav": {
+    "searchPlaceholder": "Search cards or set codes…",
+    "collection": "Collection",
+    "tradeMatches": "Trade matches",
+    "lightMode": "Light mode",
+    "darkMode": "Dark mode",
+    "loginSignup": "Login / Sign up",
+    "search": "Search",
+    "library": "Library",
+    "trades": "Trades",
+    "account": "Account"
+  },
+  "footer": {
+    "copyright": "© {year} One for One",
+    "privacy": "Privacy Policy",
+    "contact": "Contact"
+  },
+  "hero": {
+    "headline": "Trade Yu-Gi-Oh! cards directly with other collectors.",
+    "subheadline": "No fees, no auctions — just direct peer-to-peer trades.",
+    "cta": "Start trading",
+    "learnMore": "How it works",
+    "steps": {
+      "01": { "title": "Build your trade pile", "body": "List cards you're ready to trade away." },
+      "02": { "title": "Add your wishlist", "body": "Mark every card you're hunting for." },
+      "03": { "title": "Find your match", "body": "We surface traders who want yours and have yours." },
+      "04": { "title": "Propose & confirm", "body": "Send a proposal, chat, and close the trade." }
+    }
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "createAccount": "Create an account",
+    "createAccountShort": "Create account",
+    "displayName": "Display name",
+    "email": "Email",
+    "password": "Password",
+    "whereDoYouTrade": "Where do you trade?",
+    "country": "Country (optional)",
+    "city": "City (optional)",
+    "tradingRange": "Trading range",
+    "alreadyHaveAccount": "Already have an account?",
+    "noAccount": "Don't have an account?",
+    "createOne": "Create one",
+    "emailPasswordRequired": "Email and password are required.",
+    "displayNameRequired": "Display name is required.",
+    "signUpFailed": "Sign-up failed.",
+    "signInFailed": "Sign-in failed.",
+    "confirmEmail": "Account created! Check your email to confirm, then sign in.",
+    "noSession": "No session returned. Please try again.",
+    "unexpectedError": "Unexpected error.",
+    "scopes": {
+      "local": "Local",
+      "national": "National",
+      "worldwide": "Worldwide"
+    }
+  },
+  "userMenu": {
+    "accountProfile": "Account & profile",
+    "signOut": "Sign out"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "All caught up",
+    "emptyDesc": "New trade proposals and updates will appear here.",
+    "viewAll": "View in Trade Center"
+  },
+  "library": {
+    "tradePile": "Trade pile",
+    "wishlist": "Wishlist",
+    "tradePileEmpty": "No cards to trade yet. Add some to get started.",
+    "wishlistEmpty": "Your wishlist is empty. Add cards you're looking for.",
+    "searchCards": "Search for cards to add"
+  },
+  "addCard": {
+    "addToTrade": "Add to trade pile",
+    "addToWishlist": "Add to wishlist",
+    "search": "Search a card…",
+    "add": "Add",
+    "adding": "Adding…",
+    "alreadyAdded": "Already in your list",
+    "cardAdded": "Card added!"
+  },
+  "tradeCenter": {
+    "matches": "Matches",
+    "proposals": "Proposals"
+  },
+  "matches": {
+    "loginRequired": "Log in to see your trade matches.",
+    "filterPlaceholder": "Filter by card or trader name…",
+    "allCountries": "All countries",
+    "city": "City",
+    "clearFilters": "clear filters",
+    "tradersWith": "Traders with:",
+    "clear": "clear",
+    "mutualMatches": "Mutual matches",
+    "mutualDesc": "Both sides have something for each other. Start here.",
+    "theyHave": "Have what you want",
+    "theyWant": "Want what you have",
+    "noMatchesTitle": "No matches yet",
+    "noMatchesDesc": "The more cards you add to your trade pile and wishlist, the more traders you'll find here.",
+    "goToCollection": "Go to My Collection to add cards"
+  },
+  "proposals": {
+    "loginRequired": "Log in to see your proposals.",
+    "noProposalsTitle": "No proposals yet",
+    "noProposalsDesc": "Send one from the Matches tab when you find a trader you want to deal with.",
+    "incoming": "Incoming",
+    "incomingDesc": "These traders want to deal with you. Accept or decline.",
+    "outgoing": "Outgoing",
+    "outgoingDesc": "Waiting for the other side to respond.",
+    "accepted": "In progress",
+    "acceptedDesc": "Both sides agreed. Coordinate and complete the trade.",
+    "history": "History"
+  },
+  "proposal": {
+    "accept": "Accept",
+    "decline": "Decline",
+    "cancel": "Cancel",
+    "complete": "Complete",
+    "counter": "Counter",
+    "pending": "Pending",
+    "accepted": "Accepted",
+    "completed": "Completed",
+    "declined": "Declined",
+    "cancelled": "Cancelled",
+    "theySend": "They send",
+    "youSend": "You send",
+    "viewProfile": "View profile",
+    "openTrade": "Open trade"
+  },
+  "account": {
+    "title": "My Account",
+    "profile": "Profile",
+    "displayName": "Display name",
+    "location": "Location",
+    "country": "Country (optional)",
+    "city": "City (optional)",
+    "tradingRange": "Trading range",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "saved": "Saved!",
+    "deleteAccount": "Delete account",
+    "deleteConfirm": "Are you sure? This will permanently delete your account and all your data.",
+    "noNameSet": "No name set",
+    "locationNotSet": "Location not set",
+    "nationalOnly": "National only",
+    "localOnly": "Local only",
+    "changePhoto": "Change photo",
+    "uploading": "Uploading…",
+    "tradeHistory": "Trade history",
+    "noHistory": "No trade history yet.",
+    "status": {
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "completed": "Completed",
+      "declined": "Declined",
+      "cancelled": "Cancelled"
+    },
+    "scopes": {
+      "local": "Local",
+      "national": "National",
+      "worldwide": "Worldwide"
+    }
+  },
+  "cardPage": {
+    "back": "Back",
+    "traders": "Traders who have this card",
+    "noTraders": "No traders have this card yet.",
+    "addToWishlist": "Add to wishlist",
+    "addToTrade": "Add to trade pile",
+    "printings": "Printings",
+    "setCode": "Set code",
+    "rarity": "Rarity"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "updated": "Last updated: May 2026",
+    "intro": "One for One is a free, peer-to-peer Yu-Gi-Oh! card trading platform. This policy explains what data we collect, why we collect it, and what we do with it.",
+    "contact": "Questions? Email us at"
+  },
+  "common": {
+    "loading": "Loading…",
+    "error": "Something went wrong.",
+    "retry": "Retry",
+    "close": "Close",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "back": "Back",
+    "viewMore": "View more",
+    "propose": "Propose trade",
+    "openProfile": "View profile"
+  },
+  "language": {
+    "label": "Language",
+    "en": "English",
+    "fr": "Français",
+    "de": "Deutsch",
+    "it": "Italiano"
+  }
+}

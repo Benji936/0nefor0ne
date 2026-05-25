@@ -1,12 +1,22 @@
 <script setup>
-import Search from "@/components/Pages/Search.vue";
-import Library from "@/components/Pages/Library.vue";
-import TradeCenter from "@/components/Pages/TradeCenter.vue";
-import Account from "@/components/Pages/Account.vue";
+import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 import AuthDialog from "@/components/AuthDialog.vue";
 import NavItem from "@/components/NavItem.vue";
 import NotificationBell from "@/components/NotificationBell.vue";
 import UserMenuChip from "@/components/UserMenuChip.vue";
+import { setLocale, SUPPORTED } from "@/i18n.js";
+
+const { locale } = useI18n();
+const langMenuOpen = ref(false);
+
+const LANG_FLAGS = { en: "🇬🇧", fr: "🇫🇷", de: "🇩🇪", it: "🇮🇹" };
+const LANG_LABELS = { en: "English", fr: "Français", de: "Deutsch", it: "Italiano" };
+
+function switchLang(lang) {
+  setLocale(lang);
+  langMenuOpen.value = false;
+}
 </script>
 
 <template>
@@ -36,7 +46,7 @@ import UserMenuChip from "@/components/UserMenuChip.vue";
         @keyup.enter="update"
         class="placeholder:opacity-50 outline-none bg-transparent w-full"
         style="color: var(--c-text); font-size: 16px; font-weight: 500; padding: 10px 14px; letter-spacing: 0.01em;"
-        placeholder="Search cards or set codes…"
+        :placeholder="$t('nav.searchPlaceholder')"
         type="text"
         name="search"
         inputmode="search"
@@ -47,14 +57,14 @@ import UserMenuChip from "@/components/UserMenuChip.vue";
     <div class="flex items-center gap-1">
       <div v-if="authenticated" class="flex max-md:hidden items-center gap-1">
         <NavItem
-          tooltip="Collection"
+          :tooltip="$t('nav.collection')"
           icon="mdi-cards"
           img-src="/src/assets/library.svg"
           :active="page === 'library'"
           @click="changePage('library')"
         />
         <NavItem
-          tooltip="Trade matches"
+          :tooltip="$t('nav.tradeMatches')"
           icon="mdi-swap-horizontal-bold"
           :active="page === 'TradeCenter'"
           @click="openMatches()"
@@ -62,11 +72,44 @@ import UserMenuChip from "@/components/UserMenuChip.vue";
       </div>
 
       <NavItem
-        :tooltip="isDarkTheme ? 'Light mode' : 'Dark mode'"
+        :tooltip="isDarkTheme ? $t('nav.lightMode') : $t('nav.darkMode')"
         :icon="isDarkTheme ? 'mdi-white-balance-sunny' : 'mdi-moon-waning-crescent'"
         :indicator="false"
         @click="toggleTheme"
       />
+
+      <!-- ── Language switcher ── -->
+      <div class="relative">
+        <button
+          class="flex items-center gap-1 px-2 py-2 rounded-lg cursor-pointer transition-colors hover:opacity-70 select-none text-sm font-semibold"
+          style="color: var(--c-muted)"
+          :title="$t('language.label')"
+          @click="langMenuOpen = !langMenuOpen"
+        >
+          <span>{{ LANG_FLAGS[locale] }}</span>
+          <v-icon icon="mdi-chevron-down" size="14" :class="{ 'rotate-180': langMenuOpen }" class="transition-transform duration-200" />
+        </button>
+
+        <div
+          v-if="langMenuOpen"
+          class="absolute right-0 top-full mt-1 flex flex-col rounded-xl overflow-hidden z-50 min-w-[130px]"
+          style="background: var(--c-surface); border: 1px solid var(--c-border); box-shadow: 0 8px 32px rgba(0,0,0,0.28)"
+        >
+          <button
+            v-for="lang in SUPPORTED"
+            :key="lang"
+            class="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer transition-colors text-left"
+            :style="locale === lang
+              ? { background: 'color-mix(in srgb, var(--c-accent) 10%, transparent)', color: 'var(--c-accent)', fontWeight: 600 }
+              : { color: 'var(--c-text)' }"
+            :class="locale !== lang ? 'hover:bg-[var(--c-surface-2)]' : ''"
+            @click="switchLang(lang)"
+          >
+            <span>{{ LANG_FLAGS[lang] }}</span>
+            <span>{{ LANG_LABELS[lang] }}</span>
+          </button>
+        </div>
+      </div>
 
       <NotificationBell
         v-if="authenticated"
@@ -85,7 +128,7 @@ import UserMenuChip from "@/components/UserMenuChip.vue";
       <!-- Guest: login button -->
       <NavItem
         v-else
-        tooltip="Login / Sign up"
+        :tooltip="$t('nav.loginSignup')"
         icon="mdi-login"
         :indicator="false"
         @click="openLogin()"
@@ -111,6 +154,13 @@ import UserMenuChip from "@/components/UserMenuChip.vue";
       <span class="text-[10px] font-semibold">{{ tab.label }}</span>
     </button>
   </nav>
+
+  <!-- Click-outside overlay for lang menu -->
+  <div
+    v-if="langMenuOpen"
+    class="fixed inset-0 z-40"
+    @click="langMenuOpen = false"
+  />
 
   <main class="main-content-mobile-pb px-5 md:px-16 pt-5 md:pt-8 min-h-screen sm:pb-0" style="background: var(--c-bg); transition: background 0.3s ease">
     <!-- RouterView renders the active page component; props are forwarded via slot -->
@@ -140,8 +190,8 @@ import UserMenuChip from "@/components/UserMenuChip.vue";
   >
     <span>© {{ new Date().getFullYear() }} One for One</span>
     <nav class="flex items-center gap-4">
-      <router-link to="/privacy" class="no-underline transition-opacity hover:opacity-70" style="color: var(--c-muted)">Privacy Policy</router-link>
-      <a href="mailto:hello@0nefor.one" class="no-underline transition-opacity hover:opacity-70" style="color: var(--c-muted)">Contact</a>
+      <router-link to="/privacy" class="no-underline transition-opacity hover:opacity-70" style="color: var(--c-muted)">{{ $t('footer.privacy') }}</router-link>
+      <a href="mailto:hello@0nefor.one" class="no-underline transition-opacity hover:opacity-70" style="color: var(--c-muted)">{{ $t('footer.contact') }}</a>
     </nav>
   </footer>
 </template>
@@ -163,10 +213,10 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
         },
         mobileTabs() {
           return [
-            { key: 'search',      label: 'Search',  icon: 'mdi-magnify',                iconActive: 'mdi-magnify',                action: () => this.changePage('search') },
-            { key: 'library',     label: 'Library', icon: 'mdi-cards-outline',           iconActive: 'mdi-cards',                  action: () => this.changePage('library') },
-            { key: 'TradeCenter', label: 'Trades',  icon: 'mdi-swap-horizontal',         iconActive: 'mdi-swap-horizontal-bold',   action: () => this.openMatches() },
-            { key: 'account',     label: 'Account', icon: 'mdi-account-circle-outline',  iconActive: 'mdi-account-circle',         action: () => this.changePage('account') },
+            { key: 'search',      label: this.$t('nav.search'),  icon: 'mdi-magnify',                iconActive: 'mdi-magnify',                action: () => this.changePage('search') },
+            { key: 'library',     label: this.$t('nav.library'), icon: 'mdi-cards-outline',           iconActive: 'mdi-cards',                  action: () => this.changePage('library') },
+            { key: 'TradeCenter', label: this.$t('nav.trades'),  icon: 'mdi-swap-horizontal',         iconActive: 'mdi-swap-horizontal-bold',   action: () => this.openMatches() },
+            { key: 'account',     label: this.$t('nav.account'), icon: 'mdi-account-circle-outline',  iconActive: 'mdi-account-circle',         action: () => this.changePage('account') },
           ];
         },
       },

@@ -1,6 +1,9 @@
 <script setup>
+import { useI18n } from "vue-i18n";
 import AddCard     from "@/components/AddCard.vue";
 import CardElement from "@/components/CardElement.vue";
+
+const { t } = useI18n();
 
 defineProps({
   title:     { type: String,  required: true },
@@ -64,7 +67,7 @@ const emit = defineEmits(["added", "deleted"]);
           style="color: var(--c-trade)"
         >
           <v-icon icon="mdi-magnify" size="14" />
-          Search for cards to add
+          {{ t('library.searchCards') }}
         </router-link>
       </div>
     </template>

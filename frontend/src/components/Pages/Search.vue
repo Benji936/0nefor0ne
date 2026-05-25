@@ -1,8 +1,12 @@
 <script setup>
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 import CardYugi              from "@/components/CardYugi.vue";
 import SearchTrending        from "./search/SearchTrending.vue";
 import SearchSetBrowser      from "./search/SearchSetBrowser.vue";
 import SearchLatestReleases  from "./search/SearchLatestReleases.vue";
+
+const { t } = useI18n();
 
 defineProps({
   searchCards: { type: Object, default: null },
@@ -18,12 +22,12 @@ const hasSearchResults = (searchCards) =>
 const HERO_CARDS = [46986414, 89631139, 53129443, 14558127, 38033121, 55144522];
 const cardThumb = (id) => `https://images.ygoprodeck.com/images/cards_small/${id}.jpg`;
 
-const HOW_IT_WORKS = [
-  { n: "01", title: "Build your trade pile",  body: "List cards you're ready to trade away." },
-  { n: "02", title: "Add your wishlist",      body: "Mark every card you're hunting for." },
-  { n: "03", title: "Find your match",        body: "We surface traders who want yours and have yours." },
-  { n: "04", title: "Propose & confirm",      body: "Send a proposal, chat, and close the trade." },
-];
+const HOW_IT_WORKS = computed(() => [
+  { n: "01", title: t("hero.steps.01.title"), body: t("hero.steps.01.body") },
+  { n: "02", title: t("hero.steps.02.title"), body: t("hero.steps.02.body") },
+  { n: "03", title: t("hero.steps.03.title"), body: t("hero.steps.03.body") },
+  { n: "04", title: t("hero.steps.04.title"), body: t("hero.steps.04.body") },
+]);
 </script>
 
 <template>
@@ -50,11 +54,10 @@ const HOW_IT_WORKS = [
       <!-- Headline block -->
       <div class="flex flex-col gap-4 max-w-xl">
         <h1 class="text-3xl md:text-4xl font-black leading-tight tracking-tight" style="color: var(--c-text)">
-          Trade duplicates.<br>Hunt your targets.
+          {{ $t('hero.headline') }}
         </h1>
         <p class="text-base md:text-lg leading-relaxed" style="color: var(--c-muted)">
-          One for One connects Yu-Gi-Oh! collectors who have what each other wants.
-          No fees, no auctions just direct peer-to-peer trades.
+          {{ $t('hero.subheadline') }}
         </p>
         <div class="flex flex-wrap gap-3 mt-1">
           <v-btn
@@ -63,14 +66,14 @@ const HOW_IT_WORKS = [
             :style="{ background: 'var(--c-trade)', color: 'white', fontWeight: 700, minHeight: '48px', paddingInline: '28px' }"
             @click="$emit('requireAuth')"
           >
-            Get started — it's free
+            {{ $t('hero.cta') }}
           </v-btn>
         </div>
       </div>
 
       <!-- How it works -->
       <div class="flex flex-col gap-3">
-        <p class="text-xs font-bold uppercase tracking-widest" style="color: var(--c-muted)">How it works</p>
+        <p class="text-xs font-bold uppercase tracking-widest" style="color: var(--c-muted)">{{ $t('hero.learnMore') }}</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           <div
             v-for="step in HOW_IT_WORKS"

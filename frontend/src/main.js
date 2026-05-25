@@ -2,6 +2,7 @@ import './assets/main.css'
 
 import { createApp } from 'vue'
 import router from './router/index.js'
+import i18n from './i18n.js'
 import App from './views/App.vue'
 
 import { createVuetify } from 'vuetify'
@@ -48,4 +49,4 @@ const vuetify = createVuetify({
   },
 })
 
-createApp(App).use(router).use(vuetify).mount('#app')
+createApp(App).use(router).use(vuetify).use(i18n).mount('#app')

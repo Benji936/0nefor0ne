@@ -149,8 +149,8 @@ export default {
     tabs() {
       const pendingCount = this.proposals.filter(p => p.status === "pending" && !p.i_am_proposer).length;
       return [
-        { key: "matches",   label: "Matches",   icon: "mdi-account-group-outline", badge: 0 },
-        { key: "proposals", label: "Proposals", icon: "mdi-swap-horizontal-bold",  badge: pendingCount },
+        { key: "matches",   label: this.$t("tradeCenter.matches"),   icon: "mdi-account-group-outline", badge: 0 },
+        { key: "proposals", label: this.$t("tradeCenter.proposals"), icon: "mdi-swap-horizontal-bold",  badge: pendingCount },
       ];
     },
     visibleMatches() {

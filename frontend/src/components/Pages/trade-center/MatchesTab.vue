@@ -1,5 +1,8 @@
 <script setup>
+import { useI18n } from "vue-i18n";
 import UserCard from "@/components/UserCard.vue";
+
+const { t } = useI18n();
 
 defineProps({
   login:             { type: Object,  default: null },
@@ -28,7 +31,7 @@ const emit = defineEmits([
   <!-- Not logged in -->
   <div v-if="!login" class="flex flex-col items-center gap-3 py-16 text-center">
     <v-icon icon="mdi-lock-outline" size="36" color="var(--c-muted)" />
-    <p class="text-sm" style="color: var(--c-muted)">Log in to see your trade matches.</p>
+    <p class="text-sm" style="color: var(--c-muted)">{{ t('matches.loginRequired') }}</p>
   </div>
 
   <template v-else>
@@ -37,7 +40,7 @@ const emit = defineEmits([
       <v-icon icon="mdi-magnify" size="16" class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" color="var(--c-muted)" />
       <input
         :value="matchSearch"
-        placeholder="Filter by card or trader name…"
+        :placeholder="t('matches.filterPlaceholder')"
         class="w-full rounded-xl pl-9 pr-4 py-3 text-sm border outline-none transition-colors"
         :style="{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
         @input="emit('update:matchSearch', $event.target.value)"
@@ -62,14 +65,14 @@ const emit = defineEmits([
         :style="{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: locationCountry ? 'var(--c-text)' : 'var(--c-muted)' }"
         @change="emit('update:locationCountry', $event.target.value)"
       >
-        <option value="">All countries</option>
+        <option value="">{{ t('matches.allCountries') }}</option>
         <option v-for="c in availableCountries" :key="c" :value="c">{{ c }}</option>
       </select>
 
       <div class="relative flex-1 min-w-[100px]">
         <input
           :value="locationCity"
-          placeholder="City"
+          :placeholder="t('matches.city')"
           class="w-full rounded-xl pl-3 pr-3 py-2 text-sm border outline-none transition-colors"
           :style="{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
           @input="emit('update:locationCity', $event.target.value)"
@@ -83,19 +86,19 @@ const emit = defineEmits([
         class="text-xs transition-opacity hover:opacity-70 cursor-pointer"
         style="color: var(--c-accent)"
         @click="emit('update:locationCountry', ''); emit('update:locationCity', '')"
-      >clear filters</button>
+      >{{ t('matches.clearFilters') }}</button>
     </div>
 
     <!-- Card filter notice -->
     <div v-if="filterCardName" class="flex items-center gap-2 text-sm" style="color: var(--c-muted)">
       <v-icon icon="mdi-magnify" size="15" />
-      Traders with:
+      {{ t('matches.tradersWith') }}
       <span class="font-semibold" style="color: var(--c-text)">{{ filterCardName }}</span>
       <button
         class="ml-1 cursor-pointer transition-opacity hover:opacity-70"
         style="color: var(--c-accent)"
         @click="emit('clearFilter')"
-      >clear</button>
+      >{{ t('matches.clear') }}</button>
     </div>
 
     <!-- Skeleton -->
@@ -135,9 +138,9 @@ const emit = defineEmits([
       >
         <v-icon icon="mdi-account-search-outline" size="28" color="var(--c-muted)" />
       </div>
-      <p class="text-base font-semibold" style="color: var(--c-text)">No matches yet</p>
+      <p class="text-base font-semibold" style="color: var(--c-text)">{{ t('matches.noMatchesTitle') }}</p>
       <p class="text-sm max-w-xs leading-relaxed" style="color: var(--c-muted)">
-        The more cards you add to your trade pile and wishlist, the more traders you'll find here.
+        {{ t('matches.noMatchesDesc') }}
       </p>
       <router-link
         to="/library"
@@ -145,7 +148,7 @@ const emit = defineEmits([
         style="color: var(--c-trade)"
       >
         <v-icon icon="mdi-cards-outline" size="14" />
-        Go to My Collection to add cards
+        {{ t('matches.goToCollection') }}
       </router-link>
     </div>
 
@@ -154,10 +157,10 @@ const emit = defineEmits([
       <section v-if="buckets.mutual.length > 0" class="flex flex-col gap-4">
         <div class="flex items-center gap-3 pb-3" style="border-bottom: 1px solid var(--c-border)">
           <div class="size-2 rounded-full shrink-0" style="background: var(--c-mutual)" />
-          <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">Mutual matches</h2>
+          <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">{{ t('matches.mutualMatches') }}</h2>
           <span class="text-[11px] font-bold px-2 py-1 rounded-md tabular-nums" style="background: color-mix(in srgb, var(--c-mutual) 15%, transparent); color: var(--c-mutual)">{{ buckets.mutual.length }}</span>
         </div>
-        <p class="text-xs -mt-2" style="color: var(--c-muted)">Both sides have something for each other. Start here.</p>
+        <p class="text-xs -mt-2" style="color: var(--c-muted)">{{ t('matches.mutualDesc') }}</p>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           <UserCard v-for="u in buckets.mutual" :key="u.id" :user="u" @openTrade="emit('openTrade', u)" @openProfile="emit('openProfile', $event)" />
         </div>
@@ -171,7 +174,7 @@ const emit = defineEmits([
       >
         <div class="flex items-center gap-3 pb-3" style="border-bottom: 1px solid var(--c-border)">
           <div class="size-2 rounded-full shrink-0" style="background: var(--c-trade)" />
-          <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">Have what you want</h2>
+          <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">{{ t('matches.theyHave') }}</h2>
           <span class="text-[11px] font-bold px-2 py-1 rounded-md tabular-nums" style="background: color-mix(in srgb, var(--c-trade) 15%, transparent); color: var(--c-trade)">{{ buckets.theyHave.length }}</span>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -186,7 +189,7 @@ const emit = defineEmits([
       >
         <div class="flex items-center gap-3 pb-3" style="border-bottom: 1px solid var(--c-border)">
           <div class="size-2 rounded-full shrink-0" style="background: var(--c-accent)" />
-          <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">Want what you have</h2>
+          <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">{{ t('matches.theyWant') }}</h2>
           <span class="text-[11px] font-bold px-2 py-1 rounded-md tabular-nums" style="background: color-mix(in srgb, var(--c-accent) 15%, transparent); color: var(--c-accent)">{{ buckets.theyWant.length }}</span>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

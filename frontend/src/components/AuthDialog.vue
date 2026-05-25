@@ -1,5 +1,6 @@
 <script setup>
 import { ref, watch, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { signInWithEmail, signUpNewUser, updateTraderProfile } from "@/lib/supabaseClient";
 import { COUNTRIES } from "@/lib/countries";
 
@@ -7,6 +8,8 @@ const props = defineProps({
   modelValue: { type: Boolean, default: false },
 });
 const emit = defineEmits(["update:modelValue", "authenticated"]);
+
+const { t } = useI18n();
 
 const mode        = ref("signin"); // 'signin' | 'signup'
 const email       = ref("");
@@ -19,11 +22,11 @@ const submitting  = ref(false);
 const errorMessage = ref("");
 const infoMessage  = ref("");
 
-const SCOPES = [
-  { value: "local",     label: "Local",     icon: "mdi-map-marker" },
-  { value: "national",  label: "National",  icon: "mdi-flag-outline" },
-  { value: "worldwide", label: "Worldwide", icon: "mdi-earth" },
-];
+const SCOPES = computed(() => [
+  { value: "local",     label: t("auth.scopes.local"),     icon: "mdi-map-marker" },
+  { value: "national",  label: t("auth.scopes.national"),  icon: "mdi-flag-outline" },
+  { value: "worldwide", label: t("auth.scopes.worldwide"), icon: "mdi-earth" },
+]);
 
 const countryItems = COUNTRIES.map(c => ({
   title: `${c.flag} ${c.name}`,
@@ -41,8 +44,8 @@ watch(
   }
 );
 
-const title       = computed(() => mode.value === "signup" ? "Create an account" : "Sign in");
-const submitLabel = computed(() => mode.value === "signup" ? "Create account" : "Sign in");
+const title       = computed(() => mode.value === "signup" ? t("auth.createAccount") : t("auth.signIn"));
+const submitLabel = computed(() => mode.value === "signup" ? t("auth.createAccountShort") : t("auth.signIn"));
 
 function close() { emit("update:modelValue", false); }
 
@@ -59,11 +62,11 @@ function clearFields() {
 
 async function submit() {
   if (!email.value || !password.value) {
-    errorMessage.value = "Email and password are required.";
+    errorMessage.value = t("auth.emailPasswordRequired");
     return;
   }
   if (mode.value === "signup" && !name.value.trim()) {
-    errorMessage.value = "Display name is required.";
+    errorMessage.value = t("auth.displayNameRequired");
     return;
   }
 
@@ -83,11 +86,11 @@ async function submit() {
       };
       const { data, error } = await signUpNewUser(email.value.trim(), password.value, metadata);
 
-      if (error) { errorMessage.value = error.message ?? "Sign-up failed."; return; }
+      if (error) { errorMessage.value = error.message ?? t("auth.signUpFailed"); return; }
 
       if (!data?.session) {
         // Email confirmation required — trigger will apply metadata on confirmation
-        infoMessage.value = "Account created! Check your email to confirm, then sign in.";
+        infoMessage.value = t("auth.confirmEmail");
         mode.value = "signin";
         password.value = "";
         return;
@@ -105,17 +108,17 @@ async function submit() {
 
     } else {
       const { data, error } = await signInWithEmail(email.value.trim(), password.value);
-      if (error) { errorMessage.value = error.message ?? "Sign-in failed."; return; }
+      if (error) { errorMessage.value = error.message ?? t("auth.signInFailed"); return; }
       if (data?.session) {
         emit("authenticated", { user: data.user, session: data.session });
         clearFields();
         close();
       } else {
-        errorMessage.value = "No session returned. Please try again.";
+        errorMessage.value = t("auth.noSession");
       }
     }
   } catch (err) {
-    errorMessage.value = err?.message ?? "Unexpected error.";
+    errorMessage.value = err?.message ?? t("auth.unexpectedError");
   } finally {
     submitting.value = false;
   }
@@ -145,7 +148,7 @@ async function submit() {
           <v-text-field
             v-if="mode === 'signup'"
             v-model="name"
-            label="Display name"
+            :label="$t('auth.displayName')"
             autocomplete="name"
             variant="outlined"
             density="comfortable"
@@ -157,7 +160,7 @@ async function submit() {
 
           <v-text-field
             v-model="email"
-            label="Email"
+            :label="$t('auth.email')"
             type="email"
             autocomplete="email"
             variant="outlined"
@@ -170,7 +173,7 @@ async function submit() {
 
           <v-text-field
             v-model="password"
-            label="Password"
+            :label="$t('auth.password')"
             type="password"
             :autocomplete="mode === 'signup' ? 'new-password' : 'current-password'"
             variant="outlined"
@@ -184,12 +187,12 @@ async function submit() {
           <!-- Signup-only: location & trading preferences -->
           <template v-if="mode === 'signup'">
             <div class="h-px w-full my-1" style="background: var(--c-border)" />
-            <p class="text-xs font-semibold uppercase tracking-wide" style="color: var(--c-muted)">Where do you trade?</p>
+            <p class="text-xs font-semibold uppercase tracking-wide" style="color: var(--c-muted)">{{ $t('auth.whereDoYouTrade') }}</p>
 
             <v-autocomplete
               v-model="countryCode"
               :items="countryItems"
-              label="Country (optional)"
+              :label="$t('auth.country')"
               variant="outlined"
               density="comfortable"
               hide-details="auto"
@@ -200,7 +203,7 @@ async function submit() {
 
             <v-text-field
               v-model="city"
-              label="City (optional)"
+              :label="$t('auth.city')"
               autocomplete="address-level2"
               variant="outlined"
               density="comfortable"
@@ -210,7 +213,7 @@ async function submit() {
             />
 
             <div class="flex flex-col gap-2">
-              <p class="text-xs font-semibold uppercase tracking-wide" style="color: var(--c-muted)">Trading range</p>
+              <p class="text-xs font-semibold uppercase tracking-wide" style="color: var(--c-muted)">{{ $t('auth.tradingRange') }}</p>
               <div class="flex gap-2">
                 <button
                   v-for="s in SCOPES"
@@ -247,10 +250,10 @@ async function submit() {
 
       <v-card-actions class="pa-4 justify-center">
         <span class="text-sm" style="color: var(--c-muted)">
-          {{ mode === "signup" ? "Already have an account?" : "Don't have an account?" }}
+          {{ mode === "signup" ? $t("auth.alreadyHaveAccount") : $t("auth.noAccount") }}
         </span>
         <v-btn variant="text" color="var(--c-accent)" size="small" :disabled="submitting" @click="toggleMode">
-          {{ mode === "signup" ? "Sign in" : "Create one" }}
+          {{ mode === "signup" ? $t("auth.signIn") : $t("auth.createOne") }}
         </v-btn>
       </v-card-actions>
     </v-card>

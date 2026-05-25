@@ -1,5 +1,8 @@
 <script setup>
+import { useI18n } from "vue-i18n";
 import ProposalRow from "@/components/ProposalRow.vue";
+
+const { t } = useI18n();
 
 defineProps({
   login:           { type: Object,  default: null },
@@ -18,7 +21,7 @@ const emit = defineEmits(["accept", "decline", "cancel", "complete", "counter", 
   <!-- Not logged in -->
   <div v-if="!login" class="flex flex-col items-center gap-3 py-16 text-center">
     <v-icon icon="mdi-lock-outline" size="36" color="var(--c-muted)" />
-    <p class="text-sm" style="color: var(--c-muted)">Log in to see your proposals.</p>
+    <p class="text-sm" style="color: var(--c-muted)">{{ t('proposals.loginRequired') }}</p>
   </div>
 
   <!-- Skeleton -->
@@ -53,9 +56,9 @@ const emit = defineEmits(["accept", "decline", "cancel", "complete", "counter", 
     >
       <v-icon icon="mdi-swap-horizontal" size="28" color="var(--c-muted)" />
     </div>
-    <p class="text-base font-semibold" style="color: var(--c-text)">No proposals yet</p>
+    <p class="text-base font-semibold" style="color: var(--c-text)">{{ t('proposals.noProposalsTitle') }}</p>
     <p class="text-sm max-w-xs leading-relaxed" style="color: var(--c-muted)">
-      Send one from the Matches tab when you find a trader you want to deal with.
+      {{ t('proposals.noProposalsDesc') }}
     </p>
   </div>
 
@@ -65,10 +68,10 @@ const emit = defineEmits(["accept", "decline", "cancel", "complete", "counter", 
     <section v-if="incomingPending.length > 0" class="flex flex-col gap-4">
       <div class="flex items-center gap-3 pb-3" style="border-bottom: 1px solid var(--c-border)">
         <div class="size-2 rounded-full shrink-0" style="background: var(--c-mutual)" />
-        <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">Incoming</h2>
+        <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">{{ t('proposals.incoming') }}</h2>
         <span class="text-[11px] font-bold px-1 py-1 w-6 h-6 text-center rounded-md tabular-nums" style="background: color-mix(in srgb, var(--c-mutual) 15%, transparent); color: var(--c-mutual)">{{ incomingPending.length }}</span>
       </div>
-      <p class="text-xs -mt-2" style="color: var(--c-muted)">These traders want to deal with you. Accept or decline.</p>
+      <p class="text-xs -mt-2" style="color: var(--c-muted)">{{ t('proposals.incomingDesc') }}</p>
       <div class="flex flex-col gap-3">
         <ProposalRow
           v-for="p in incomingPending" :key="p.id"
@@ -87,10 +90,10 @@ const emit = defineEmits(["accept", "decline", "cancel", "complete", "counter", 
     >
       <div class="flex items-center gap-3 pb-3" style="border-bottom: 1px solid var(--c-border)">
         <div class="size-2 rounded-full shrink-0" style="background: var(--c-trade)" />
-        <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">Sent</h2>
+        <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">{{ t('proposals.outgoing') }}</h2>
         <span class="text-[11px] font-bold px-2 py-1 rounded-md tabular-nums" style="background: color-mix(in srgb, var(--c-trade) 15%, transparent); color: var(--c-trade)">{{ outgoingPending.length }}</span>
       </div>
-      <p class="text-xs -mt-2" style="color: var(--c-muted)">Waiting for the other side to respond.</p>
+      <p class="text-xs -mt-2" style="color: var(--c-muted)">{{ t('proposals.outgoingDesc') }}</p>
       <div class="flex flex-col gap-3">
         <ProposalRow
           v-for="p in outgoingPending" :key="p.id"
@@ -104,10 +107,10 @@ const emit = defineEmits(["accept", "decline", "cancel", "complete", "counter", 
     <section v-if="acceptedTrades.length > 0" class="flex flex-col gap-4 border-t pt-6" style="border-color: var(--c-border)">
       <div class="flex items-center gap-3 pb-3" style="border-bottom: 1px solid var(--c-border)">
         <div class="size-2 rounded-full shrink-0" style="background: var(--c-mutual)" />
-        <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">Awaiting exchange</h2>
+        <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">{{ t('proposals.accepted') }}</h2>
         <span class="text-[11px] font-bold px-2 py-1 rounded-md tabular-nums" style="background: color-mix(in srgb, var(--c-mutual) 15%, transparent); color: var(--c-mutual)">{{ acceptedTrades.length }}</span>
       </div>
-      <p class="text-xs -mt-2" style="color: var(--c-muted)">Both sides agreed. Confirm once cards have changed hands, or cancel to release them.</p>
+      <p class="text-xs -mt-2" style="color: var(--c-muted)">{{ t('proposals.acceptedDesc') }}</p>
       <div class="flex flex-col gap-3">
         <ProposalRow
           v-for="p in acceptedTrades" :key="p.id"
@@ -120,7 +123,7 @@ const emit = defineEmits(["accept", "decline", "cancel", "complete", "counter", 
     <section v-if="history.length > 0" class="flex flex-col gap-4 border-t pt-6" style="border-color: var(--c-border)">
       <div class="flex items-center gap-3 pb-3" style="border-bottom: 1px solid var(--c-border)">
         <div class="size-2 rounded-full shrink-0" style="background: var(--c-muted)" />
-        <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-muted)">History</h2>
+        <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-muted)">{{ t('proposals.history') }}</h2>
       </div>
       <div class="flex flex-col gap-3">
         <ProposalRow

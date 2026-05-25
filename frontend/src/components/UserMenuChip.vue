@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getClient } from '@/lib/supabaseClient';
 
 const props = defineProps({
@@ -8,6 +9,7 @@ const props = defineProps({
 
 const emit = defineEmits(['navigate', 'logout']);
 
+const { t } = useI18n();
 const menuOpen   = ref(false);
 const traderName = ref(null);
 const avatarUrl  = ref(null);
@@ -40,14 +42,13 @@ const displayName = computed(() =>
   traderName.value?.trim() || props.login?.user?.email?.split('@')[0] || 'Account'
 );
 
-const menuItems = [
+const menuItems = computed(() => [
   {
-    label: 'Account & profile',
+    label: t('userMenu.accountProfile'),
     icon:  'mdi-account-circle-outline',
     action: 'account',
   },
-  // Future slots go here
-];
+]);
 
 function handleAction(action) {
   menuOpen.value = false;
@@ -147,7 +148,7 @@ function handleAction(action) {
           @click="handleAction('logout')"
         >
           <v-icon icon="mdi-logout" size="16" style="color: var(--c-accent)" />
-          <span class="text-sm font-medium" style="color: var(--c-accent)">Sign out</span>
+          <span class="text-sm font-medium" style="color: var(--c-accent)">{{ t('userMenu.signOut') }}</span>
         </button>
       </div>
     </div>
