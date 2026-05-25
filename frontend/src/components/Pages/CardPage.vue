@@ -9,7 +9,7 @@
       @click.prevent="$router.back()"
     >
       <v-icon icon="mdi-arrow-left" size="16" />
-      Back to search
+      {{ $t('cardPage.backToSearch') }}
     </a>
 
     <!-- Loading skeleton -->
@@ -26,9 +26,9 @@
     <!-- Error -->
     <div v-else-if="error" class="flex flex-col items-center gap-3 py-16 text-center">
       <v-icon icon="mdi-card-off-outline" size="48" style="color: var(--c-muted)" />
-      <p class="text-lg font-semibold" style="color: var(--c-text)">Card not found</p>
+      <p class="text-lg font-semibold" style="color: var(--c-text)">{{ $t('cardPage.cardNotFound') }}</p>
       <p class="text-sm" style="color: var(--c-muted)">{{ error }}</p>
-      <router-link to="/" class="text-sm" style="color: var(--c-accent)">Search for another card</router-link>
+      <router-link to="/" class="text-sm" style="color: var(--c-accent)">{{ $t('cardPage.searchOther') }}</router-link>
     </div>
 
     <!-- Card content -->
@@ -52,7 +52,7 @@
             <span v-if="card.type">{{ card.type }}</span>
             <span v-if="card.race">· {{ card.race }}</span>
             <span v-if="card.attribute">· {{ card.attribute }}</span>
-            <span v-if="card.level != null">· Level {{ card.level }}</span>
+            <span v-if="card.level != null">· {{ $t('cardYugi.level') }} {{ card.level }}</span>
             <span v-if="card.atk != null">· ATK {{ card.atk }}</span>
             <span v-if="card.def != null">· DEF {{ card.def }}</span>
           </div>
@@ -82,13 +82,13 @@
               :style="{ backgroundColor: 'var(--c-trade)', color: 'white', minHeight: '40px' }"
               prepend-icon="mdi-plus-box"
               @click="openTrade"
-            >Add to trade pile</v-btn>
+            >{{ $t('cardPage.addToTrade') }}</v-btn>
             <v-btn
               variant="flat"
               :style="{ backgroundColor: 'var(--c-accent)', color: 'white', minHeight: '40px' }"
               prepend-icon="mdi-heart-plus"
               @click="openWish"
-            >Add to wishlist</v-btn>
+            >{{ $t('cardPage.addToWishlist') }}</v-btn>
           </div>
         </div>
       </div>
@@ -96,7 +96,7 @@
       <!-- Printings -->
       <div v-if="card.card_sets?.length" class="rounded-lg border overflow-hidden" style="border-color: var(--c-border)">
         <p class="text-xs font-bold uppercase tracking-wide px-4 py-3" style="color: var(--c-muted); border-bottom: 1px solid var(--c-border)">
-          Printings ({{ card.card_sets.length }})
+          {{ $t('cardPage.printingsCount', { count: card.card_sets.length }) }}
         </p>
         <div class="overflow-y-auto" style="max-height: 180px">
           <div
@@ -123,7 +123,7 @@
 
       <!-- Traders section -->
       <div class="flex flex-col gap-3">
-        <p class="text-xs font-bold uppercase tracking-wide" style="color: var(--c-muted)">Traders with this card</p>
+        <p class="text-xs font-bold uppercase tracking-wide" style="color: var(--c-muted)">{{ $t('cardYugi.tradersWithCard') }}</p>
 
         <div v-if="loadingTraders" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <div
@@ -148,7 +148,7 @@
           v-else-if="traders.length === 0"
           class="text-sm text-center py-6"
           style="color: var(--c-muted)"
-        >No one is trading this card yet.</p>
+        >{{ $t('cardYugi.noTraders') }}</p>
 
         <div v-else class="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <div
@@ -169,9 +169,9 @@
                   <span v-else>{{ (trader.name ?? '?')[0].toUpperCase() }}</span>
                 </div>
                 <div class="flex flex-col min-w-0">
-                  <span class="text-sm font-semibold truncate" style="color: var(--c-text)">{{ trader.name ?? 'Anonymous' }}</span>
+                  <span class="text-sm font-semibold truncate" style="color: var(--c-text)">{{ trader.name ?? $t('common.anonymous') }}</span>
                   <span class="text-xs truncate" style="color: var(--c-muted)">
-                    {{ [trader.city, trader.country].filter(Boolean).join(', ') || 'Unknown' }}
+                    {{ [trader.city, trader.country].filter(Boolean).join(', ') || $t('cardPage.unknown') }}
                   </span>
                 </div>
               </div>
@@ -338,9 +338,9 @@ export default {
            :                         "var(--c-accent)";
     },
     kindLabel(kind) {
-      return kind === "mutual"    ? "Match"
-           : kind === "they_have" ? "Has this card"
-           :                        "Wants yours";
+      return kind === "mutual"    ? this.$t('cardYugi.match')
+           : kind === "they_have" ? this.$t('cardYugi.hasThisCard')
+           :                        this.$t('cardYugi.wantsYours');
     },
 
     async _requireAuth() {

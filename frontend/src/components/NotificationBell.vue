@@ -1,7 +1,10 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getClient } from '@/lib/supabaseClient';
 import { notifMeta, notifText, timeAgo } from '@/lib/notifications';
+
+const { t } = useI18n();
 
 const props = defineProps({
   login: { type: Object, default: null },
@@ -87,7 +90,7 @@ onBeforeUnmount(() => {
         ? { backgroundColor: 'var(--c-surface-2)', color: 'var(--c-accent)' }
         : { backgroundColor: 'transparent', color: 'var(--c-accent)' }"
       @click.stop="toggle"
-      :title="unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'Notifications'"
+      :title="unreadCount > 0 ? t('notifications.bellTitleUnread', { count: unreadCount }) : t('notifications.bellTitle')"
     >
       <v-icon :icon="unreadCount > 0 ? 'mdi-bell-badge' : 'mdi-bell-outline'" size="22" />
       <!-- Unread badge -->
@@ -120,13 +123,13 @@ onBeforeUnmount(() => {
       >
         <!-- Header -->
         <div class="flex items-center justify-between px-4 py-3" style="border-bottom: 1px solid var(--c-border)">
-          <span class="text-sm font-bold" style="color: var(--c-text)">Notifications</span>
+          <span class="text-sm font-bold" style="color: var(--c-text)">{{ t('notifications.title') }}</span>
           <button
             v-if="unreadCount > 0"
             class="text-[11px] font-semibold cursor-pointer transition-opacity hover:opacity-70"
             style="color: var(--c-muted)"
             @click="markAllRead"
-          >Mark all read</button>
+          >{{ t('notifications.markAllRead') }}</button>
         </div>
 
         <!-- List -->
@@ -145,7 +148,7 @@ onBeforeUnmount(() => {
           <!-- Empty -->
           <div v-else-if="notifications.length === 0" class="flex flex-col items-center gap-2 py-10">
             <v-icon icon="mdi-bell-sleep-outline" size="32" color="var(--c-muted)" />
-            <p class="text-sm" style="color: var(--c-muted)">Nothing here yet</p>
+            <p class="text-sm" style="color: var(--c-muted)">{{ t('notifications.empty') }}</p>
           </div>
 
           <!-- Items -->

@@ -1,7 +1,10 @@
 <script setup>
 import { ref, computed, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { fetchTradePhotos, uploadTradePhoto, deleteTradePhoto } from "@/lib/proposals";
 import { getClient } from "@/lib/supabaseClient";
+
+const { t } = useI18n();
 
 const props = defineProps({
   open:          { type: Boolean, default: false },
@@ -86,7 +89,7 @@ watch(() => props.open, (open) => {
     <!-- Section header -->
     <div class="flex items-center gap-3 mb-1">
       <v-icon icon="mdi-camera-outline" size="20" color="var(--c-muted)" />
-      <span class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">Verification photos</span>
+      <span class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">{{ t('tradePhotos.title') }}</span>
       <span
         class="ml-auto flex items-center gap-2 text-[11px] font-bold px-3 py-1 rounded-lg border"
         :style="bothUploaded
@@ -98,15 +101,15 @@ watch(() => props.open, (open) => {
           size="13"
           :color="bothUploaded ? 'var(--c-mutual)' : 'var(--c-trade)'"
         />
-        {{ bothUploaded ? "Both verified" : "Waiting for both sides" }}
+        {{ bothUploaded ? t('tradePhotos.bothVerified') : t('tradePhotos.waitingBothSides') }}
       </span>
     </div>
     <p class="text-xs mb-4" style="color: var(--c-muted)">
       <template v-if="proposal?.status === 'pending'">
-        Both traders must upload photos of their cards before the trade can be accepted.
+        {{ t('tradePhotos.pendingDesc') }}
       </template>
       <template v-else>
-        Photos were verified before acceptance.
+        {{ t('tradePhotos.acceptedDesc') }}
       </template>
     </p>
 
@@ -115,12 +118,12 @@ watch(() => props.open, (open) => {
       <!-- My uploads -->
       <div class="flex flex-col gap-3">
         <div class="flex items-center gap-2">
-          <span class="text-xs font-semibold uppercase tracking-wide" style="color: var(--c-accent)">Your photos</span>
+          <span class="text-xs font-semibold uppercase tracking-wide" style="color: var(--c-accent)">{{ t('tradePhotos.yourPhotos') }}</span>
           <span v-if="myPhotos.length" class="text-[11px] px-2 py-1 rounded font-semibold"
             style="background: color-mix(in srgb, var(--c-accent) 15%, transparent); color: var(--c-accent)">
             {{ myPhotos.length }}
           </span>
-          <span v-else class="text-[11px]" style="color: var(--c-muted)">none yet</span>
+          <span v-else class="text-[11px]" style="color: var(--c-muted)">{{ t('common.noneYet') }}</span>
         </div>
 
         <!-- Drop zone -->
@@ -137,7 +140,7 @@ watch(() => props.open, (open) => {
         >
           <v-progress-circular v-if="uploading" indeterminate size="24" width="2" color="var(--c-trade)" />
           <v-icon v-else icon="mdi-camera-plus-outline" size="24" color="var(--c-muted)" />
-          <span class="text-xs" style="color: var(--c-muted)">{{ uploading ? "Uploading…" : "Click or drag a photo" }}</span>
+          <span class="text-xs" style="color: var(--c-muted)">{{ uploading ? t('tradePhotos.uploading') : t('tradePhotos.clickOrDrag') }}</span>
         </button>
         <input
           ref="fileInputRef"
@@ -173,24 +176,24 @@ watch(() => props.open, (open) => {
       <!-- Their uploads -->
       <div class="flex flex-col gap-3">
         <div class="flex items-center gap-2">
-          <span class="text-xs font-semibold uppercase tracking-wide" style="color: var(--c-trade)">Their photos</span>
+          <span class="text-xs font-semibold uppercase tracking-wide" style="color: var(--c-trade)">{{ t('tradePhotos.theirPhotos') }}</span>
           <span v-if="theirPhotos.length" class="text-[11px] px-2 py-1 rounded font-semibold"
             style="background: color-mix(in srgb, var(--c-trade) 15%, transparent); color: var(--c-trade)">
             {{ theirPhotos.length }}
           </span>
-          <span v-else class="text-[11px]" style="color: var(--c-muted)">none yet</span>
+          <span v-else class="text-[11px]" style="color: var(--c-muted)">{{ t('common.noneYet') }}</span>
         </div>
 
         <div v-if="loadingPhotos" class="flex items-center gap-2 py-4" style="color: var(--c-muted)">
           <v-progress-circular indeterminate size="16" width="2" color="var(--c-muted)" />
-          <span class="text-xs">Loading…</span>
+          <span class="text-xs">{{ t('tradePhotos.loading') }}</span>
         </div>
 
         <div v-else-if="!theirPhotos.length"
           class="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed py-5 px-4"
           style="border-color: var(--c-border); color: var(--c-muted)">
           <v-icon icon="mdi-clock-outline" size="24" color="var(--c-muted)" />
-          <span class="text-xs">Waiting for {{ proposal?.counterparty_name ?? "them" }} to upload</span>
+          <span class="text-xs">{{ t('tradePhotos.waitingUpload', { name: proposal?.counterparty_name ?? t('common.anonymous') }) }}</span>
         </div>
 
         <div v-else class="flex flex-wrap gap-2">

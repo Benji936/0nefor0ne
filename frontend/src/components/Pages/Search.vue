@@ -53,9 +53,11 @@ const HOW_IT_WORKS = computed(() => [
 
       <!-- Headline block -->
       <div class="flex flex-col gap-4 max-w-xl">
-        <h1 class="text-3xl md:text-4xl font-black leading-tight tracking-tight" style="color: var(--c-text)">
-          {{ $t('hero.headline') }}
-        </h1>
+        <h1
+          class="text-3xl md:text-4xl font-black leading-tight tracking-tight"
+          style="color: var(--c-text)"
+          v-html="$t('hero.headline')"
+        />
         <p class="text-base md:text-lg leading-relaxed" style="color: var(--c-muted)">
           {{ $t('hero.subheadline') }}
         </p>
@@ -95,9 +97,9 @@ const HOW_IT_WORKS = computed(() => [
     <!-- Search results -->
     <section v-if="hasSearchResults(searchCards)">
       <div class="flex items-center gap-3 mb-5">
-        <p class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">Results</p>
+        <p class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">{{ t('search.results') }}</p>
         <span class="text-sm px-2 py-1 rounded-md border" style="color: var(--c-muted); border-color: var(--c-border)">
-          {{ searchCards.data.length }} cards
+          {{ t('search.cardsCount', { count: searchCards.data.length }) }}
         </span>
       </div>
       <div class="flex flex-wrap gap-5">

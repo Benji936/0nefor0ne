@@ -63,7 +63,9 @@
     "markAllRead": "Alle als gelesen markieren",
     "empty": "Noch nichts hier",
     "emptyDesc": "Neue Tauschvorschläge und Updates erscheinen hier.",
-    "viewAll": "Im Trade Center ansehen"
+    "viewAll": "Im Trade Center ansehen",
+    "bellTitle": "Benachrichtigungen",
+    "bellTitleUnread": "{count} ungelesen"
   },
   "library": {
     "tradePile": "Tauschstapel",
@@ -288,13 +290,18 @@
   },
   "cardPage": {
     "back": "Zurück",
+    "backToSearch": "Zurück zur Suche",
+    "cardNotFound": "Karte nicht gefunden",
+    "searchOther": "Nach einer anderen Karte suchen",
     "traders": "Trader mit dieser Karte",
-    "noTraders": "Noch kein Trader hat diese Karte.",
+    "noTraders": "Noch niemand handelt diese Karte.",
     "addToWishlist": "Zur Wunschliste hinzufügen",
     "addToTrade": "Zum Tauschstapel hinzufügen",
     "printings": "Drucke",
+    "printingsCount": "Drucke ({count})",
     "setCode": "Set-Code",
-    "rarity": "Seltenheit"
+    "rarity": "Seltenheit",
+    "unknown": "Unbekannt"
   },
   "privacy": {
     "title": "Datenschutzerklärung",
@@ -310,7 +317,48 @@
     "cancel": "Abbrechen",
     "confirm": "Bestätigen",
     "back": "Zurück",
-    "anonymous": "Anonym"
+    "anonymous": "Anonym",
+    "unknownLocation": "Unbekannter Ort",
+    "unknown": "Unbekannt",
+    "noneYet": "Noch keine"
+  },
+  "search": {
+    "results": "Ergebnisse",
+    "cardsCount": "{count} Karten",
+    "trending": "Trending",
+    "last30days": "Letzte 30 Tage",
+    "browseByExtension": "Nach Erweiterung durchsuchen",
+    "searchByNameOrCode": "Nach Name oder Code suchen…",
+    "latestReleases": "Neueste Veröffentlichungen"
+  },
+  "cardYugi": {
+    "level": "Level",
+    "tradersWithCard": "Händler mit dieser Karte",
+    "noTraders": "Noch niemand handelt diese Karte.",
+    "moreTraders": "+{count} weitere Händler",
+    "permalink": "Permalink",
+    "match": "Match",
+    "hasThisCard": "Hat diese Karte",
+    "wantsYours": "Möchte deine"
+  },
+  "cardElement": {
+    "acceptedTrade": "Akzeptierter Tausch",
+    "copyLocked": "1 Exemplar gesperrt",
+    "copiesLocked": "{count} Exemplare gesperrt"
+  },
+  "tradePhotos": {
+    "title": "Verifikationsfotos",
+    "bothVerified": "Beide verifiziert",
+    "waitingBothSides": "Warten auf beide Seiten",
+    "pendingDesc": "Beide Händler müssen Fotos ihrer Karten hochladen, bevor der Tausch angenommen werden kann.",
+    "acceptedDesc": "Fotos wurden vor der Annahme verifiziert.",
+    "yourPhotos": "Deine Fotos",
+    "theirPhotos": "Ihre Fotos",
+    "noneYet": "Noch keine",
+    "clickOrDrag": "Klicken oder Foto hierher ziehen",
+    "uploading": "Wird hochgeladen…",
+    "waitingUpload": "Warte auf {name} zum Hochladen",
+    "loading": "Lädt…"
   },
   "language": {
     "label": "Sprache",

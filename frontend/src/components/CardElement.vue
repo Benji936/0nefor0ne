@@ -27,7 +27,7 @@ defineEmits(['deleted']);
         style="background: rgba(0,0,0,0.6)"
       >
         <v-icon icon="mdi-handshake" size="22" color="var(--c-mutual)" />
-        <span class="text-[10px] font-bold uppercase tracking-wide text-center px-2 leading-tight" style="color: var(--c-mutual)">Accepted trade</span>
+        <span class="text-[10px] font-bold uppercase tracking-wide text-center px-2 leading-tight" style="color: var(--c-mutual)">{{ $t('cardElement.acceptedTrade') }}</span>
       </div>
 
     </div>
@@ -64,7 +64,7 @@ defineEmits(['deleted']);
       >
         <v-icon icon="mdi-lock-outline" size="13" color="var(--c-mutual)" />
         <span class="text-xs font-semibold tabular-nums" style="color: var(--c-mutual)">
-          {{ wish.quantity }} {{ wish.quantity === 1 ? 'copy' : 'copies' }} locked
+          {{ wish.quantity === 1 ? $t('cardElement.copyLocked') : $t('cardElement.copiesLocked', { count: wish.quantity }) }}
         </span>
       </div>
 

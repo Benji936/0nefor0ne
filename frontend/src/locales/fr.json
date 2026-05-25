@@ -63,7 +63,9 @@
     "markAllRead": "Tout marquer comme lu",
     "empty": "Rien de nouveau",
     "emptyDesc": "Les nouvelles propositions d'échange et mises à jour apparaîtront ici.",
-    "viewAll": "Voir dans le Trade Center"
+    "viewAll": "Voir dans le Trade Center",
+    "bellTitle": "Notifications",
+    "bellTitleUnread": "{count} non lu(s)"
   },
   "library": {
     "tradePile": "Pile d'échange",
@@ -288,13 +290,18 @@
   },
   "cardPage": {
     "back": "Retour",
+    "backToSearch": "Retour à la recherche",
+    "cardNotFound": "Carte introuvable",
+    "searchOther": "Rechercher une autre carte",
     "traders": "Joueurs qui ont cette carte",
-    "noTraders": "Aucun joueur ne possède encore cette carte.",
+    "noTraders": "Personne n'échange cette carte pour l'instant.",
     "addToWishlist": "Ajouter à ma liste de souhaits",
     "addToTrade": "Ajouter à ma pile d'échange",
     "printings": "Éditions",
+    "printingsCount": "Éditions ({count})",
     "setCode": "Code de set",
-    "rarity": "Rareté"
+    "rarity": "Rareté",
+    "unknown": "Inconnu"
   },
   "privacy": {
     "title": "Politique de confidentialité",
@@ -310,7 +317,48 @@
     "cancel": "Annuler",
     "confirm": "Confirmer",
     "back": "Retour",
-    "anonymous": "Anonyme"
+    "anonymous": "Anonyme",
+    "unknownLocation": "Lieu inconnu",
+    "unknown": "Inconnu",
+    "noneYet": "Aucun pour l'instant"
+  },
+  "search": {
+    "results": "Résultats",
+    "cardsCount": "{count} cartes",
+    "trending": "Tendances",
+    "last30days": "30 derniers jours",
+    "browseByExtension": "Parcourir par extension",
+    "searchByNameOrCode": "Rechercher par nom ou code…",
+    "latestReleases": "Dernières sorties"
+  },
+  "cardYugi": {
+    "level": "Niveau",
+    "tradersWithCard": "Joueurs avec cette carte",
+    "noTraders": "Personne n'échange cette carte pour l'instant.",
+    "moreTraders": "+{count} joueurs de plus",
+    "permalink": "Permalien",
+    "match": "Match",
+    "hasThisCard": "Possède cette carte",
+    "wantsYours": "Veut les vôtres"
+  },
+  "cardElement": {
+    "acceptedTrade": "Échange accepté",
+    "copyLocked": "1 copie verrouillée",
+    "copiesLocked": "{count} copies verrouillées"
+  },
+  "tradePhotos": {
+    "title": "Photos de vérification",
+    "bothVerified": "Les deux vérifiés",
+    "waitingBothSides": "En attente des deux côtés",
+    "pendingDesc": "Les deux joueurs doivent envoyer des photos de leurs cartes avant d'accepter l'échange.",
+    "acceptedDesc": "Les photos ont été vérifiées avant l'acceptation.",
+    "yourPhotos": "Vos photos",
+    "theirPhotos": "Ses photos",
+    "noneYet": "Aucune pour l'instant",
+    "clickOrDrag": "Cliquez ou déposez une photo",
+    "uploading": "Envoi en cours…",
+    "waitingUpload": "En attente de {name} pour envoyer",
+    "loading": "Chargement…"
   },
   "language": {
     "label": "Langue",

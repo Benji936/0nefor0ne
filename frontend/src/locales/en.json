@@ -63,7 +63,9 @@
     "markAllRead": "Mark all read",
     "empty": "Nothing here yet",
     "emptyDesc": "New trade proposals and updates will appear here.",
-    "viewAll": "View in Trade Center"
+    "viewAll": "View in Trade Center",
+    "bellTitle": "Notifications",
+    "bellTitleUnread": "{count} unread"
   },
   "library": {
     "tradePile": "Trade pile",
@@ -288,13 +290,18 @@
   },
   "cardPage": {
     "back": "Back",
+    "backToSearch": "Back to search",
+    "cardNotFound": "Card not found",
+    "searchOther": "Search for another card",
     "traders": "Traders who have this card",
-    "noTraders": "No traders have this card yet.",
+    "noTraders": "No one is trading this card yet.",
     "addToWishlist": "Add to wishlist",
     "addToTrade": "Add to trade pile",
     "printings": "Printings",
+    "printingsCount": "Printings ({count})",
     "setCode": "Set code",
-    "rarity": "Rarity"
+    "rarity": "Rarity",
+    "unknown": "Unknown"
   },
   "privacy": {
     "title": "Privacy Policy",
@@ -310,7 +317,48 @@
     "cancel": "Cancel",
     "confirm": "Confirm",
     "back": "Back",
-    "anonymous": "Anonymous"
+    "anonymous": "Anonymous",
+    "unknownLocation": "Unknown location",
+    "unknown": "Unknown",
+    "noneYet": "None yet"
+  },
+  "search": {
+    "results": "Results",
+    "cardsCount": "{count} cards",
+    "trending": "Trending",
+    "last30days": "Last 30 days",
+    "browseByExtension": "Browse by extension",
+    "searchByNameOrCode": "Search by name or code…",
+    "latestReleases": "Latest releases"
+  },
+  "cardYugi": {
+    "level": "Level",
+    "tradersWithCard": "Traders with this card",
+    "noTraders": "No one is trading this card yet.",
+    "moreTraders": "+{count} more traders",
+    "permalink": "Permalink",
+    "match": "Match",
+    "hasThisCard": "Has this card",
+    "wantsYours": "Wants yours"
+  },
+  "cardElement": {
+    "acceptedTrade": "Accepted trade",
+    "copyLocked": "1 copy locked",
+    "copiesLocked": "{count} copies locked"
+  },
+  "tradePhotos": {
+    "title": "Verification photos",
+    "bothVerified": "Both verified",
+    "waitingBothSides": "Waiting for both sides",
+    "pendingDesc": "Both traders must upload photos of their cards before the trade can be accepted.",
+    "acceptedDesc": "Photos were verified before acceptance.",
+    "yourPhotos": "Your photos",
+    "theirPhotos": "Their photos",
+    "noneYet": "None yet",
+    "clickOrDrag": "Click or drag a photo",
+    "uploading": "Uploading…",
+    "waitingUpload": "Waiting for {name} to upload",
+    "loading": "Loading…"
   },
   "language": {
     "label": "Language",

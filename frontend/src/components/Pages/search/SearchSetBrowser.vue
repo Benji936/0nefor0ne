@@ -1,7 +1,10 @@
 <script setup>
 import { ref, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import CardYugi from "@/components/CardYugi.vue";
 import { getCardSets, getCardsBySet } from "@/api";
+
+const { t } = useI18n();
 
 const emit = defineEmits(["showTraders", "requireAuth"]);
 
@@ -48,7 +51,7 @@ defineExpose({ allSets, loading });
 <template>
   <section class="flex flex-col gap-4">
     <div class="flex items-center gap-3">
-      <p class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">Browse by extension</p>
+      <p class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">{{ t('search.browseByExtension') }}</p>
     </div>
 
     <v-autocomplete
@@ -58,7 +61,7 @@ defineExpose({ allSets, loading });
       item-value="set_name"
       :custom-filter="filterSet"
       :loading="loading"
-      placeholder="Search by name or code…"
+      :placeholder="t('search.searchByNameOrCode')"
       clearable
       hide-details
       density="comfortable"
@@ -74,7 +77,7 @@ defineExpose({ allSets, loading });
       <template #item="{ item, props: itemProps }">
         <v-list-item v-bind="itemProps" :subtitle="item.raw.set_code">
           <template #append>
-            <span class="text-xs tabular-nums" style="color: var(--c-muted)">{{ item.raw.num_of_cards }} cards</span>
+            <span class="text-xs tabular-nums" style="color: var(--c-muted)">{{ t('search.cardsCount', { count: item.raw.num_of_cards }) }}</span>
           </template>
         </v-list-item>
       </template>

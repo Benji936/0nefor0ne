@@ -24,7 +24,7 @@ const emit = defineEmits(['showTraders', 'requireAuth'])
             <div class="flex flex-wrap gap-3 text-base" style="color: var(--c-muted)">
               <p v-if="componentCard.atk != null">ATK {{ componentCard.atk }}</p>
               <p v-if="componentCard.def != null">DEF {{ componentCard.def }}</p>
-              <p v-if="componentCard.level != null">Level {{ componentCard.level }}</p>
+              <p v-if="componentCard.level != null">{{ $t('cardYugi.level') }} {{ componentCard.level }}</p>
               <p>{{ componentCard.race }}</p>
             </div>
             <p class="text-sm leading-relaxed" style="color: var(--c-text); opacity: 0.85">{{ componentCard.desc }}</p>
@@ -62,7 +62,7 @@ const emit = defineEmits(['showTraders', 'requireAuth'])
           style="color: var(--c-muted)"
         >
           <v-icon icon="mdi-link-variant" size="13" />
-          Permalink
+          {{ $t('cardYugi.permalink') }}
         </router-link>
 
         <!-- Footer links -->
@@ -82,7 +82,7 @@ const emit = defineEmits(['showTraders', 'requireAuth'])
 
         <!-- Traders with this card -->
         <div class="flex flex-col gap-2">
-          <p class="text-xs font-bold uppercase tracking-wide" style="color: var(--c-muted)">Traders with this card</p>
+          <p class="text-xs font-bold uppercase tracking-wide" style="color: var(--c-muted)">{{ $t('cardYugi.tradersWithCard') }}</p>
 
           <!-- Loading skeleton -->
           <div v-if="loadingTraders" class="grid grid-cols-2 gap-2">
@@ -110,7 +110,7 @@ const emit = defineEmits(['showTraders', 'requireAuth'])
             v-else-if="traders.length === 0"
             class="text-sm text-center py-4"
             style="color: var(--c-muted)"
-          >No one is trading this card yet.</p>
+          >{{ $t('cardYugi.noTraders') }}</p>
 
           <!-- Trader cards grid -->
           <template v-else>
@@ -136,9 +136,9 @@ const emit = defineEmits(['showTraders', 'requireAuth'])
                       <span v-else>{{ (trader.name ?? '?')[0].toUpperCase() }}</span>
                     </div>
                     <div class="flex flex-col min-w-0">
-                      <span class="text-sm font-semibold truncate" style="color: var(--c-text)">{{ trader.name ?? 'Anonymous' }}</span>
+                      <span class="text-sm font-semibold truncate" style="color: var(--c-text)">{{ trader.name ?? $t('common.anonymous') }}</span>
                       <span class="text-xs truncate" style="color: var(--c-muted)">
-                        {{ [trader.city, trader.country].filter(Boolean).join(', ') || 'Unknown location' }}
+                        {{ [trader.city, trader.country].filter(Boolean).join(', ') || $t('common.unknownLocation') }}
                       </span>
                     </div>
                   </div>
@@ -154,7 +154,7 @@ const emit = defineEmits(['showTraders', 'requireAuth'])
                       variant="outlined"
                       style="border-color: var(--c-border); color: var(--c-muted)"
                       @click.stop="proposeToTrader(trader)"
-                    >Propose</v-btn>
+                    >{{ $t('userCard.propose') }}</v-btn>
                   </div>
                 </div>
               </div>
@@ -166,7 +166,7 @@ const emit = defineEmits(['showTraders', 'requireAuth'])
               class="text-xs text-center py-1 cursor-pointer transition-opacity hover:opacity-70 w-full"
               style="color: var(--c-muted)"
               @click="emit('showTraders', componentCard)"
-            >+{{ traders.length - 4 }} more traders</button>
+            >{{ $t('cardYugi.moreTraders', { count: traders.length - 4 }) }}</button>
           </template>
         </div>
 
@@ -178,7 +178,7 @@ const emit = defineEmits(['showTraders', 'requireAuth'])
             :style="{ backgroundColor: 'var(--c-trade)', color: 'white', minHeight: '44px' }"
             prepend-icon="mdi-plus-box"
             @click="openTrade"
-          >Add to trade pile</v-btn>
+          >{{ $t('addCard.addToTrade') }}</v-btn>
 
           <v-btn
             class="grow"
@@ -186,7 +186,7 @@ const emit = defineEmits(['showTraders', 'requireAuth'])
             :style="{ backgroundColor: 'var(--c-accent)', color: 'white', minHeight: '44px' }"
             prepend-icon="mdi-heart-plus"
             @click="openWish"
-          >Add to wishlist</v-btn>
+          >{{ $t('addCard.addToWishlist') }}</v-btn>
         </div>
       </div>
     </template>
@@ -268,7 +268,7 @@ export default {
       return kind === 'mutual' ? 'var(--c-mutual)' : kind === 'they_have' ? 'var(--c-trade)' : 'var(--c-accent)';
     },
     kindLabel(kind) {
-      return kind === 'mutual' ? 'Match' : kind === 'they_have' ? 'Has this card' : 'Wants yours';
+      return kind === 'mutual' ? this.$t('cardYugi.match') : kind === 'they_have' ? this.$t('cardYugi.hasThisCard') : this.$t('cardYugi.wantsYours');
     },
     async fetchTraders() {
       this._injectCardSeo();

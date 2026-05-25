@@ -1,8 +1,11 @@
 <script setup>
 import { ref, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import { fetchTrendingCards } from "@/lib/matches";
 import { searchById } from "@/api";
 import CardYugi from "@/components/CardYugi.vue";
+
+const { t } = useI18n();
 
 const emit = defineEmits(["showTraders", "requireAuth"]);
 
@@ -46,8 +49,8 @@ onMounted(async () => {
   <section v-if="loading || trendingCards.length > 0" class="flex flex-col gap-4">
     <div class="flex items-center gap-3">
       <v-icon icon="mdi-fire" size="18" style="color: var(--c-accent)" />
-      <p class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">Trending</p>
-      <span class="text-xs px-2 py-1 rounded border" style="color: var(--c-muted); border-color: var(--c-border)">last 30 days</span>
+      <p class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">{{ t('search.trending') }}</p>
+      <span class="text-xs px-2 py-1 rounded border" style="color: var(--c-muted); border-color: var(--c-border)">{{ t('search.last30days') }}</span>
     </div>
 
     <!-- Skeleton -->

@@ -1,7 +1,10 @@
 <script setup>
 import { ref, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import CardYugi from "@/components/CardYugi.vue";
 import { getCardSets, getCardsBySet } from "@/api";
+
+const { t } = useI18n();
 
 const emit = defineEmits(["showTraders", "requireAuth"]);
 
@@ -48,7 +51,7 @@ onMounted(async () => {
 
   <template v-else>
     <div class="flex items-center gap-3 -mb-6">
-      <p class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">Latest releases</p>
+      <p class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">{{ t('search.latestReleases') }}</p>
     </div>
 
     <section v-for="set in latestSets" :key="set.set_name" class="flex flex-col gap-3">
