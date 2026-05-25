@@ -10,7 +10,6 @@ import { setLocale, SUPPORTED } from "@/i18n.js";
 const { locale } = useI18n();
 const langMenuOpen = ref(false);
 
-const LANG_FLAGS = { en: "🇬🇧", fr: "🇫🇷", de: "🇩🇪", it: "🇮🇹" };
 const LANG_LABELS = { en: "English", fr: "Français", de: "Deutsch", it: "Italiano" };
 
 function switchLang(lang) {
@@ -78,44 +77,43 @@ function switchLang(lang) {
         @click="toggleTheme"
       />
 
-      <!-- ── Language switcher ── -->
-      <div class="relative">
-        <button
-          class="flex items-center gap-1 px-2 py-2 rounded-lg cursor-pointer transition-colors hover:opacity-70 select-none text-sm font-semibold"
-          style="color: var(--c-muted)"
-          :title="$t('language.label')"
-          @click="langMenuOpen = !langMenuOpen"
-        >
-          <span>{{ LANG_FLAGS[locale] }}</span>
-          <v-icon icon="mdi-chevron-down" size="14" :class="{ 'rotate-180': langMenuOpen }" class="transition-transform duration-200" />
-        </button>
-
-        <div
-          v-if="langMenuOpen"
-          class="absolute right-0 top-full mt-1 flex flex-col rounded-xl overflow-hidden z-50 min-w-[130px]"
-          style="background: var(--c-surface); border: 1px solid var(--c-border); box-shadow: 0 8px 32px rgba(0,0,0,0.28)"
-        >
-          <button
-            v-for="lang in SUPPORTED"
-            :key="lang"
-            class="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer transition-colors text-left"
-            :style="locale === lang
-              ? { background: 'color-mix(in srgb, var(--c-accent) 10%, transparent)', color: 'var(--c-accent)', fontWeight: 600 }
-              : { color: 'var(--c-text)' }"
-            :class="locale !== lang ? 'hover:bg-[var(--c-surface-2)]' : ''"
-            @click="switchLang(lang)"
-          >
-            <span>{{ LANG_FLAGS[lang] }}</span>
-            <span>{{ LANG_LABELS[lang] }}</span>
-          </button>
-        </div>
-      </div>
-
       <NotificationBell
         v-if="authenticated"
         :login="authenticated"
         @navigate="openProposals"
       />
+
+      <!-- ── Language switcher ── -->
+      <div class="relative">
+        <button
+          class="flex items-center gap-1 px-2 py-1 rounded-lg cursor-pointer transition-opacity hover:opacity-70 select-none"
+          :title="$t('language.label')"
+          @click.stop="langMenuOpen = !langMenuOpen"
+        >
+          <span class="text-xs font-bold tracking-wide uppercase" style="color: var(--c-muted)">{{ locale }}</span>
+          <v-icon icon="mdi-chevron-down" size="13" :class="{ 'rotate-180': langMenuOpen }" class="transition-transform duration-200" style="color: var(--c-muted)" />
+        </button>
+
+        <div
+          v-if="langMenuOpen"
+          class="absolute right-0 top-full mt-1 flex flex-col rounded-xl overflow-hidden min-w-[140px]"
+          style="background: var(--c-surface); border: 1px solid var(--c-border); box-shadow: 0 8px 32px rgba(0,0,0,0.28); z-index: 9999"
+        >
+          <button
+            v-for="lang in SUPPORTED"
+            :key="lang"
+            class="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer text-left"
+            :style="locale === lang
+              ? { background: 'color-mix(in srgb, var(--c-accent) 10%, transparent)', color: 'var(--c-accent)', fontWeight: 700 }
+              : { color: 'var(--c-text)' }"
+            :class="locale !== lang ? 'hover:opacity-70' : ''"
+            @click.stop="switchLang(lang)"
+          >
+            <span class="text-xs font-bold uppercase w-6" style="color: var(--c-muted)">{{ lang }}</span>
+            <span>{{ LANG_LABELS[lang] }}</span>
+          </button>
+        </div>
+      </div>
 
       <!-- Authenticated: user chip with dropdown -->
       <UserMenuChip
@@ -155,10 +153,10 @@ function switchLang(lang) {
     </button>
   </nav>
 
-  <!-- Click-outside overlay for lang menu -->
+  <!-- Click-outside overlay for lang menu (z-20 so it doesn't block the sticky nav at z-30) -->
   <div
     v-if="langMenuOpen"
-    class="fixed inset-0 z-40"
+    class="fixed inset-0 z-20"
     @click="langMenuOpen = false"
   />
 
