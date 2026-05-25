@@ -1,8 +1,11 @@
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import { getClient, updateTraderProfile } from "@/lib/supabaseClient";
 import { COUNTRIES } from "@/lib/countries";
 import { countryByCode } from "@/lib/countries";
+
+const { t } = useI18n();
 
 const props = defineProps({ login: { type: Object, default: null } });
 const emit  = defineEmits(["logout"]);
@@ -18,11 +21,11 @@ const countryCode = ref("");
 const city        = ref("");
 const tradeScope  = ref("worldwide");
 
-const SCOPES = [
-  { value: "local",     label: "Local",     icon: "mdi-map-marker"  },
-  { value: "national",  label: "National",  icon: "mdi-flag-outline" },
-  { value: "worldwide", label: "Worldwide", icon: "mdi-earth"        },
-];
+const SCOPES = computed(() => [
+  { value: "local",     label: t('account.scopes.local'),     icon: "mdi-map-marker"  },
+  { value: "national",  label: t('account.scopes.national'),  icon: "mdi-flag-outline" },
+  { value: "worldwide", label: t('account.scopes.worldwide'), icon: "mdi-earth"        },
+]);
 
 const countryItems = COUNTRIES.map(c => ({ title: `${c.flag} ${c.name}`, value: c.code }));
 
@@ -41,13 +44,13 @@ const countryDisplay = computed(() => {
 const trades   = ref([]);
 const loadingTrades = ref(false);
 
-const statusMeta = {
-  pending:   { label: "Pending",   color: "var(--c-trade)"  },
-  accepted:  { label: "Accepted",  color: "var(--c-mutual)" },
-  completed: { label: "Completed", color: "var(--c-mutual)" },
-  declined:  { label: "Declined",  color: "var(--c-accent)" },
-  cancelled: { label: "Cancelled", color: "var(--c-muted)"  },
-};
+const statusMeta = computed(() => ({
+  pending:   { label: t('account.status.pending'),   color: "var(--c-trade)"  },
+  accepted:  { label: t('account.status.accepted'),  color: "var(--c-mutual)" },
+  completed: { label: t('account.status.completed'), color: "var(--c-mutual)" },
+  declined:  { label: t('account.status.declined'),  color: "var(--c-accent)" },
+  cancelled: { label: t('account.status.cancelled'), color: "var(--c-muted)"  },
+}));
 
 async function loadProfile() {
   if (!props.login?.user?.id) return;
@@ -127,18 +130,18 @@ watch(() => props.login?.user?.id, (id) => {
           <div class="flex flex-col min-w-0">
             <span class="font-bold text-xl truncate" style="color: var(--c-text)">{{ name || login?.user?.email }}</span>
             <span class="text-sm mt-1" style="color: var(--c-muted)">
-              {{ [countryDisplay, city].filter(Boolean).join(", ") || "No location set" }}
+              {{ [countryDisplay, city].filter(Boolean).join(", ") || t('account.locationNotSet') }}
             </span>
           </div>
         </div>
 
         <!-- Edit form -->
         <div class="flex flex-col gap-3">
-          <p class="text-xs font-bold uppercase tracking-wide" style="color: var(--c-muted)">Edit profile</p>
+          <p class="text-xs font-bold uppercase tracking-wide" style="color: var(--c-muted)">{{ t('account.profile') }}</p>
 
           <v-text-field
             v-model="name"
-            label="Display name"
+            :label="t('account.displayName')"
             variant="outlined"
             density="comfortable"
             hide-details
@@ -150,7 +153,7 @@ watch(() => props.login?.user?.id, (id) => {
             <v-autocomplete
               v-model="countryCode"
               :items="countryItems"
-              label="Country"
+              :label="t('account.country')"
               variant="outlined"
               density="comfortable"
               hide-details
@@ -160,7 +163,7 @@ watch(() => props.login?.user?.id, (id) => {
             />
             <v-text-field
               v-model="city"
-              label="City"
+              :label="t('account.city')"
               variant="outlined"
               density="comfortable"
               hide-details
@@ -171,7 +174,7 @@ watch(() => props.login?.user?.id, (id) => {
 
           <!-- Trade scope -->
           <div class="flex flex-col gap-2">
-            <p class="text-xs font-semibold uppercase tracking-wide" style="color: var(--c-muted)">Trading range</p>
+            <p class="text-xs font-semibold uppercase tracking-wide" style="color: var(--c-muted)">{{ t('account.tradingRange') }}</p>
             <div class="flex gap-2">
               <button
                 v-for="s in SCOPES"
@@ -199,7 +202,7 @@ watch(() => props.login?.user?.id, (id) => {
             :loading="saving"
             :disabled="loading"
             @click="saveProfile"
-          >{{ saved ? "Saved!" : "Save profile" }}</v-btn>
+          >{{ saved ? t('account.saved') : t('account.save') }}</v-btn>
         </div>
       </div>
     </div>
@@ -208,7 +211,7 @@ watch(() => props.login?.user?.id, (id) => {
     <div class="rounded-2xl border overflow-hidden" style="background: var(--c-surface); border-color: var(--c-border)">
       <div class="px-5 py-4 flex items-center gap-2" style="border-bottom: 1px solid var(--c-border)">
         <v-icon icon="mdi-swap-horizontal" size="16" color="var(--c-muted)" />
-        <span class="text-sm font-semibold" style="color: var(--c-text)">Trade history</span>
+        <span class="text-sm font-semibold" style="color: var(--c-text)">{{ t('account.tradeHistory') }}</span>
       </div>
 
       <div v-if="loadingTrades" class="flex flex-col divide-y" style="border-color: var(--c-border)">
@@ -220,7 +223,7 @@ watch(() => props.login?.user?.id, (id) => {
       </div>
 
       <div v-else-if="trades.length === 0" class="px-5 py-8 text-center text-sm" style="color: var(--c-muted)">
-        No trades yet.
+        {{ t('account.noHistory') }}
       </div>
 
       <div v-else class="flex flex-col divide-y" style="border-color: var(--c-border)">
@@ -230,7 +233,7 @@ watch(() => props.login?.user?.id, (id) => {
           class="flex items-center gap-3 px-5 py-3 text-sm"
         >
           <span class="font-mono text-xs shrink-0" style="color: var(--c-muted)">#{{ trade.trade_id }}</span>
-          <span class="truncate" style="color: var(--c-text)">{{ trade.counterparty_name ?? "Anonymous" }}</span>
+          <span class="truncate" style="color: var(--c-text)">{{ trade.counterparty_name ?? t('common.anonymous') }}</span>
           <span
             class="ml-auto shrink-0 text-xs font-semibold px-2 py-1 rounded-md"
             :style="{ color: (statusMeta[trade.status] ?? statusMeta.pending).color, background: `color-mix(in srgb, ${(statusMeta[trade.status] ?? statusMeta.pending).color} 12%, transparent)` }"
@@ -243,7 +246,7 @@ watch(() => props.login?.user?.id, (id) => {
     <div class="rounded-2xl border overflow-hidden" style="background: var(--c-surface); border-color: var(--c-border)">
       <div class="flex items-center justify-between px-5 py-4" style="border-bottom: 1px solid var(--c-border)">
         <div class="flex flex-col">
-          <span class="text-sm font-semibold" style="color: var(--c-text)">Email address</span>
+          <span class="text-sm font-semibold" style="color: var(--c-text)">{{ t('account.emailAddress') }}</span>
           <span class="text-xs mt-1" style="color: var(--c-muted)">{{ login?.user?.email ?? "—" }}</span>
         </div>
         <v-icon icon="mdi-email-outline" size="18" color="var(--c-muted)" />
@@ -251,8 +254,7 @@ watch(() => props.login?.user?.id, (id) => {
 
       <div class="flex items-center justify-between px-5 py-4">
         <div class="flex flex-col">
-          <span class="text-sm font-semibold" style="color: var(--c-text)">Sign out</span>
-          <span class="text-xs mt-1" style="color: var(--c-muted)">End your current session</span>
+          <span class="text-sm font-semibold" style="color: var(--c-text)">{{ t('userMenu.signOut') }}</span>
         </div>
         <v-btn
           size="small"
@@ -260,7 +262,7 @@ watch(() => props.login?.user?.id, (id) => {
           prepend-icon="mdi-logout"
           style="border-color: var(--c-accent); color: var(--c-accent)"
           @click="$emit('logout')"
-        >Sign out</v-btn>
+        >{{ t('userMenu.signOut') }}</v-btn>
       </div>
     </div>
 

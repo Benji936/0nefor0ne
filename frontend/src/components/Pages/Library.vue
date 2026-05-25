@@ -1,29 +1,31 @@
 <script setup>
 import LibrarySection from "./library/LibrarySection.vue";
+import { useI18n } from "vue-i18n";
+const { t } = useI18n();
 </script>
 
 <template>
   <div class="flex flex-col gap-6 md:gap-10 py-5 md:py-8">
 
     <LibrarySection
-      title="Cards for trade"
+      :title="t('library.tradePile')"
       mode="trade"
       :cards="trade_cards.value"
       :loading="loading"
       :new-card-id="newCardId"
-      empty-text="Nothing here yet — click &quot;Add card&quot; to list cards you have for trade."
+      :empty-text="t('library.emptyTrade')"
       ring-class="ring-blue-400"
       @added="onCardAdded"
       @deleted="onCardDeleted"
     />
 
     <LibrarySection
-      title="Wishlist"
+      :title="t('library.wishlist')"
       mode="wish"
       :cards="wished_cards.value"
       :loading="loading"
       :new-card-id="newCardId"
-      empty-text="Nothing here yet — click &quot;Add card&quot; to list cards you're hunting for."
+      :empty-text="t('library.emptyWish')"
       ring-class="ring-pink-400"
       @added="onCardAdded"
       @deleted="onCardDeleted"
@@ -76,11 +78,11 @@ export default {
       if (newCard.wish) {
         this.wished_cards.value = [newCard, ...this.wished_cards.value];
         this.wishes_quantity++;
-        this.snackbar = { open: true, message: `"${newCard.name}" added to wishlist.`, color: 'var(--c-accent)', icon: 'mdi-heart-plus' };
+        this.snackbar = { open: true, message: this.$t('library.addedToWishlist', { name: newCard.name }), color: 'var(--c-accent)', icon: 'mdi-heart-plus' };
       } else {
         this.trade_cards.value = [newCard, ...this.trade_cards.value];
         this.trades_quantity++;
-        this.snackbar = { open: true, message: `"${newCard.name}" added to trade pile.`, color: 'var(--c-trade)', icon: 'mdi-plus-box' };
+        this.snackbar = { open: true, message: this.$t('library.addedToTrade', { name: newCard.name }), color: 'var(--c-trade)', icon: 'mdi-plus-box' };
       }
       this.newCardId = newCard.id;
       setTimeout(() => { this.newCardId = null; }, 2000);

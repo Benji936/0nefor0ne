@@ -1,7 +1,10 @@
 <script setup>
 import { ref, watch, nextTick } from "vue";
+import { useI18n } from "vue-i18n";
 import { fetchTradeMessages, sendTradeMessage } from "@/lib/proposals";
 import { getClient } from "@/lib/supabaseClient";
+
+const { t } = useI18n();
 
 const props = defineProps({
   open:          { type: Boolean, default: false },
@@ -87,8 +90,8 @@ watch(() => props.open, (open) => {
   <div v-if="!standalone" class="mt-6 pt-5 px-4 " style="border-top: 1px solid var(--c-border)">
     <div class="flex items-center gap-3 mb-3">
       <v-icon icon="mdi-message-outline" size="20" color="var(--c-muted)" />
-      <span class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">Trade chat</span>
-      <span class="text-[11px] ml-auto" style="color: var(--c-muted)">Visible to both traders</span>
+      <span class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">{{ t('tradeChat.title') }}</span>
+      <span class="text-[11px] ml-auto" style="color: var(--c-muted)">{{ t('tradeChat.visibleToBoth') }}</span>
     </div>
     <div
       ref="msgListRef"
@@ -99,7 +102,7 @@ watch(() => props.open, (open) => {
         <v-progress-circular indeterminate size="20" width="2" color="var(--c-muted)" />
       </div>
       <p v-else-if="messages.length === 0" class="text-xs italic text-center m-auto py-4" style="color: var(--c-muted)">
-        No messages yet. Say something!
+        {{ t('tradeChat.noMessages') }}
       </p>
       <template v-else>
         <div
@@ -121,7 +124,7 @@ watch(() => props.open, (open) => {
     <div v-if="proposal?.status === 'pending' || proposal?.status === 'accepted'" class="flex gap-2 mt-2">
       <input
         v-model="newMessage"
-        placeholder="Type a message…"
+        :placeholder="t('tradeChat.typeMessage')"
         class="flex-1 rounded-lg px-4 py-2 text-sm border outline-none"
         :style="{ backgroundColor: 'var(--c-surface-2)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
         @keydown.enter.prevent="sendMessage"
@@ -132,7 +135,7 @@ watch(() => props.open, (open) => {
         @click="sendMessage"/>
     </div>
     <p v-else class="text-xs mt-2 italic" style="color: var(--c-muted)">
-      This trade is {{ proposal?.status }}. Chat is read-only.
+      {{ t('tradeChat.readOnly') }}
     </p>
   </div>
 
@@ -148,7 +151,7 @@ watch(() => props.open, (open) => {
         <v-progress-circular indeterminate size="20" width="2" color="var(--c-muted)" />
       </div>
       <p v-else-if="messages.length === 0" class="text-xs italic text-center m-auto py-4" style="color: var(--c-muted)">
-        No messages yet. Say something!
+        {{ t('tradeChat.noMessages') }}
       </p>
       <template v-else>
         <div
@@ -173,7 +176,7 @@ watch(() => props.open, (open) => {
       <div v-if="proposal?.status === 'pending' || proposal?.status === 'accepted'" class="flex gap-2">
         <input
           v-model="newMessage"
-          placeholder="Type a message…"
+          :placeholder="t('tradeChat.typeMessage')"
           class="flex-1 rounded-xl px-4 py-2 text-sm border outline-none"
           :style="{ backgroundColor: 'var(--c-surface-2)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
           @keydown.enter.prevent="sendMessage"
@@ -184,7 +187,7 @@ watch(() => props.open, (open) => {
           @click="sendMessage" />
       </div>
       <p v-else class="text-xs italic" style="color: var(--c-muted)">
-        This trade is {{ proposal?.status }}. Chat is read-only.
+        {{ t('tradeChat.readOnly') }}
       </p>
     </div>
   </div>

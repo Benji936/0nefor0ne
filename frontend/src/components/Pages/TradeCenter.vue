@@ -215,39 +215,39 @@ export default {
       this.counterProposal = proposal; this.dialogOpen = true;
     },
     onTradeCountered(tradeId) {
-      this.snackbar = { open: true, message: `Counter-offer #${tradeId} sent.`, color: "var(--c-mutual)" };
+      this.snackbar = { open: true, message: this.$t('tradeCenter.counterSent', { id: tradeId }), color: "var(--c-mutual)" };
       this.loadProposals();
     },
     onTradeSubmitted(tradeId) {
-      this.snackbar = { open: true, message: `Proposal #${tradeId} sent.`, color: "var(--c-mutual)" };
+      this.snackbar = { open: true, message: this.$t('tradeCenter.proposalSent', { id: tradeId }), color: "var(--c-mutual)" };
       Promise.all([this.loadMatches(), this.loadProposals()]);
       this.activeTab = "proposals";
     },
     onTradeUpdated() {
-      this.snackbar = { open: true, message: "Proposal updated.", color: "var(--c-mutual)" };
+      this.snackbar = { open: true, message: this.$t('tradeCenter.proposalUpdated'), color: "var(--c-mutual)" };
       this.loadProposals();
     },
     async onComplete(proposal) {
       try {
         const result = await completeTradeProposal(proposal.id);
         if (result?.status === 'completed') {
-          this.snackbar = { open: true, message: "Exchange complete — cards have been updated.", color: "var(--c-mutual)" };
+          this.snackbar = { open: true, message: this.$t('tradeCenter.exchangeComplete'), color: "var(--c-mutual)" };
           await Promise.all([this.loadMatches(), this.loadProposals()]);
         } else {
-          this.snackbar = { open: true, message: "Your side confirmed. Waiting for the other trader.", color: "var(--c-mutual)" };
+          this.snackbar = { open: true, message: this.$t('tradeCenter.yourSideConfirmed'), color: "var(--c-mutual)" };
           await this.loadProposals();
         }
       } catch (err) {
-        this.snackbar = { open: true, message: err.message ?? "Failed to confirm.", color: "var(--c-accent)" };
+        this.snackbar = { open: true, message: err.message ?? this.$t('tradeCenter.failedToConfirm'), color: "var(--c-accent)" };
       }
     },
     async onAccept(proposal) {
       try {
         await acceptTradeProposal(proposal.id);
-        this.snackbar = { open: true, message: "Trade accepted!", color: "var(--c-mutual)" };
+        this.snackbar = { open: true, message: this.$t('tradeCenter.tradeAccepted'), color: "var(--c-mutual)" };
         await this.loadProposals();
       } catch (err) {
-        this.snackbar = { open: true, message: err.message ?? "Failed to accept.", color: "var(--c-accent)" };
+        this.snackbar = { open: true, message: err.message ?? this.$t('tradeCenter.failedToAccept'), color: "var(--c-accent)" };
       }
     },
     async onDecline(payload) {
@@ -255,19 +255,19 @@ export default {
       const reason   = payload?.reason   ?? null;
       try {
         await declineTradeProposal(proposal.id, reason);
-        this.snackbar = { open: true, message: "Trade declined.", color: "var(--c-muted)" };
+        this.snackbar = { open: true, message: this.$t('tradeCenter.tradeDeclined'), color: "var(--c-muted)" };
         await this.loadProposals();
       } catch (err) {
-        this.snackbar = { open: true, message: err.message ?? "Failed to decline.", color: "var(--c-accent)" };
+        this.snackbar = { open: true, message: err.message ?? this.$t('tradeCenter.failedToDecline'), color: "var(--c-accent)" };
       }
     },
     async onCancel(proposal) {
       try {
         await cancelTradeProposal(proposal.id);
-        this.snackbar = { open: true, message: "Trade cancelled.", color: "var(--c-muted)" };
+        this.snackbar = { open: true, message: this.$t('tradeCenter.tradeCancelled'), color: "var(--c-muted)" };
         await this.loadProposals();
       } catch (err) {
-        this.snackbar = { open: true, message: err.message ?? "Failed to cancel.", color: "var(--c-accent)" };
+        this.snackbar = { open: true, message: err.message ?? this.$t('tradeCenter.failedToCancel'), color: "var(--c-accent)" };
       }
     },
     onOpenProfile(traderId) {

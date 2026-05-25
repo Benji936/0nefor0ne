@@ -12,14 +12,13 @@
     "account": "Konto"
   },
   "footer": {
-    "copyright": "© {year} One for One",
     "privacy": "Datenschutzerklärung",
     "contact": "Kontakt"
   },
   "hero": {
-    "headline": "Tausche Yu-Gi-Oh! Karten direkt mit anderen Sammlern.",
-    "subheadline": "Keine Gebühren, keine Auktionen — nur direkte Peer-to-Peer-Tausche.",
-    "cta": "Jetzt tauschen",
+    "headline": "Tausch deine Doubles.<br>Jag deine Ziele.",
+    "subheadline": "One for One verbindet Yu-Gi-Oh! Sammler, die haben, was der andere sucht. Keine Gebühren, keine Auktionen, nur direkte Tausche.",
+    "cta": "Kostenlos starten",
     "learnMore": "So funktioniert es",
     "steps": {
       "01": { "title": "Tauschstapel aufbauen", "body": "Liste Karten auf, die du tauschen möchtest." },
@@ -61,7 +60,8 @@
   },
   "notifications": {
     "title": "Benachrichtigungen",
-    "empty": "Alles erledigt",
+    "markAllRead": "Alle als gelesen markieren",
+    "empty": "Noch nichts hier",
     "emptyDesc": "Neue Tauschvorschläge und Updates erscheinen hier.",
     "viewAll": "Im Trade Center ansehen"
   },
@@ -70,20 +70,47 @@
     "wishlist": "Wunschliste",
     "tradePileEmpty": "Noch keine Karten zum Tauschen. Füge welche hinzu, um loszulegen.",
     "wishlistEmpty": "Deine Wunschliste ist leer. Füge Karten hinzu, die du suchst.",
-    "searchCards": "Karten suchen zum Hinzufügen"
+    "searchCards": "Karten suchen zum Hinzufügen",
+    "emptyTrade": "Noch nichts hier — füge Karten hinzu, die du anbieten möchtest.",
+    "emptyWish": "Noch nichts hier — füge Karten hinzu, die du suchst.",
+    "addedToWishlist": "\"{name}\" zur Wunschliste hinzugefügt.",
+    "addedToTrade": "\"{name}\" zum Tauschstapel hinzugefügt."
   },
   "addCard": {
     "addToTrade": "Zum Tauschstapel hinzufügen",
+    "addToTradeSub": "Wähle eine Karte, die du anbieten möchtest.",
     "addToWishlist": "Zur Wunschliste hinzufügen",
+    "addToWishlistSub": "Wähle eine Karte, die du suchst.",
+    "addCard": "Karte hinzufügen",
     "search": "Karte suchen…",
+    "cardNameOrCode": "Kartenname oder Set-Code",
     "add": "Hinzufügen",
     "adding": "Wird hinzugefügt…",
     "alreadyAdded": "Bereits in deiner Liste",
-    "cardAdded": "Karte hinzugefügt!"
+    "alreadyInCollection": "Bereits in deiner Sammlung",
+    "cardAdded": "Karte hinzugefügt!",
+    "noCardsFound": "Keine Karten gefunden.",
+    "searchPrompt": "Gib einen Namen ein und drücke Enter zum Suchen.",
+    "extensionRarity": "Erweiterung & Seltenheit",
+    "language": "Sprache",
+    "condition": "Zustand",
+    "quantity": "Anzahl"
   },
   "tradeCenter": {
     "matches": "Matches",
-    "proposals": "Vorschläge"
+    "proposals": "Vorschläge",
+    "proposalUpdated": "Vorschlag aktualisiert.",
+    "exchangeComplete": "Tausch abgeschlossen — Karten wurden aktualisiert.",
+    "yourSideConfirmed": "Deine Seite bestätigt. Warte auf den anderen Trader.",
+    "failedToConfirm": "Bestätigung fehlgeschlagen.",
+    "tradeAccepted": "Tausch angenommen!",
+    "failedToAccept": "Annehmen fehlgeschlagen.",
+    "tradeDeclined": "Tausch abgelehnt.",
+    "failedToDecline": "Ablehnen fehlgeschlagen.",
+    "tradeCancelled": "Tausch abgebrochen.",
+    "failedToCancel": "Abbrechen fehlgeschlagen.",
+    "counterSent": "Gegenangebot #{id} gesendet.",
+    "proposalSent": "Vorschlag #{id} gesendet."
   },
   "matches": {
     "loginRequired": "Melde dich an, um deine Tauschpartner zu sehen.",
@@ -127,15 +154,110 @@
     "theySend": "Er/Sie sendet",
     "youSend": "Du sendest",
     "viewProfile": "Profil anzeigen",
-    "openTrade": "Tausch öffnen"
+    "viewDetails": "Details anzeigen",
+    "openTrade": "Tausch öffnen",
+    "youProposed": "Du hast vorgeschlagen",
+    "proposedToYou": "Dir vorgeschlagen",
+    "none": "Keine",
+    "editOffer": "Angebot bearbeiten",
+    "uploadPhotosBtn": "Fotos hochladen",
+    "reviewAndAccept": "Prüfen & annehmen",
+    "confirmYourSide": "Deine Seite bestätigen",
+    "cancelTrade": "Tausch abbrechen",
+    "submit": "Absenden",
+    "uploadPhotos": "Lade Fotos deiner Karten hoch, damit die andere Person sie überprüfen und annehmen kann.",
+    "failedToSave": "Vorschlag konnte nicht gespeichert werden."
+  },
+  "proposeDialog": {
+    "title": "Tausch vorschlagen",
+    "editProposal": "Vorschlag bearbeiten",
+    "counterPropose": "Gegenangebot machen",
+    "with": "mit",
+    "youGive": "Du gibst",
+    "youReceive": "Du erhältst",
+    "cardsTheyWant": "Karten, die sie wollen",
+    "cardsYouWant": "Karten, die du willst",
+    "filter": "Filtern…",
+    "clickToSelect": "Klicken zum Auswählen",
+    "addToOffer": "Zum Angebot hinzufügen",
+    "hideSuggestions": "Vorschläge ausblenden",
+    "searchYourLibrary": "Sammlung durchsuchen…",
+    "searchTheirPile": "Seinen Tauschstapel durchsuchen…",
+    "theyWantThis": "Er/Sie will das",
+    "onYourWishlist": "Auf deiner Wunschliste",
+    "matchesYourWishlist": "Entspricht deiner Wunschliste",
+    "theirFullTradePile": "Sein/Ihr vollständiger Tauschstapel",
+    "yourLibraryEmpty": "Deine Sammlung ist leer. Füge eine Karte oben hinzu.",
+    "theirTradePileEmpty": "Sein/Ihr Tauschstapel ist leer.",
+    "theirWishlistEmpty": "Seine/Ihre Wunschliste ist leer.",
+    "noCardsMatch": "Keine Karten entsprechen deiner Suche.",
+    "noMatches": "Keine Ergebnisse.",
+    "selectCards": "Karten zum Einschließen auswählen.",
+    "settlementDetails": "Tauschdetails",
+    "verificationPhoto": "Verifizierungsfoto",
+    "addPhoto": "Foto hinzufügen",
+    "changePhoto": "Foto ändern",
+    "removePhoto": "Foto entfernen",
+    "save": "Speichern",
+    "send": "Vorschlag senden",
+    "update": "Vorschlag aktualisieren",
+    "anonymous": "Anonym"
+  },
+  "tradeDetail": {
+    "you": "Du",
+    "counterparty": "Gegenpartei",
+    "youGive": "Du gibst",
+    "youReceive": "Du erhältst",
+    "nothingOnThisSide": "Nichts auf dieser Seite",
+    "declineReason": "Ablehnungsgrund",
+    "activityLog": "Aktivitätsprotokoll",
+    "openChat": "Tausch-Chat öffnen",
+    "qty": "Anz.:",
+    "tradeProposed": "Tausch vorgeschlagen",
+    "proposalEdited": "Vorschlag bearbeitet",
+    "noEvents": "Noch keine Ereignisse aufgezeichnet.",
+    "anonymous": "Anonym"
+  },
+  "traderProfile": {
+    "wishlistEmpty": "Wunschliste ist leer.",
+    "noCardsForTrade": "Keine Karten zum Tauschen aufgelistet.",
+    "noReviewsYet": "Noch keine Bewertungen.",
+    "forTrade": "Zum Tausch",
+    "reviews": "Bewertungen",
+    "noLocationSet": "Kein Standort angegeben",
+    "traderNotFound": "Trader nicht gefunden.",
+    "close": "Schließen",
+    "proposeTrade": "Tausch vorschlagen"
+  },
+  "userCard": {
+    "mutual": "Gegenseitig",
+    "hasYourWants": "Hat, was du willst",
+    "wantsYours": "Will, was du hast",
+    "match": "Match",
+    "theyHave": "Er/Sie hat",
+    "theyWant": "Er/Sie will",
+    "propose": "Vorschlagen",
+    "anonymous": "Anonym",
+    "verifiedTrader": "Verifizierter Trader"
+  },
+  "chat": {
+    "title": "Tausch-Chat",
+    "visibleToBoth": "Für beide Trader sichtbar",
+    "placeholder": "Nachricht eingeben…",
+    "anonymous": "Anonym"
   },
   "account": {
     "title": "Mein Konto",
     "profile": "Profil",
     "displayName": "Anzeigename",
+    "displayNamePlaceholder": "Dein Name",
     "location": "Standort",
-    "country": "Land (optional)",
+    "country": "Land",
+    "countryOptional": "Land (optional)",
     "city": "Stadt (optional)",
+    "cityPlaceholder": "Deine Stadt",
+    "phone": "Telefon",
+    "searchCountry": "Land suchen…",
     "tradingRange": "Tauschbereich",
     "save": "Änderungen speichern",
     "saving": "Wird gespeichert…",
@@ -148,6 +270,7 @@
     "localOnly": "Nur lokal",
     "changePhoto": "Foto ändern",
     "uploading": "Wird hochgeladen…",
+    "emailAddress": "E-Mail-Adresse",
     "tradeHistory": "Tauschverlauf",
     "noHistory": "Noch kein Tauschverlauf.",
     "status": {
@@ -176,7 +299,7 @@
   "privacy": {
     "title": "Datenschutzerklärung",
     "updated": "Zuletzt aktualisiert: Mai 2026",
-    "intro": "One for One ist eine kostenlose Peer-to-Peer-Tauschplattform für Yu-Gi-Oh! Karten. Diese Richtlinie erklärt, welche Daten wir erheben, warum und was wir damit machen.",
+    "intro": "One for One ist eine kostenlose Peer-to-Peer-Tauschplattform für Yu-Gi-Oh! Karten.",
     "contact": "Fragen? Schreib uns an"
   },
   "common": {
@@ -187,9 +310,7 @@
     "cancel": "Abbrechen",
     "confirm": "Bestätigen",
     "back": "Zurück",
-    "viewMore": "Mehr anzeigen",
-    "propose": "Tausch vorschlagen",
-    "openProfile": "Profil anzeigen"
+    "anonymous": "Anonym"
   },
   "language": {
     "label": "Sprache",
@@ -197,5 +318,12 @@
     "fr": "Français",
     "de": "Deutsch",
     "it": "Italiano"
+  },
+  "tradeChat": {
+    "title": "Tausch-Chat",
+    "visibleToBoth": "Für beide Händler sichtbar",
+    "noMessages": "Noch keine Nachrichten. Sag etwas!",
+    "typeMessage": "Nachricht eingeben…",
+    "readOnly": "Chat ist schreibgeschützt."
   }
 }

@@ -12,14 +12,13 @@
     "account": "Account"
   },
   "footer": {
-    "copyright": "© {year} One for One",
     "privacy": "Privacy Policy",
     "contact": "Contact"
   },
   "hero": {
-    "headline": "Trade Yu-Gi-Oh! cards directly with other collectors.",
-    "subheadline": "No fees, no auctions — just direct peer-to-peer trades.",
-    "cta": "Start trading",
+    "headline": "Trade duplicates.<br>Hunt your targets.",
+    "subheadline": "One for One connects Yu-Gi-Oh! collectors who have what each other wants. No fees, no auctions, just direct peer-to-peer trades.",
+    "cta": "Get started — it's free",
     "learnMore": "How it works",
     "steps": {
       "01": { "title": "Build your trade pile", "body": "List cards you're ready to trade away." },
@@ -61,7 +60,8 @@
   },
   "notifications": {
     "title": "Notifications",
-    "empty": "All caught up",
+    "markAllRead": "Mark all read",
+    "empty": "Nothing here yet",
     "emptyDesc": "New trade proposals and updates will appear here.",
     "viewAll": "View in Trade Center"
   },
@@ -70,20 +70,47 @@
     "wishlist": "Wishlist",
     "tradePileEmpty": "No cards to trade yet. Add some to get started.",
     "wishlistEmpty": "Your wishlist is empty. Add cards you're looking for.",
-    "searchCards": "Search for cards to add"
+    "searchCards": "Search for cards to add",
+    "emptyTrade": "Nothing here yet — add cards you have for trade.",
+    "emptyWish": "Nothing here yet — add cards you're hunting for.",
+    "addedToWishlist": "\"{name}\" added to wishlist.",
+    "addedToTrade": "\"{name}\" added to trade pile."
   },
   "addCard": {
     "addToTrade": "Add to trade pile",
+    "addToTradeSub": "Pick a card you have to offer.",
     "addToWishlist": "Add to wishlist",
+    "addToWishlistSub": "Pick a card you're hunting for.",
+    "addCard": "Add card",
     "search": "Search a card…",
+    "cardNameOrCode": "Card name or set code",
     "add": "Add",
     "adding": "Adding…",
     "alreadyAdded": "Already in your list",
-    "cardAdded": "Card added!"
+    "alreadyInCollection": "Already in your collection",
+    "cardAdded": "Card added!",
+    "noCardsFound": "No cards found.",
+    "searchPrompt": "Type a name and press Enter to search.",
+    "extensionRarity": "Extension & Rarity",
+    "language": "Language",
+    "condition": "Condition",
+    "quantity": "Quantity"
   },
   "tradeCenter": {
     "matches": "Matches",
-    "proposals": "Proposals"
+    "proposals": "Proposals",
+    "proposalUpdated": "Proposal updated.",
+    "exchangeComplete": "Exchange complete — cards have been updated.",
+    "yourSideConfirmed": "Your side confirmed. Waiting for the other trader.",
+    "failedToConfirm": "Failed to confirm.",
+    "tradeAccepted": "Trade accepted!",
+    "failedToAccept": "Failed to accept.",
+    "tradeDeclined": "Trade declined.",
+    "failedToDecline": "Failed to decline.",
+    "tradeCancelled": "Trade cancelled.",
+    "failedToCancel": "Failed to cancel.",
+    "counterSent": "Counter-offer #{id} sent.",
+    "proposalSent": "Proposal #{id} sent."
   },
   "matches": {
     "loginRequired": "Log in to see your trade matches.",
@@ -127,15 +154,110 @@
     "theySend": "They send",
     "youSend": "You send",
     "viewProfile": "View profile",
-    "openTrade": "Open trade"
+    "viewDetails": "View details",
+    "openTrade": "Open trade",
+    "youProposed": "You proposed",
+    "proposedToYou": "Proposed to you",
+    "none": "None",
+    "editOffer": "Edit offer",
+    "uploadPhotosBtn": "Upload photos",
+    "reviewAndAccept": "Review & accept",
+    "confirmYourSide": "Confirm your side",
+    "cancelTrade": "Cancel trade",
+    "submit": "Submit",
+    "uploadPhotos": "Upload photos of your cards so the other person can verify and accept.",
+    "failedToSave": "Failed to save proposal."
+  },
+  "proposeDialog": {
+    "title": "Propose a trade",
+    "editProposal": "Edit proposal",
+    "counterPropose": "Counter-propose",
+    "with": "with",
+    "youGive": "You give",
+    "youReceive": "You receive",
+    "cardsTheyWant": "Cards they want",
+    "cardsYouWant": "Cards you want",
+    "filter": "Filter…",
+    "clickToSelect": "Click to select",
+    "addToOffer": "Add to offer",
+    "hideSuggestions": "Hide suggestions",
+    "searchYourLibrary": "Search your library…",
+    "searchTheirPile": "Search their trade pile…",
+    "theyWantThis": "They want this",
+    "onYourWishlist": "On your wishlist",
+    "matchesYourWishlist": "Matches your wishlist",
+    "theirFullTradePile": "Their full trade pile",
+    "yourLibraryEmpty": "Your library is empty. Add a card to offer above.",
+    "theirTradePileEmpty": "Their trade pile is empty.",
+    "theirWishlistEmpty": "Their wishlist is empty.",
+    "noCardsMatch": "No cards match your search.",
+    "noMatches": "No matches.",
+    "selectCards": "Select cards to include.",
+    "settlementDetails": "Settlement details",
+    "verificationPhoto": "Verification photo",
+    "addPhoto": "Add photo",
+    "changePhoto": "Change photo",
+    "removePhoto": "Remove photo",
+    "save": "Save",
+    "send": "Send proposal",
+    "update": "Update proposal",
+    "anonymous": "Anonymous"
+  },
+  "tradeDetail": {
+    "you": "You",
+    "counterparty": "Counterparty",
+    "youGive": "You give",
+    "youReceive": "You receive",
+    "nothingOnThisSide": "Nothing on this side",
+    "declineReason": "Reason for declining",
+    "activityLog": "Activity log",
+    "openChat": "Open trade chat",
+    "qty": "Qty:",
+    "tradeProposed": "Trade proposed",
+    "proposalEdited": "Proposal edited",
+    "noEvents": "No events recorded yet.",
+    "anonymous": "Anonymous"
+  },
+  "traderProfile": {
+    "wishlistEmpty": "Wishlist is empty.",
+    "noCardsForTrade": "No cards listed for trade.",
+    "noReviewsYet": "No reviews yet.",
+    "forTrade": "For trade",
+    "reviews": "Reviews",
+    "noLocationSet": "No location set",
+    "traderNotFound": "Trader not found.",
+    "close": "Close",
+    "proposeTrade": "Propose trade"
+  },
+  "userCard": {
+    "mutual": "Mutual",
+    "hasYourWants": "Has your wants",
+    "wantsYours": "Wants yours",
+    "match": "Match",
+    "theyHave": "They have",
+    "theyWant": "They want",
+    "propose": "Propose",
+    "anonymous": "Anonymous",
+    "verifiedTrader": "Verified trader"
+  },
+  "chat": {
+    "title": "Trade chat",
+    "visibleToBoth": "Visible to both traders",
+    "placeholder": "Type a message…",
+    "anonymous": "Anonymous"
   },
   "account": {
     "title": "My Account",
     "profile": "Profile",
     "displayName": "Display name",
+    "displayNamePlaceholder": "Your name",
     "location": "Location",
-    "country": "Country (optional)",
+    "country": "Country",
+    "countryOptional": "Country (optional)",
     "city": "City (optional)",
+    "cityPlaceholder": "Your city",
+    "phone": "Phone",
+    "searchCountry": "Search country…",
     "tradingRange": "Trading range",
     "save": "Save changes",
     "saving": "Saving…",
@@ -148,6 +270,7 @@
     "localOnly": "Local only",
     "changePhoto": "Change photo",
     "uploading": "Uploading…",
+    "emailAddress": "Email address",
     "tradeHistory": "Trade history",
     "noHistory": "No trade history yet.",
     "status": {
@@ -187,9 +310,7 @@
     "cancel": "Cancel",
     "confirm": "Confirm",
     "back": "Back",
-    "viewMore": "View more",
-    "propose": "Propose trade",
-    "openProfile": "View profile"
+    "anonymous": "Anonymous"
   },
   "language": {
     "label": "Language",
@@ -197,5 +318,12 @@
     "fr": "Français",
     "de": "Deutsch",
     "it": "Italiano"
+  },
+  "tradeChat": {
+    "title": "Trade chat",
+    "visibleToBoth": "Visible to both traders",
+    "noMessages": "No messages yet. Say something!",
+    "typeMessage": "Type a message…",
+    "readOnly": "Chat is read-only."
   }
 }

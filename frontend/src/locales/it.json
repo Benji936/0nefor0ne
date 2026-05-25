@@ -12,14 +12,13 @@
     "account": "Account"
   },
   "footer": {
-    "copyright": "© {year} One for One",
     "privacy": "Informativa sulla privacy",
     "contact": "Contatti"
   },
   "hero": {
-    "headline": "Scambia carte Yu-Gi-Oh! direttamente con altri collezionisti.",
-    "subheadline": "Nessuna commissione, nessuna asta — solo scambi diretti tra giocatori.",
-    "cta": "Inizia a scambiare",
+    "headline": "Scambia i tuoi doppioni.<br>Caccia i tuoi obiettivi.",
+    "subheadline": "One for One mette in contatto i collezionisti Yu-Gi-Oh! che hanno ciò che l'altro cerca. Senza commissioni, senza aste, solo scambi diretti.",
+    "cta": "Inizia gratuitamente",
     "learnMore": "Come funziona",
     "steps": {
       "01": { "title": "Costruisci il tuo mazzo di scambio", "body": "Elenca le carte che sei pronto a scambiare." },
@@ -61,7 +60,8 @@
   },
   "notifications": {
     "title": "Notifiche",
-    "empty": "Tutto aggiornato",
+    "markAllRead": "Segna tutto come letto",
+    "empty": "Niente di nuovo",
     "emptyDesc": "Le nuove proposte di scambio e gli aggiornamenti appariranno qui.",
     "viewAll": "Vedi nel Trade Center"
   },
@@ -70,20 +70,47 @@
     "wishlist": "Lista desideri",
     "tradePileEmpty": "Nessuna carta da scambiare ancora. Aggiungine alcune per iniziare.",
     "wishlistEmpty": "La tua lista desideri è vuota. Aggiungi le carte che stai cercando.",
-    "searchCards": "Cerca carte da aggiungere"
+    "searchCards": "Cerca carte da aggiungere",
+    "emptyTrade": "Niente qui ancora — aggiungi carte che hai da offrire.",
+    "emptyWish": "Niente qui ancora — aggiungi carte che stai cercando.",
+    "addedToWishlist": "\"{name}\" aggiunto alla lista desideri.",
+    "addedToTrade": "\"{name}\" aggiunto al mazzo di scambio."
   },
   "addCard": {
     "addToTrade": "Aggiungi al mazzo di scambio",
+    "addToTradeSub": "Scegli una carta che hai da offrire.",
     "addToWishlist": "Aggiungi alla lista desideri",
+    "addToWishlistSub": "Scegli una carta che stai cercando.",
+    "addCard": "Aggiungi carta",
     "search": "Cerca una carta…",
+    "cardNameOrCode": "Nome carta o codice set",
     "add": "Aggiungi",
     "adding": "Aggiunta in corso…",
     "alreadyAdded": "Già nella tua lista",
-    "cardAdded": "Carta aggiunta!"
+    "alreadyInCollection": "Già nella tua collezione",
+    "cardAdded": "Carta aggiunta!",
+    "noCardsFound": "Nessuna carta trovata.",
+    "searchPrompt": "Digita un nome e premi Invio per cercare.",
+    "extensionRarity": "Edizione & Rarità",
+    "language": "Lingua",
+    "condition": "Condizione",
+    "quantity": "Quantità"
   },
   "tradeCenter": {
     "matches": "Corrispondenze",
-    "proposals": "Proposte"
+    "proposals": "Proposte",
+    "proposalUpdated": "Proposta aggiornata.",
+    "exchangeComplete": "Scambio completato — le carte sono state aggiornate.",
+    "yourSideConfirmed": "Il tuo lato confermato. In attesa dell'altro trader.",
+    "failedToConfirm": "Conferma fallita.",
+    "tradeAccepted": "Scambio accettato!",
+    "failedToAccept": "Accettazione fallita.",
+    "tradeDeclined": "Scambio rifiutato.",
+    "failedToDecline": "Rifiuto fallito.",
+    "tradeCancelled": "Scambio annullato.",
+    "failedToCancel": "Annullamento fallito.",
+    "counterSent": "Contro-offerta n.{id} inviata.",
+    "proposalSent": "Proposta n.{id} inviata."
   },
   "matches": {
     "loginRequired": "Accedi per vedere le tue corrispondenze di scambio.",
@@ -127,15 +154,110 @@
     "theySend": "Loro inviano",
     "youSend": "Tu invii",
     "viewProfile": "Vedi profilo",
-    "openTrade": "Apri scambio"
+    "viewDetails": "Vedi dettagli",
+    "openTrade": "Apri scambio",
+    "youProposed": "Hai proposto",
+    "proposedToYou": "Proposto a te",
+    "none": "Nessuna",
+    "editOffer": "Modifica offerta",
+    "uploadPhotosBtn": "Carica foto",
+    "reviewAndAccept": "Verifica e accetta",
+    "confirmYourSide": "Conferma il tuo lato",
+    "cancelTrade": "Annulla scambio",
+    "submit": "Invia",
+    "uploadPhotos": "Carica foto delle tue carte affinché l'altro possa verificare e accettare.",
+    "failedToSave": "Salvataggio proposta fallito."
+  },
+  "proposeDialog": {
+    "title": "Proponi uno scambio",
+    "editProposal": "Modifica proposta",
+    "counterPropose": "Controproposta",
+    "with": "con",
+    "youGive": "Tu dai",
+    "youReceive": "Tu ricevi",
+    "cardsTheyWant": "Carte che vogliono",
+    "cardsYouWant": "Carte che vuoi",
+    "filter": "Filtra…",
+    "clickToSelect": "Clicca per selezionare",
+    "addToOffer": "Aggiungi all'offerta",
+    "hideSuggestions": "Nascondi suggerimenti",
+    "searchYourLibrary": "Cerca nella tua collezione…",
+    "searchTheirPile": "Cerca nel loro mazzo…",
+    "theyWantThis": "Lo/la vuole",
+    "onYourWishlist": "Nella tua lista desideri",
+    "matchesYourWishlist": "Corrisponde alla tua lista desideri",
+    "theirFullTradePile": "Il loro mazzo completo",
+    "yourLibraryEmpty": "La tua collezione è vuota. Aggiungi una carta sopra.",
+    "theirTradePileEmpty": "Il loro mazzo di scambio è vuoto.",
+    "theirWishlistEmpty": "La loro lista desideri è vuota.",
+    "noCardsMatch": "Nessuna carta corrisponde alla tua ricerca.",
+    "noMatches": "Nessun risultato.",
+    "selectCards": "Seleziona le carte da includere.",
+    "settlementDetails": "Dettagli dello scambio",
+    "verificationPhoto": "Foto di verifica",
+    "addPhoto": "Aggiungi foto",
+    "changePhoto": "Cambia foto",
+    "removePhoto": "Rimuovi foto",
+    "save": "Salva",
+    "send": "Invia proposta",
+    "update": "Aggiorna proposta",
+    "anonymous": "Anonimo"
+  },
+  "tradeDetail": {
+    "you": "Tu",
+    "counterparty": "Controparte",
+    "youGive": "Tu dai",
+    "youReceive": "Tu ricevi",
+    "nothingOnThisSide": "Niente su questo lato",
+    "declineReason": "Motivo del rifiuto",
+    "activityLog": "Registro attività",
+    "openChat": "Apri chat scambio",
+    "qty": "Qtà:",
+    "tradeProposed": "Scambio proposto",
+    "proposalEdited": "Proposta modificata",
+    "noEvents": "Nessun evento registrato.",
+    "anonymous": "Anonimo"
+  },
+  "traderProfile": {
+    "wishlistEmpty": "Lista desideri vuota.",
+    "noCardsForTrade": "Nessuna carta listata per lo scambio.",
+    "noReviewsYet": "Nessuna recensione ancora.",
+    "forTrade": "Da scambiare",
+    "reviews": "Recensioni",
+    "noLocationSet": "Posizione non impostata",
+    "traderNotFound": "Trader non trovato.",
+    "close": "Chiudi",
+    "proposeTrade": "Proponi scambio"
+  },
+  "userCard": {
+    "mutual": "Reciproco",
+    "hasYourWants": "Ha ciò che vuoi",
+    "wantsYours": "Vuole ciò che hai",
+    "match": "Match",
+    "theyHave": "Ha",
+    "theyWant": "Vuole",
+    "propose": "Proponi",
+    "anonymous": "Anonimo",
+    "verifiedTrader": "Trader verificato"
+  },
+  "chat": {
+    "title": "Chat scambio",
+    "visibleToBoth": "Visibile a entrambi i trader",
+    "placeholder": "Scrivi un messaggio…",
+    "anonymous": "Anonimo"
   },
   "account": {
     "title": "Il mio account",
     "profile": "Profilo",
     "displayName": "Nome visualizzato",
+    "displayNamePlaceholder": "Il tuo nome",
     "location": "Posizione",
-    "country": "Paese (opzionale)",
+    "country": "Paese",
+    "countryOptional": "Paese (opzionale)",
     "city": "Città (opzionale)",
+    "cityPlaceholder": "La tua città",
+    "phone": "Telefono",
+    "searchCountry": "Cerca paese…",
     "tradingRange": "Raggio di scambio",
     "save": "Salva modifiche",
     "saving": "Salvataggio…",
@@ -148,6 +270,7 @@
     "localOnly": "Solo locale",
     "changePhoto": "Cambia foto",
     "uploading": "Caricamento…",
+    "emailAddress": "Indirizzo email",
     "tradeHistory": "Cronologia scambi",
     "noHistory": "Nessuna cronologia scambi ancora.",
     "status": {
@@ -176,7 +299,7 @@
   "privacy": {
     "title": "Informativa sulla privacy",
     "updated": "Ultimo aggiornamento: maggio 2026",
-    "intro": "One for One è una piattaforma gratuita di scambio peer-to-peer di carte Yu-Gi-Oh!. Questa politica spiega quali dati raccogliamo, perché e cosa ne facciamo.",
+    "intro": "One for One è una piattaforma gratuita di scambio peer-to-peer di carte Yu-Gi-Oh!.",
     "contact": "Domande? Scrivici a"
   },
   "common": {
@@ -187,9 +310,7 @@
     "cancel": "Annulla",
     "confirm": "Conferma",
     "back": "Indietro",
-    "viewMore": "Vedi altro",
-    "propose": "Proponi scambio",
-    "openProfile": "Vedi profilo"
+    "anonymous": "Anonimo"
   },
   "language": {
     "label": "Lingua",
@@ -197,5 +318,12 @@
     "fr": "Français",
     "de": "Deutsch",
     "it": "Italiano"
+  },
+  "tradeChat": {
+    "title": "Chat scambio",
+    "visibleToBoth": "Visibile a entrambi i trader",
+    "noMessages": "Ancora nessun messaggio. Di' qualcosa!",
+    "typeMessage": "Scrivi un messaggio…",
+    "readOnly": "La chat è di sola lettura."
   }
 }

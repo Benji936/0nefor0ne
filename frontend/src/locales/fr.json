@@ -12,14 +12,13 @@
     "account": "Compte"
   },
   "footer": {
-    "copyright": "© {year} One for One",
     "privacy": "Politique de confidentialité",
     "contact": "Contact"
   },
   "hero": {
-    "headline": "Échangez vos cartes Yu-Gi-Oh! directement avec d'autres collectionneurs.",
-    "subheadline": "Sans frais, sans enchères — juste des échanges directs entre joueurs.",
-    "cta": "Commencer à échanger",
+    "headline": "Échangez vos doublons.<br>Chassez vos cibles.",
+    "subheadline": "One for One met en relation les collectionneurs Yu-Gi-Oh! qui ont ce que l'autre veut. Sans frais, sans enchères, juste des échanges directs entre joueurs.",
+    "cta": "Commencer gratuitement",
     "learnMore": "Comment ça marche",
     "steps": {
       "01": { "title": "Constituez votre pile d'échange", "body": "Listez les cartes que vous souhaitez échanger." },
@@ -61,7 +60,8 @@
   },
   "notifications": {
     "title": "Notifications",
-    "empty": "Tout est à jour",
+    "markAllRead": "Tout marquer comme lu",
+    "empty": "Rien de nouveau",
     "emptyDesc": "Les nouvelles propositions d'échange et mises à jour apparaîtront ici.",
     "viewAll": "Voir dans le Trade Center"
   },
@@ -70,20 +70,47 @@
     "wishlist": "Liste de souhaits",
     "tradePileEmpty": "Aucune carte à échanger pour l'instant. Ajoutez-en pour commencer.",
     "wishlistEmpty": "Votre liste de souhaits est vide. Ajoutez les cartes que vous recherchez.",
-    "searchCards": "Rechercher des cartes à ajouter"
+    "searchCards": "Rechercher des cartes à ajouter",
+    "emptyTrade": "Rien ici pour l'instant — ajoutez des cartes que vous avez à échanger.",
+    "emptyWish": "Rien ici pour l'instant — ajoutez des cartes que vous recherchez.",
+    "addedToWishlist": "\"{name}\" ajouté à la liste de souhaits.",
+    "addedToTrade": "\"{name}\" ajouté à la pile d'échange."
   },
   "addCard": {
     "addToTrade": "Ajouter à ma pile d'échange",
+    "addToTradeSub": "Choisissez une carte que vous proposez à l'échange.",
     "addToWishlist": "Ajouter à ma liste de souhaits",
+    "addToWishlistSub": "Choisissez une carte que vous recherchez.",
+    "addCard": "Ajouter une carte",
     "search": "Rechercher une carte…",
+    "cardNameOrCode": "Nom de carte ou code de set",
     "add": "Ajouter",
     "adding": "Ajout en cours…",
     "alreadyAdded": "Déjà dans votre liste",
-    "cardAdded": "Carte ajoutée !"
+    "alreadyInCollection": "Déjà dans votre collection",
+    "cardAdded": "Carte ajoutée !",
+    "noCardsFound": "Aucune carte trouvée.",
+    "searchPrompt": "Saisissez un nom et appuyez sur Entrée pour rechercher.",
+    "extensionRarity": "Extension & Rareté",
+    "language": "Langue",
+    "condition": "État",
+    "quantity": "Quantité"
   },
   "tradeCenter": {
     "matches": "Correspondances",
-    "proposals": "Propositions"
+    "proposals": "Propositions",
+    "proposalUpdated": "Proposition mise à jour.",
+    "exchangeComplete": "Échange terminé — les cartes ont été mises à jour.",
+    "yourSideConfirmed": "Votre côté confirmé. En attente de l'autre joueur.",
+    "failedToConfirm": "Échec de la confirmation.",
+    "tradeAccepted": "Échange accepté !",
+    "failedToAccept": "Échec de l'acceptation.",
+    "tradeDeclined": "Échange refusé.",
+    "failedToDecline": "Échec du refus.",
+    "tradeCancelled": "Échange annulé.",
+    "failedToCancel": "Échec de l'annulation.",
+    "counterSent": "Contre-offre n°{id} envoyée.",
+    "proposalSent": "Proposition n°{id} envoyée."
   },
   "matches": {
     "loginRequired": "Connectez-vous pour voir vos correspondances d'échange.",
@@ -127,15 +154,110 @@
     "theySend": "Il/elle envoie",
     "youSend": "Vous envoyez",
     "viewProfile": "Voir le profil",
-    "openTrade": "Ouvrir l'échange"
+    "viewDetails": "Voir les détails",
+    "openTrade": "Ouvrir l'échange",
+    "youProposed": "Vous avez proposé",
+    "proposedToYou": "Proposé par quelqu'un",
+    "none": "Aucune",
+    "editOffer": "Modifier l'offre",
+    "uploadPhotosBtn": "Envoyer des photos",
+    "reviewAndAccept": "Vérifier et accepter",
+    "confirmYourSide": "Confirmer votre côté",
+    "cancelTrade": "Annuler l'échange",
+    "submit": "Envoyer",
+    "uploadPhotos": "Envoyez des photos de vos cartes pour que l'autre joueur puisse vérifier et accepter.",
+    "failedToSave": "Échec de l'enregistrement de la proposition."
+  },
+  "proposeDialog": {
+    "title": "Proposer un échange",
+    "editProposal": "Modifier la proposition",
+    "counterPropose": "Contre-proposer",
+    "with": "avec",
+    "youGive": "Vous donnez",
+    "youReceive": "Vous recevez",
+    "cardsTheyWant": "Cartes qu'ils veulent",
+    "cardsYouWant": "Cartes que vous voulez",
+    "filter": "Filtrer…",
+    "clickToSelect": "Cliquez pour sélectionner",
+    "addToOffer": "Ajouter à l'offre",
+    "hideSuggestions": "Masquer les suggestions",
+    "searchYourLibrary": "Rechercher dans votre collection…",
+    "searchTheirPile": "Rechercher dans sa pile d'échange…",
+    "theyWantThis": "Il/elle veut ça",
+    "onYourWishlist": "Dans votre liste de souhaits",
+    "matchesYourWishlist": "Correspond à votre liste de souhaits",
+    "theirFullTradePile": "Sa pile d'échange complète",
+    "yourLibraryEmpty": "Votre collection est vide. Ajoutez une carte ci-dessus.",
+    "theirTradePileEmpty": "Sa pile d'échange est vide.",
+    "theirWishlistEmpty": "Sa liste de souhaits est vide.",
+    "noCardsMatch": "Aucune carte ne correspond à votre recherche.",
+    "noMatches": "Aucun résultat.",
+    "selectCards": "Sélectionnez des cartes à inclure.",
+    "settlementDetails": "Détails de l'échange",
+    "verificationPhoto": "Photo de vérification",
+    "addPhoto": "Ajouter une photo",
+    "changePhoto": "Changer la photo",
+    "removePhoto": "Supprimer la photo",
+    "save": "Enregistrer",
+    "send": "Envoyer la proposition",
+    "update": "Mettre à jour la proposition",
+    "anonymous": "Anonyme"
+  },
+  "tradeDetail": {
+    "you": "Vous",
+    "counterparty": "Contrepartie",
+    "youGive": "Vous donnez",
+    "youReceive": "Vous recevez",
+    "nothingOnThisSide": "Rien de ce côté",
+    "declineReason": "Raison du refus",
+    "activityLog": "Journal d'activité",
+    "openChat": "Ouvrir le chat d'échange",
+    "qty": "Qté :",
+    "tradeProposed": "Échange proposé",
+    "proposalEdited": "Proposition modifiée",
+    "noEvents": "Aucun événement enregistré.",
+    "anonymous": "Anonyme"
+  },
+  "traderProfile": {
+    "wishlistEmpty": "Liste de souhaits vide.",
+    "noCardsForTrade": "Aucune carte listée pour l'échange.",
+    "noReviewsYet": "Aucun avis pour l'instant.",
+    "forTrade": "À échanger",
+    "reviews": "Avis",
+    "noLocationSet": "Localisation non renseignée",
+    "traderNotFound": "Joueur introuvable.",
+    "close": "Fermer",
+    "proposeTrade": "Proposer un échange"
+  },
+  "userCard": {
+    "mutual": "Mutuel",
+    "hasYourWants": "A ce que vous voulez",
+    "wantsYours": "Veut ce que vous avez",
+    "match": "Match",
+    "theyHave": "Il/elle a",
+    "theyWant": "Il/elle veut",
+    "propose": "Proposer",
+    "anonymous": "Anonyme",
+    "verifiedTrader": "Joueur vérifié"
+  },
+  "chat": {
+    "title": "Chat d'échange",
+    "visibleToBoth": "Visible par les deux joueurs",
+    "placeholder": "Tapez un message…",
+    "anonymous": "Anonyme"
   },
   "account": {
     "title": "Mon compte",
     "profile": "Profil",
     "displayName": "Nom d'affichage",
+    "displayNamePlaceholder": "Votre nom",
     "location": "Localisation",
-    "country": "Pays (optionnel)",
+    "country": "Pays",
+    "countryOptional": "Pays (optionnel)",
     "city": "Ville (optionnel)",
+    "cityPlaceholder": "Votre ville",
+    "phone": "Téléphone",
+    "searchCountry": "Rechercher un pays…",
     "tradingRange": "Zone d'échange",
     "save": "Enregistrer les modifications",
     "saving": "Enregistrement…",
@@ -148,6 +270,7 @@
     "localOnly": "Local uniquement",
     "changePhoto": "Changer la photo",
     "uploading": "Téléchargement…",
+    "emailAddress": "Adresse e-mail",
     "tradeHistory": "Historique des échanges",
     "noHistory": "Aucun historique d'échange pour l'instant.",
     "status": {
@@ -176,7 +299,7 @@
   "privacy": {
     "title": "Politique de confidentialité",
     "updated": "Dernière mise à jour : mai 2026",
-    "intro": "One for One est une plateforme d'échange de cartes Yu-Gi-Oh! gratuite entre particuliers. Cette politique explique quelles données nous collectons, pourquoi et ce que nous en faisons.",
+    "intro": "One for One est une plateforme d'échange de cartes Yu-Gi-Oh! gratuite entre particuliers.",
     "contact": "Des questions ? Écrivez-nous à"
   },
   "common": {
@@ -187,9 +310,7 @@
     "cancel": "Annuler",
     "confirm": "Confirmer",
     "back": "Retour",
-    "viewMore": "Voir plus",
-    "propose": "Proposer un échange",
-    "openProfile": "Voir le profil"
+    "anonymous": "Anonyme"
   },
   "language": {
     "label": "Langue",
@@ -197,5 +318,12 @@
     "fr": "Français",
     "de": "Deutsch",
     "it": "Italiano"
+  },
+  "tradeChat": {
+    "title": "Chat d'échange",
+    "visibleToBoth": "Visible par les deux échangeurs",
+    "noMessages": "Aucun message pour l'instant. Dites quelque chose !",
+    "typeMessage": "Tapez un message…",
+    "readOnly": "Le chat est en lecture seule."
   }
 }

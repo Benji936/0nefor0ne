@@ -8,7 +8,7 @@
         :prepend-icon="meta.icon"
         v-bind="activatorProps"
       >
-        {{ buttonLabel || "Add card" }}
+        {{ buttonLabel || $t('addCard.addCard') }}
       </v-btn>
     </template>
 
@@ -36,7 +36,7 @@
         <div class="px-4 pt-4 pb-2">
           <v-text-field
             v-model="search"
-            label="Card name or set code"
+            :label="$t('addCard.cardNameOrCode')"
             prepend-inner-icon="mdi-magnify"
             variant="outlined"
             hide-details
@@ -62,7 +62,7 @@
 
           <div v-else-if="!cards.length" class="flex flex-col items-center justify-center py-16 gap-2" style="color: var(--c-muted)">
             <v-icon icon="mdi-card-search-outline" size="40" color="gray" />
-            <p class="text-sm">{{ searched ? 'No cards found.' : 'Type a name and press Enter to search.' }}</p>
+            <p class="text-sm">{{ searched ? $t('addCard.noCardsFound') : $t('addCard.searchPrompt') }}</p>
           </div>
 
           <div v-else>
@@ -105,7 +105,7 @@
           >
             <v-icon icon="mdi-information-outline" size="16" color="var(--c-trade)" class="shrink-0 mt-1" />
             <div class="flex flex-col gap-1 min-w-0">
-              <p class="text-xs font-semibold" style="color: var(--c-trade)">Already in your collection</p>
+              <p class="text-xs font-semibold" style="color: var(--c-trade)">{{ $t('addCard.alreadyInCollection') }}</p>
               <p class="text-xs leading-snug" style="color: var(--c-muted)">
                 {{ duplicates.length === 1 ? 'You have 1 entry' : `You have ${duplicates.length} entries` }} for this card
                 ({{ duplicates.filter(d => !d.wish).length }} for trade,
@@ -122,14 +122,14 @@
               v-model="extensionDisplay"
               :items="extensions"
               :rules="[v => !!v || 'Pick an extension']"
-              label="Extension & Rarity"
+              :label="$t('addCard.extensionRarity')"
               @update:model-value="extensionSelected"
               required
             />
 
-            <v-select density="comfortable" variant="outlined" v-model="language" :items="languages" label="Language" />
+            <v-select density="comfortable" variant="outlined" v-model="language" :items="languages" :label="$t('addCard.language')" />
             <div class="flex gap-4 items-center">
-              <v-select density="comfortable" variant="outlined" v-model="condition" :items="conditions" label="Condition" class="grow" />
+              <v-select density="comfortable" variant="outlined" v-model="condition" :items="conditions" :label="$t('addCard.condition')" class="grow" />
               <v-checkbox density="comfortable" label="1st Ed." color="blue-darken-3" v-model="first_edition" hide-details />
             </div>
 
@@ -139,7 +139,7 @@
               variant="outlined"
               control-variant="split"
               :rules="[v => v > 0 || 'Quantity must be more than 0']"
-              label="Quantity"
+              :label="$t('addCard.quantity')"
               required
               :min="1"
             />
@@ -179,8 +179,8 @@ export default {
   computed: {
     meta() {
       return this.mode === "wish"
-        ? { title: "Add to wishlist", subtitle: "Pick a card you're hunting for.", color: "var(--c-accent)", icon: "mdi-heart-plus" }
-        : { title: "Add to trade pile", subtitle: "Pick a card you have to offer.", color: "var(--c-trade)", icon: "mdi-plus-box" };
+        ? { title: this.$t('addCard.addToWishlist'), subtitle: this.$t('addCard.addToWishlistSub'), color: "var(--c-accent)", icon: "mdi-heart-plus" }
+        : { title: this.$t('addCard.addToTrade'), subtitle: this.$t('addCard.addToTradeSub'), color: "var(--c-trade)", icon: "mdi-plus-box" };
     },
   },
   data() {
