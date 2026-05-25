@@ -65,7 +65,16 @@
     "emptyDesc": "Le nuove proposte di scambio e gli aggiornamenti appariranno qui.",
     "viewAll": "Vedi nel Trade Center",
     "bellTitle": "Notifiche",
-    "bellTitleUnread": "{count} non letto/i"
+    "bellTitleUnread": "{count} non letto/i",
+    "proposalReceived": "{name} ti ha inviato una proposta di scambio",
+    "proposalAccepted": "{name} ha accettato la tua proposta",
+    "proposalDeclined": "{name} ha rifiutato la tua proposta",
+    "proposalCancelled": "Lo scambio con {name} è stato annullato",
+    "sideConfirmed": "{name} ha confermato lo scambio",
+    "tradeCompleted": "Scambio con {name} completato",
+    "fallback": "Notifica",
+    "someone": "Qualcuno",
+    "them": "loro"
   },
   "library": {
     "tradePile": "Mazzo di scambio",
@@ -168,7 +177,19 @@
     "cancelTrade": "Annulla scambio",
     "submit": "Invia",
     "uploadPhotos": "Carica foto delle tue carte affinché l'altro possa verificare e accettare.",
-    "failedToSave": "Salvataggio proposta fallito."
+    "failedToSave": "Salvataggio proposta fallito.",
+    "waitingForUpload": "In attesa che {name} carichi le foto e accetti.",
+    "waitingForConfirm": "In attesa che {name} confermi.",
+    "them": "Loro",
+    "you": "Tu",
+    "rateTrader": "Valuta {name}:",
+    "ratingPlaceholder": "Nota opzionale… (max 140 caratteri)",
+    "charsLeft": "{count} caratteri rimanenti",
+    "tradeMethodInPerson": "Di persona",
+    "tradeMethodMail": "Per posta",
+    "tradeMethodOther": "Altro",
+    "youPay": "Paghi tu",
+    "theyPay": "Paga {name}"
   },
   "proposeDialog": {
     "title": "Proponi uno scambio",

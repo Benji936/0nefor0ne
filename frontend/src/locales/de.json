@@ -65,7 +65,16 @@
     "emptyDesc": "Neue Tauschvorschläge und Updates erscheinen hier.",
     "viewAll": "Im Trade Center ansehen",
     "bellTitle": "Benachrichtigungen",
-    "bellTitleUnread": "{count} ungelesen"
+    "bellTitleUnread": "{count} ungelesen",
+    "proposalReceived": "{name} hat dir einen Tauschvorschlag geschickt",
+    "proposalAccepted": "{name} hat deinen Vorschlag angenommen",
+    "proposalDeclined": "{name} hat deinen Vorschlag abgelehnt",
+    "proposalCancelled": "Tausch mit {name} wurde abgebrochen",
+    "sideConfirmed": "{name} hat den Tausch bestätigt",
+    "tradeCompleted": "Tausch mit {name} abgeschlossen",
+    "fallback": "Benachrichtigung",
+    "someone": "Jemand",
+    "them": "sie"
   },
   "library": {
     "tradePile": "Tauschstapel",
@@ -168,7 +177,19 @@
     "cancelTrade": "Tausch abbrechen",
     "submit": "Absenden",
     "uploadPhotos": "Lade Fotos deiner Karten hoch, damit die andere Person sie überprüfen und annehmen kann.",
-    "failedToSave": "Vorschlag konnte nicht gespeichert werden."
+    "failedToSave": "Vorschlag konnte nicht gespeichert werden.",
+    "waitingForUpload": "Warten auf {name}, Fotos hochzuladen und zu akzeptieren.",
+    "waitingForConfirm": "Warten auf {name}, zu bestätigen.",
+    "them": "Sie",
+    "you": "Du",
+    "rateTrader": "{name} bewerten:",
+    "ratingPlaceholder": "Optionale Notiz… (max. 140 Zeichen)",
+    "charsLeft": "Noch {count} Zeichen",
+    "tradeMethodInPerson": "Persönlich",
+    "tradeMethodMail": "Per Post",
+    "tradeMethodOther": "Sonstiges",
+    "youPay": "Du zahlst",
+    "theyPay": "{name} zahlt"
   },
   "proposeDialog": {
     "title": "Tausch vorschlagen",

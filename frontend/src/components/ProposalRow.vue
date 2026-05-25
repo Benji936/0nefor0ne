@@ -1,9 +1,12 @@
 <script setup>
 import { ref, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { cardImage } from "@/lib/cardImage";
 import { getClient } from "@/lib/supabaseClient";
 import { timeAgo } from "@/lib/notifications";
 import TradeDetailDialog from "@/components/TradeDetailDialog.vue";
+
+const { t } = useI18n();
 
 const props = defineProps({
   proposal:      { type: Object, required: true },
@@ -14,11 +17,11 @@ const emit = defineEmits(["accept", "decline", "cancel", "complete", "edit", "co
 
 const statusMeta = computed(() => {
   const map = {
-    pending:   { label: "Pending",   color: "var(--c-trade)",  icon: "mdi-clock-outline" },
-    accepted:  { label: "Accepted",  color: "var(--c-mutual)", icon: "mdi-check-circle-outline" },
-    declined:  { label: "Declined",  color: "var(--c-accent)", icon: "mdi-close-circle-outline" },
-    cancelled: { label: "Cancelled", color: "var(--c-accent)",  icon: "mdi-cancel" },
-    completed: { label: "Completed", color: "var(--c-mutual)", icon: "mdi-handshake-outline" },
+    pending:   { label: t('proposal.pending'),   color: "var(--c-trade)",  icon: "mdi-clock-outline" },
+    accepted:  { label: t('proposal.accepted'),  color: "var(--c-mutual)", icon: "mdi-check-circle-outline" },
+    declined:  { label: t('proposal.declined'),  color: "var(--c-accent)", icon: "mdi-close-circle-outline" },
+    cancelled: { label: t('proposal.cancelled'), color: "var(--c-accent)", icon: "mdi-cancel" },
+    completed: { label: t('proposal.completed'), color: "var(--c-mutual)", icon: "mdi-handshake-outline" },
   };
   return map[props.proposal.status] ?? map.pending;
 });
@@ -104,7 +107,7 @@ function cancelRating() {
             : 'color-mix(in srgb, var(--c-accent) 18%, transparent)',
           color: proposal.i_am_proposer ? 'var(--c-trade)' : 'var(--c-accent)',
         }"
-        title="View profile"
+        :title="t('proposal.viewProfile')"
         @click.stop="emit('openProfile', proposal.counterparty_id)"
       >
         <img
@@ -121,10 +124,10 @@ function cancelRating() {
         @click.stop="emit('openProfile', proposal.counterparty_id)"
       >
         <span class="font-semibold text-sm truncate hover:underline underline-offset-2" style="color: var(--c-text)">
-          {{ proposal.counterparty_name ?? "Anonymous" }}
+          {{ proposal.counterparty_name ?? t('common.anonymous') }}
         </span>
         <span class="text-[11px]" style="color: var(--c-muted)">
-          {{ proposal.i_am_proposer ? "You proposed" : "Proposed to you" }} · {{ timeAgo(proposal.created_at) }}
+          {{ proposal.i_am_proposer ? t('proposal.youProposed') : t('proposal.proposedToYou') }} · {{ timeAgo(proposal.created_at) }}
         </span>
       </div>
 
@@ -146,7 +149,7 @@ function cancelRating() {
         size="small"
         density="compact"
         style="color: var(--c-muted)"
-        title="View details"
+        :title="t('proposal.viewDetails')"
         @click.stop="detailOpen = true"
       />
     </div>
@@ -185,7 +188,7 @@ function cancelRating() {
             +{{ proposal.i_give.length - 5 }}
           </div>
         </div>
-        <span v-else class="text-xs italic" style="color: var(--c-muted)">None</span>
+        <span v-else class="text-xs italic" style="color: var(--c-muted)">{{ t('proposal.none') }}</span>
       </div>
 
       <!-- Divider: horizontal on mobile, vertical on desktop -->
@@ -229,7 +232,7 @@ function cancelRating() {
           </div>
           
         </div>
-        <span v-else class="text-xs italic self-center" style="color: var(--c-muted)">None</span>
+        <span v-else class="text-xs italic self-center" style="color: var(--c-muted)">{{ t('proposal.none') }}</span>
       </div>
     </div>
 
@@ -252,7 +255,7 @@ function cancelRating() {
             : 'mdi-dots-horizontal'"
           size="12"
         />
-        {{ proposal.trade_method === 'in_person' ? 'Meet in person' : proposal.trade_method === 'mail' ? 'By mail' : 'Other' }}
+        {{ proposal.trade_method === 'in_person' ? t('proposal.tradeMethodInPerson') : proposal.trade_method === 'mail' ? t('proposal.tradeMethodMail') : t('proposal.tradeMethodOther') }}
       </span>
       <span
         v-if="proposal.cash_amount"
@@ -261,8 +264,8 @@ function cancelRating() {
       >
         <v-icon icon="mdi-currency-eur" size="12" />
         {{ proposal.cash_payer === 'proposer'
-            ? (proposal.i_am_proposer ? 'You pay' : `${proposal.counterparty_name} pays`)
-            : (proposal.i_am_proposer ? `${proposal.counterparty_name} pays` : 'You pay') }}
+            ? (proposal.i_am_proposer ? t('proposal.youPay') : t('proposal.theyPay', { name: proposal.counterparty_name }))
+            : (proposal.i_am_proposer ? t('proposal.theyPay', { name: proposal.counterparty_name }) : t('proposal.youPay')) }}
         €{{ Number(proposal.cash_amount).toFixed(2) }}
       </span>
       <span
@@ -285,20 +288,20 @@ function cancelRating() {
       <template v-if="isPending">
         <span class="text-xs grow" style="color: var(--c-muted)">
           {{ proposal.i_am_proposer
-            ? `Waiting for ${proposal.counterparty_name ?? 'them'} to upload photos and accept.`
-            : "Upload photos of your cards so the other person can verify and accept." }}
+            ? t('proposal.waitingForUpload', { name: proposal.counterparty_name ?? t('proposal.them') })
+            : t('proposal.uploadPhotos') }}
         </span>
         <v-btn
           v-if="proposal.i_am_proposer"
           size="small" variant="outlined" prepend-icon="mdi-pencil-outline"
           style="border-color: var(--c-border); color: var(--c-muted)"
           @click="emit('edit', proposal)"
-        >Edit offer</v-btn>
+        >{{ t('proposal.editOffer') }}</v-btn>
         <v-btn
           size="small" variant="flat" :prepend-icon="proposal.i_am_proposer ? 'mdi-camera-outline' : 'mdi-check-circle-outline'"
           style="background-color: var(--c-surface-2); color: var(--c-text)"
           @click="detailOpen = true"
-        >{{ proposal.i_am_proposer ? 'Upload photos' : 'Review &amp; accept' }}</v-btn>
+        >{{ proposal.i_am_proposer ? t('proposal.uploadPhotosBtn') : t('proposal.reviewAndAccept') }}</v-btn>
       </template>
 
       <template v-else-if="isAccepted">
@@ -316,7 +319,7 @@ function cancelRating() {
                 size="13"
                 :color="iConfirmed ? 'var(--c-mutual)' : 'var(--c-muted)'"
               />
-              <span class="font-medium" :style="{ color: iConfirmed ? 'var(--c-mutual)' : 'var(--c-muted)' }">You</span>
+              <span class="font-medium" :style="{ color: iConfirmed ? 'var(--c-mutual)' : 'var(--c-muted)' }">{{ t('proposal.you') }}</span>
             </div>
             <div
               class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs flex-1 border"
@@ -330,7 +333,7 @@ function cancelRating() {
                 :color="theyConfirmed ? 'var(--c-mutual)' : 'var(--c-muted)'"
               />
               <span class="font-medium truncate" :style="{ color: theyConfirmed ? 'var(--c-mutual)' : 'var(--c-muted)' }">
-                {{ proposal.counterparty_name ?? 'Them' }}
+                {{ proposal.counterparty_name ?? t('proposal.them') }}
               </span>
             </div>
           </div>
@@ -341,15 +344,15 @@ function cancelRating() {
               size="small" variant="flat" prepend-icon="mdi-handshake-outline"
               style="background-color: var(--c-mutual); color: #0C0820"
               @click="emit('complete', proposal)"
-            >Confirm your side</v-btn>
+            >{{ t('proposal.confirmYourSide') }}</v-btn>
             <span v-else class="text-xs grow" style="color: var(--c-muted)">
-              Waiting for {{ proposal.counterparty_name ?? 'them' }} to confirm.
+              {{ t('proposal.waitingForConfirm', { name: proposal.counterparty_name ?? t('proposal.them') }) }}
             </span>
             <v-btn
               size="small" variant="outlined" prepend-icon="mdi-cancel"
               style="border-color: var(--c-accent); color: var(--c-accent)"
               @click="emit('cancel', proposal)"
-            >Cancel trade</v-btn>
+            >{{ t('proposal.cancelTrade') }}</v-btn>
           </div>
         </div>
       </template>
@@ -372,7 +375,7 @@ function cancelRating() {
           />
         </div>
         <span class="text-xs truncate" style="color: var(--c-muted)">
-          {{ myRating.comment || 'You rated this trade' }}
+          {{ myRating.comment || t('proposal.completed') }}
         </span>
       </div>
 
@@ -380,7 +383,7 @@ function cancelRating() {
       <template v-else>
         <div class="flex items-center gap-3 flex-wrap">
           <span class="text-xs" style="color: var(--c-muted)">
-            Rate {{ proposal.counterparty_name ?? 'this trader' }}:
+            {{ t('proposal.rateTrader', { name: proposal.counterparty_name ?? t('common.anonymous') }) }}
           </span>
           <div class="flex gap-1">
             <button
@@ -404,22 +407,22 @@ function cancelRating() {
           <input
             v-model="ratingComment"
             maxlength="140"
-            placeholder="Optional note… (140 chars max)"
+            :placeholder="t('proposal.ratingPlaceholder')"
             class="w-full text-xs rounded-lg px-3 py-2 border outline-none transition-colors"
             :style="{ backgroundColor: 'var(--c-surface-2)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
             @focus="e => e.target.style.borderColor = 'var(--c-mutual)'"
             @blur="e => e.target.style.borderColor = 'var(--c-border)'"
           />
           <div class="flex items-center justify-between gap-2">
-            <span class="text-[11px]" style="color: var(--c-muted)">{{ 140 - ratingComment.length }} chars left</span>
+            <span class="text-[11px]" style="color: var(--c-muted)">{{ t('proposal.charsLeft', { count: 140 - ratingComment.length }) }}</span>
             <div class="flex gap-2">
-              <button class="text-xs cursor-pointer transition-opacity hover:opacity-70" style="color: var(--c-muted)" @click="cancelRating">Cancel</button>
+              <button class="text-xs cursor-pointer transition-opacity hover:opacity-70" style="color: var(--c-muted)" @click="cancelRating">{{ t('common.cancel') }}</button>
               <v-btn
                 size="x-small" variant="flat"
                 style="background: var(--c-mutual); color: #0C0820; min-height: 28px"
                 :loading="ratingSubmitting"
                 @click="submitRating"
-              >Submit</v-btn>
+              >{{ t('proposal.submit') }}</v-btn>
             </div>
           </div>
         </div>

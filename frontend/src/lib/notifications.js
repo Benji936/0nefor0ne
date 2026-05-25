@@ -18,9 +18,22 @@ export function notifMeta(n) {
   return NOTIF_META[n.kind] ?? FALLBACK_META;
 }
 
-/** Returns the human-readable text string for a notification row. */
-export function notifText(n) {
-  return (NOTIF_META[n.kind]?.text ?? FALLBACK_META.text)(n);
+/**
+ * Returns the human-readable text string for a notification row.
+ * Pass the vue-i18n `t` function for translated output; omit for English fallback.
+ */
+export function notifText(n, t) {
+  if (!t) return (NOTIF_META[n.kind]?.text ?? FALLBACK_META.text)(n);
+  const name = n.counterparty_name;
+  switch (n.kind) {
+    case 'proposal_received':  return t('notifications.proposalReceived',  { name: name ?? t('notifications.someone') });
+    case 'proposal_accepted':  return t('notifications.proposalAccepted',  { name: name ?? t('notifications.them') });
+    case 'proposal_declined':  return t('notifications.proposalDeclined',  { name: name ?? t('notifications.them') });
+    case 'proposal_cancelled': return t('notifications.proposalCancelled', { name: name ?? t('notifications.them') });
+    case 'side_confirmed':     return t('notifications.sideConfirmed',     { name: name ?? t('notifications.them') });
+    case 'trade_completed':    return t('notifications.tradeCompleted',    { name: name ?? t('notifications.them') });
+    default:                   return t('notifications.fallback');
+  }
 }
 
 /**

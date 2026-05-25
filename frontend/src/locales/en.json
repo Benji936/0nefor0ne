@@ -65,7 +65,16 @@
     "emptyDesc": "New trade proposals and updates will appear here.",
     "viewAll": "View in Trade Center",
     "bellTitle": "Notifications",
-    "bellTitleUnread": "{count} unread"
+    "bellTitleUnread": "{count} unread",
+    "proposalReceived": "{name} sent you a trade proposal",
+    "proposalAccepted": "{name} accepted your proposal",
+    "proposalDeclined": "{name} declined your proposal",
+    "proposalCancelled": "Trade with {name} was cancelled",
+    "sideConfirmed": "{name} confirmed the exchange",
+    "tradeCompleted": "Exchange with {name} complete",
+    "fallback": "Notification",
+    "someone": "Someone",
+    "them": "them"
   },
   "library": {
     "tradePile": "Trade pile",
@@ -168,7 +177,19 @@
     "cancelTrade": "Cancel trade",
     "submit": "Submit",
     "uploadPhotos": "Upload photos of your cards so the other person can verify and accept.",
-    "failedToSave": "Failed to save proposal."
+    "failedToSave": "Failed to save proposal.",
+    "waitingForUpload": "Waiting for {name} to upload photos and accept.",
+    "waitingForConfirm": "Waiting for {name} to confirm.",
+    "them": "Them",
+    "you": "You",
+    "rateTrader": "Rate {name}:",
+    "ratingPlaceholder": "Optional note… (140 chars max)",
+    "charsLeft": "{count} chars left",
+    "tradeMethodInPerson": "Meet in person",
+    "tradeMethodMail": "By mail",
+    "tradeMethodOther": "Other",
+    "youPay": "You pay",
+    "theyPay": "{name} pays"
   },
   "proposeDialog": {
     "title": "Propose a trade",

@@ -1,4 +1,6 @@
 <script setup>
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 import TradeChatPanel from "@/components/trade/TradeChatPanel.vue";
 
 const props = defineProps({
@@ -8,6 +10,19 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["update:modelValue"]);
+
+const { t } = useI18n();
+
+const statusLabel = computed(() => {
+  const map = {
+    pending:   t('proposal.pending'),
+    accepted:  t('proposal.accepted'),
+    declined:  t('proposal.declined'),
+    cancelled: t('proposal.cancelled'),
+    completed: t('proposal.completed'),
+  };
+  return map[props.proposal?.status] ?? (props.proposal?.status ?? '');
+});
 </script>
 
 <template>
@@ -59,7 +74,7 @@ const emit = defineEmits(["update:modelValue"]);
                       : proposal.status === 'accepted' ? 'color-mix(in srgb, var(--c-mutual) 14%, transparent)'
                       : 'color-mix(in srgb, var(--c-muted) 12%, transparent)',
           }"
-        >{{ proposal.status }}</span>
+        >{{ statusLabel }}</span>
 
         <v-btn
           icon="mdi-close"

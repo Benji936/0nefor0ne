@@ -65,7 +65,16 @@
     "emptyDesc": "Les nouvelles propositions d'échange et mises à jour apparaîtront ici.",
     "viewAll": "Voir dans le Trade Center",
     "bellTitle": "Notifications",
-    "bellTitleUnread": "{count} non lu(s)"
+    "bellTitleUnread": "{count} non lu(s)",
+    "proposalReceived": "{name} vous a envoyé une proposition d'échange",
+    "proposalAccepted": "{name} a accepté votre proposition",
+    "proposalDeclined": "{name} a refusé votre proposition",
+    "proposalCancelled": "L'échange avec {name} a été annulé",
+    "sideConfirmed": "{name} a confirmé l'échange",
+    "tradeCompleted": "Échange avec {name} terminé",
+    "fallback": "Notification",
+    "someone": "Quelqu'un",
+    "them": "eux"
   },
   "library": {
     "tradePile": "Pile d'échange",
@@ -168,7 +177,19 @@
     "cancelTrade": "Annuler l'échange",
     "submit": "Envoyer",
     "uploadPhotos": "Envoyez des photos de vos cartes pour que l'autre joueur puisse vérifier et accepter.",
-    "failedToSave": "Échec de l'enregistrement de la proposition."
+    "failedToSave": "Échec de l'enregistrement de la proposition.",
+    "waitingForUpload": "En attente que {name} envoie ses photos et accepte.",
+    "waitingForConfirm": "En attente que {name} confirme.",
+    "them": "Eux",
+    "you": "Vous",
+    "rateTrader": "Évaluer {name} :",
+    "ratingPlaceholder": "Note optionnelle… (140 caractères max)",
+    "charsLeft": "{count} caractères restants",
+    "tradeMethodInPerson": "En personne",
+    "tradeMethodMail": "Par courrier",
+    "tradeMethodOther": "Autre",
+    "youPay": "Vous payez",
+    "theyPay": "{name} paie"
   },
   "proposeDialog": {
     "title": "Proposer un échange",
