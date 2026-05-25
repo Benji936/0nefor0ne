@@ -251,7 +251,8 @@ export default {
       this.searching = true;
       this.searched = true;
       try {
-        const response = await searchCardByName(this.search);
+        const locale = this.$route.params.locale || 'en';
+        const response = await searchCardByName(this.search, locale);
         if (response.data?.data?.length > 0) {
           this.cards = response.data.data;
         } else if (response.data?.length > 0) {
@@ -259,7 +260,7 @@ export default {
         } else {
           const alt = await searchCardBySetCode(this.search);
           if (alt) {
-            const byId = await searchById(alt.data.id);
+            const byId = await searchById(alt.data.id, locale);
             this.cards = byId.data?.data ?? byId.data ?? [];
           } else {
             this.cards = [];
@@ -280,7 +281,8 @@ export default {
       this.errorMessage = "";
       this.duplicates = [];
       this.step = "form";
-      this.checkDuplicates(card.name);
+      // Duplicate check uses the English canonical name so it matches DB records
+      this.checkDuplicates(card.name_en ?? card.name);
     },
 
     async checkDuplicates(name) {
@@ -316,11 +318,13 @@ export default {
       }
 
       const isWish = this.mode === "wish";
+      // Always store the English canonical name so DB records are language-agnostic
+      const canonicalName = this.selectedCard.name_en ?? this.selectedCard.name;
       const row = {
         wish: isWish,
         game: "YGO",
-        url: "https://db.ygoprodeck.com/api/v7/cardinfo.php?name=" + this.selectedCard.name,
-        name: this.selectedCard.name,
+        url: "https://db.ygoprodeck.com/api/v7/cardinfo.php?name=" + canonicalName,
+        name: canonicalName,
         extension: this.extensionCode,
         rarity: this.rarity,
         quantity: this.quantity,

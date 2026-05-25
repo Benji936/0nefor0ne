@@ -356,7 +356,8 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
         async _doSearch(query) {
           if (!query.trim()) { this.cards = {}; return; }
           try {
-            const response = await searchCardByName(query);
+            const locale = this.$route.params.locale || 'en';
+            const response = await searchCardByName(query, locale);
             if (query !== this.searchQuery) return; // stale
             if (response.data?.data?.length > 0) {
               this.cards = response.data;
@@ -366,7 +367,7 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
               const alt = await searchCardBySetCode(query);
               if (query !== this.searchQuery) return;
               if (alt?.data?.id) {
-                const byId = await searchById(alt.data.id);
+                const byId = await searchById(alt.data.id, locale);
                 if (query !== this.searchQuery) return;
                 this.cards = byId.data?.data ? byId.data : { data: byId.data ?? [] };
               } else {

@@ -275,7 +275,8 @@ export default {
       if (this.loadingTraders || this.traders.length > 0) return; // skip if cached
       this.loadingTraders = true;
       try {
-        this.traders = await fetchTradersWithCard(this.componentCard.name);
+        // Use English canonical name so DB lookup matches stored records
+        this.traders = await fetchTradersWithCard(this.componentCard.name_en ?? this.componentCard.name);
       } catch {
         this.traders = [];
       } finally {

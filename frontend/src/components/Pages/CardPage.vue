@@ -258,14 +258,15 @@ export default {
       this.traders = [];
 
       try {
-        const res = await searchById(this.cardId);
+        const locale = this.$route.params.locale || 'en';
+        const res = await searchById(this.cardId, locale);
         const data = res?.data?.data?.[0] ?? res?.data?.[0] ?? null;
         if (!data) { this.error = "Card not found."; return; }
         this.card = data;
         this._injectSeo();
-        // Load traders in the background
+        // Traders are looked up by English canonical name so they match DB records
         this.loadingTraders = true;
-        fetchTradersWithCard(data.name)
+        fetchTradersWithCard(data.name_en ?? data.name)
           .then(t => { this.traders = t; })
           .catch(() => { this.traders = []; })
           .finally(() => { this.loadingTraders = false; });
