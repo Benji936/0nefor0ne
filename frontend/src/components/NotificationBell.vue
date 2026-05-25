@@ -170,7 +170,7 @@ onBeforeUnmount(() => {
                 <p class="text-xs leading-snug" :style="{ color: n.read ? 'var(--c-muted)' : 'var(--c-text)', fontWeight: n.read ? '400' : '500' }">
                   {{ notifText(n, t) }}
                 </p>
-                <p class="text-[11px]" style="color: var(--c-muted)">{{ timeAgo(n.created_at) }}</p>
+                <p class="text-[11px]" style="color: var(--c-muted)">{{ timeAgo(n.created_at, t) }}</p>
               </div>
               <span
                 v-if="!n.read"

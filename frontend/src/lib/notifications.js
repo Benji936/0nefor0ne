@@ -38,17 +38,27 @@ export function notifText(n, t) {
 
 /**
  * Returns a compact time-ago string.
- * short=false → "5m ago", "2h ago", "3d ago"
- * short=true  → "5m", "2h", "3d"
+ * Pass the vue-i18n `t` function for translated output.
+ * short=false → "5m ago" / "il y a 5min"
+ * short=true  → "5m" / "5min"
  */
-export function timeAgo(ts, { short = false } = {}) {
+export function timeAgo(ts, t, { short = false } = {}) {
   if (!ts) return '';
   const diff = Date.now() - new Date(ts).getTime();
   const m = Math.floor(diff / 60000);
-  const suffix = short ? '' : ' ago';
-  if (m < 1)  return 'just now';
-  if (m < 60) return `${m}m${suffix}`;
+  if (!t) {
+    // English fallback when t is not provided
+    const suffix = short ? '' : ' ago';
+    if (m < 1)  return 'just now';
+    if (m < 60) return `${m}m${suffix}`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h${suffix}`;
+    return `${Math.floor(h / 24)}d${suffix}`;
+  }
+  if (m < 1)  return t('time.justNow');
+  if (m < 60) return short ? t('time.minutes', { count: m })      : t('time.minutesAgo', { count: m });
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h${suffix}`;
-  return `${Math.floor(h / 24)}d${suffix}`;
+  if (h < 24) return short ? t('time.hours',   { count: h })      : t('time.hoursAgo',   { count: h });
+  const d = Math.floor(h / 24);
+              return short ? t('time.days',    { count: d })      : t('time.daysAgo',    { count: d });
 }

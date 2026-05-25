@@ -3,6 +3,7 @@ import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { cardImage } from "@/lib/cardImage";
 import { fetchTradeEvents } from "@/lib/proposals";
+import { timeAgo as sharedTimeAgo } from "@/lib/notifications";
 import TradeChatDialog   from "@/components/trade/TradeChatDialog.vue";
 import TradePhotosPanel  from "@/components/trade/TradePhotosPanel.vue";
 
@@ -104,14 +105,7 @@ function actorLabel(actorId) {
 }
 
 function timeAgo(ts) {
-  if (!ts) return "";
-  const d    = new Date(ts);
-  const diff = Date.now() - d.getTime();
-  if (diff < 60_000)         return t('notifications.justNow', {}, { missingWarn: false }) || 'just now';
-  if (diff < 3_600_000)      return `${Math.floor(diff / 60_000)}m`;
-  if (diff < 86_400_000)     return `${Math.floor(diff / 3_600_000)}h`;
-  if (diff < 86_400_000 * 7) return `${Math.floor(diff / 86_400_000)}d`;
-  return d.toLocaleDateString();
+  return sharedTimeAgo(ts, t, { short: true });
 }
 
 function statusLabel(status) {

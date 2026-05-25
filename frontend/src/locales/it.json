@@ -389,6 +389,15 @@
     "waitingUpload": "In attesa che {name} carichi",
     "loading": "Caricamento…"
   },
+  "time": {
+    "justNow": "adesso",
+    "minutesAgo": "{count}min fa",
+    "hoursAgo": "{count}h fa",
+    "daysAgo": "{count}g fa",
+    "minutes": "{count}min",
+    "hours": "{count}h",
+    "days": "{count}g"
+  },
   "language": {
     "label": "Lingua",
     "en": "English",

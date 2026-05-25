@@ -389,6 +389,15 @@
     "waitingUpload": "Waiting for {name} to upload",
     "loading": "Loading…"
   },
+  "time": {
+    "justNow": "just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "daysAgo": "{count}d ago",
+    "minutes": "{count}m",
+    "hours": "{count}h",
+    "days": "{count}d"
+  },
   "language": {
     "label": "Language",
     "en": "English",
