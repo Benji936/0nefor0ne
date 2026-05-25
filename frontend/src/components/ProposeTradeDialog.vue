@@ -1,5 +1,6 @@
 <script setup>
 import { ref, watch, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { cardImage } from "@/lib/cardImage";
 import { fetchMyLibrary, fetchUserWishlist, fetchUserTradePile, fetchMyWishlistNames } from "@/lib/matches";
 import { createTradeProposal, updateTradeProposal, counterTradeProposal, uploadTradePhoto } from "@/lib/proposals";
@@ -18,6 +19,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["update:modelValue", "submitted", "updated", "countered"]);
+
+const { t } = useI18n();
 
 // Derived: the counterparty regardless of mode
 const effectiveUser = computed(() => {
@@ -373,9 +376,9 @@ function marketLinks(name, setCode) {
           </div>
           <div class="flex flex-col grow min-w-0">
             <span class="font-bold text-base sm:text-lg leading-tight" style="color: var(--c-text)">
-              {{ isEditing ? 'Edit proposal' : isCountering ? 'Counter-propose' : 'Propose trade' }}
+              {{ isEditing ? t('proposeDialog.editProposal') : isCountering ? t('proposeDialog.counterPropose') : t('proposeDialog.title') }}
             </span>
-            <span class="text-xs sm:text-sm mt-1 truncate" style="color: var(--c-muted)">with {{ effectiveUser.name ?? "Anonymous" }}</span>
+            <span class="text-xs sm:text-sm mt-1 truncate" style="color: var(--c-muted)">{{ t('proposeDialog.with') }} {{ effectiveUser.name ?? t('proposeDialog.anonymous') }}</span>
           </div>
           <v-btn icon="mdi-close" variant="text" color="white" density="compact" @click="close" />
         </div>
@@ -411,7 +414,7 @@ function marketLinks(name, setCode) {
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <v-icon icon="mdi-arrow-up-circle" :color="'var(--c-accent)'" size="20" />
-                <p class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">You give</p>
+                <p class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">{{ t('proposeDialog.youGive') }}</p>
                 <span
                   v-if="givePayload.length > 0"
                   class="text-[11px] px-2 py-1 rounded-md bg-pink-500/15 text-pink-300 border border-pink-500/30 font-semibold"
@@ -425,15 +428,15 @@ function marketLinks(name, setCode) {
                   ? { backgroundColor: 'var(--c-surface-2)', color: 'var(--c-text)' }
                   : { backgroundColor: 'var(--c-trade)', color: 'white' }"
                 @click="openWantedPicker"
-              >{{ showWantedPicker ? 'Hide suggestions' : 'Add to offer' }}</v-btn>
+              >{{ showWantedPicker ? t('proposeDialog.hideSuggestions') : t('proposeDialog.addToOffer') }}</v-btn>
             </div>
 
             <!-- Inline "what they want" suggestions panel -->
             <div v-if="showWantedPicker" class="rounded-xl border overflow-hidden" style="border-color: var(--c-border); background-color: var(--c-surface-2)">
               <div class="flex items-center gap-2 px-3 py-2 border-b" style="border-color: var(--c-border)">
                 <v-icon icon="mdi-heart-search" size="14" color="var(--c-trade)" />
-                <span class="text-[11px] font-bold uppercase tracking-wide grow" style="color: var(--c-trade)">Cards they want</span>
-                <span class="text-[10px]" style="color: var(--c-muted)">Click to select · not in library opens AddCard</span>
+                <span class="text-[11px] font-bold uppercase tracking-wide grow" style="color: var(--c-trade)">{{ t('proposeDialog.cardsTheyWant') }}</span>
+                <span class="text-[10px]" style="color: var(--c-muted)">{{ t('proposeDialog.clickToSelect') }}</span>
               </div>
               <!-- Search -->
               <div class="px-3 pt-2 pb-1">
@@ -454,7 +457,7 @@ function marketLinks(name, setCode) {
               </div>
               <!-- Empty -->
               <p v-else-if="!filteredWanted.length" class="text-xs text-center py-4" style="color: var(--c-muted)">
-                {{ counterpartyWishlist.length === 0 ? 'Their wishlist is empty.' : 'No matches.' }}
+                {{ counterpartyWishlist.length === 0 ? t('proposeDialog.theirWishlistEmpty') : t('proposeDialog.noMatches') }}
               </p>
               <!-- Cards strip -->
               <div v-else class="flex gap-2 px-3 py-2 overflow-x-auto suggestions-scroll">
@@ -500,7 +503,7 @@ function marketLinks(name, setCode) {
               <v-icon icon="mdi-magnify" size="16" class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" color="var(--c-muted)" />
               <input
                 v-model="giveFilter"
-                placeholder="Search your library…"
+                :placeholder="t('proposeDialog.searchYourLibrary')"
                 class="w-full rounded-lg pl-8 pr-3 py-2 text-sm outline-none border"
                 :style="{ backgroundColor: 'var(--c-surface-2)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
               />
@@ -510,11 +513,11 @@ function marketLinks(name, setCode) {
             <div class="overflow-y-auto flex flex-col gap-3 pr-1 flex-1 min-h-0 column-scroll">
               <p v-if="myOffers.length === 0" class="text-sm py-8 text-center flex flex-col items-center gap-3" style="color: var(--c-muted)">
                 <v-icon icon="mdi-card-off-outline" size="36" color="var(--c-muted)" />
-                <span>Your library is empty.<br />Add a card to offer above.</span>
+                <span>{{ t('proposeDialog.yourLibraryEmpty') }}</span>
               </p>
               <p v-else-if="filteredMyOffers.length === 0" class="text-sm py-8 text-center flex flex-col items-center gap-3" style="color: var(--c-muted)">
                 <v-icon icon="mdi-magnify-close" size="36" color="var(--c-muted)" />
-                <span>No cards match your search.</span>
+                <span>{{ t('proposeDialog.noCardsMatch') }}</span>
               </p>
 
               <template v-for="card in filteredMyOffers" :key="card.id">
@@ -565,7 +568,7 @@ function marketLinks(name, setCode) {
                     <span
                       v-if="card.theyWantThis"
                       class="text-[11px] font-bold text-lime-300 bg-lime-500/15 border border-lime-500/30 px-2 py-1 rounded-md w-fit flex items-center gap-1"
-                    ><v-icon icon="mdi-star-four-points" size="10" color="var(--c-mutual)" />They want this</span>
+                    ><v-icon icon="mdi-star-four-points" size="10" color="var(--c-mutual)" />{{ t('proposeDialog.theyWantThis') }}</span>
                   </div>
                   <v-number-input
                     v-if="(giveSelection[card.id] ?? 0) > 0"
@@ -585,7 +588,7 @@ function marketLinks(name, setCode) {
           <section class="flex flex-col gap-4 min-h-0">
             <div class="flex items-center gap-3">
               <v-icon icon="mdi-arrow-down-circle" :color="'var(--c-trade)'" size="20" />
-              <p class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">You receive</p>
+              <p class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">{{ t('proposeDialog.youReceive') }}</p>
               <span
                 v-if="receivePayload.length > 0"
                 class="text-[11px] px-2 py-1 rounded-md bg-blue-500/15 text-blue-300 border border-blue-500/30 font-semibold"
@@ -602,7 +605,7 @@ function marketLinks(name, setCode) {
               <v-icon icon="mdi-magnify" size="16" class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" color="var(--c-muted)" />
               <input
                 v-model="theirFilter"
-                placeholder="Search their trade pile…"
+                :placeholder="t('proposeDialog.searchTheirPile')"
                 class="w-full rounded-lg pl-8 pr-3 py-2 text-sm outline-none border"
                 :style="{
                   backgroundColor: 'var(--c-surface-2)',
@@ -633,11 +636,11 @@ function marketLinks(name, setCode) {
                 <!-- Empty state -->
                 <p v-if="theirTradePile.length === 0" class="text-sm py-8 text-center flex flex-col items-center gap-3" style="color: var(--c-muted)">
                   <v-icon icon="mdi-card-off-outline" size="36" color="var(--c-muted)" />
-                  <span>Their trade pile is empty.</span>
+                  <span>{{ t('proposeDialog.theirTradePileEmpty') }}</span>
                 </p>
                 <p v-else-if="filteredTheirPile.length === 0" class="text-sm py-8 text-center flex flex-col items-center gap-3" style="color: var(--c-muted)">
                   <v-icon icon="mdi-magnify-close" size="36" color="var(--c-muted)" />
-                  <span>No cards match your search.</span>
+                  <span>{{ t('proposeDialog.noCardsMatch') }}</span>
                 </p>
 
                 <!-- Wishlist match divider -->
@@ -646,7 +649,7 @@ function marketLinks(name, setCode) {
                   class="text-[10px] font-bold uppercase tracking-widest pt-1 pb-1"
                   style="color: var(--c-muted)"
                 >
-                  Matches your wishlist
+                  {{ t('proposeDialog.matchesYourWishlist') }}
                 </p>
 
                 <template v-for="(card, idx) in filteredTheirPile" :key="card.id">
@@ -656,7 +659,7 @@ function marketLinks(name, setCode) {
                     class="text-[10px] font-bold uppercase tracking-widest pt-2 pb-1"
                     style="color: var(--c-muted)"
                   >
-                    Their full trade pile
+                    {{ t('proposeDialog.theirFullTradePile') }}
                   </p>
 
                   <div
@@ -715,7 +718,7 @@ function marketLinks(name, setCode) {
                         style="color: var(--c-mutual); background-color: color-mix(in srgb, var(--c-mutual) 15%, transparent); border: 1px solid color-mix(in srgb, var(--c-mutual) 30%, transparent)"
                       >
                         <v-icon icon="mdi-star-four-points" size="10" :color="'var(--c-mutual)'" />
-                        On your wishlist
+                        {{ t('proposeDialog.onYourWishlist') }}
                       </span>
                     </div>
                     <v-number-input
@@ -739,7 +742,7 @@ function marketLinks(name, setCode) {
         <!-- ── Settlement details ── -->
         <div class="flex flex-col sm:flex-row sm:justify-between gap-4 mt-4 rounded-xl border py-4 px-4" style="border-color: var(--c-border); background-color: var(--c-surface-2)">
           <div class="flex flex-col gap-3">
-            <p class="text-[11px] font-bold uppercase tracking-widest" style="color: var(--c-muted)">Settlement details</p>
+            <p class="text-[11px] font-bold uppercase tracking-widest" style="color: var(--c-muted)">{{ t('proposeDialog.settlementDetails') }}</p>
 
             <!-- Trade method -->
             <div class="flex items-center gap-2 flex-wrap">
@@ -790,8 +793,8 @@ function marketLinks(name, setCode) {
 
           <!-- Verification photo -->
           <div class="flex flex-col gap-2">
-            <p class="text-[11px] font-bold uppercase tracking-widest" style="color: var(--c-muted)">Verification photo</p>
-            <p class="text-xs" style="color: var(--c-muted)">Attach a photo of your cards so the other party can verify the condition before accepting.</p>
+            <p class="text-[11px] font-bold uppercase tracking-widest" style="color: var(--c-muted)">{{ t('proposeDialog.verificationPhoto') }}</p>
+            <p class="text-xs" style="color: var(--c-muted)">{{ t('proposal.uploadPhotos') }}</p>
 
             <div class="flex items-center gap-3 flex-wrap">
               <!-- Preview thumbnail -->
@@ -823,7 +826,7 @@ function marketLinks(name, setCode) {
                 @click="photoInput.click()"
               >
                 <v-icon icon="mdi-camera-plus-outline" size="15" />
-                {{ photoFile ? 'Change photo' : 'Add photo' }}
+                {{ photoFile ? t('proposeDialog.changePhoto') : t('proposeDialog.addPhoto') }}
               </button>
               <input
                 ref="photoInput"
@@ -857,10 +860,10 @@ function marketLinks(name, setCode) {
                 <span class="text-blue-300 font-semibold">{{ receivePayload.length }}</span>
               </span>
             </span>
-            <span v-else class="text-xs sm:text-sm hidden sm:block" style="color: var(--c-muted)">Select cards to include.</span>
+            <span v-else class="text-xs sm:text-sm hidden sm:block" style="color: var(--c-muted)">{{ t('proposeDialog.selectCards') }}</span>
           </div>
           <div class="flex gap-2">
-            <v-btn variant="text" color="gray" size="small" @click="close" :disabled="submitting">Cancel</v-btn>
+            <v-btn variant="text" color="gray" size="small" @click="close" :disabled="submitting">{{ t('common.cancel') }}</v-btn>
             <v-btn
               variant="flat"
               style="background-color: var(--c-accent); color: white"
@@ -871,7 +874,7 @@ function marketLinks(name, setCode) {
               :disabled="!canSubmit"
               @click="submit"
             >
-              {{ isEditing ? 'Save' : isCountering ? 'Counter' : 'Send' }}
+              {{ isEditing ? t('proposeDialog.save') : isCountering ? t('proposal.counter') : t('proposeDialog.send') }}
             </v-btn>
           </div>
         </div>

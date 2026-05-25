@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import ProposalRow from "@/components/ProposalRow.vue";
 
@@ -24,12 +24,23 @@ const total = computed(() =>
 );
 
 const filters = computed(() => [
-  { key: "all",      label: t("proposals.all"),      count: total.value,                    color: "var(--c-text)",   bg: "var(--c-surface-2)" },
-  { key: "incoming", label: t("proposals.incoming"), count: props.incomingPending.length,   color: "var(--c-mutual)", bg: `color-mix(in srgb, var(--c-mutual) 14%, transparent)`, show: props.incomingPending.length > 0 },
-  { key: "outgoing", label: t("proposals.outgoing"), count: props.outgoingPending.length,   color: "var(--c-trade)",  bg: `color-mix(in srgb, var(--c-trade) 14%, transparent)`,  show: props.outgoingPending.length > 0 },
-  { key: "accepted", label: t("proposals.accepted"), count: props.acceptedTrades.length,    color: "var(--c-mutual)", bg: `color-mix(in srgb, var(--c-mutual) 14%, transparent)`, show: props.acceptedTrades.length > 0 },
-  { key: "history",  label: t("proposals.history"),  count: props.history.length,           color: "var(--c-muted)",  bg: `color-mix(in srgb, var(--c-muted) 10%, transparent)`,  show: props.history.length > 0 },
-].filter(f => f.key === "all" || f.show));
+  { key: "all",      label: t("proposals.all"),      count: total.value,                  color: "var(--c-text)",   bg: "var(--c-surface-2)" },
+  { key: "incoming", label: t("proposals.incoming"), count: props.incomingPending.length, color: "var(--c-mutual)", bg: "color-mix(in srgb, var(--c-mutual) 14%, transparent)" },
+  { key: "outgoing", label: t("proposals.outgoing"), count: props.outgoingPending.length, color: "var(--c-trade)",  bg: "color-mix(in srgb, var(--c-trade) 14%, transparent)" },
+  { key: "accepted", label: t("proposals.accepted"), count: props.acceptedTrades.length,  color: "var(--c-accent)", bg: "color-mix(in srgb, var(--c-accent) 14%, transparent)" },
+  { key: "history",  label: t("proposals.history"),  count: props.history.length,         color: "var(--c-muted)",  bg: "color-mix(in srgb, var(--c-muted) 10%, transparent)" },
+]);
+
+// Reset to "all" if the active section becomes empty
+watch(
+  () => [props.incomingPending.length, props.outgoingPending.length, props.acceptedTrades.length, props.history.length],
+  () => {
+    const counts = { incoming: props.incomingPending.length, outgoing: props.outgoingPending.length, accepted: props.acceptedTrades.length, history: props.history.length };
+    if (activeFilter.value !== "all" && counts[activeFilter.value] === 0) {
+      activeFilter.value = "all";
+    }
+  }
+);
 
 const show = (key) => activeFilter.value === "all" || activeFilter.value === key;
 </script>
@@ -81,21 +92,28 @@ const show = (key) => activeFilter.value === "all" || activeFilter.value === key
   <template v-else>
 
     <!-- Filter chips -->
-    <div v-if="filters.length > 1" class="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+    <div class="flex flex-wrap gap-5 pt-1 pb-1">
       <button
         v-for="f in filters"
         :key="f.key"
-        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0"
+        class="group flex items-center gap-3 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 whitespace-nowrap"
+        :class="f.count === 0 && f.key !== 'all' ? 'opacity-30 cursor-default pointer-events-none' : 'cursor-pointer'"
         :style="activeFilter === f.key
-          ? { background: f.bg, color: f.color, boxShadow: `0 0 0 1.5px ${f.color}` }
+          ? { background: f.bg, color: f.color, boxShadow: `0 0 0 1.5px ${f.color}, 0 0 12px color-mix(in srgb, ${f.color} 20%, transparent)` }
           : { background: 'var(--c-surface-2)', color: 'var(--c-muted)', boxShadow: '0 0 0 1px var(--c-border)' }"
-        @click="activeFilter = f.key"
+        :disabled="f.count === 0 && f.key !== 'all'"
+        @click="f.count > 0 || f.key === 'all' ? activeFilter = f.key : null"
       >
+        <span
+          v-if="f.key !== 'all'"
+          class="size-1.5 rounded-full shrink-0 transition-opacity duration-200"
+          :style="{ background: f.color, opacity: activeFilter === f.key ? 1 : 0.5 }"
+        />
         {{ f.label }}
         <span
-          class="tabular-nums text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+          class="tabular-nums text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-all duration-200"
           :style="activeFilter === f.key
-            ? { background: `color-mix(in srgb, ${f.color} 20%, transparent)`, color: f.color }
+            ? { background: `color-mix(in srgb, ${f.color} 22%, transparent)`, color: f.color }
             : { background: 'var(--c-border)', color: 'var(--c-muted)' }"
         >{{ f.count }}</span>
       </button>
@@ -109,7 +127,7 @@ const show = (key) => activeFilter.value === "all" || activeFilter.value === key
         <span class="text-[11px] font-bold px-2 py-1 rounded-md tabular-nums" style="background: color-mix(in srgb, var(--c-mutual) 15%, transparent); color: var(--c-mutual)">{{ incomingPending.length }}</span>
       </div>
       <p class="text-xs -mt-2" style="color: var(--c-muted)">{{ t('proposals.incomingDesc') }}</p>
-      <div class="flex flex-col gap-3">
+      <div class="flex flex-col gap-10">
         <ProposalRow
           v-for="p in incomingPending" :key="p.id"
           :proposal="p" :current-user-id="currentUserId"
@@ -131,7 +149,7 @@ const show = (key) => activeFilter.value === "all" || activeFilter.value === key
         <span class="text-[11px] font-bold px-2 py-1 rounded-md tabular-nums" style="background: color-mix(in srgb, var(--c-trade) 15%, transparent); color: var(--c-trade)">{{ outgoingPending.length }}</span>
       </div>
       <p class="text-xs -mt-2" style="color: var(--c-muted)">{{ t('proposals.outgoingDesc') }}</p>
-      <div class="flex flex-col gap-3">
+      <div class="flex flex-col gap-10">
         <ProposalRow
           v-for="p in outgoingPending" :key="p.id"
           :proposal="p" :current-user-id="currentUserId"
@@ -147,12 +165,12 @@ const show = (key) => activeFilter.value === "all" || activeFilter.value === key
       style="border-color: var(--c-border)"
     >
       <div class="flex items-center gap-3 pb-3" style="border-bottom: 1px solid var(--c-border)">
-        <div class="size-2 rounded-full shrink-0" style="background: var(--c-mutual)" />
+        <div class="size-2 rounded-full shrink-0" style="background: var(--c-accent)" />
         <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">{{ t('proposals.accepted') }}</h2>
-        <span class="text-[11px] font-bold px-2 py-1 rounded-md tabular-nums" style="background: color-mix(in srgb, var(--c-mutual) 15%, transparent); color: var(--c-mutual)">{{ acceptedTrades.length }}</span>
+        <span class="text-[11px] font-bold px-2 py-1 rounded-md tabular-nums" style="background: color-mix(in srgb, var(--c-accent) 15%, transparent); color: var(--c-accent)">{{ acceptedTrades.length }}</span>
       </div>
       <p class="text-xs -mt-2" style="color: var(--c-muted)">{{ t('proposals.acceptedDesc') }}</p>
-      <div class="flex flex-col gap-3">
+      <div class="flex flex-col gap-10">
         <ProposalRow
           v-for="p in acceptedTrades" :key="p.id"
           :proposal="p" :current-user-id="currentUserId"
@@ -170,7 +188,7 @@ const show = (key) => activeFilter.value === "all" || activeFilter.value === key
         <div class="size-2 rounded-full shrink-0" style="background: var(--c-muted)" />
         <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-muted)">{{ t('proposals.history') }}</h2>
       </div>
-      <div class="flex flex-col gap-3">
+      <div class="flex flex-col gap-10">
         <ProposalRow
           v-for="p in history" :key="p.id"
           :proposal="p" :current-user-id="currentUserId"

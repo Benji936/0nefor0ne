@@ -412,5 +412,33 @@
     "noMessages": "Aucun message pour l'instant. Dites quelque chose !",
     "typeMessage": "Tapez un message…",
     "readOnly": "Le chat est en lecture seule."
+  },
+  "meta": {
+    "search": {
+      "title": "One for One — Échange de Cartes Yu-Gi-Oh!",
+      "titleWithQuery": "{query} — Échange Yu-Gi-Oh! | One for One",
+      "desc": "Échangez vos cartes Yu-Gi-Oh! directement avec d'autres collectionneurs. Gérez votre pile d'échange et trouvez des correspondances parfaites près de chez vous.",
+      "descWithQuery": "Trouvez des échangeurs pour {query} sur One for One, la plateforme d'échange gratuite."
+    },
+    "library": {
+      "title": "Ma Collection — One for One",
+      "desc": "Gérez votre collection de cartes Yu-Gi-Oh!, votre pile d'échange et votre liste de souhaits sur One for One."
+    },
+    "trade": {
+      "title": "Centre d'Échange — One for One",
+      "desc": "Parcourez vos correspondances, envoyez des propositions et finalisez vos échanges de cartes sur One for One."
+    },
+    "account": {
+      "title": "Mon Compte — One for One",
+      "desc": "Gérez votre profil One for One, votre localisation et vos préférences d'échange."
+    },
+    "card": {
+      "title": "Carte Yu-Gi-Oh! — One for One",
+      "desc": "Échangez des cartes Yu-Gi-Oh! sur One for One. Trouvez des collectionneurs qui les ont ou les cherchent."
+    },
+    "privacy": {
+      "title": "Politique de Confidentialité — One for One",
+      "desc": "Politique de confidentialité de One for One, la plateforme d'échange gratuite de cartes Yu-Gi-Oh!."
+    }
   }
 }

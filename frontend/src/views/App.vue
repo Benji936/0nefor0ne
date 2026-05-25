@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRouter, useRoute } from "vue-router";
 import AuthDialog from "@/components/AuthDialog.vue";
 import NavItem from "@/components/NavItem.vue";
 import NotificationBell from "@/components/NotificationBell.vue";
@@ -8,12 +9,21 @@ import UserMenuChip from "@/components/UserMenuChip.vue";
 import { setLocale, SUPPORTED } from "@/i18n.js";
 
 const { locale } = useI18n();
+const router = useRouter();
+const route  = useRoute();
 const langMenuOpen = ref(false);
 
 const LANG_LABELS = { en: "English", fr: "Français", de: "Deutsch", it: "Italiano" };
 
 function switchLang(lang) {
   setLocale(lang);
+  // Swap the locale segment in the current URL so the address bar stays in sync
+  const currentLocale = route.params.locale || "en";
+  const newPath = route.path.replace(
+    new RegExp(`^/${currentLocale}(/|$)`),
+    `/${lang}$1`
+  );
+  router.replace(newPath);
   langMenuOpen.value = false;
 }
 </script>
@@ -243,59 +253,90 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
       },
       methods: {
         _updateMeta(overrides = {}) {
-          const BASE = 'One for One';
-          const q    = this.searchQuery.trim();
+          const q      = this.searchQuery.trim();
+          const locale = this.$route.params.locale || 'en';
+          const OG_LOCALES = { en: 'en_US', fr: 'fr_FR', de: 'de_DE', it: 'it_IT' };
+          const IMAGE = 'https://0nefor.one/logo.png';
 
           const defaults = {
             search: {
-              title: q
-                ? `${q} — Yu-Gi-Oh! Trading | ${BASE}`
-                : `${BASE} — Yu-Gi-Oh! Card Trading`,
-              desc:  q
-                ? `Find traders for ${q} on One for One the free Yu-Gi-Oh! card trading platform.`
-                : 'Trade Yu-Gi-Oh! cards directly with other collectors. List your trade pile, build your wishlist, and find perfect one-for-one matches near you.',
-              image: 'https://0nefor.one/logo.png',
+              title: q ? this.$t('meta.search.titleWithQuery', { query: q }) : this.$t('meta.search.title'),
+              desc:  q ? this.$t('meta.search.descWithQuery',  { query: q }) : this.$t('meta.search.desc'),
+              image: IMAGE,
             },
             library: {
-              title: `My Collection — ${BASE}`,
-              desc:  'Manage your Yu-Gi-Oh! card collection, trade pile, and wishlist on One for One.',
-              image: 'https://0nefor.one/logo.png',
+              title: this.$t('meta.library.title'),
+              desc:  this.$t('meta.library.desc'),
+              image: IMAGE,
             },
             TradeCenter: {
-              title: `Trade Center — ${BASE}`,
-              desc:  'Browse your trade matches, send proposals, and complete card trades on One for One.',
-              image: 'https://0nefor.one/logo.png',
+              title: this.$t('meta.trade.title'),
+              desc:  this.$t('meta.trade.desc'),
+              image: IMAGE,
             },
             account: {
-              title: `My Account — ${BASE}`,
-              desc:  'Manage your One for One profile, location, and trade preferences.',
-              image: 'https://0nefor.one/logo.png',
+              title: this.$t('meta.account.title'),
+              desc:  this.$t('meta.account.desc'),
+              image: IMAGE,
+            },
+            card: {
+              title: this.$t('meta.card.title'),
+              desc:  this.$t('meta.card.desc'),
+              image: IMAGE,
+            },
+            privacy: {
+              title: this.$t('meta.privacy.title'),
+              desc:  this.$t('meta.privacy.desc'),
+              image: IMAGE,
             },
           };
 
           const meta = { ...defaults[this.page] ?? defaults.search, ...overrides };
 
-          // <title>
           document.title = meta.title;
+          this._setMeta('name',     'description',      meta.desc);
+          this._setMeta('property', 'og:title',         meta.title);
+          this._setMeta('property', 'og:description',   meta.desc);
+          this._setMeta('property', 'og:image',         meta.image);
+          this._setMeta('property', 'og:locale',        OG_LOCALES[locale] || 'en_US');
+          this._setMeta('name',     'twitter:title',       meta.title);
+          this._setMeta('name',     'twitter:description', meta.desc);
+          this._setMeta('name',     'twitter:image',       meta.image);
 
-          // <meta name="description">
-          this._setMeta('name', 'description', meta.desc);
-
-          // Open Graph
-          this._setMeta('property', 'og:title',       meta.title);
-          this._setMeta('property', 'og:description',  meta.desc);
-          this._setMeta('property', 'og:image',        meta.image);
-
-          // Twitter / X
-          this._setMeta('name', 'twitter:title',       meta.title);
-          this._setMeta('name', 'twitter:description', meta.desc);
-          this._setMeta('name', 'twitter:image',       meta.image);
-
-          // <link rel="canonical"> — reflects the real URL for this route
+          // Canonical
           const canonical = document.head.querySelector('link[rel="canonical"]');
-          if (canonical) {
-            canonical.setAttribute('href', `https://0nefor.one${this.$route?.fullPath ?? '/'}`);
+          if (canonical) canonical.setAttribute('href', `https://0nefor.one${this.$route?.fullPath ?? '/'}`);
+
+          // hreflang — one tag per supported locale + x-default
+          this._updateHreflang(locale);
+        },
+
+        _updateHreflang(currentLocale) {
+          const SUPPORTED = ['en', 'fr', 'de', 'it'];
+          const path = this.$route.path; // e.g. /fr/trade
+
+          SUPPORTED.forEach(lang => {
+            const localePath = path.replace(new RegExp(`^/${currentLocale}(/|$)`), `/${lang}$1`);
+            let el = document.head.querySelector(`link[rel="alternate"][hreflang="${lang}"]`);
+            if (!el) {
+              el = document.createElement('link');
+              el.setAttribute('rel', 'alternate');
+              el.setAttribute('hreflang', lang);
+              document.head.appendChild(el);
+            }
+            el.setAttribute('href', `https://0nefor.one${localePath}`);
+          });
+
+          // x-default points to the English version
+          const enPath = path.replace(new RegExp(`^/${currentLocale}(/|$)`), `/en$1`);
+          let xDefault = document.head.querySelector('link[rel="alternate"][hreflang="x-default"]');
+          if (!xDefault) {
+            xDefault = document.createElement('link');
+            xDefault.setAttribute('rel', 'alternate');
+            xDefault.setAttribute('hreflang', 'x-default');
+            document.head.appendChild(xDefault);
           }
+          xDefault.setAttribute('href', `https://0nefor.one${enPath}`);
         },
 
         /** Upsert a <meta> tag by its attribute selector. */
@@ -360,15 +401,18 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
         },
 
         changePage(name) {
-          const routeMap = { search: '/', library: '/library', TradeCenter: '/trade', account: '/account' };
-          this.$router.push(routeMap[name] ?? '/');
+          const lc = this.$route.params.locale || 'en';
+          const pathMap = { search: `/${lc}/`, library: `/${lc}/library`, TradeCenter: `/${lc}/trade`, account: `/${lc}/account` };
+          this.$router.push(pathMap[name] ?? `/${lc}/`);
         },
         openMatches(card = null) {
           this.filterCardName = card?.name ?? "";
-          this.$router.push('/trade');
+          const lc = this.$route.params.locale || 'en';
+          this.$router.push(`/${lc}/trade`);
         },
         openProposals() {
-          this.$router.push('/trade').then(() => {
+          const lc = this.$route.params.locale || 'en';
+          this.$router.push(`/${lc}/trade`).then(() => {
             this.$nextTick(() => this.$refs.pageRef?.switchToProposals?.());
           });
         },

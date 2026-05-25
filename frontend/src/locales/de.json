@@ -412,5 +412,33 @@
     "noMessages": "Noch keine Nachrichten. Sag etwas!",
     "typeMessage": "Nachricht eingeben…",
     "readOnly": "Chat ist schreibgeschützt."
+  },
+  "meta": {
+    "search": {
+      "title": "One for One — Yu-Gi-Oh! Karten tauschen",
+      "titleWithQuery": "{query} — Yu-Gi-Oh! Tausch | One for One",
+      "desc": "Tausche Yu-Gi-Oh! Karten direkt mit anderen Sammlern. Verwalte deinen Tauschstapel und finde perfekte Matches in deiner Nähe.",
+      "descWithQuery": "Finde Tauschpartner für {query} auf One for One, der kostenlosen Yu-Gi-Oh! Tauschplattform."
+    },
+    "library": {
+      "title": "Meine Sammlung — One for One",
+      "desc": "Verwalte deine Yu-Gi-Oh! Kartensammlung, Tauschstapel und Wunschliste auf One for One."
+    },
+    "trade": {
+      "title": "Tauschzentrum — One for One",
+      "desc": "Durchsuche Tauschpartner, sende Angebote und schließe Kartentausche auf One for One ab."
+    },
+    "account": {
+      "title": "Mein Konto — One for One",
+      "desc": "Verwalte dein One for One Profil, deinen Standort und deine Tauschpräferenzen."
+    },
+    "card": {
+      "title": "Yu-Gi-Oh! Karte — One for One",
+      "desc": "Tausche Yu-Gi-Oh! Karten auf One for One. Finde Sammler, die sie haben oder suchen."
+    },
+    "privacy": {
+      "title": "Datenschutzrichtlinie — One for One",
+      "desc": "Datenschutzrichtlinie für One for One, die kostenlose Yu-Gi-Oh! Tauschplattform."
+    }
   }
 }

@@ -32,7 +32,8 @@ const iConfirmed    = computed(() => props.proposal.i_confirmed    ?? false);
 const theyConfirmed = computed(() => props.proposal.they_confirmed ?? false);
 const initials      = computed(() => (props.proposal.counterparty_name ?? "?")[0].toUpperCase());
 
-const detailOpen = ref(false);
+const detailOpen  = ref(false);
+const cardsOpen   = ref(false);
 
 // Rating state
 const myRating       = ref(null);
@@ -154,87 +155,119 @@ function cancelRating() {
       />
     </div>
 
-    <!-- Deal body: you give | ⇄ | you receive -->
-    <div class="flex flex-col md:flex-row" style="border-top: 1px solid var(--c-border)">
-
-      <!-- You give (accent/pink tint) -->
-      <div
-        class="flex flex-col p-4 md:flex-1 min-w-0 align-center justify-center"
-        style="background: color-mix(in srgb, var(--c-accent) 4%, transparent)"
-      >
-        <div v-if="proposal.i_give?.length" class="card-fan">
-          <v-tooltip
-            v-for="(card, i) in proposal.i_give.slice(0, 5)"
-            :key="card.id"
-            :text="card.name"
-            location="top"
-          >
-            <template #activator="{ props: tip }">
-              <div
-                v-bind="tip"
-                class="card-fan-item"
-                :style="{ '--r': `${[-3, -1.5, 0.5, -2, 1.5][i] ?? 0}deg`, zIndex: i + 1 }"
-              >
-                <img
-                  :src="cardImage(card.image_id)"
-                  :alt="card.name"
-                  loading="lazy"
-                  class="card-fan-img rounded-md object-contain"
-                />
-              </div>
-            </template>
-          </v-tooltip>
-          <div v-if="proposal.i_give.length > 5" class="card-fan-extra">
-            +{{ proposal.i_give.length - 5 }}
-          </div>
-        </div>
-        <span v-else class="text-xs italic" style="color: var(--c-muted)">{{ t('proposal.none') }}</span>
+    <!-- Card summary bar: always visible, click to expand fan -->
+    <div
+      class="flex items-center gap-3 px-4 py-3 cursor-pointer select-none transition-colors duration-150"
+      :style="{ borderTop: '1px solid var(--c-border)', background: cardsOpen ? 'var(--c-surface-2)' : 'transparent' }"
+      @click="cardsOpen = !cardsOpen"
+    >
+      <!-- You give: count + label -->
+      <div class="flex items-center gap-2 flex-1 min-w-0 py-1">
+        <span
+          class="text-xs font-bold tabular-nums px-2 py-1 rounded"
+          :style="{ background: 'color-mix(in srgb, var(--c-accent) 14%, transparent)', color: 'var(--c-accent)' }"
+        >{{ proposal.i_give?.length ?? 0 }}</span>
+        <span class="text-[11px] truncate" style="color: var(--c-muted)">{{ t('proposal.youSend') }}</span>
       </div>
 
-      <!-- Divider: horizontal on mobile, vertical on desktop -->
-      <div
-        class="flex items-center justify-center py-2 md:py-0 md:w-8 shrink-0"
-        
-        style="background: var(--c-surface)"
-      >
-        <v-icon icon="mdi-swap-horizontal" size="16" color="var(--c-muted)" />
+      <v-icon icon="mdi-swap-horizontal" size="14" color="var(--c-muted)" class="shrink-0" />
+
+      <!-- You receive: label + count -->
+      <div class="flex items-center gap-2 flex-1 min-w-0 justify-end">
+        <span class="text-[11px] truncate" style="color: var(--c-muted)">{{ t('proposal.theySend') }}</span>
+        <span
+          class="text-xs font-bold tabular-nums px-2 py-1 rounded"
+          :style="{ background: 'color-mix(in srgb, var(--c-trade) 14%, transparent)', color: 'var(--c-trade)' }"
+        >{{ proposal.i_receive?.length ?? 0 }}</span>
       </div>
 
-      <!-- You receive (amethyst tint) -->
-      <div
-        class="flex flex-col p-4 md:flex-1 min-w-0 items-center"
-        style="background: color-mix(in srgb, var(--c-trade) 4%, transparent)"
-      >
-        <div v-if="proposal.i_receive?.length" class="card-fan">
-          <v-tooltip
-            v-for="(card, i) in proposal.i_receive.slice(0, 5)"
-            :key="card.id"
-            :text="card.name"
-            location="top"
-          >
-            <template #activator="{ props: tip }">
-              <div
-                v-bind="tip"
-                class="card-fan-item"
-                :style="{ '--r': `${[-3, -1.5, 0.5, -2, 1.5][i] ?? 0}deg`, zIndex: i + 1 }"
-              >
-                <img
-                  :src="cardImage(card.image_id)"
-                  :alt="card.name"
-                  loading="lazy"
-                  class="card-fan-img rounded-md object-contain"
-                />
-              </div>
-            </template>
-          </v-tooltip>
-          <div v-if="proposal.i_receive.length > 5" class="card-fan-extra">
-            +{{ proposal.i_receive.length - 5 }}
-          </div>
-          
-        </div>
-        <span v-else class="text-xs italic self-center" style="color: var(--c-muted)">{{ t('proposal.none') }}</span>
-      </div>
+      <v-icon
+        :icon="cardsOpen ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+        size="16"
+        color="var(--c-muted)"
+        class="shrink-0"
+        style="transition: transform 0.2s cubic-bezier(0.22,1,0.36,1)"
+      />
     </div>
+
+    <!-- Expandable card fan -->
+    <Transition name="cards-expand">
+      <div v-show="cardsOpen" class="flex flex-col md:flex-row" style="border-top: 1px solid var(--c-border)">
+
+        <!-- You give (accent/pink tint) -->
+        <div
+          class="flex flex-col items-center justify-center p-4 md:flex-1 min-w-0"
+          style="background: color-mix(in srgb, var(--c-accent) 4%, transparent)"
+        >
+          <div v-if="proposal.i_give?.length" class="card-fan">
+            <v-tooltip
+              v-for="(card, i) in proposal.i_give.slice(0, 5)"
+              :key="card.id"
+              :text="card.name"
+              location="top"
+            >
+              <template #activator="{ props: tip }">
+                <div
+                  v-bind="tip"
+                  class="card-fan-item"
+                  :style="{ '--r': `${[-3, -1.5, 0.5, -2, 1.5][i] ?? 0}deg`, zIndex: i + 1 }"
+                >
+                  <img
+                    :src="cardImage(card.image_id)"
+                    :alt="card.name"
+                    loading="lazy"
+                    class="card-fan-img rounded-md object-contain"
+                  />
+                </div>
+              </template>
+            </v-tooltip>
+            <div v-if="proposal.i_give.length > 5" class="card-fan-extra">
+              +{{ proposal.i_give.length - 5 }}
+            </div>
+          </div>
+          <div v-else class="flex flex-col items-center gap-2 py-8 opacity-30">
+            <v-icon icon="mdi-cards-outline" size="36" color="var(--c-muted)" />
+          </div>
+        </div>
+        
+
+        <!-- You receive (amethyst tint) -->
+        <div
+          class="flex flex-col items-center justify-center p-4 md:flex-1 min-w-0"
+          style="background: color-mix(in srgb, var(--c-trade) 4%, transparent)"
+        >
+          <div v-if="proposal.i_receive?.length" class="card-fan">
+            <v-tooltip
+              v-for="(card, i) in proposal.i_receive.slice(0, 5)"
+              :key="card.id"
+              :text="card.name"
+              location="top"
+            >
+              <template #activator="{ props: tip }">
+                <div
+                  v-bind="tip"
+                  class="card-fan-item"
+                  :style="{ '--r': `${[-3, -1.5, 0.5, -2, 1.5][i] ?? 0}deg`, zIndex: i + 1 }"
+                >
+                  <img
+                    :src="cardImage(card.image_id)"
+                    :alt="card.name"
+                    loading="lazy"
+                    class="card-fan-img rounded-md object-contain"
+                  />
+                </div>
+              </template>
+            </v-tooltip>
+            <div v-if="proposal.i_receive.length > 5" class="card-fan-extra">
+              +{{ proposal.i_receive.length - 5 }}
+            </div>
+          </div>
+          <div v-else class="flex flex-col items-center gap-2 py-8 opacity-30">
+            <v-icon icon="mdi-cards-outline" size="36" color="var(--c-muted)" />
+          </div>
+        </div>
+      </div>
+    </Transition>
 
     <!-- Settlement chips -->
     <div
@@ -482,6 +515,24 @@ function cancelRating() {
 .card-fan-item:hover .card-fan-img {
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.65);
   outline-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Cards expand / collapse transition */
+.cards-expand-enter-active,
+.cards-expand-leave-active {
+  transition: max-height 0.26s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity    0.20s ease;
+  overflow: hidden;
+}
+.cards-expand-enter-from,
+.cards-expand-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+.cards-expand-enter-to,
+.cards-expand-leave-from {
+  max-height: 260px;
+  opacity: 1;
 }
 
 .card-fan-extra {

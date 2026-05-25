@@ -1,6 +1,9 @@
 <script setup>
 import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { cardImage } from "@/lib/cardImage";
+
+const { t } = useI18n();
 
 const props = defineProps({
   user: { type: Object, required: true },
@@ -24,7 +27,7 @@ const kindMeta = computed(() => {
   switch (props.user.kind) {
     case "mutual":
       return {
-        label: "Mutual",
+        label: t("userCard.mutual"),
         color: "var(--c-mutual)",
         glow: "rgba(132,204,22,0.22)",
         bg: "color-mix(in srgb, var(--c-mutual) 4%, transparent)",
@@ -33,7 +36,7 @@ const kindMeta = computed(() => {
       };
     case "they_have":
       return {
-        label: "Has your wants",
+        label: t("userCard.hasYourWants"),
         color: "var(--c-trade)",
         glow: "rgba(144,102,255,0.22)",
         bg: "color-mix(in srgb, var(--c-trade) 4%, transparent)",
@@ -42,7 +45,7 @@ const kindMeta = computed(() => {
       };
     case "they_want":
       return {
-        label: "Wants yours",
+        label: t("userCard.wantsYours"),
         color: "var(--c-accent)",
         glow: "rgba(240,72,122,0.22)",
         bg: "color-mix(in srgb, var(--c-accent) 4%, transparent)",
@@ -51,7 +54,7 @@ const kindMeta = computed(() => {
       };
     default:
       return {
-        label: "Match",
+        label: t("userCard.match"),
         color: "var(--c-muted)",
         glow: "rgba(167,139,250,0.18)",
         bg: "color-mix(in srgb, var(--c-muted) 4%, transparent)",
@@ -88,7 +91,7 @@ const kindMeta = computed(() => {
       <!-- Avatar — clicking opens profile -->
       <div
         class="relative shrink-0 cursor-pointer"
-        title="View profile"
+        :title="t('proposal.viewProfile')"
         @click.stop="emit('openProfile', user.id)"
       >
         <div
@@ -102,7 +105,7 @@ const kindMeta = computed(() => {
           <img
             v-if="user.avatarUrl"
             :src="user.avatarUrl"
-            :alt="user.name ?? 'Avatar'"
+            :alt="user.name ?? t('userCard.anonymous')"
             class="w-full h-full object-cover"
           />
           <span v-else>{{ initials }}</span>
@@ -116,13 +119,13 @@ const kindMeta = computed(() => {
       >
         <div class="flex items-center gap-2 min-w-0">
           <p class="font-bold text-sm truncate leading-tight hover:underline underline-offset-2" style="color: var(--c-text)">
-            {{ user.name ?? "Anonymous" }}
+            {{ user.name ?? t('userCard.anonymous') }}
           </p>
           <v-icon
             v-if="verified"
             icon="mdi-check-decagram"
             size="13"
-            title="Verified trader"
+            :title="t('userCard.verifiedTrader')"
             style="color: var(--c-mutual); flex-shrink: 0"
           />
           <span
@@ -162,7 +165,7 @@ const kindMeta = computed(() => {
       >
         <div class="flex items-center gap-1">
           <v-icon icon="mdi-arrow-down-bold" size="10" color="var(--c-trade)" />
-          <span class="text-[10px] font-bold uppercase tracking-wider" style="color: var(--c-trade)">They have</span>
+          <span class="text-[10px] font-bold uppercase tracking-wider" style="color: var(--c-trade)">{{ t('userCard.theyHave') }}</span>
           <span v-if="user.theyHaveCount > 0" class="text-[10px] font-bold ml-auto tabular-nums" style="color: var(--c-trade)">{{ user.theyHaveCount }}</span>
         </div>
         <div v-if="user.theyHave.length > 0" class="flex flex-wrap gap-1">
@@ -197,7 +200,7 @@ const kindMeta = computed(() => {
       >
         <div class="flex items-center gap-1">
           <v-icon icon="mdi-arrow-up-bold" size="10" color="var(--c-accent)" />
-          <span class="text-[10px] font-bold uppercase tracking-wider" style="color: var(--c-accent)">They want</span>
+          <span class="text-[10px] font-bold uppercase tracking-wider" style="color: var(--c-accent)">{{ t('userCard.theyWant') }}</span>
           <span v-if="user.theyWantCount > 0" class="text-[10px] font-bold ml-auto tabular-nums" style="color: var(--c-accent)">{{ user.theyWantCount }}</span>
         </div>
         <div v-if="user.theyWant.length > 0" class="flex flex-wrap gap-1">
@@ -248,7 +251,7 @@ const kindMeta = computed(() => {
         style="min-height: 44px; font-size: 13px; min-width: 0"
         :style="{ backgroundColor: kindMeta.color, color: kindMeta.btnText }"
         @click.stop="emit('openTrade', user)"
-      >Propose</v-btn>
+      >{{ t('userCard.propose') }}</v-btn>
     </div>
   </div>
 </template>

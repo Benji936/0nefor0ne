@@ -35,5 +35,5 @@ export function setLocale(lang) {
   document.documentElement.setAttribute("lang", lang);
 }
 
-export { SUPPORTED };
+export { SUPPORTED, detectLocale };
 export default i18n;

@@ -1,10 +1,13 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getClient } from '@/lib/supabaseClient';
 import { cardImage } from '@/lib/cardImage';
 import { countryByCode } from '@/lib/countries';
 import { fetchUserTradePile, fetchUserWishlist } from '@/lib/matches';
 import { timeAgo } from '@/lib/notifications';
+
+const { t } = useI18n();
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -42,9 +45,9 @@ const initials = computed(() => {
 });
 
 const scopeMeta = computed(() => ({
-  local:     { label: 'Local only',     icon: 'mdi-map-marker',   color: 'var(--c-trade)' },
-  national:  { label: 'National only',  icon: 'mdi-flag-outline',  color: 'var(--c-trade)' },
-  worldwide: { label: 'Worldwide',      icon: 'mdi-earth',         color: 'var(--c-muted)' },
+  local:     { label: t('account.localOnly'),    icon: 'mdi-map-marker',   color: 'var(--c-trade)' },
+  national:  { label: t('account.nationalOnly'), icon: 'mdi-flag-outline',  color: 'var(--c-trade)' },
+  worldwide: { label: t('account.scopes.worldwide'), icon: 'mdi-earth',    color: 'var(--c-muted)' },
 }[profile.value?.trade_scope ?? 'worldwide']));
 
 // ── Load ─────────────────────────────────────────────────────────────────
@@ -86,9 +89,9 @@ watch(() => [props.modelValue, props.traderId], ([open, id]) => {
 }, { immediate: true });
 
 const statItems = computed(() => [
-  { label: 'For trade',  icon: 'mdi-cards-outline',    color: 'var(--c-trade)',  value: profile.value?.trade_pile_count, sub: null },
-  { label: 'Wishlist',   icon: 'mdi-heart-outline',     color: 'var(--c-accent)', value: profile.value?.wishlist_count,   sub: null },
-  { label: 'Completed',  icon: 'mdi-handshake-outline', color: 'var(--c-mutual)', value: profile.value?.completed_trades, sub: null },
+  { label: t('traderProfile.forTrade'), icon: 'mdi-cards-outline',    color: 'var(--c-trade)',  value: profile.value?.trade_pile_count, sub: null },
+  { label: t('library.wishlist'),       icon: 'mdi-heart-outline',     color: 'var(--c-accent)', value: profile.value?.wishlist_count,   sub: null },
+  { label: t('proposal.completed'),     icon: 'mdi-handshake-outline', color: 'var(--c-mutual)', value: profile.value?.completed_trades, sub: null },
   {
     label: 'Rating', icon: 'mdi-star', color: 'var(--c-mutual)',
     value: profile.value?.avg_rating ? `${profile.value.avg_rating}★` : '—',
@@ -97,9 +100,9 @@ const statItems = computed(() => [
 ]);
 
 const tabItems = computed(() => [
-  { key: 'pile',    label: 'Trade pile', count: tradePile.value.length },
-  { key: 'wish',    label: 'Wishlist',   count: wishlist.value.length  },
-  { key: 'reviews', label: 'Reviews',    count: Number(profile.value?.rating_count ?? 0) },
+  { key: 'pile',    label: t('library.tradePile'), count: tradePile.value.length },
+  { key: 'wish',    label: t('library.wishlist'),  count: wishlist.value.length  },
+  { key: 'reviews', label: t('traderProfile.reviews'), count: Number(profile.value?.rating_count ?? 0) },
 ]);
 
 function close() { open.value = false; }
@@ -178,7 +181,7 @@ function propose() {
 
               <div class="flex flex-col min-w-0 grow">
                 <span class="font-bold text-2xl leading-tight truncate" style="color: var(--c-text)">
-                  {{ profile.name ?? 'Anonymous' }}
+                  {{ profile.name ?? t('userCard.anonymous') }}
                 </span>
                 <span class="text-base mt-1 flex items-center gap-2 flex-wrap" style="color: var(--c-muted)">
                   <template v-if="country">
@@ -186,7 +189,7 @@ function propose() {
                     <span>{{ [profile.city, country.name].filter(Boolean).join(', ') }}</span>
                   </template>
                   <span v-else-if="profile.city">{{ profile.city }}</span>
-                  <span v-else style="opacity: 0.6">No location set</span>
+                  <span v-else style="opacity: 0.6">{{ t('traderProfile.noLocationSet') }}</span>
                 </span>
               </div>
 
@@ -261,7 +264,7 @@ function propose() {
                   </template>
                 </v-tooltip>
               </div>
-              <p v-else class="text-sm py-6 text-center" style="color: var(--c-muted)">No cards listed for trade.</p>
+              <p v-else class="text-sm py-6 text-center" style="color: var(--c-muted)">{{ t('traderProfile.noCardsForTrade') }}</p>
             </div>
 
             <!-- Card grid — wishlist -->
@@ -285,7 +288,7 @@ function propose() {
                   </template>
                 </v-tooltip>
               </div>
-              <p v-else class="text-sm py-6 text-center" style="color: var(--c-muted)">Wishlist is empty.</p>
+              <p v-else class="text-sm py-6 text-center" style="color: var(--c-muted)">{{ t('traderProfile.wishlistEmpty') }}</p>
             </div>
 
             <!-- Reviews tab -->
@@ -309,7 +312,7 @@ function propose() {
                   <p v-if="r.comment" class="text-sm leading-relaxed" style="color: var(--c-text)">{{ r.comment }}</p>
                 </div>
               </div>
-              <p v-else class="text-sm py-6 text-center" style="color: var(--c-muted)">No reviews yet.</p>
+              <p v-else class="text-sm py-6 text-center" style="color: var(--c-muted)">{{ t('traderProfile.noReviewsYet') }}</p>
             </div>
 
           </div>
@@ -317,14 +320,14 @@ function propose() {
 
         <!-- Footer -->
         <div class="flex justify-end gap-3 px-8 py-5 shrink-0" style="border-top: 1px solid var(--c-border)">
-          <v-btn variant="text" style="color: var(--c-muted)" @click="close">Close</v-btn>
+          <v-btn variant="text" style="color: var(--c-muted)" @click="close">{{ t('traderProfile.close') }}</v-btn>
           <v-btn
             v-if="!isSelf"
             variant="flat"
             prepend-icon="mdi-swap-horizontal"
             style="background: var(--c-trade); color: white"
             @click="propose"
-          >Propose trade</v-btn>
+          >{{ t('traderProfile.proposeTrade') }}</v-btn>
         </div>
       </template>
 
@@ -332,8 +335,8 @@ function propose() {
       <template v-else>
         <div class="flex flex-col items-center gap-3 py-16 px-6">
           <v-icon icon="mdi-account-off-outline" size="36" color="var(--c-muted)" />
-          <p class="text-sm" style="color: var(--c-muted)">Trader not found.</p>
-          <v-btn variant="text" size="small" style="color: var(--c-muted)" @click="close">Close</v-btn>
+          <p class="text-sm" style="color: var(--c-muted)">{{ t('traderProfile.traderNotFound') }}</p>
+          <v-btn variant="text" size="small" style="color: var(--c-muted)" @click="close">{{ t('traderProfile.close') }}</v-btn>
         </div>
       </template>
 

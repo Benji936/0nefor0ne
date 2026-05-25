@@ -13,7 +13,14 @@
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
 
     <!-- Canonical -->
-    <link rel="canonical" href="https://0nefor.one/">
+    <link rel="canonical" href="https://0nefor.one/en/">
+
+    <!-- hreflang — updated dynamically per-route; static fallback for crawlers -->
+    <link rel="alternate" hreflang="en"        href="https://0nefor.one/en/">
+    <link rel="alternate" hreflang="fr"        href="https://0nefor.one/fr/">
+    <link rel="alternate" hreflang="de"        href="https://0nefor.one/de/">
+    <link rel="alternate" hreflang="it"        href="https://0nefor.one/it/">
+    <link rel="alternate" hreflang="x-default" href="https://0nefor.one/en/">
 
     <!-- Preconnect: card image CDN — opens TCP+TLS early so first card images load faster -->
     <link rel="preconnect" href="https://images.ygoprodeck.com" crossorigin>
@@ -27,7 +34,7 @@
 
     <!-- Open Graph (Facebook, WhatsApp, Discord, LinkedIn) -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://0nefor.one/">
+    <meta property="og:url" content="https://0nefor.one/en/">
     <meta property="og:title" content="One for One — Yu-Gi-Oh! Card Trading">
     <meta property="og:description" content="Trade Yu-Gi-Oh! cards directly with other collectors. List your trade pile, build your wishlist, and find perfect one-for-one matches near you.">
     <meta property="og:image" content="https://0nefor.one/logo.png">

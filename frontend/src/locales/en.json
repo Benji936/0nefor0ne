@@ -412,5 +412,33 @@
     "noMessages": "No messages yet. Say something!",
     "typeMessage": "Type a message…",
     "readOnly": "Chat is read-only."
+  },
+  "meta": {
+    "search": {
+      "title": "One for One — Yu-Gi-Oh! Card Trading",
+      "titleWithQuery": "{query} — Yu-Gi-Oh! Trading | One for One",
+      "desc": "Trade Yu-Gi-Oh! cards directly with other collectors. List your trade pile, build your wishlist, and find perfect one-for-one matches near you.",
+      "descWithQuery": "Find traders for {query} on One for One, the free Yu-Gi-Oh! card trading platform."
+    },
+    "library": {
+      "title": "My Collection — One for One",
+      "desc": "Manage your Yu-Gi-Oh! card collection, trade pile, and wishlist on One for One."
+    },
+    "trade": {
+      "title": "Trade Center — One for One",
+      "desc": "Browse your trade matches, send proposals, and complete card trades on One for One."
+    },
+    "account": {
+      "title": "My Account — One for One",
+      "desc": "Manage your One for One profile, location, and trade preferences."
+    },
+    "card": {
+      "title": "Yu-Gi-Oh! Card — One for One",
+      "desc": "Trade Yu-Gi-Oh! cards on One for One. Find collectors who have it or want it."
+    },
+    "privacy": {
+      "title": "Privacy Policy — One for One",
+      "desc": "Privacy policy for One for One, the free Yu-Gi-Oh! card trading platform."
+    }
   }
 }
