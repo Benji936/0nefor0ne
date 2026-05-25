@@ -1,5 +1,4 @@
 <script setup>
-import TradeCenterActivity from "./trade-center/TradeCenterActivity.vue";
 import MatchesTab          from "./trade-center/MatchesTab.vue";
 import ProposalsTab        from "./trade-center/ProposalsTab.vue";
 import ProposeTradeDialog  from "@/components/ProposeTradeDialog.vue";
@@ -8,15 +7,6 @@ import TraderProfileDialog from "@/components/TraderProfileDialog.vue";
 
 <template>
   <div class="flex flex-col gap-4 md:gap-6 py-4 md:py-10">
-
-    <!-- Recent activity panel -->
-    <TradeCenterActivity
-      v-if="login"
-      :notifs="recentNotifs"
-      :expanded="notifExpanded"
-      @toggle="notifExpanded = !notifExpanded"
-      @click="onNotifClick"
-    />
 
     <!-- Tab bar -->
     <div class="flex items-center" style="border-bottom: 1px solid var(--c-border)">
@@ -135,8 +125,6 @@ export default {
       locationCity:       "",
       profileDialogOpen:  false,
       profileTraderId:    null,
-      recentNotifs:       [],
-      notifExpanded:      false,
       subscription:       null,
       dialogOpen:         false,
       dialogUser:         null,
@@ -279,18 +267,7 @@ export default {
       this.dialogUser = existing ?? { id: traderId, name: null, theyWant: [], theyHave: [] };
       this.dialogOpen = true;
     },
-    onNotifClick()       { this.activeTab = "proposals"; },
     switchToProposals()  { this.activeTab = "proposals"; },
-    async loadRecentNotifs() {
-      if (!this.login?.user?.id) return;
-      const { data } = await getClient()
-        .from("notification")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(3);
-      this.recentNotifs = data ?? [];
-      this.notifExpanded = this.recentNotifs.some(n => !n.read);
-    },
     async loadCardTraders(cardName) {
       if (!cardName) { this.cardTraders = []; return; }
       this.loadingCardTraders = true;
@@ -306,7 +283,7 @@ export default {
     const matchesLoad = this.filterCardName
       ? this.loadCardTraders(this.filterCardName)
       : this.loadMatches();
-    await Promise.all([matchesLoad, this.loadProposals(), this.loadRecentNotifs()]);
+    await Promise.all([matchesLoad, this.loadProposals()]);
 
     const debouncedLoadMatches   = debounce(() => { if (!this.filterCardName) this.loadMatches(); }, 600);
     const debouncedLoadProposals = debounce(() => this.loadProposals(), 600);
@@ -315,12 +292,6 @@ export default {
       .channel("trade-center-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "Card" },  debouncedLoadMatches)
       .on("postgres_changes", { event: "*", schema: "public", table: "Trade" }, debouncedLoadProposals)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notification",
-          filter: `user_id=eq.${this.login?.user?.id}` },
-        (payload) => {
-          this.recentNotifs = [payload.new, ...this.recentNotifs].slice(0, 3);
-          this.notifExpanded = true;
-        })
       .subscribe();
   },
   beforeUnmount() {
