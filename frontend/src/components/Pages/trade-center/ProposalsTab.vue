@@ -111,7 +111,7 @@ const show = (key) => activeFilter.value === "all" || activeFilter.value === key
         />
         {{ f.label }}
         <span
-          class="tabular-nums text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-all duration-200"
+          class="tabular-nums text-[10px] font-bold px-2 py-1 rounded-full transition-all duration-200"
           :style="activeFilter === f.key
             ? { background: `color-mix(in srgb, ${f.color} 22%, transparent)`, color: f.color }
             : { background: 'var(--c-border)', color: 'var(--c-muted)' }"
