@@ -252,7 +252,7 @@ export default {
       this.searched = true;
       try {
         const locale = this.$route.params.locale || 'en';
-        const response = await searchCardByName(this.search, locale);
+        const response = await searchCardByName(this.search); // name search always in English
         if (response.data?.data?.length > 0) {
           this.cards = response.data.data;
         } else if (response.data?.length > 0) {

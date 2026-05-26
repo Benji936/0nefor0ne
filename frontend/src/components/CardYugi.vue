@@ -18,16 +18,16 @@ const emit = defineEmits(['showTraders', 'requireAuth'])
       >
         <!-- Card image + data -->
         <div class="flex flex-col sm:flex-row gap-6">
-          <img :alt="componentCard.name" loading="lazy" class="h-26 sm:h-52 shrink-0  sm:mx-0 rounded" :src="cardImage(componentCard.id)" />
+          <img :alt="displayCard.name" loading="lazy" class="h-26 sm:h-52 shrink-0  sm:mx-0 rounded" :src="cardImage(componentCard.id)" />
           <div class="flex flex-col gap-2">
-            <p class="font-bold text-xl" style="color: var(--c-text)">{{ componentCard.name }}</p>
+            <p class="font-bold text-xl" style="color: var(--c-text)">{{ displayCard.name }}</p>
             <div class="flex flex-wrap gap-3 text-base" style="color: var(--c-muted)">
-              <p v-if="componentCard.atk != null">ATK {{ componentCard.atk }}</p>
-              <p v-if="componentCard.def != null">DEF {{ componentCard.def }}</p>
-              <p v-if="componentCard.level != null">{{ $t('cardYugi.level') }} {{ componentCard.level }}</p>
-              <p>{{ componentCard.race }}</p>
+              <p v-if="displayCard.atk != null">ATK {{ displayCard.atk }}</p>
+              <p v-if="displayCard.def != null">DEF {{ displayCard.def }}</p>
+              <p v-if="displayCard.level != null">{{ $t('cardYugi.level') }} {{ displayCard.level }}</p>
+              <p>{{ displayCard.race }}</p>
             </div>
-            <p class="text-sm leading-relaxed" style="color: var(--c-text); opacity: 0.85">{{ componentCard.desc }}</p>
+            <p class="text-sm leading-relaxed" style="color: var(--c-text); opacity: 0.85">{{ displayCard.desc }}</p>
           </div>
         </div>
 
@@ -220,6 +220,7 @@ import ProposeTradeDialog from './ProposeTradeDialog.vue';
 import TraderProfileDialog from './TraderProfileDialog.vue';
 import { getCurrentSession } from '@/lib/supabaseClient';
 import { fetchTradersWithCard } from '@/lib/matches';
+import { searchById } from '@/api';
 
 export default {
   components: { AddCard, ProposeTradeDialog, TraderProfileDialog },
@@ -231,6 +232,7 @@ export default {
     return {
       traders: [],
       loadingTraders: false,
+      localCard: null,      // locale-aware card data fetched on overlay open
       proposeDialogOpen: false,
       proposingTo: null,
       profileDialogOpen: false,
@@ -239,15 +241,27 @@ export default {
     };
   },
   computed: {
+    /** Use the locale-enriched card data when available, fall back to the prop. */
+    displayCard() {
+      return this.localCard ?? this.componentCard;
+    },
     printPrices() {
-      return this.componentCard.card_sets ?? [];
+      return this.displayCard.card_sets ?? [];
     },
     marketLinks() {
-      const name = encodeURIComponent(this.componentCard.name);
+      // Always use the English canonical name for external market searches
+      const name = encodeURIComponent(this.displayCard.name_en ?? this.componentCard.name_en ?? this.displayCard.name);
       return [
         { label: 'TCGPlayer', url: `https://www.tcgplayer.com/search/yugioh/product?q=${name}` },
         { label: 'eBay', url: `https://www.ebay.com/sch/i.html?_nkw=${name}+yugioh` },
       ];
+    },
+  },
+  watch: {
+    /** Refresh localized card data if the user changes language while the overlay is open. */
+    '$route.params.locale'(locale) {
+      this.localCard = null;
+      if (locale && locale !== 'en') this._fetchLocalCard(locale);
     },
   },
   methods: {
@@ -270,8 +284,23 @@ export default {
     kindLabel(kind) {
       return kind === 'mutual' ? this.$t('cardYugi.match') : kind === 'they_have' ? this.$t('cardYugi.hasThisCard') : this.$t('cardYugi.wantsYours');
     },
+    /** Fire-and-forget: fetch the card's localized data by ID in the current locale. */
+    async _fetchLocalCard(locale) {
+      try {
+        const res = await searchById(this.componentCard.id, locale);
+        const data = res?.data?.data?.[0] ?? res?.data?.[0] ?? null;
+        if (data) this.localCard = data;
+      } catch {
+        // Silent — displayCard falls back to componentCard
+      }
+    },
     async fetchTraders() {
       this._injectCardSeo();
+
+      // Kick off a locale-aware card detail fetch (fire-and-forget — overlay opens immediately)
+      const locale = this.$route.params.locale || 'en';
+      if (locale !== 'en' && !this.localCard) this._fetchLocalCard(locale);
+
       if (this.loadingTraders || this.traders.length > 0) return; // skip if cached
       this.loadingTraders = true;
       try {

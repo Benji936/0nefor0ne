@@ -13,8 +13,11 @@ function langParam(locale = "en") {
 
 export const getUrl = () => API_URL;
 
-export const searchCardByName = async (fname = "", locale = "en") => {
-    return axios.get(`${API_URL}cardinfo.php?fname=${fname}${langParam(locale)}`).catch((error) => {
+/** Name search is intentionally language-agnostic: users type English card names
+ *  regardless of the active UI locale. Localized names/desc are fetched separately
+ *  by ID (searchById) when the card detail view opens. */
+export const searchCardByName = async (fname = "") => {
+    return axios.get(`${API_URL}cardinfo.php?fname=${fname}`).catch((error) => {
         console.error("Error fetching card with " + fname, error);
         return { data: [] };
     });
