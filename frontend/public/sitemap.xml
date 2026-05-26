@@ -1,84 +1,147 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
 
-  <!-- Homepage / card search -->
+  <!-- ── Homepage / card search ─────────────────────────────────────── -->
   <url>
-    <loc>https://0nefor.one/</loc>
-    <lastmod>2026-05-24</lastmod>
+    <loc>https://0nefor.one/en/</loc>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://0nefor.one/en/"/>
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://0nefor.one/fr/"/>
+    <xhtml:link rel="alternate" hreflang="de"        href="https://0nefor.one/de/"/>
+    <xhtml:link rel="alternate" hreflang="it"        href="https://0nefor.one/it/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://0nefor.one/en/"/>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
 
-  <!-- Trade Center -->
+  <!-- ── Trade Center ───────────────────────────────────────────────── -->
   <url>
-    <loc>https://0nefor.one/trade</loc>
-    <lastmod>2026-05-24</lastmod>
+    <loc>https://0nefor.one/en/trade</loc>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://0nefor.one/en/trade"/>
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://0nefor.one/fr/trade"/>
+    <xhtml:link rel="alternate" hreflang="de"        href="https://0nefor.one/de/trade"/>
+    <xhtml:link rel="alternate" hreflang="it"        href="https://0nefor.one/it/trade"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://0nefor.one/en/trade"/>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
 
-  <!-- Collection manager -->
+  <!-- ── Collection manager ────────────────────────────────────────── -->
   <url>
-    <loc>https://0nefor.one/library</loc>
-    <lastmod>2026-05-24</lastmod>
+    <loc>https://0nefor.one/en/library</loc>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://0nefor.one/en/library"/>
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://0nefor.one/fr/library"/>
+    <xhtml:link rel="alternate" hreflang="de"        href="https://0nefor.one/de/library"/>
+    <xhtml:link rel="alternate" hreflang="it"        href="https://0nefor.one/it/library"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://0nefor.one/en/library"/>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
 
-  <!-- Account -->
+  <!-- ── Card permalinks — seeding crawl discovery ─────────────────── -->
+  <!-- Dark Magician -->
   <url>
-    <loc>https://0nefor.one/account</loc>
-    <lastmod>2026-05-24</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
+    <loc>https://0nefor.one/en/card/46986414</loc>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://0nefor.one/en/card/46986414"/>
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://0nefor.one/fr/card/46986414"/>
+    <xhtml:link rel="alternate" hreflang="de"        href="https://0nefor.one/de/card/46986414"/>
+    <xhtml:link rel="alternate" hreflang="it"        href="https://0nefor.one/it/card/46986414"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://0nefor.one/en/card/46986414"/>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
 
-  <!-- Card permalinks — high-traffic iconic cards to seed crawl discovery -->
+  <!-- Blue-Eyes White Dragon -->
   <url>
-    <loc>https://0nefor.one/card/46986414</loc><!-- Dark Magician -->
-    <lastmod>2026-05-24</lastmod>
+    <loc>https://0nefor.one/en/card/89631139</loc>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://0nefor.one/en/card/89631139"/>
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://0nefor.one/fr/card/89631139"/>
+    <xhtml:link rel="alternate" hreflang="de"        href="https://0nefor.one/de/card/89631139"/>
+    <xhtml:link rel="alternate" hreflang="it"        href="https://0nefor.one/it/card/89631139"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://0nefor.one/en/card/89631139"/>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
+
+  <!-- Exodia the Forbidden One -->
   <url>
-    <loc>https://0nefor.one/card/89631139</loc><!-- Blue-Eyes White Dragon -->
-    <lastmod>2026-05-24</lastmod>
+    <loc>https://0nefor.one/en/card/74677422</loc>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://0nefor.one/en/card/74677422"/>
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://0nefor.one/fr/card/74677422"/>
+    <xhtml:link rel="alternate" hreflang="de"        href="https://0nefor.one/de/card/74677422"/>
+    <xhtml:link rel="alternate" hreflang="it"        href="https://0nefor.one/it/card/74677422"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://0nefor.one/en/card/74677422"/>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
+
+  <!-- Red-Eyes Black Dragon -->
   <url>
-    <loc>https://0nefor.one/card/74677422</loc><!-- Exodia the Forbidden One -->
-    <lastmod>2026-05-24</lastmod>
+    <loc>https://0nefor.one/en/card/55144522</loc>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://0nefor.one/en/card/55144522"/>
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://0nefor.one/fr/card/55144522"/>
+    <xhtml:link rel="alternate" hreflang="de"        href="https://0nefor.one/de/card/55144522"/>
+    <xhtml:link rel="alternate" hreflang="it"        href="https://0nefor.one/it/card/55144522"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://0nefor.one/en/card/55144522"/>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
+
+  <!-- Mirror Force -->
   <url>
-    <loc>https://0nefor.one/card/55144522</loc><!-- Red-Eyes Black Dragon -->
-    <lastmod>2026-05-24</lastmod>
+    <loc>https://0nefor.one/en/card/38033121</loc>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://0nefor.one/en/card/38033121"/>
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://0nefor.one/fr/card/38033121"/>
+    <xhtml:link rel="alternate" hreflang="de"        href="https://0nefor.one/de/card/38033121"/>
+    <xhtml:link rel="alternate" hreflang="it"        href="https://0nefor.one/it/card/38033121"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://0nefor.one/en/card/38033121"/>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
+
+  <!-- Monster Reborn -->
   <url>
-    <loc>https://0nefor.one/card/38033121</loc><!-- Mirror Force -->
-    <lastmod>2026-05-24</lastmod>
+    <loc>https://0nefor.one/en/card/14558127</loc>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://0nefor.one/en/card/14558127"/>
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://0nefor.one/fr/card/14558127"/>
+    <xhtml:link rel="alternate" hreflang="de"        href="https://0nefor.one/de/card/14558127"/>
+    <xhtml:link rel="alternate" hreflang="it"        href="https://0nefor.one/it/card/14558127"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://0nefor.one/en/card/14558127"/>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
+
+  <!-- Pot of Greed -->
   <url>
-    <loc>https://0nefor.one/card/14558127</loc><!-- Monster Reborn -->
-    <lastmod>2026-05-24</lastmod>
+    <loc>https://0nefor.one/en/card/5318639</loc>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://0nefor.one/en/card/5318639"/>
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://0nefor.one/fr/card/5318639"/>
+    <xhtml:link rel="alternate" hreflang="de"        href="https://0nefor.one/de/card/5318639"/>
+    <xhtml:link rel="alternate" hreflang="it"        href="https://0nefor.one/it/card/5318639"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://0nefor.one/en/card/5318639"/>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
+
+  <!-- Ash Blossom & Joyous Spring -->
   <url>
-    <loc>https://0nefor.one/card/5318639</loc><!-- Pot of Greed -->
-    <lastmod>2026-05-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://0nefor.one/card/53129443</loc><!-- Ash Blossom & Joyous Spring -->
-    <lastmod>2026-05-24</lastmod>
+    <loc>https://0nefor.one/en/card/53129443</loc>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://0nefor.one/en/card/53129443"/>
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://0nefor.one/fr/card/53129443"/>
+    <xhtml:link rel="alternate" hreflang="de"        href="https://0nefor.one/de/card/53129443"/>
+    <xhtml:link rel="alternate" hreflang="it"        href="https://0nefor.one/it/card/53129443"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://0nefor.one/en/card/53129443"/>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
