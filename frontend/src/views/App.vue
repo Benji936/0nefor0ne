@@ -6,6 +6,7 @@ import AuthDialog from "@/components/AuthDialog.vue";
 import NavItem from "@/components/NavItem.vue";
 import NotificationBell from "@/components/NotificationBell.vue";
 import UserMenuChip from "@/components/UserMenuChip.vue";
+import TcgPlayerAd from "@/components/TcgPlayerAd.vue";
 import { setLocale, SUPPORTED } from "@/i18n.js";
 
 const { locale } = useI18n();
@@ -172,6 +173,9 @@ function switchLang(lang) {
 
   <main class="main-content-mobile-pb px-5 md:px-16 pt-5 md:pt-8 min-h-screen sm:pb-0" style="background: var(--c-bg); transition: background 0.3s ease">
     <!-- RouterView renders the active page component; props are forwarded via slot -->
+     <a rel="sponsored"
+           href="https://partner.tcgplayer.com/c/7340656/3913674/21018" target="_top" id="3913674">
+<img src="//a.impactradius-go.com/display-ad/21018-3913674" border="0" alt="" width="1940" height="500"/></a><img height="0" width="0" src="https://imp.pxf.io/i/7340656/3913674/21018" style="position:absolute;visibility:hidden;" border="0" />
     <RouterView v-slot="{ Component }">
       <component
         :is="Component"
@@ -189,6 +193,16 @@ function switchLang(lang) {
     <AuthDialog v-model="authDialogOpen" @authenticated="onAuthenticated" />
 
   </main>
+
+  <!-- ── TCGPlayer skyscraper — fixed right sidebar, desktop only ── -->
+  <div
+    class="hidden xl:flex fixed right-4 top-1/2 -translate-y-1/2 z-20 flex-col items-center"
+    style="pointer-events: none"
+  >
+    <div style="pointer-events: auto">
+      <TcgPlayerAd :ad-id="3913676" :width="240" :height="1200" />
+    </div>
+  </div>
 
   <!-- ── Footer ── -->
   <footer
