@@ -27,7 +27,7 @@ const pixelSrc  = `https://imp.pxf.io/i/${PARTNER}/${props.adId}/${CAMPAIGN}`;
 </script>
 
 <template>
-  <div class="tcgplayer-ad" :style="{ width: `${width}px` }">
+  <div class="tcgplayer-ad" :style="{ width: `${width}px`, maxWidth: '100%' }">
     <a
       rel="sponsored noopener"
       :href="linkHref"
@@ -40,7 +40,7 @@ const pixelSrc  = `https://imp.pxf.io/i/${PARTNER}/${props.adId}/${CAMPAIGN}`;
         alt="Shop TCGPlayer"
         :width="width"
         :height="height"
-        style="display: block"
+        style="display: block; max-width: 100%; height: auto"
       />
     </a>
     <!-- Impression tracking pixel -->
