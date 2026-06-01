@@ -1,4 +1,12 @@
 {
+  "redirects": [
+    { "source": "/",              "destination": "/en/",             "permanent": true },
+    { "source": "/library",       "destination": "/en/library",      "permanent": true },
+    { "source": "/trade",         "destination": "/en/trade",        "permanent": true },
+    { "source": "/account",       "destination": "/en/account",      "permanent": true },
+    { "source": "/privacy",       "destination": "/en/privacy",      "permanent": true },
+    { "source": "/card/:id",      "destination": "/en/card/:id",     "permanent": true }
+  ],
   "rewrites": [
     {
       "source": "/((?!ads\\.txt|robots\\.txt|sitemap\\.xml|_redirects|favicon\\.ico|logo\\.png|logo\\.svg).*)",
