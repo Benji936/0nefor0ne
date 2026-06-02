@@ -15,7 +15,7 @@
     <!-- Canonical -->
     <link rel="canonical" href="https://0nefor.one/en/">
 
-    <!-- hreflang — updated dynamically per-route; static fallback for crawlers -->
+    <!-- hreflang — updated dynamically per-route by App.vue; static fallback for crawlers -->
     <link rel="alternate" hreflang="en"        href="https://0nefor.one/en/">
     <link rel="alternate" hreflang="fr"        href="https://0nefor.one/fr/">
     <link rel="alternate" hreflang="de"        href="https://0nefor.one/de/">
@@ -33,24 +33,31 @@
     <link rel="apple-touch-icon" href="/logo.png">
 
     <!-- Open Graph (Facebook, WhatsApp, Discord, LinkedIn) -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://0nefor.one/en/">
-    <meta property="og:title" content="One for One — Yu-Gi-Oh! Card Trading">
-    <meta property="og:description" content="Trade Yu-Gi-Oh! cards directly with other collectors. List your trade pile, build your wishlist, and find perfect one-for-one matches near you.">
-    <meta property="og:image" content="https://0nefor.one/logo.png">
-    <meta property="og:image:width" content="600">
-    <meta property="og:image:height" content="600">
-    <meta property="og:site_name" content="One for One">
-    <meta property="og:locale" content="en_US">
+    <meta property="og:type"              content="website">
+    <meta property="og:url"               content="https://0nefor.one/en/">
+    <meta property="og:title"             content="One for One — Yu-Gi-Oh! Card Trading">
+    <meta property="og:description"       content="Trade Yu-Gi-Oh! cards directly with other collectors. List your trade pile, build your wishlist, and find perfect one-for-one matches near you.">
+    <meta property="og:image"             content="https://0nefor.one/logo.png">
+    <meta property="og:image:width"       content="600">
+    <meta property="og:image:height"      content="600">
+    <meta property="og:site_name"         content="One for One">
+    <meta property="og:locale"            content="en_US">
+    <meta property="og:locale:alternate"  content="fr_FR">
+    <meta property="og:locale:alternate"  content="de_DE">
+    <meta property="og:locale:alternate"  content="it_IT">
 
     <!-- Twitter / X Card -->
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="One for One — Yu-Gi-Oh! Card Trading">
+    <meta name="twitter:card"        content="summary">
+    <meta name="twitter:title"       content="One for One — Yu-Gi-Oh! Card Trading">
     <meta name="twitter:description" content="Trade Yu-Gi-Oh! cards directly with other collectors. Find perfect one-for-one matches near you.">
-    <meta name="twitter:image" content="https://0nefor.one/logo.png">
+    <meta name="twitter:image"       content="https://0nefor.one/logo.png">
 
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9846108092898163"
      crossorigin="anonymous"></script>
+
+     <script type="text/javascript">
+(function(i,m,p,a,c,t){c.ire_o=p;c[p]=c[p]||function(){(c[p].a=c[p].a||[]).push(arguments)};t=a.createElement(m);var z=a.getElementsByTagName(m)[0];t.async=1;t.src=i;z.parentNode.insertBefore(t,z)})('https://utt.impactcdn.com/P-A7340656-1e1e-42f3-8070-c2fd5737b5c61.js','script','impactStat',document,window);impactStat('trackImpression');
+</script>
 
     <!-- Structured data: WebApplication -->
     <script type="application/ld+json">
@@ -71,6 +78,24 @@
         "@type": "Organization",
         "name": "One for One",
         "url": "https://0nefor.one/"
+      }
+    }
+    </script>
+
+    <!-- Structured data: WebSite with SearchAction (enables sitelinks search box in Google) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "One for One",
+      "url": "https://0nefor.one/en/",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://0nefor.one/en/?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
       }
     }
     </script>
@@ -103,10 +128,10 @@
       </ul>
       <h2>Sections</h2>
       <ul>
-        <li><a href="/">Card Search</a> — Search the full Yu-Gi-Oh! card database</li>
-        <li><a href="/library">My Collection</a> — Manage your trade pile and wishlist</li>
-        <li><a href="/trade">Trade Center</a> — Browse matches and manage proposals</li>
-        <li><a href="/account">My Account</a> — Update your profile and location</li>
+        <li><a href="/en/">Card Search</a> — Search the full Yu-Gi-Oh! card database</li>
+        <li><a href="/en/library">My Collection</a> — Manage your trade pile and wishlist</li>
+        <li><a href="/en/trade">Trade Center</a> — Browse matches and manage proposals</li>
+        <li><a href="/en/account">My Account</a> — Update your profile and location</li>
       </ul>
       <p>JavaScript is required to use the full One for One application.</p>
     </noscript>

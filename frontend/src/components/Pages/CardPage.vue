@@ -297,13 +297,15 @@ export default {
       setMeta("property", "og:title",            title);
       setMeta("property", "og:description",      desc);
       setMeta("property", "og:image",            image);
+      setMeta("name",     "twitter:card",        "summary_large_image");
       setMeta("name",     "twitter:title",       title);
       setMeta("name",     "twitter:description", desc);
       setMeta("name",     "twitter:image",       image);
 
       // Canonical
+      const locale = this.$route?.params?.locale || "en";
       const canonical = document.head.querySelector('link[rel="canonical"]');
-      if (canonical) canonical.setAttribute("href", `https://0nefor.one/card/${card.id}`);
+      if (canonical) canonical.setAttribute("href", `https://0nefor.one/${locale}/card/${card.id}`);
 
       // JSON-LD
       const schema = {
