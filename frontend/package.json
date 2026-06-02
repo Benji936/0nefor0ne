@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "sitemap": "node scripts/generate-sitemap.mjs",
+    "sitemap:large": "node scripts/generate-sitemap.mjs --limit=500",
     "cards:bulk-upload": "node scripts/r2/bulk-upload.mjs",
     "cards:sync": "node scripts/r2/sync-from-api.mjs"
   },
