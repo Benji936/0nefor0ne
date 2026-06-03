@@ -198,12 +198,15 @@
 </template>
 
 <script>
+import { ref, computed, onServerPrefetch } from "vue";
+import { useRoute } from "vue-router";
+import { useHead } from "@unhead/vue";
 import AddCard           from "@/components/AddCard.vue";
 import ProposeTradeDialog from "@/components/ProposeTradeDialog.vue";
 import { cardImage }      from "@/lib/cardImage";
 import { searchById }     from "@/api";
 import { fetchTradersWithCard } from "@/lib/matches";
-import { getCurrentSession }   from "@/lib/supabaseClient";
+import { getCurrentSession, getClient } from "@/lib/supabaseClient";
 
 export default {
   components: { AddCard, ProposeTradeDialog },
@@ -214,6 +217,92 @@ export default {
   },
 
   emits: ["requireAuth"],
+
+  setup() {
+    const route = useRoute();
+
+    // Reactive card state shared between SSR prefetch and client load.
+    // Also declared in data() as null; the setup() ref takes precedence via merging.
+    const ssrCard = ref(null);
+
+    // Build-time prefetch: vite-ssg awaits this before snapshotting HTML.
+    onServerPrefetch(async () => {
+      const cardId = route.params.id;
+      const loc = route.params.locale || "en";
+      try {
+        const res = await searchById(cardId, loc);
+        const data = res?.data?.data?.[0] ?? res?.data?.[0] ?? null;
+        if (data) ssrCard.value = data;
+      } catch (err) {
+        console.error(`[vite-ssg] Skipping card ${cardId} — API error:`, err?.message ?? err);
+        throw err; // causes vite-ssg to skip this route silently
+      }
+    });
+
+    // SEO via useHead — reactive to ssrCard (set by SSR prefetch and client load()).
+    useHead(computed(() => {
+      const card = ssrCard.value;
+      if (!card) return { title: "Yu-Gi-Oh! Card — One for One" };
+
+      const BASE = "https://0nefor.one";
+      const loc = route.params?.locale || "en";
+      const path = route.path || `/en/card/${card.id}`;
+      const image = cardImage(card.id);
+      const title = `${card.name} — Yu-Gi-Oh! | One for One`;
+      const raw = card.desc ?? "";
+      const desc = raw.length > 155 ? raw.slice(0, 155) + "…" : raw ||
+        `Trade ${card.name} on One for One — the free Yu-Gi-Oh! card trading platform.`;
+      const canonical = `${BASE}${path}`;
+      const enPath = path.replace(new RegExp(`^/${loc}(/|$)`), "/en$1");
+
+      const schema = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: card.name,
+        description: card.desc ?? "",
+        image,
+        category: "Trading Card",
+        brand: { "@type": "Brand", name: "Yu-Gi-Oh!" },
+        ...(card.card_sets?.length ? {
+          offers: card.card_sets.map(s => ({
+            "@type": "Offer",
+            sku: s.set_code,
+            name: s.set_rarity,
+            url: `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${encodeURIComponent(s.set_code)}`,
+            price: "0",
+            priceCurrency: "USD",
+            availability: "https://schema.org/InStock",
+            seller: { "@type": "Organization", name: "One for One" },
+          })),
+        } : {}),
+      };
+
+      return {
+        title,
+        meta: [
+          { name: "description", content: desc },
+          { property: "og:title", content: title },
+          { property: "og:description", content: desc },
+          { property: "og:image", content: image },
+          { property: "og:url", content: canonical },
+          { name: "twitter:card", content: "summary_large_image" },
+          { name: "twitter:title", content: title },
+          { name: "twitter:description", content: desc },
+          { name: "twitter:image", content: image },
+        ],
+        link: [
+          { rel: "canonical", href: canonical },
+          { rel: "alternate", hreflang: "en", href: `${BASE}${enPath}` },
+          { rel: "alternate", hreflang: "x-default", href: `${BASE}${enPath}` },
+        ],
+        script: [
+          { type: "application/ld+json", innerHTML: JSON.stringify(schema) },
+        ],
+      };
+    }));
+
+    return { ssrCard };
+  },
 
   data() {
     return {
@@ -263,7 +352,7 @@ export default {
         const data = res?.data?.data?.[0] ?? res?.data?.[0] ?? null;
         if (!data) { this.error = "Card not found."; return; }
         this.card = data;
-        this._injectSeo();
+        this.ssrCard = data; // drive useHead() reactively on the client too
         // Traders are looked up by English canonical name so they match DB records
         this.loadingTraders = true;
         fetchTradersWithCard(data.name_en ?? data.name)
@@ -275,65 +364,6 @@ export default {
       } finally {
         this.loading = false;
       }
-    },
-
-    _injectSeo() {
-      const card  = this.card;
-      const image = cardImage(card.id);
-      const title = `${card.name} — Yu-Gi-Oh! | One for One`;
-      const raw   = card.desc ?? "";
-      const desc  = raw.length > 155 ? raw.slice(0, 155) + "…" : raw ||
-        `Trade ${card.name} on One for One — the free Yu-Gi-Oh! card trading platform.`;
-
-      document.title = title;
-
-      const setMeta = (attr, key, val) => {
-        let el = document.head.querySelector(`meta[${attr}="${key}"]`);
-        if (!el) { el = document.createElement("meta"); el.setAttribute(attr, key); document.head.appendChild(el); }
-        el.setAttribute("content", val);
-      };
-
-      setMeta("name",     "description",        desc);
-      setMeta("property", "og:title",            title);
-      setMeta("property", "og:description",      desc);
-      setMeta("property", "og:image",            image);
-      setMeta("property", "og:url",             `https://0nefor.one/${this.$route?.params?.locale || "en"}/card/${card.id}`);
-      setMeta("name",     "twitter:card",        "summary_large_image");
-      setMeta("name",     "twitter:title",       title);
-      setMeta("name",     "twitter:description", desc);
-      setMeta("name",     "twitter:image",       image);
-
-      // Canonical
-      const locale = this.$route?.params?.locale || "en";
-      const canonical = document.head.querySelector('link[rel="canonical"]');
-      if (canonical) canonical.setAttribute("href", `https://0nefor.one/${locale}/card/${card.id}`);
-
-      // JSON-LD
-      const schema = {
-        "@context": "https://schema.org",
-        "@type":    "Product",
-        name:       card.name,
-        description: card.desc ?? "",
-        image,
-        category: "Trading Card",
-        brand: { "@type": "Brand", name: "Yu-Gi-Oh!" },
-        ...(card.card_sets?.length ? {
-          offers: card.card_sets.map(s => ({
-            "@type": "Offer",
-            sku:     s.set_code,
-            name:    s.set_rarity,
-            url: `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${encodeURIComponent(s.set_code)}`,
-          })),
-        } : {}),
-      };
-      let tag = document.getElementById("ld-card");
-      if (!tag) {
-        tag = document.createElement("script");
-        tag.id   = "ld-card";
-        tag.type = "application/ld+json";
-        document.head.appendChild(tag);
-      }
-      tag.textContent = JSON.stringify(schema);
     },
 
     kindColor(kind) {

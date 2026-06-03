@@ -14,7 +14,7 @@ const localeChildren = [
   { path: "privacy",   name: "privacy",     component: () => import(/* webpackChunkName: "privacy" */     "@/components/Pages/PrivacyPage.vue") },
 ];
 
-const routes = [
+export const routes = [
   // Bare root → detected locale
   { path: "/", redirect: () => `/${detectLocale()}/` },
 
@@ -41,9 +41,10 @@ const routes = [
   { path: "/:pathMatch(.*)*", redirect: () => `/${detectLocale()}/` },
 ];
 
-const router = createRouter({
-  history: createWebHistory(),
-  routes,
-});
+// Only instantiate the router in browser environments (SPA / dev mode).
+// During vite-ssg SSR, ViteSSG creates its own router from `routes` above.
+const router = typeof window !== 'undefined'
+  ? createRouter({ history: createWebHistory(), routes })
+  : null;
 
 export default router;

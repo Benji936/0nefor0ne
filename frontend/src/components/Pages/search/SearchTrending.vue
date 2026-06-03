@@ -71,6 +71,12 @@ onMounted(async () => {
         :key="`${card.image_id}-${card.extension}`"
         class="relative shrink-0"
       >
+        <a
+          :href="`/${route.params.locale || 'en'}/card/${card.image_id}`"
+          :aria-label="card.name"
+          class="absolute inset-0 z-0 pointer-events-none"
+          tabindex="-1"
+        />
         <CardYugi
           :componentCard="card"
           :extension="card.extension ?? ''"

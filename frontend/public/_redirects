@@ -1,1 +1,6 @@
+# Non-English card pages → canonical English equivalent (avoids duplicate content)
+/fr/card/:id /en/card/:id 301
+/de/card/:id /en/card/:id 301
+/it/card/:id /en/card/:id 301
+
 /* /index.html 200

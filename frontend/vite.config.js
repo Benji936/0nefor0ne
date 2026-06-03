@@ -1,17 +1,18 @@
 import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig } from 'vite'
+import { TOP_CARD_IDS } from './src/data/card-ids.js'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [
     vue(),
-    vueDevTools(),
+    command === 'serve' && vueDevTools(),
     tailwindcss(),
-  ],
+  ].filter(Boolean),
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
@@ -33,4 +34,35 @@ export default defineConfig({
       },
     },
   },
-})
+  ssr: {
+    // Vuetify component CSS files can't be loaded as ESM in Node — externalize them
+    noExternal: ['vuetify'],
+  },
+  ssgOptions: {
+    script: 'async',
+    formatting: 'minify',
+    async includedRoutes(paths, routes) {
+      const locales = ['en', 'fr', 'de', 'it']
+
+      const included = []
+
+      // Homepages: /en/, /fr/, /de/, /it/
+      for (const locale of locales) {
+        included.push(`/${locale}/`)
+      }
+
+      // Privacy pages: /en/privacy, /fr/privacy, /de/privacy, /it/privacy
+      for (const locale of locales) {
+        included.push(`/${locale}/privacy`)
+      }
+
+      // Top-16 English card pages (English only — non-English redirect to /en/)
+      // IDs sourced from src/data/card-ids.js (single source of truth)
+      for (const id of TOP_CARD_IDS) {
+        included.push(`/en/card/${id}`)
+      }
+
+      return included  // 4 + 4 + 16 = 24 paths
+    },
+  },
+}))

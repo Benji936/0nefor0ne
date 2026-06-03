@@ -9,7 +9,10 @@ const STORAGE_KEY = "lang";
 
 /** Pick the best locale: saved preference → browser language → 'en'. */
 function detectLocale() {
-  const saved = localStorage.getItem(STORAGE_KEY);
+  if (typeof window === "undefined") return "en";
+
+  let saved = null;
+  try { saved = localStorage.getItem(STORAGE_KEY); } catch { /* SSR/no-op */ }
   if (saved && SUPPORTED.includes(saved)) return saved;
 
   // navigator.languages is ordered by preference
@@ -22,8 +25,9 @@ function detectLocale() {
 
 const i18n = createI18n({
   legacy: false,          // use Composition API mode
-  locale: detectLocale(),
+  locale: "en",
   fallbackLocale: "en",
+  globalInjection: true,
   messages: { en, fr, de, it },
 });
 
@@ -31,8 +35,12 @@ const i18n = createI18n({
 export function setLocale(lang) {
   if (!SUPPORTED.includes(lang)) return;
   i18n.global.locale.value = lang;
-  localStorage.setItem(STORAGE_KEY, lang);
-  document.documentElement.setAttribute("lang", lang);
+  if (typeof window !== "undefined") {
+    localStorage.setItem(STORAGE_KEY, lang);
+  }
+  if (typeof document !== "undefined") {
+    document.documentElement.setAttribute("lang", lang);
+  }
 }
 
 export { SUPPORTED, detectLocale };

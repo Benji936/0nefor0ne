@@ -31,7 +31,7 @@ const HOW_IT_WORKS = computed(() => [
 </script>
 
 <template>
-  <div class="flex flex-col gap-6 md:gap-10 py-15 max-w-screen-xl mx-auto w-full">
+  <div class="flex flex-col gap-6 md:gap-10 py-15 max-w-screen-xl mx-auto w-full md:px-6 lg:px-12">
 
     <!-- ── Hero (logged-out, no search active) ───────────────────────────── -->
     <section

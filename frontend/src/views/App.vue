@@ -1,7 +1,8 @@
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter, useRoute } from "vue-router";
+import { useHead } from "@unhead/vue";
 import AuthDialog from "@/components/AuthDialog.vue";
 import NavItem from "@/components/NavItem.vue";
 import NotificationBell from "@/components/NotificationBell.vue";
@@ -9,10 +10,73 @@ import UserMenuChip from "@/components/UserMenuChip.vue";
 import TcgPlayerAd from "@/components/TcgPlayerAd.vue";
 import { setLocale, SUPPORTED } from "@/i18n.js";
 
-const { locale } = useI18n();
+const { t, locale } = useI18n();
 const router = useRouter();
 const route  = useRoute();
 const langMenuOpen = ref(false);
+
+// ── SEO head: reactive, SSR-rendered via @unhead/vue ──
+const pageName = computed(() => route.name);
+const seoQuery = computed(() => route.query?.q ?? "");
+const localeVal = computed(() => route.params?.locale || "en");
+
+useHead(
+  computed(() => {
+    const page = pageName.value;
+    const q = seoQuery.value;
+    const loc = localeVal.value;
+    const path = route.path;
+    const BASE = "https://0nefor.one";
+    const IMAGE = `${BASE}/logo.png`;
+    const OG_LOCALES = { en: "en_US", fr: "fr_FR", de: "de_DE", it: "it_IT" };
+
+    const isSearch = page === "search" || !page;
+    const title = isSearch && q
+      ? t("meta.search.titleWithQuery", { query: q })
+      : t(`meta.${page || "search"}.title`, {}, { missingWarn: false }) || t("meta.search.title");
+    const desc = isSearch && q
+      ? t("meta.search.descWithQuery", { query: q })
+      : t(`meta.${page || "search"}.desc`, {}, { missingWarn: false }) || t("meta.search.desc");
+
+    const canonical = `${BASE}${path}`;
+
+    // Card pages (/xx/card/:id) are English-only; emit en + x-default only.
+    const isCardPage = /^\/[a-z]{2}\/card\//.test(path);
+    const enPath = path.replace(new RegExp(`^/${loc}(/|$)`), `/en$1`);
+    const hreflangLinks = [];
+    if (!isCardPage) {
+      for (const lang of SUPPORTED) {
+        const localePath = path.replace(new RegExp(`^/${loc}(/|$)`), `/${lang}$1`);
+        hreflangLinks.push({ rel: "alternate", hreflang: lang, href: `${BASE}${localePath}` });
+      }
+    } else {
+      hreflangLinks.push({ rel: "alternate", hreflang: "en", href: `${BASE}${enPath}` });
+    }
+    hreflangLinks.push({ rel: "alternate", hreflang: "x-default", href: `${BASE}${enPath}` });
+
+    return {
+      title,
+      htmlAttrs: { lang: loc },
+      meta: [
+        { name: "description", content: desc },
+        { property: "og:title", content: title },
+        { property: "og:description", content: desc },
+        { property: "og:image", content: IMAGE },
+        { property: "og:url", content: canonical },
+        { property: "og:locale", content: OG_LOCALES[loc] || "en_US" },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: desc },
+        { name: "twitter:image", content: IMAGE },
+        { "http-equiv": "content-language", content: loc },
+      ],
+      link: [
+        { rel: "canonical", href: canonical },
+        ...hreflangLinks,
+      ],
+    };
+  })
+);
 
 const LANG_LABELS = { en: "English", fr: "Français", de: "Deutsch", it: "Italiano" };
 
@@ -210,7 +274,7 @@ function switchLang(lang) {
   >
     <span>© {{ new Date().getFullYear() }} One for One</span>
     <nav class="flex items-center gap-4">
-      <router-link to="/privacy" class="no-underline transition-opacity hover:opacity-70" style="color: var(--c-muted)">{{ $t('footer.privacy') }}</router-link>
+      <router-link :to="`/${$route.params.locale || 'en'}/privacy`" class="no-underline transition-opacity hover:opacity-70" style="color: var(--c-muted)">{{ $t('footer.privacy') }}</router-link>
       <a href="mailto:hello@0nefor.one" class="no-underline transition-opacity hover:opacity-70" style="color: var(--c-muted)">{{ $t('footer.contact') }}</a>
     </nav>
   </footer>
@@ -252,8 +316,6 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
           };
       },
       watch: {
-        $route()      { this._updateMeta(); },
-        searchQuery() { if (this.page === 'search') this._updateMeta(); },
         // Sync URL ?q= back into the input when the user navigates back/forward
         '$route.query.q'(q) {
           if (this.page === 'search' && q !== this.searchQuery) {
@@ -264,109 +326,6 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
         },
       },
       methods: {
-        _updateMeta(overrides = {}) {
-          const q      = this.searchQuery.trim();
-          const locale = this.$route.params.locale || 'en';
-          const OG_LOCALES = { en: 'en_US', fr: 'fr_FR', de: 'de_DE', it: 'it_IT' };
-          const IMAGE = 'https://0nefor.one/logo.png';
-
-          const defaults = {
-            search: {
-              title: q ? this.$t('meta.search.titleWithQuery', { query: q }) : this.$t('meta.search.title'),
-              desc:  q ? this.$t('meta.search.descWithQuery',  { query: q }) : this.$t('meta.search.desc'),
-              image: IMAGE,
-            },
-            library: {
-              title: this.$t('meta.library.title'),
-              desc:  this.$t('meta.library.desc'),
-              image: IMAGE,
-            },
-            TradeCenter: {
-              title: this.$t('meta.trade.title'),
-              desc:  this.$t('meta.trade.desc'),
-              image: IMAGE,
-            },
-            account: {
-              title: this.$t('meta.account.title'),
-              desc:  this.$t('meta.account.desc'),
-              image: IMAGE,
-            },
-            card: {
-              title: this.$t('meta.card.title'),
-              desc:  this.$t('meta.card.desc'),
-              image: IMAGE,
-            },
-            privacy: {
-              title: this.$t('meta.privacy.title'),
-              desc:  this.$t('meta.privacy.desc'),
-              image: IMAGE,
-            },
-          };
-
-          const meta = { ...defaults[this.page] ?? defaults.search, ...overrides };
-
-          document.title = meta.title;
-          this._setMeta('name',     'description',      meta.desc);
-          this._setMeta('property', 'og:title',         meta.title);
-          this._setMeta('property', 'og:description',   meta.desc);
-          this._setMeta('property', 'og:image',         meta.image);
-          this._setMeta('property', 'og:locale',        OG_LOCALES[locale] || 'en_US');
-          this._setMeta('name',     'twitter:title',       meta.title);
-          this._setMeta('name',     'twitter:description', meta.desc);
-          this._setMeta('name',     'twitter:image',       meta.image);
-
-          // Canonical + og:url (must stay in sync)
-          const fullPath = this.$route?.fullPath ?? '/en/';
-          const canonical = document.head.querySelector('link[rel="canonical"]');
-          if (canonical) canonical.setAttribute('href', `https://0nefor.one${fullPath}`);
-          this._setMeta('property', 'og:url', `https://0nefor.one${fullPath}`);
-
-          // Keep <html lang> + content-language in sync (Bing uses both)
-          document.documentElement.setAttribute('lang', locale);
-          this._setMeta('http-equiv', 'content-language', locale);
-
-          // hreflang — one tag per supported locale + x-default
-          this._updateHreflang(locale);
-        },
-
-        _updateHreflang(currentLocale) {
-          const SUPPORTED = ['en', 'fr', 'de', 'it'];
-          const path = this.$route.path; // e.g. /fr/trade
-
-          SUPPORTED.forEach(lang => {
-            const localePath = path.replace(new RegExp(`^/${currentLocale}(/|$)`), `/${lang}$1`);
-            let el = document.head.querySelector(`link[rel="alternate"][hreflang="${lang}"]`);
-            if (!el) {
-              el = document.createElement('link');
-              el.setAttribute('rel', 'alternate');
-              el.setAttribute('hreflang', lang);
-              document.head.appendChild(el);
-            }
-            el.setAttribute('href', `https://0nefor.one${localePath}`);
-          });
-
-          // x-default points to the English version
-          const enPath = path.replace(new RegExp(`^/${currentLocale}(/|$)`), `/en$1`);
-          let xDefault = document.head.querySelector('link[rel="alternate"][hreflang="x-default"]');
-          if (!xDefault) {
-            xDefault = document.createElement('link');
-            xDefault.setAttribute('rel', 'alternate');
-            xDefault.setAttribute('hreflang', 'x-default');
-            document.head.appendChild(xDefault);
-          }
-          xDefault.setAttribute('href', `https://0nefor.one${enPath}`);
-        },
-
-        /** Upsert a <meta> tag by its attribute selector. */
-        _setMeta(attr, key, value) {
-          let el = document.head.querySelector(`meta[${attr}="${key}"]`);
-          if (!el) {
-            el = document.createElement('meta');
-            el.setAttribute(attr, key);
-            document.head.appendChild(el);
-          }
-          el.setAttribute('content', value);
-        },
         update() {
           clearTimeout(this._searchTimer);
           this._searchTimer = setTimeout(() => this._doSearch(this.searchQuery), 300);
@@ -438,11 +397,12 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
         toggleTheme() {
           const isDark = this.isDarkTheme;
           this.$vuetify.theme.global.name = isDark ? 'neonDuskLight' : 'neonDusk';
-          document.documentElement.classList.toggle('dark', !isDark);
+          if (typeof document !== 'undefined') document.documentElement.classList.toggle('dark', !isDark);
           localStorage.setItem('theme', isDark ? 'light' : 'dark');
         },
       },
       async mounted() {
+        if (typeof document === 'undefined') return;
         // Init theme from localStorage
         const saved = localStorage.getItem('theme') || 'dark';
         const isDark = saved !== 'light';
@@ -456,7 +416,6 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
           this._doSearch(initialQuery);
         }
 
-        this._updateMeta();
         this.authenticated = await getCurrentSession();
 
         // Stay in sync if the token refreshes or the user signs in/out from

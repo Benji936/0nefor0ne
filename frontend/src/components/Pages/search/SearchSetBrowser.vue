@@ -104,7 +104,13 @@ defineExpose({ allSets, loading });
         </span>
       </div>
       <div class="flex gap-3 overflow-x-auto pb-3">
-        <div v-for="card in setCards" :key="card.id" style="width: 136px; flex-shrink: 0">
+        <div v-for="card in setCards" :key="card.id" class="relative" style="width: 136px; flex-shrink: 0">
+          <a
+            :href="`/${route.params.locale || 'en'}/card/${card.id}`"
+            :aria-label="card.name"
+            class="absolute inset-0 z-0 pointer-events-none"
+            tabindex="-1"
+          />
           <CardYugi :componentCard="card" :extension="selectedSet" @showTraders="emit('showTraders', $event)" @requireAuth="emit('requireAuth')" />
         </div>
       </div>
