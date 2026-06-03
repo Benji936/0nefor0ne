@@ -321,8 +321,9 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
           if (canonical) canonical.setAttribute('href', `https://0nefor.one${fullPath}`);
           this._setMeta('property', 'og:url', `https://0nefor.one${fullPath}`);
 
-          // Keep <html lang> in sync with active locale
+          // Keep <html lang> + content-language in sync (Bing uses both)
           document.documentElement.setAttribute('lang', locale);
+          this._setMeta('http-equiv', 'content-language', locale);
 
           // hreflang — one tag per supported locale + x-default
           this._updateHreflang(locale);

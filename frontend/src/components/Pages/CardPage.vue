@@ -297,6 +297,7 @@ export default {
       setMeta("property", "og:title",            title);
       setMeta("property", "og:description",      desc);
       setMeta("property", "og:image",            image);
+      setMeta("property", "og:url",             `https://0nefor.one/${this.$route?.params?.locale || "en"}/card/${card.id}`);
       setMeta("name",     "twitter:card",        "summary_large_image");
       setMeta("name",     "twitter:title",       title);
       setMeta("name",     "twitter:description", desc);

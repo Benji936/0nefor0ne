@@ -324,13 +324,17 @@ export default {
       document.title = title;
 
       // Meta description + OG + Twitter
-      this._setMeta('name',     'description',       desc);
-      this._setMeta('property', 'og:title',           title);
-      this._setMeta('property', 'og:description',     desc);
-      this._setMeta('property', 'og:image',           image);
-      this._setMeta('name',     'twitter:title',      title);
+      const locale = this.$route?.params?.locale || 'en';
+      const cardUrl = `https://0nefor.one/${locale}/card/${card.id}`;
+      this._setMeta('name',     'description',        desc);
+      this._setMeta('property', 'og:title',            title);
+      this._setMeta('property', 'og:description',      desc);
+      this._setMeta('property', 'og:image',            image);
+      this._setMeta('property', 'og:url',              cardUrl);
+      this._setMeta('name',     'twitter:card',        'summary_large_image');
+      this._setMeta('name',     'twitter:title',       title);
       this._setMeta('name',     'twitter:description', desc);
-      this._setMeta('name',     'twitter:image',      image);
+      this._setMeta('name',     'twitter:image',       image);
 
       // JSON-LD Product schema
       const schema = {
