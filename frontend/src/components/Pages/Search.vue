@@ -97,7 +97,7 @@ const HOW_IT_WORKS = computed(() => [
     <!-- Search results -->
     <section v-if="hasSearchResults(searchCards)">
       <div class="flex items-center gap-3 mb-5">
-        <p class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">{{ t('search.results') }}</p>
+        <h1 class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">{{ t('search.results') }}</h1>
         <span class="text-sm px-2 py-1 rounded-md border" style="color: var(--c-muted); border-color: var(--c-border)">
           {{ t('search.cardsCount', { count: searchCards.data.length }) }}
         </span>
@@ -108,7 +108,7 @@ const HOW_IT_WORKS = computed(() => [
                pointer-events-none keeps it invisible to mouse/touch so the
                CardYugi overlay activator receives clicks normally. -->
           <a
-            :href="`/card/${card.id}`"
+            :href="`/${$route.params.locale || 'en'}/card/${card.id}`"
             :aria-label="card.name"
             class="absolute inset-0 z-0 pointer-events-none"
             tabindex="-1"

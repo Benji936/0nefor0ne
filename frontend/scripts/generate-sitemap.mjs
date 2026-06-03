@@ -48,10 +48,10 @@ ${hreflangSet(path)}
 
 // ── Static pages ──────────────────────────────────────────────────────────────
 
+// Only include publicly useful pages — auth-required pages (library, trade, account)
+// show thin/empty content to Googlebot and waste crawl budget.
 const STATIC_PAGES = [
-  { path: "/",        changefreq: "daily",  priority: 1.0 },
-  { path: "/trade",   changefreq: "daily",  priority: 0.8 },
-  { path: "/library", changefreq: "weekly", priority: 0.7 },
+  { path: "/", changefreq: "daily", priority: 1.0 },
 ];
 
 // ── Fetch trending cards from Supabase ────────────────────────────────────────
