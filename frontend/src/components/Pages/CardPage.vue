@@ -42,6 +42,7 @@
           :alt="card.name"
           class="rounded-lg shrink-0 shadow-lg"
           style="width: 200px; height: 291px; object-fit: cover"
+          fetchpriority="high"
         />
 
         <!-- Details -->
@@ -222,8 +223,11 @@ export default {
     const route = useRoute();
 
     // Reactive card state shared between SSR prefetch and client load.
-    // Also declared in data() as null; the setup() ref takes precedence via merging.
+    // card and loading are declared here so onServerPrefetch can set them
+    // before renderToString serializes the HTML (created() runs too early).
     const ssrCard = ref(null);
+    const card    = ref(null);
+    const loading = ref(true);
 
     // Build-time prefetch: vite-ssg awaits this before snapshotting HTML.
     onServerPrefetch(async () => {
@@ -232,7 +236,14 @@ export default {
       try {
         const res = await searchById(cardId, loc);
         const data = res?.data?.data?.[0] ?? res?.data?.[0] ?? null;
-        if (data) ssrCard.value = data;
+        if (data) {
+          ssrCard.value = data;
+          card.value    = data;
+          loading.value = false;
+        } else {
+          console.warn(`[vite-ssg] Skipping card ${cardId} — API returned null`);
+          throw new Error(`No data for card ${cardId}`);
+        }
       } catch (err) {
         console.error(`[vite-ssg] Skipping card ${cardId} — API error:`, err?.message ?? err);
         throw err; // causes vite-ssg to skip this route silently
@@ -242,7 +253,30 @@ export default {
     // SEO via useHead — reactive to ssrCard (set by SSR prefetch and client load()).
     useHead(computed(() => {
       const card = ssrCard.value;
-      if (!card) return { title: "Yu-Gi-Oh! Card — One for One" };
+      if (!card) {
+        const fallbackId = route.params?.id;
+        const fallbackImage = cardImage(fallbackId) || 'https://0nefor.one/logo.png';
+        const fallbackUrl = `https://0nefor.one${route.path || '/en/card/unknown'}`;
+        const fallbackTitle = "Yu-Gi-Oh! Card — One for One";
+        const fallbackDesc = "Trade Yu-Gi-Oh! cards on One for One — the free card trading platform.";
+        return {
+          title: fallbackTitle,
+          meta: [
+            { name: "description", content: fallbackDesc },
+            { property: "og:title", content: fallbackTitle },
+            { property: "og:description", content: fallbackDesc },
+            { property: "og:image", content: fallbackImage },
+            { property: "og:url", content: fallbackUrl },
+            { name: "twitter:card", content: "summary_large_image" },
+            { name: "twitter:title", content: fallbackTitle },
+            { name: "twitter:description", content: fallbackDesc },
+            { name: "twitter:image", content: fallbackImage },
+          ],
+          link: [
+            { rel: "canonical", href: fallbackUrl },
+          ],
+        };
+      }
 
       const BASE = "https://0nefor.one";
       const loc = route.params?.locale || "en";
@@ -250,8 +284,15 @@ export default {
       const image = cardImage(card.id);
       const title = `${card.name} — Yu-Gi-Oh! | One for One`;
       const raw = card.desc ?? "";
-      const desc = raw.length > 155 ? raw.slice(0, 155) + "…" : raw ||
-        `Trade ${card.name} on One for One — the free Yu-Gi-Oh! card trading platform.`;
+      let candidate;
+      if (raw.length === 0) {
+        candidate = `Trade ${card.name} on One for One — the free Yu-Gi-Oh! card trading platform.`;
+      } else if (raw.length < 30) {
+        candidate = `${raw} — Trade ${card.name} on One for One.`;
+      } else {
+        candidate = raw;
+      }
+      const desc = candidate.length > 155 ? candidate.slice(0, 155) + "…" : candidate;
       const canonical = `${BASE}${path}`;
       const enPath = path.replace(new RegExp(`^/${loc}(/|$)`), "/en$1");
 
@@ -269,9 +310,6 @@ export default {
             sku: s.set_code,
             name: s.set_rarity,
             url: `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${encodeURIComponent(s.set_code)}`,
-            price: "0",
-            priceCurrency: "USD",
-            availability: "https://schema.org/InStock",
             seller: { "@type": "Organization", name: "One for One" },
           })),
         } : {}),
@@ -301,13 +339,14 @@ export default {
       };
     }));
 
-    return { ssrCard };
+    return { ssrCard, card, loading };
   },
 
   data() {
+    // card and loading are intentionally omitted here — they are declared as
+    // refs in setup() so that onServerPrefetch can set them before renderToString
+    // serializes the HTML. setup() properties take precedence over data().
     return {
-      card:           null,
-      loading:        true,
       error:          null,
       traders:        [],
       loadingTraders: false,
@@ -333,6 +372,11 @@ export default {
   watch: {
     // Re-load when navigating between card pages directly
     cardId() { this.load(); },
+  },
+
+  created() {
+    // During SSG, card and loading are already set by onServerPrefetch in setup().
+    // This hook is kept as a no-op placeholder for clarity.
   },
 
   async mounted() {

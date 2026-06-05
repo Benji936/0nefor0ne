@@ -28,6 +28,15 @@ for (const { path, type } of ROUTES) {
     fail++; continue
   }
   const html = readFileSync(filePath, 'utf8')
+  // Extract description content (handle both attribute orderings)
+  const descMatch = html.match(/name="description"\s+content="([^"]*)"/) ||
+                    html.match(/content="([^"]*)"\s+name="description"/)
+  const descContent = descMatch ? descMatch[1] : ''
+
+  // Non-English locale check: /fr/, /de/, /it/ home routes
+  const localeMatch = path.match(/^\/(fr|de|it)\/$/)
+  const locale = localeMatch ? localeMatch[1] : null
+
   const checks = [
     ['<title>', html.includes('<title>')],
     ['meta description', html.includes('name="description"')],
@@ -35,7 +44,34 @@ for (const { path, type } of ROUTES) {
     ['hreflang', html.includes('hreflang=')],
     ['og:title', html.includes('og:title')],
     ['og:url', html.includes('og:url')],
-    ...(type === 'card' ? [['json-ld', html.includes('application/ld+json')]] : []),
+    // New assertion a: og:image present for all route types
+    ['og:image', html.includes('og:image')],
+    // New assertion b: non-empty description content
+    ['non-empty description', descContent.length > 0],
+    // New assertion c: non-English locale titles (only for /fr/, /de/, /it/ home)
+    ...(locale ? [
+      [`html lang="${locale}"`, html.includes(`<html lang="${locale}"`)],
+      ...(locale === 'fr' ? [['title contains French keyword', html.includes('Échange')]] : []),
+      ...(locale === 'de' ? [['title contains German keyword', html.includes('Tausch')]] : []),
+      ...(locale === 'it' ? [['title contains Italian keyword', html.includes('Scambio')]] : []),
+    ] : []),
+    // New assertion d: no "price" in JSON-LD on card routes (scoped to Product schema only)
+    ...(type === 'card' ? (() => {
+      const jldMatches = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+      let productHasPrice = false
+      for (const match of jldMatches) {
+        try {
+          const schema = JSON.parse(match[1])
+          if (schema['@type'] === 'Product' && Array.isArray(schema.offers)) {
+            productHasPrice = schema.offers.some(o => 'price' in o || 'priceCurrency' in o || 'availability' in o)
+          }
+        } catch {}
+      }
+      return [
+        ['json-ld', html.includes('application/ld+json')],
+        ['no price in json-ld', !productHasPrice],
+      ]
+    })() : []),
   ]
   const failed = checks.filter(([, ok]) => !ok)
   if (failed.length) {

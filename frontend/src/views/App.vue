@@ -32,11 +32,11 @@ useHead(
 
     const isSearch = page === "search" || !page;
     const title = isSearch && q
-      ? t("meta.search.titleWithQuery", { query: q })
-      : t(`meta.${page || "search"}.title`, {}, { missingWarn: false }) || t("meta.search.title");
+      ? t("meta.search.titleWithQuery", { query: q }, { locale: loc })
+      : t(`meta.${page || "search"}.title`, {}, { missingWarn: false, locale: loc }) || t("meta.search.title", {}, { locale: loc });
     const desc = isSearch && q
-      ? t("meta.search.descWithQuery", { query: q })
-      : t(`meta.${page || "search"}.desc`, {}, { missingWarn: false }) || t("meta.search.desc");
+      ? t("meta.search.descWithQuery", { query: q }, { locale: loc })
+      : t(`meta.${page || "search"}.desc`, {}, { missingWarn: false, locale: loc }) || t("meta.search.desc", {}, { locale: loc });
 
     const canonical = `${BASE}${path}`;
 
@@ -256,7 +256,7 @@ function switchLang(lang) {
 
   </main>
 
-  <!-- ── TCGPlayer skyscraper — fixed right sidebar, desktop only ──
+  <!-- ── TCGPlayer skyscraper — fixed right sidebar, desktop only ── -->
   <div
     class="hidden xl:flex fixed right-4 top-1/2 -translate-y-1/2 z-20 flex-col items-center"
     style="pointer-events: none"
@@ -264,7 +264,7 @@ function switchLang(lang) {
     <div style="pointer-events: auto">
       <TcgPlayerAd :ad-id="3913676" :width="240" :height="1200" />
     </div>
-  </div> -->
+  </div> 
 
   <!-- ── Footer ── -->
   <footer
