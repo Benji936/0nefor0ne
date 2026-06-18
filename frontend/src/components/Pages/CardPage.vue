@@ -74,6 +74,29 @@
               <v-icon icon="mdi-open-in-new" size="13" />
               {{ link.label }}
             </a>
+            <!-- Strategy tips (outbound link only — no content reproduced).
+                 Shown only when the crawler confirmed a real Card Tips page. -->
+            <a
+              v-if="yugipediaTipsUrl"
+              :href="yugipediaTipsUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-xs no-underline flex items-center gap-1 transition-opacity hover:opacity-70"
+              style="color: var(--c-muted)"
+            >
+              <v-icon icon="mdi-open-in-new" size="13" />
+              {{ $t('cardPage.yugipediaTips') }}
+            </a>
+          </div>
+
+          <!-- Price badges -->
+          <div v-if="prices" class="flex flex-wrap gap-2 mt-1">
+            <span v-if="prices.tcg" class="text-xs px-2 py-0.5 rounded" style="background: var(--c-surface-2); color: var(--c-text)">
+              {{ $t('cardPage.priceTcg', { price: `$${prices.tcg}` }) }}
+            </span>
+            <span v-if="prices.cm" class="text-xs px-2 py-0.5 rounded" style="background: var(--c-surface-2); color: var(--c-text)">
+              {{ $t('cardPage.priceCm', { price: `€${prices.cm}` }) }}
+            </span>
           </div>
 
           <!-- Actions -->
@@ -94,12 +117,35 @@
         </div>
       </div>
 
+      <!-- Alternate artworks: clicking a thumbnail swaps the hero image above.
+           Full-width row that wraps to as many lines as needed so every printing
+           art is visible; shown only when the card has more than one. -->
+      <div v-if="altImages.length > 1" class="flex flex-col gap-2">
+        <p class="text-xs font-bold uppercase tracking-wide" style="color: var(--c-muted)">{{ $t('cardPage.alternateArtworks') }}</p>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="img in altImages"
+            :key="img.id"
+            type="button"
+            class="shrink-0 rounded overflow-hidden p-0 cursor-pointer transition-opacity hover:opacity-80"
+            :style="{ border: '2px solid ' + ((selectedImageId ?? card.id) === img.id ? 'var(--c-accent)' : 'transparent') }"
+            :aria-label="card.name"
+            @click="selectedImageId = img.id"
+          >
+            <img :src="cardImage(img.id)" :alt="card.name" loading="lazy" style="width: 50px; height: 73px; object-fit: cover; display: block" />
+          </button>
+        </div>
+      </div>
+
       <!-- Printings -->
-      <div v-if="card.card_sets?.length" class="rounded-lg border overflow-hidden" style="border-color: var(--c-border)">
+      <div v-if="card.card_sets?.length" class="rounded-lg border" style="border-color: var(--c-border)">
         <p class="text-xs font-bold uppercase tracking-wide px-4 py-3" style="color: var(--c-muted); border-bottom: 1px solid var(--c-border)">
           {{ $t('cardPage.printingsCount', { count: card.card_sets.length }) }}
         </p>
-        <div class="overflow-y-auto" style="max-height: 180px">
+        <!-- Printings list — collapsed to 180px when >5 entries, toggle to expand -->
+        <div
+          :style="card.card_sets.length > 5 && !printingsExpanded ? 'max-height: 180px; overflow-y: hidden' : 'overflow-y: auto'"
+        >
           <div
             v-for="s in card.card_sets"
             :key="s.set_code"
@@ -107,12 +153,11 @@
             style="border-color: var(--c-border)"
           >
             <span class="font-mono font-semibold shrink-0 w-28" style="color: var(--c-text)">{{ s.set_code }}</span>
-            <span class="truncate grow" style="color: var(--c-muted)">{{ s.set_name }}</span>
+            <router-link :to="'/en/set/' + encodeURIComponent(s.set_name)" class="truncate grow no-underline transition-opacity hover:opacity-70" style="color: var(--c-muted)">{{ s.set_name }}</router-link>
             <span class="shrink-0" style="color: var(--c-muted)">{{ s.set_rarity }}</span>
             <a
               :href="`https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${encodeURIComponent(s.set_code)}`"
-              target="_blank"
-              rel="noopener noreferrer"
+              target="_blank" rel="noopener noreferrer"
               class="shrink-0 flex items-center gap-1 no-underline transition-opacity hover:opacity-70"
               style="color: var(--c-muted)"
             >
@@ -120,20 +165,75 @@
             </a>
           </div>
         </div>
+        <button
+          v-if="card.card_sets.length > 5"
+          type="button"
+          class="w-full text-xs py-2 text-center transition-opacity hover:opacity-70"
+          style="color: var(--c-muted); border-top: 1px solid var(--c-border)"
+          @click="printingsExpanded = !printingsExpanded"
+        >
+          {{ printingsExpanded ? $t('cardPage.showLess') : $t('cardPage.showAllPrintings', { count: card.card_sets.length }) }}
+        </button>
+      </div>
+
+      <!-- Archetype cards -->
+      <div v-if="card.archetype && (loadingArchetype || archetypeCards.length)" class="flex flex-col gap-3">
+        <p class="text-xs font-bold uppercase tracking-wide" style="color: var(--c-muted)">
+          {{ $t('cardPage.archetypeCards', { archetype: card.archetype }) }}
+        </p>
+        <div v-if="loadingArchetype" class="flex gap-3 overflow-x-auto pb-1">
+          <div v-for="i in 6" :key="i" class="shrink-0 rounded-lg animate-pulse" style="width: 80px; height: 116px; background: var(--c-skeleton)" />
+        </div>
+        <div v-else class="flex gap-3 overflow-x-auto pb-1" style="scrollbar-width: thin">
+          <router-link
+            v-for="c in archetypeCards"
+            :key="c.id"
+            :to="`/${$route.params.locale || 'en'}/card/${c.id}`"
+            class="shrink-0 flex flex-col gap-1 no-underline transition-opacity hover:opacity-80"
+            style="width: 80px"
+          >
+            <img :src="cardImage(c.id)" :alt="c.name" loading="lazy" class="rounded w-full shadow-sm" style="aspect-ratio: 59/86; object-fit: cover" />
+            <span class="text-[10px] text-center leading-tight" style="color: var(--c-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden">{{ c.name }}</span>
+          </router-link>
+        </div>
+      </div>
+
+      <!-- Cards that can search this one (Yugipedia "can be searched by" list) -->
+      <div v-if="loadingSearchers || searcherCards.length" class="flex flex-col gap-3">
+        <p class="text-xs font-bold uppercase tracking-wide" style="color: var(--c-muted)">
+          {{ $t('cardPage.searchedBy') }}
+        </p>
+        <div v-if="loadingSearchers" class="flex gap-3 overflow-x-auto pb-1">
+          <div v-for="i in 6" :key="i" class="shrink-0 rounded-lg animate-pulse" style="width: 80px; height: 116px; background: var(--c-skeleton)" />
+        </div>
+        <div v-else class="flex gap-3 overflow-x-auto pb-1" style="scrollbar-width: thin">
+          <router-link
+            v-for="c in searcherCards"
+            :key="c.id"
+            :to="`/${$route.params.locale || 'en'}/card/${c.id}`"
+            class="shrink-0 flex flex-col gap-1 no-underline transition-opacity hover:opacity-80"
+            style="width: 80px"
+          >
+            <img :src="cardImage(c.id)" :alt="c.name" loading="lazy" class="rounded w-full shadow-sm" style="aspect-ratio: 59/86; object-fit: cover" />
+            <span class="text-[10px] text-center leading-tight" style="color: var(--c-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden">{{ c.name }}</span>
+          </router-link>
+        </div>
       </div>
 
       <!-- Traders section -->
-      <div class="flex flex-col gap-3">
+      <div class="flex flex-col gap-3 ">
         <p class="text-xs font-bold uppercase tracking-wide" style="color: var(--c-muted)">{{ $t('cardYugi.tradersWithCard') }}</p>
 
-        <div v-if="loadingTraders" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+
+        <div v-if="loadingTraders" class="grid grid-cols-2 sm:grid-cols-3 gap-3 px-3 py-3">
+
           <div
             v-for="i in 6" :key="i"
             class="rounded-xl border overflow-hidden animate-pulse"
             style="border-color: var(--c-border)"
           >
             <div class="h-1 w-full" style="background: var(--c-skeleton)" />
-            <div class="p-3 flex flex-col gap-2" style="background: var(--c-surface-2)">
+            <div class="px-3 py-3 flex flex-col gap-2" style="background: var(--c-surface-2)">
               <div class="flex items-center gap-2">
                 <div class="size-8 rounded-full" style="background: var(--c-skeleton)" />
                 <div class="flex flex-col gap-1 grow">
@@ -159,8 +259,8 @@
             style="border-color: var(--c-border)"
             @click="proposeToTrader(trader)"
           >
-            <div class="h-1 w-full" :style="{ background: kindColor(trader.kind) }" />
-            <div class="flex flex-col gap-2 p-3" style="background: var(--c-surface-2)">
+            <div class="h-1 w-full " :style="{ background: kindColor(trader.kind) }" />
+            <div class="flex flex-col gap-2 px-3 py-3" style="background: var(--c-surface-2)">
               <div class="flex items-center gap-2">
                 <div
                   class="size-9 rounded-full shrink-0 flex items-center justify-center text-sm font-bold overflow-hidden"
@@ -193,7 +293,6 @@
     <ProposeTradeDialog
       v-model="proposeOpen"
       :user="proposingTo"
-      :login="currentLogin"
     />
   </div>
 </template>
@@ -205,9 +304,44 @@ import { useHead } from "@unhead/vue";
 import AddCard           from "@/components/AddCard.vue";
 import ProposeTradeDialog from "@/components/ProposeTradeDialog.vue";
 import { cardImage }      from "@/lib/cardImage";
-import { searchById }     from "@/api";
+import { searchById, searchByArchetype, getCardsByIds, getCardArtworks } from "@/api";
 import { fetchTradersWithCard } from "@/lib/matches";
 import { getCurrentSession, getClient } from "@/lib/supabaseClient";
+
+// Lazily-loaded Yugipedia "Card Tips" availability manifest: { [cardId]: url }.
+// Generated by scripts/yugipedia-tips.mjs and served as a static file; fetched
+// ONCE on the client (module-level cache, browser-cached) — never a per-view
+// request to Yugipedia, and absent from SSR so it can't break prerender.
+const yugipediaTips = ref({});
+let yugipediaTipsLoaded = false;
+async function ensureYugipediaTips() {
+  if (yugipediaTipsLoaded || typeof window === "undefined") return;
+  yugipediaTipsLoaded = true;
+  try {
+    const res = await fetch("/yugipedia-tips.json");
+    if (res.ok) yugipediaTips.value = await res.json();
+  } catch {
+    // Non-critical enhancement — silently skip if the manifest is unavailable.
+  }
+}
+
+// Lazily-loaded Yugipedia "can be searched by" manifest: { [cardId]: [searcherId, …] }.
+// Same static-file / fetch-once-per-session pattern as the tips manifest, but
+// awaitable so the related-cards loader can read it deterministically. Absent
+// from SSR (client-only) so it can't affect prerender.
+let searchersData = null;
+let searchersPromise = null;
+function ensureYugipediaSearchers() {
+  if (typeof window === "undefined") return Promise.resolve({});
+  if (searchersData) return Promise.resolve(searchersData);
+  if (!searchersPromise) {
+    searchersPromise = fetch("/yugipedia-searchers.json")
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((j) => { searchersData = j; return j; })
+      .catch(() => ({})); // non-critical enhancement
+  }
+  return searchersPromise;
+}
 
 export default {
   components: { AddCard, ProposeTradeDialog },
@@ -284,17 +418,33 @@ export default {
       const image = cardImage(card.id);
       const title = `${card.name} — Yu-Gi-Oh! | One for One`;
       const raw = card.desc ?? "";
-      let candidate;
-      if (raw.length === 0) {
-        candidate = `Trade ${card.name} on One for One — the free Yu-Gi-Oh! card trading platform.`;
-      } else if (raw.length < 30) {
-        candidate = `${raw} — Trade ${card.name} on One for One.`;
-      } else {
-        candidate = raw;
-      }
+
+      // Build a stats prefix line for monsters and typed spell/trap cards
+      const statParts = [];
+      if (card.type)             statParts.push(card.type);
+      if (card.attribute)        statParts.push(card.attribute);
+      if (card.level != null)    statParts.push(`Lv.${card.level}`);
+      else if (card.linkval != null) statParts.push(`Link ${card.linkval}`);
+      if (card.atk != null)      statParts.push(`ATK ${card.atk}${card.def != null ? `/DEF ${card.def}` : ""}`);
+      const statsLine = statParts.join(" · ");
+
+      const effectText = raw.length > 0
+        ? raw
+        : `Trade ${card.name} on One for One — the free Yu-Gi-Oh! card trading platform.`;
+      const candidate = statsLine ? `${statsLine} — ${effectText}` : effectText;
       const desc = candidate.length > 155 ? candidate.slice(0, 155) + "…" : candidate;
+
       const canonical = `${BASE}${path}`;
       const enPath = path.replace(new RegExp(`^/${loc}(/|$)`), "/en$1");
+
+      // Card stats as schema.org additionalProperty for structured data richness
+      const additionalProperty = [];
+      if (card.type)          additionalProperty.push({ "@type": "PropertyValue", name: "Card Type",  value: card.type });
+      if (card.attribute)     additionalProperty.push({ "@type": "PropertyValue", name: "Attribute",  value: card.attribute });
+      if (card.race)          additionalProperty.push({ "@type": "PropertyValue", name: "Type",       value: card.race });
+      if (card.level != null) additionalProperty.push({ "@type": "PropertyValue", name: "Level",      value: card.level });
+      if (card.atk != null)   additionalProperty.push({ "@type": "PropertyValue", name: "ATK",        value: card.atk });
+      if (card.def != null)   additionalProperty.push({ "@type": "PropertyValue", name: "DEF",        value: card.def });
 
       const schema = {
         "@context": "https://schema.org",
@@ -304,6 +454,7 @@ export default {
         image,
         category: "Trading Card",
         brand: { "@type": "Brand", name: "Yu-Gi-Oh!" },
+        ...(additionalProperty.length ? { additionalProperty } : {}),
         ...(card.card_sets?.length ? {
           offers: card.card_sets.map(s => ({
             "@type": "Offer",
@@ -315,31 +466,53 @@ export default {
         } : {}),
       };
 
+      const breadcrumb = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home",        item: `${BASE}/en/` },
+          { "@type": "ListItem", position: 2, name: "Card Search", item: `${BASE}/en/` },
+          { "@type": "ListItem", position: 3, name: card.name,     item: canonical },
+        ],
+      };
+
       return {
         title,
         meta: [
           { name: "description", content: desc },
-          { property: "og:title", content: title },
+          { property: "og:type",        content: "product" },
+          { property: "og:title",       content: title },
           { property: "og:description", content: desc },
-          { property: "og:image", content: image },
-          { property: "og:url", content: canonical },
-          { name: "twitter:card", content: "summary_large_image" },
-          { name: "twitter:title", content: title },
+          { property: "og:image",       content: image },
+          { property: "og:url",         content: canonical },
+          { name: "twitter:card",        content: "summary_large_image" },
+          { name: "twitter:title",       content: title },
           { name: "twitter:description", content: desc },
-          { name: "twitter:image", content: image },
+          { name: "twitter:image",       content: image },
         ],
         link: [
           { rel: "canonical", href: canonical },
-          { rel: "alternate", hreflang: "en", href: `${BASE}${enPath}` },
+          { rel: "alternate", hreflang: "en",        href: `${BASE}${enPath}` },
           { rel: "alternate", hreflang: "x-default", href: `${BASE}${enPath}` },
         ],
         script: [
           { type: "application/ld+json", innerHTML: JSON.stringify(schema) },
+          { type: "application/ld+json", innerHTML: JSON.stringify(breadcrumb) },
         ],
       };
     }));
 
-    return { ssrCard, card, loading };
+    // Client-only: load the Card Tips + searcher manifests (guarded so SSR skips them).
+    ensureYugipediaTips();
+    ensureYugipediaSearchers();
+
+    // `cardImage` is imported at module scope, so the template (which calls
+    // cardImage(c.id) directly in the archetype / matching-cards v-for loops)
+    // cannot see it unless it is returned here. Without this, every related-card
+    // thumbnail render throws "cardImage is not a function", leaving null vnodes
+    // in the v-for children array — which crashes unmountChildren on the next
+    // navigation and wedges the router. Expose it explicitly.
+    return { ssrCard, card, loading, yugipediaTips, cardImage };
   },
 
   data() {
@@ -347,18 +520,28 @@ export default {
     // refs in setup() so that onServerPrefetch can set them before renderToString
     // serializes the HTML. setup() properties take precedence over data().
     return {
-      error:          null,
-      traders:        [],
-      loadingTraders: false,
-      proposeOpen:    false,
-      proposingTo:    null,
-      currentLogin:   null,
+      error:            null,
+      traders:          [],
+      loadingTraders:   false,
+      archetypeCards:   [],
+      loadingArchetype: false,
+      searcherCards:    [],
+      loadingSearchers: false,
+      proposeOpen:        false,
+      proposingTo:        null,
+      currentLogin:       null,
+      printingsExpanded:  false,
+      selectedImageId:    null, // which printing art the hero image shows (null → main id)
+      artworks:           [],   // all printing artworks (fetched by name; id query returns only one)
     };
   },
 
   computed: {
     cardId()     { return this.$route.params.id; },
-    cardImageUrl() { return cardImage(this.card?.id); },
+    cardImageUrl() { return cardImage(this.selectedImageId ?? this.card?.id); },
+    // All printing artworks for this card (each has its own passcode id, already
+    // synced to R2). Populated lazily by loadArtworks(); length<=1 → no alternates.
+    altImages() { return this.artworks; },
     marketLinks() {
       const name = encodeURIComponent(this.card?.name ?? "");
       return [
@@ -366,6 +549,19 @@ export default {
         { label: "eBay",       url: `https://www.ebay.com/sch/i.html?_nkw=${name}+yugioh` },
         { label: "Cardmarket", url: `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${name}` },
       ];
+    },
+    // Outbound Yugipedia strategy-tips link — only present when the crawler
+    // confirmed a real (non-stub) Card Tips page exists for this card id.
+    yugipediaTipsUrl() {
+      return (this.card?.id != null && this.yugipediaTips?.[this.card.id]) || null;
+    },
+    prices() {
+      const p = this.card?.card_prices?.[0];
+      if (!p) return null;
+      const normalize = v => (!v || v === '0.00') ? null : v;
+      const tcg = normalize(p.tcgplayer_price);
+      const cm  = normalize(p.cardmarket_price);
+      return (tcg || cm) ? { tcg, cm } : null;
     },
   },
 
@@ -385,10 +581,17 @@ export default {
 
   methods: {
     async load() {
-      this.loading = true;
-      this.error   = null;
-      this.card    = null;
-      this.traders = [];
+      this.loading           = true;
+      this.error             = null;
+      this.card              = null;
+      this.traders           = [];
+      this.archetypeCards    = [];
+      this.searcherCards     = [];
+      this.loadingArchetype  = false;
+      this.loadingSearchers  = false;
+      this.printingsExpanded = false;
+      this.selectedImageId   = null;
+      this.artworks          = [];
 
       try {
         const locale = this.$route.params.locale || 'en';
@@ -397,6 +600,8 @@ export default {
         if (!data) { this.error = "Card not found."; return; }
         this.card = data;
         this.ssrCard = data; // drive useHead() reactively on the client too
+        this.loadRelatedCards(); // fire-and-forget
+        this.loadArtworks(data); // fire-and-forget: alternate artworks (fetched by name)
         // Traders are looked up by English canonical name so they match DB records
         this.loadingTraders = true;
         fetchTradersWithCard(data.name_en ?? data.name)
@@ -407,6 +612,51 @@ export default {
         this.error = err?.message ?? "Failed to load card.";
       } finally {
         this.loading = false;
+      }
+    },
+
+    /** Fire-and-forget: populate archetypeCards and searcherCards. */
+    loadRelatedCards() {
+      const card = this.card;
+      if (!card) return;
+      if (card.archetype) {
+        this.loadingArchetype = true;
+        searchByArchetype(card.archetype, 20)
+          .then(res => {
+            const all = res?.data?.data ?? [];
+            this.archetypeCards = all.filter(c => c.id !== card.id).slice(0, 12);
+          })
+          .catch(() => { this.archetypeCards = []; })
+          .finally(() => { this.loadingArchetype = false; });
+      }
+      this.loadSearcherCards(card);
+    },
+
+    /** Fire-and-forget: fetch all printing artworks. searchById(id) returns only the
+     *  single queried artwork, so we re-query by the English name to get the full set. */
+    async loadArtworks(card) {
+      const imgs = await getCardArtworks(card.name_en ?? card.name);
+      if (this.card?.id !== card.id) return; // user navigated away mid-flight
+      this.artworks = imgs;
+    },
+
+    /** Fire-and-forget: resolve the Yugipedia "can be searched by" ids (from the
+     *  static manifest) to full card objects, preserving Yugipedia's ordering. */
+    async loadSearcherCards(card) {
+      try {
+        const map = await ensureYugipediaSearchers();
+        const ids = map?.[card.id];
+        if (!ids?.length) return;
+        // Guard against a race when the user navigated to another card meanwhile.
+        if (this.card?.id !== card.id) return;
+        this.loadingSearchers = true;
+        const byId = await getCardsByIds(ids);
+        if (this.card?.id !== card.id) return;
+        this.searcherCards = ids.map(i => byId[i]).filter(Boolean).slice(0, 24);
+      } catch {
+        this.searcherCards = [];
+      } finally {
+        this.loadingSearchers = false;
       }
     },
 
