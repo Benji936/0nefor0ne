@@ -331,7 +331,15 @@
     "printingsCount": "Éditions ({count})",
     "setCode": "Code de set",
     "rarity": "Rareté",
-    "unknown": "Inconnu"
+    "unknown": "Inconnu",
+    "archetypeCards": "Archétype {archetype}",
+    "searchedBy": "Peut être recherché par",
+    "alternateArtworks": "Autres illustrations",
+    "levelLabel": "Niveau {level}",
+    "priceTcg": "TCGPlayer {price}",
+    "priceCm": "Cardmarket {price}",
+    "showAllPrintings": "Voir les {count} éditions",
+    "showLess": "Réduire"
   },
   "privacy": {
     "title": "Politique de confidentialité",
