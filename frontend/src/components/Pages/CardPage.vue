@@ -49,16 +49,36 @@
         <div class="flex flex-col gap-3">
           <h1 class="text-2xl font-bold" style="color: var(--c-text)">{{ card.name }}</h1>
 
-          <div class="flex flex-wrap gap-3 text-sm" style="color: var(--c-muted)">
+          <div class="flex flex-wrap items-center gap-3 text-sm" style="color: var(--c-muted)">
+            <CardKindIcons :card="card" :size="20" />
             <span v-if="card.type">{{ card.type }}</span>
-            <span v-if="card.race">· {{ card.race }}</span>
-            <span v-if="card.attribute">· {{ card.attribute }}</span>
-            <span v-if="card.level != null">· {{ $t('cardYugi.level') }} {{ card.level }}</span>
+            <span v-if="card.race && !cardIsSpellTrap">· {{ card.race }}</span>
+            <span v-if="card.level != null" class="inline-flex items-center gap-1">·
+              <img v-if="levelIcon && levelIcon.src" :src="levelIcon.src" :alt="levelIcon.label" :title="levelIcon.label" class="object-contain" style="width: 18px; height: 18px" />
+              <template v-else>{{ levelIcon ? levelIcon.label : $t('cardYugi.level') }}</template>
+              {{ card.level }}
+            </span>
             <span v-if="card.atk != null">· ATK {{ card.atk }}</span>
             <span v-if="card.def != null">· DEF {{ card.def }}</span>
           </div>
 
-          <p class="text-sm leading-relaxed" style="color: var(--c-text); opacity: 0.85">{{ card.desc }}</p>
+          <!-- Banlist (Forbidden/Limited list) status — shown only for restricted
+               cards; TCG and OCG are listed separately since they can differ. -->
+          <div v-if="hasBanlist" class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-semibold uppercase tracking-wide" style="color: var(--c-muted)">{{ $t('banlist.label') }}</span>
+            <CardBanlistBadge :card="card" format="tcg" variant="chip" show-format />
+            <CardBanlistBadge :card="card" format="ocg" variant="chip" show-format />
+          </div>
+
+          <!-- Effect: the normalized breakdown stands in for the plain text when the
+               PSCT parser can segment it (the breakdown keeps a "show original"
+               toggle); otherwise fall back to the raw effect paragraph so vanilla /
+               unparseable cards still show their text. -->
+          <CardEffectBreakdown v-if="hasEffectBreakdown" :card-id="card.id" :original-text="card.desc" />
+          <p v-else class="text-sm leading-relaxed" style="color: var(--c-text); opacity: 0.85">{{ card.desc }}</p>
+
+          <!-- Combo Explorer entry (renders only if this card has a parsed effect) -->
+          <ComboExplorerLink :card-id="card.id" class="mt-1" />
 
           <!-- External links -->
           <div class="flex flex-wrap gap-3 mt-1">
@@ -147,8 +167,8 @@
           :style="card.card_sets.length > 5 && !printingsExpanded ? 'max-height: 180px; overflow-y: hidden' : 'overflow-y: auto'"
         >
           <div
-            v-for="s in card.card_sets"
-            :key="s.set_code"
+            v-for="s in sortedPrintings"
+            :key="s.set_code + '|' + s.set_rarity"
             class="flex items-center gap-2 px-4 py-2 border-b last:border-0 text-xs"
             style="border-color: var(--c-border)"
           >
@@ -303,8 +323,15 @@ import { useRoute } from "vue-router";
 import { useHead } from "@unhead/vue";
 import AddCard           from "@/components/AddCard.vue";
 import ProposeTradeDialog from "@/components/ProposeTradeDialog.vue";
+import CardKindIcons      from "@/components/CardKindIcons.vue";
+import CardBanlistBadge   from "@/components/CardBanlistBadge.vue";
+import ComboExplorerLink  from "@/components/ComboExplorerLink.vue";
+import CardEffectBreakdown from "@/components/CardEffectBreakdown.vue";
+import { parseCardText }  from "@/lib/psctParser";
 import { cardImage }      from "@/lib/cardImage";
-import { searchById, searchByArchetype, getCardsByIds, getCardArtworks } from "@/api";
+import { isSpellTrap, levelIconFor } from "@/lib/cardIcons";
+import { hasAnyBanlist, ensureBanlistManifest } from "@/lib/banlist";
+import { searchById, searchByArchetype, getCardsByIds, getCardArtworks, getSetReleaseDates } from "@/api";
 import { fetchTradersWithCard } from "@/lib/matches";
 import { getCurrentSession, getClient } from "@/lib/supabaseClient";
 
@@ -344,7 +371,7 @@ function ensureYugipediaSearchers() {
 }
 
 export default {
-  components: { AddCard, ProposeTradeDialog },
+  components: { AddCard, ProposeTradeDialog, CardKindIcons, CardBanlistBadge, ComboExplorerLink, CardEffectBreakdown },
 
   props: {
     // Passed by App.vue RouterView slot — needed for AddCard auth check
@@ -502,9 +529,10 @@ export default {
       };
     }));
 
-    // Client-only: load the Card Tips + searcher manifests (guarded so SSR skips them).
+    // Client-only: load the Card Tips + searcher + banlist manifests (guarded so SSR skips them).
     ensureYugipediaTips();
     ensureYugipediaSearchers();
+    ensureBanlistManifest();
 
     // `cardImage` is imported at module scope, so the template (which calls
     // cardImage(c.id) directly in the archetype / matching-cards v-for loops)
@@ -533,6 +561,7 @@ export default {
       printingsExpanded:  false,
       selectedImageId:    null, // which printing art the hero image shows (null → main id)
       artworks:           [],   // all printing artworks (fetched by name; id query returns only one)
+      setDates:           {},   // set_name → release date, for sorting printings by recency
     };
   },
 
@@ -542,6 +571,40 @@ export default {
     // All printing artworks for this card (each has its own passcode id, already
     // synced to R2). Populated lazily by loadArtworks(); length<=1 → no alternates.
     altImages() { return this.artworks; },
+    // Spell/Trap cards expose their property (Quick-Play, Counter, …) in `race`,
+    // which CardKindIcons renders as an icon — so the raw race text is hidden for them.
+    cardIsSpellTrap() { return isSpellTrap(this.card); },
+    // Restricted in TCG and/or OCG (Yugipedia manifest first, then YGOPRODeck).
+    hasBanlist() { return hasAnyBanlist(this.card); },
+    // Level (or Rank, for Xyz) icon + value, shown in place of the "Level" text.
+    levelIcon() { return levelIconFor(this.card); },
+    // True when the PSCT parser can segment this card's text — i.e. the
+    // CardEffectBreakdown component will render. When false (vanilla flavor text,
+    // unparseable spells/traps) we fall back to the plain effect paragraph so the
+    // text is never hidden entirely.
+    hasEffectBreakdown() {
+      const desc = this.card?.desc;
+      if (!desc) return false;
+      // Normal (vanilla) monsters carry flavor lore, not an effect — the parser
+      // would mislabel it as an "EFFECT" segment, so keep their plain text.
+      if (/Normal\b.*Monster/.test(this.card?.type ?? "")) return false;
+      return parseCardText(desc).effects.length > 0;
+    },
+    // Printings sorted newest-first by set release date. card_sets carries no date,
+    // so we look it up in setDates (loaded lazily). Sets with an unknown date sink to
+    // the bottom; equal dates keep their original order (Array.sort is stable).
+    sortedPrintings() {
+      const sets = this.card?.card_sets ?? [];
+      const dates = this.setDates;
+      return [...sets].sort((a, b) => {
+        const da = dates[a.set_name] || "";
+        const db = dates[b.set_name] || "";
+        if (da === db) return 0;
+        if (!da) return 1;
+        if (!db) return -1;
+        return db.localeCompare(da); // ISO dates → descending (newest first)
+      });
+    },
     marketLinks() {
       const name = encodeURIComponent(this.card?.name ?? "");
       return [
@@ -602,6 +665,7 @@ export default {
         this.ssrCard = data; // drive useHead() reactively on the client too
         this.loadRelatedCards(); // fire-and-forget
         this.loadArtworks(data); // fire-and-forget: alternate artworks (fetched by name)
+        this.loadSetDates();     // fire-and-forget: release dates to sort printings
         // Traders are looked up by English canonical name so they match DB records
         this.loadingTraders = true;
         fetchTradersWithCard(data.name_en ?? data.name)
@@ -638,6 +702,12 @@ export default {
       const imgs = await getCardArtworks(card.name_en ?? card.name);
       if (this.card?.id !== card.id) return; // user navigated away mid-flight
       this.artworks = imgs;
+    },
+
+    /** Fire-and-forget: load the (session-cached) set release dates so printings
+     *  can be sorted newest-first. The map is global, so this is cheap to re-call. */
+    async loadSetDates() {
+      this.setDates = await getSetReleaseDates();
     },
 
     /** Fire-and-forget: resolve the Yugipedia "can be searched by" ids (from the

@@ -75,11 +75,56 @@ export const getCardSets = () => {
     });
 };
 
-export const getCardsBySet = (setName = "", locale = "en") => {
-    return axios.get(`${API_URL}cardinfo.php?cardset=${encodeURIComponent(setName)}${langParam(locale)}`).catch((error) => {
+/** Session-cached map of set_name → TCG release date ("YYYY-MM-DD").
+ *  The full set list (cardsets.php) is large and effectively static, so we fetch
+ *  it once and reuse it. Used to sort a card's printings by recency, since the
+ *  per-card card_sets entries carry no date. Returns {} on failure (never throws). */
+let _setDatesCache = null;
+let _setDatesPromise = null;
+export const getSetReleaseDates = async () => {
+    if (_setDatesCache) return _setDatesCache;
+    if (!_setDatesPromise) {
+        _setDatesPromise = axios
+            .get(`${API_URL}cardsets.php`)
+            .then((res) => {
+                const map = {};
+                for (const s of res?.data ?? []) {
+                    if (s?.set_name && s?.tcg_date) map[s.set_name] = s.tcg_date;
+                }
+                _setDatesCache = map;
+                return map;
+            })
+            .catch(() => {
+                _setDatesPromise = null; // allow a retry on next call
+                return {};
+            });
+    }
+    return _setDatesPromise;
+};
+
+/** Retry an axios GET a couple of times on transient failures. YGOPRODeck
+ *  rate-limits bursts (a card page fires several calls, then a set click fires
+ *  another), surfacing as a Network Error. A short backoff clears the blip so a
+ *  rate-limit isn't mistaken for an empty/missing set. */
+async function getWithRetry(url, retries = 2, delayMs = 600) {
+    for (let attempt = 0; ; attempt++) {
+        try {
+            return await axios.get(url);
+        } catch (err) {
+            if (attempt >= retries) throw err;
+            await new Promise((r) => setTimeout(r, delayMs * (attempt + 1)));
+        }
+    }
+}
+
+export const getCardsBySet = async (setName = "", locale = "en") => {
+    const url = `${API_URL}cardinfo.php?cardset=${encodeURIComponent(setName)}${langParam(locale)}`;
+    try {
+        return await getWithRetry(url);
+    } catch (error) {
         console.error("Error fetching cards for set " + setName, error);
         return { data: { data: [] } };
-    });
+    }
 };
 
 export const get = (url = "") => {
@@ -89,10 +134,35 @@ export const get = (url = "") => {
     });
 };
 
-/** Fetch up to `num` cards belonging to a given archetype. */
+/** Fetch up to `num` cards belonging to a given archetype.
+ *  YGOPRODeck rejects `num` unless `offset` is also present ("use both or none"),
+ *  so we always pair them — otherwise the request 400s and resolves to []. */
 export const searchByArchetype = (archetype, num = 20) => {
-    return axios.get(`${API_URL}cardinfo.php?archetype=${encodeURIComponent(archetype)}&num=${num}`)
+    return axios.get(`${API_URL}cardinfo.php?archetype=${encodeURIComponent(archetype)}&num=${num}&offset=0`)
         .catch(() => ({ data: { data: [] } }));
+};
+
+/** Session-cached list of all canonical YGOPRODeck archetype names.
+ *  Used to normalize EDOPro SET_* archetype guesses to the API's exact spelling
+ *  (e.g. "Hero" -> "HERO"). Returns string[] (empty on failure; never throws). */
+let _archetypesCache = null;
+let _archetypesPromise = null;
+export const getArchetypes = async () => {
+    if (_archetypesCache) return _archetypesCache;
+    if (!_archetypesPromise) {
+        _archetypesPromise = axios
+            .get(`${API_URL}archetypes.php`)
+            .then((res) => {
+                const list = (res?.data ?? []).map((a) => a?.archetype_name).filter(Boolean);
+                _archetypesCache = list;
+                return list;
+            })
+            .catch(() => {
+                _archetypesPromise = null; // allow retry
+                return [];
+            });
+    }
+    return _archetypesPromise;
 };
 
 /** Fetch up to `num` cards matching the given server-supported filters.

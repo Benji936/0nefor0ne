@@ -6,7 +6,82 @@ defineEmits(['deleted']);
 </script>
 
 <template>
+  <!-- Stable root so toggling layout swaps the inner content in place — keeps the
+       parent TransitionGroup from running a leave/enter on the root (which flashed
+       both layouts during a view switch). -->
+  <div class="ce-root">
+  <!-- ── Compact list row (basic view) ── -->
   <div
+    v-if="layout === 'list'"
+    class="card-row flex items-center gap-3 rounded-lg border px-3 py-2 transition-colors"
+    :style="{
+      backgroundColor: 'var(--c-surface)',
+      borderColor: wish.status === 'locked'
+        ? 'color-mix(in srgb, var(--c-mutual) 60%, transparent)'
+        : 'var(--c-border)',
+      opacity: wish.status === 'locked' ? '0.85' : '1',
+    }"
+  >
+    <!-- Thumbnail -->
+    <div class="relative shrink-0">
+      <img :src="cardImage(wish.image_id)" :alt="wish.name" loading="lazy" class="rounded block" style="width: 38px; aspect-ratio: 59/86; object-fit: cover" />
+      <div
+        v-if="wish.status === 'locked'"
+        class="absolute inset-0 flex items-center justify-center rounded"
+        style="background: rgba(0,0,0,0.55)"
+      >
+        <v-icon icon="mdi-handshake" size="14" color="var(--c-mutual)" />
+      </div>
+    </div>
+
+    <!-- Name + meta -->
+    <div class="min-w-0 flex-1 flex flex-col gap-1">
+      <p class="font-semibold text-sm leading-tight truncate" style="color: var(--c-text)">{{ wish.name }}</p>
+      <div class="flex flex-wrap items-center gap-2">
+        <ConditionTooltip v-if="wish.condition" :condition="wish.condition" />
+        <LanguageTooltip v-if="wish.language" :language="wish.language" />
+        <v-tooltip v-if="wish.rarity" :text="wish.rarity" location="top">
+          <template #activator="{ props: tip }">
+            <span v-bind="tip" class="py-0.5 px-1 rounded text-[11px] h-fit bg-amber-900/50 text-amber-300 cursor-default">{{ shortenRarity(wish.rarity) }}</span>
+          </template>
+        </v-tooltip>
+        <a
+          :href="`https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${encodeURIComponent(wish.name)}`"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="shrink-0 transition-opacity hover:opacity-70 flex items-center gap-1 no-underline text-[11px]"
+          style="color: var(--c-muted)"
+        ><v-icon icon="mdi-open-in-new" size="12" />{{ wish.extension }}</a>
+      </div>
+    </div>
+
+    <!-- Quantity / locked status -->
+    <div class="shrink-0">
+      <div
+        v-if="wish.status === 'locked'"
+        class="flex items-center gap-1.5 rounded-md px-2 py-1.5"
+        style="background: color-mix(in srgb, var(--c-mutual) 10%, transparent); border: 1px solid color-mix(in srgb, var(--c-mutual) 30%, transparent)"
+      >
+        <v-icon icon="mdi-lock-outline" size="13" color="var(--c-mutual)" />
+        <span class="text-xs font-semibold tabular-nums" style="color: var(--c-mutual)">{{ wish.quantity }}</span>
+      </div>
+      <div v-else class="card-row-qty">
+        <v-number-input
+          hide-details
+          density="compact"
+          variant="outlined"
+          control-variant="split"
+          v-model="quantityCount"
+          @update:model-value="onQuantityChange"
+          :min="minQuantity"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Card tile (grid view) ── -->
+  <div
+    v-else
     class="card-element flex flex-col rounded-b-lg border overflow-hidden transition-colors"
     :style="{
       backgroundColor: 'transparent',
@@ -82,13 +157,14 @@ defineEmits(['deleted']);
       </template>
     </div>
   </div>
+  </div>
 </template>
 
 <script>
 import { getClient } from "@/lib/supabaseClient";
 
 export default {
-  props: ['wish'],
+  props: ['wish', 'layout'],
   data() {
     return {
       quantityCount: this.wish.quantity,
@@ -166,4 +242,8 @@ export default {
 @media (max-width: 639px) {
   .card-element { width: 100%; }
 }
+
+/* Compact stepper for the list row — keep the +/- control from stretching. */
+.card-row-qty { width: 124px; }
+.card-row:hover { background-color: var(--c-surface-2) !important; }
 </style>

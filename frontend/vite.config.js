@@ -2,6 +2,7 @@ import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig } from 'vite'
 import { TOP_CARD_IDS } from './src/data/card-ids.js'
+import { TOP_SET_SLUGS } from './src/data/set-slugs.js'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import tailwindcss from '@tailwindcss/vite'
@@ -62,7 +63,17 @@ export default defineConfig(({ command }) => ({
         included.push(`/en/card/${id}`)
       }
 
-      return included  // 4 + 4 + 16 = 24 paths
+      // Set pages — English-only (set names are always English)
+      for (const setName of TOP_SET_SLUGS) {
+        included.push('/en/set/' + encodeURIComponent(setName))
+      }
+
+      // Dedicated card search/browse page: /en/cards, /fr/cards, /de/cards, /it/cards
+      for (const locale of locales) {
+        included.push(`/${locale}/cards`)
+      }
+
+      return included  // 4 + 4 + 16 + 30 + 4 = 58 paths
     },
   },
 }))

@@ -9,7 +9,10 @@
     "search": "Recherche",
     "library": "Collection",
     "trades": "Échanges",
-    "account": "Compte"
+    "account": "Compte",
+    "decks": "Decks",
+    "collapseMenu": "Réduire le menu",
+    "expandMenu": "Agrandir le menu"
   },
   "footer": {
     "privacy": "Politique de confidentialité",
@@ -21,10 +24,22 @@
     "cta": "Commencer gratuitement",
     "learnMore": "Comment ça marche",
     "steps": {
-      "01": { "title": "Constituez votre pile d'échange", "body": "Listez les cartes que vous souhaitez échanger." },
-      "02": { "title": "Ajoutez votre liste de souhaits", "body": "Marquez chaque carte que vous recherchez." },
-      "03": { "title": "Trouvez votre correspondance", "body": "On identifie les joueurs qui veulent vos cartes et ont les vôtres." },
-      "04": { "title": "Proposez et confirmez", "body": "Envoyez une proposition, discutez et finalisez l'échange." }
+      "01": {
+        "title": "Constituez votre pile d'échange",
+        "body": "Listez les cartes que vous souhaitez échanger."
+      },
+      "02": {
+        "title": "Ajoutez votre liste de souhaits",
+        "body": "Marquez chaque carte que vous recherchez."
+      },
+      "03": {
+        "title": "Trouvez votre correspondance",
+        "body": "On identifie les joueurs qui veulent vos cartes et ont les vôtres."
+      },
+      "04": {
+        "title": "Proposez et confirmez",
+        "body": "Envoyez une proposition, discutez et finalisez l'échange."
+      }
     }
   },
   "auth": {
@@ -85,7 +100,10 @@
     "emptyTrade": "Rien ici pour l'instant — ajoutez des cartes que vous avez à échanger.",
     "emptyWish": "Rien ici pour l'instant — ajoutez des cartes que vous recherchez.",
     "addedToWishlist": "\"{name}\" ajouté à la liste de souhaits.",
-    "addedToTrade": "\"{name}\" ajouté à la pile d'échange."
+    "addedToTrade": "\"{name}\" ajouté à la pile d'échange.",
+    "viewLabel": "Affichage de la collection",
+    "viewList": "Vue liste",
+    "viewGrid": "Vue grille"
   },
   "addCard": {
     "addToTrade": "Ajouter à ma pile d'échange",
@@ -125,7 +143,6 @@
   },
   "matches": {
     "loginRequired": "Connectez-vous pour voir vos correspondances d'échange.",
-    "filterPlaceholder": "Filtrer par carte ou nom de joueur…",
     "allCountries": "Tous les pays",
     "city": "Ville",
     "clearFilters": "effacer les filtres",
@@ -318,7 +335,14 @@
       "worldwide": "Mondiale"
     }
   },
+  "banlist": {
+    "label": "Banlist",
+    "forbidden": "Interdite",
+    "limited": "Limitée",
+    "semiLimited": "Semi-Limitée"
+  },
   "cardPage": {
+    "yugipediaTips": "Conseils de stratégie sur Yugipedia",
     "back": "Retour",
     "backToSearch": "Retour à la recherche",
     "cardNotFound": "Carte introuvable",
@@ -340,6 +364,15 @@
     "priceCm": "Cardmarket {price}",
     "showAllPrintings": "Voir les {count} éditions",
     "showLess": "Réduire"
+  },
+  "setPage": {
+    "title": "{setName} — Extension Yu-Gi-Oh! | One for One",
+    "cardCount": "0 carte | 1 carte | {count} cartes",
+    "notFound": "Extension introuvable",
+    "backToSearch": "Retour à la recherche",
+    "loading": "Chargement des cartes…",
+    "rarityDistribution": "Répartition des raretés",
+    "viewCard": "Voir la carte"
   },
   "privacy": {
     "title": "Politique de confidentialité",
@@ -367,7 +400,81 @@
     "last30days": "30 derniers jours",
     "browseByExtension": "Parcourir par extension",
     "searchByNameOrCode": "Rechercher par nom ou code…",
-    "latestReleases": "Dernières sorties"
+    "latestReleases": "Dernières sorties",
+    "filters": {
+      "title": "Filtres avancés",
+      "toggle": "Filtres",
+      "clear": "Effacer les filtres",
+      "activeCount": "{count} filtre actif | {count} filtres actifs",
+      "noResults": "Aucune carte ne correspond à vos filtres",
+      "kind": {
+        "any": "Tous",
+        "monster": "Monstre",
+        "spell": "Magie",
+        "trap": "Piège"
+      },
+      "deck": {
+        "label": "Deck",
+        "main": "Deck Principal",
+        "extra": "Extra Deck"
+      },
+      "category": {
+        "normal": "Normal",
+        "effect": "Effet",
+        "ritual": "Rituel",
+        "fusion": "Fusion",
+        "synchro": "Synchro",
+        "xyz": "Xyz",
+        "pendulum": "Pendule",
+        "link": "Lien",
+        "tuner": "Syntoniseur",
+        "flip": "Flip",
+        "toon": "Toon",
+        "spirit": "Esprit",
+        "union": "Union",
+        "gemini": "Gémeaux",
+        "token": "Jeton"
+      },
+      "spellType": {
+        "normal": "Normal Magie",
+        "continuous": "Continue",
+        "field": "Terrain",
+        "equip": "Équipement",
+        "quickplay": "Jeu-Rapide",
+        "ritual": "Rituel Magie"
+      },
+      "trapType": {
+        "normal": "Normal Piège",
+        "continuous": "Continue",
+        "counter": "Contre"
+      },
+      "attribute": {
+        "label": "Attribut"
+      },
+      "level": {
+        "label": "Niveau / Rang"
+      },
+      "rank": {
+        "label": "Rang"
+      },
+      "comparator": {
+        "gte": "≥",
+        "eq": "=",
+        "lte": "≤"
+      },
+      "scale": {
+        "label": "Échelle Pendule"
+      },
+      "race": {
+        "label": "Type / Race"
+      },
+      "linkRating": {
+        "label": "Indice de Lien"
+      },
+      "linkArrows": {
+        "label": "Flèches de Lien"
+      }
+    }
   },
   "cardYugi": {
     "level": "Niveau",
@@ -421,6 +528,59 @@
     "typeMessage": "Tapez un message…",
     "readOnly": "Le chat est en lecture seule."
   },
+  "deckImport": {
+    "title": "Importer un deck (.ydk)",
+    "dropzone": "Déposez votre fichier .ydk ici, ou cliquez pour parcourir",
+    "summary": "{total} cartes · {owned} possédées · {missing} manquantes · {unrecognized} inconnues",
+    "addMissing": "Ajouter 1 carte manquante à la liste de souhaits | Ajouter {count} cartes manquantes à la liste de souhaits",
+    "allOwned": "Vous possédez déjà toutes les cartes de ce deck !",
+    "added": "1 carte ajoutée à votre liste de souhaits | {count} cartes ajoutées à votre liste de souhaits",
+    "missingBadge": "Manquante",
+    "unknownBadge": "Inconnue",
+    "sections": {
+      "main": "Deck Principal",
+      "extra": "Deck Extra",
+      "side": "Deck Side"
+    },
+    "loading": "Résolution des cartes…",
+    "error": "Impossible de lire le fichier deck"
+  },
+  "deckDetail": {
+    "title": "Deck: {name}",
+    "backToDecks": "Back to Decks",
+    "notFound": "Deck not found.",
+    "loading": "Loading deck…",
+    "mainDeck": "Main Deck",
+    "extraDeck": "Extra Deck",
+    "sideDeck": "Side Deck",
+    "addMissingToWishlist": "Add missing to wishlist",
+    "allOwned": "You own all cards in this deck!",
+    "summary": "{total} cards · {owned} owned · {missing} missing",
+    "unrecognized": "{count} unrecognized"
+  },
+  "decks": {
+    "title": "Mes Decks",
+    "empty": "Aucun deck pour l'instant. Importez un fichier .ydk pour commencer.",
+    "importButton": "Importer un deck (.ydk)",
+    "confirmName": "Nom du deck",
+    "confirmImport": "Enregistrer le deck",
+    "sortByMissing": "Trier par manquantes",
+    "totalCards": "{total} cartes",
+    "ownedCount": "{owned} possédées",
+    "missingCount": "{missing} manquantes",
+    "addMissing": "Ajouter {count} carte manquante à la liste de souhaits | Ajouter {count} cartes manquantes à la liste de souhaits",
+    "migratePartialFail": "{errors} deck(s) n'ont pas pu être sauvegardé(s).",
+    "allOwned": "Vous possédez toutes les cartes de ce deck",
+    "rename": "Renommer",
+    "delete": "Supprimer le deck",
+    "deleteConfirm": "Supprimer ce deck ?",
+    "guestBanner": "Vos decks sont sauvegardés dans votre navigateur. Connectez-vous pour les sauvegarder définitivement.",
+    "migratePrompt": "Vous avez {count} deck(s) sauvegardé(s) dans votre navigateur. Les enregistrer sur votre compte ?",
+    "migrateSave": "Enregistrer sur le compte",
+    "migrateDiscard": "Ignorer",
+    "manageLink": "Enregistrer et gérer tous les decks →",
+    "unrecognizedCount": "{count} inconnue(s)"
+  },
   "meta": {
     "search": {
       "title": "One for One — Échange de Cartes Yu-Gi-Oh!",
@@ -447,6 +607,117 @@
     "privacy": {
       "title": "Politique de Confidentialité — One for One",
       "desc": "Politique de confidentialité de One for One, la plateforme d'échange gratuite de cartes Yu-Gi-Oh!."
+    },
+    "cards": {
+      "title": "Parcourir les cartes Yu-Gi-Oh! — One for One",
+      "desc": "Recherchez et filtrez toute la base de cartes Yu-Gi-Oh! par type, attribut, niveau et plus. Trouvez des cartes à ajouter à votre pile d'échange ou votre liste de souhaits sur One for One."
+    },
+    "combo": {
+      "title": "Explorateur de combos — One for One",
+      "desc": "Découvrez toutes les cartes qu'un effet Yu-Gi-Oh! peut rechercher, Invoquer Spécialement ou envoyer au Cimetière. Explorez ce que l'effet de cette carte peut récupérer sur One for One."
     }
+  },
+  "deckIgnore": {
+    "ignore": "Ignorer",
+    "unignore": "Rétablir",
+    "skippedBadge": "OBTENU",
+    "ignoredCount": "{n} ignorée(s)"
+  },
+  "cards": {
+    "title": "Parcourir les cartes",
+    "nav": "Cartes",
+    "sort": {
+      "label": "Trier par",
+      "name": "Nom (A → Z)",
+      "level": "Niveau/Rang (décroissant)",
+      "atk": "ATK (décroissant)",
+      "def": "DEF (décroissant)",
+      "new": "Nouveautés"
+    },
+    "density": {
+      "label": "Affichage",
+      "comfortable": "Confortable",
+      "compact": "Compact"
+    },
+    "loadMore": "Charger plus",
+    "results": {
+      "count": "0 carte | 1 carte | {count} cartes",
+      "noResults": "Aucune carte ne correspond à votre recherche. Essayez d'ajuster vos filtres."
+    },
+    "filters": {
+      "button": "Filtres",
+      "buttonWithCount": "Filtres ({count})",
+      "activeLabel": "Filtres actifs"
+    },
+    "emptyState": "Commencez à taper un nom de carte ou appliquez un filtre pour parcourir la base de données."
+  },
+  "combo": {
+    "explore": "Explorer les combos",
+    "title": "Explorateur de combos",
+    "backToCard": "Retour à la carte",
+    "analyzing": "Analyse de l'effet…",
+    "noEffect": "Aucun effet de combo trouvé",
+    "noEffectHint": "Cette carte n'a aucun effet de recherche / invocation / envoi analysable, ou son effet est trop complexe pour être résolu automatiquement.",
+    "resolving": "Résolution…",
+    "broad": "Cet effet correspond à un ensemble très large (par ex. n'importe quel monstre) — trop de cartes à lister.",
+    "noMatches": "Aucune carte correspondante trouvée.",
+    "count": "0 carte | 1 carte | {count} cartes",
+    "approximate": "approximatif",
+    "approximateHint": "L'effet contient des conditions (par ex. ATK, logique personnalisée) que l'analyseur ne peut pas lire entièrement — les résultats peuvent être approximatifs.",
+    "actions": {
+      "search": "Recherche",
+      "special_summon": "Invoque Spécialement",
+      "send_to_gy": "Envoie au Cimetière",
+      "to_deck": "Ajoute au Deck",
+      "target": "Cible"
+    },
+    "locations": {
+      "deck": "depuis le Deck",
+      "graveyard": "depuis le Cimetière",
+      "extra_deck": "depuis l'Extra Deck",
+      "banished": "depuis les bannies"
+    },
+    "summary": {
+      "level": "Niveau {v}",
+      "levelMax": "Niveau ≤ {v}",
+      "levelMin": "Niveau ≥ {v}",
+      "atk": "ATK {v}",
+      "atkMax": "ATK ≤ {v}",
+      "atkMin": "ATK ≥ {v}",
+      "def": "DEF {v}",
+      "defMax": "DEF ≤ {v}",
+      "defMin": "DEF ≥ {v}",
+      "any": "n'importe quelle carte"
+    }
+  },
+  "breakdown": {
+    "title": "Décomposition de l'effet",
+    "auto": "généré automatiquement",
+    "showOriginal": "Afficher le texte original",
+    "hideOriginal": "Masquer le texte original",
+    "labels": {
+      "trigger": "Déclencheur",
+      "condition": "Condition",
+      "cost": "Coût",
+      "target": "Cible",
+      "effect": "Effet",
+      "restriction": "Restriction",
+      "downside": "Inconvénient"
+    },
+    "tags": {
+      "effectType": "Type",
+      "oncePerTurn": "une fois par tour",
+      "fromHand": "depuis la main",
+      "quickEffect": "effet rapide",
+      "negates": "annule",
+      "banishes": "bannit",
+      "lock": "verrouille",
+      "amount": "quantité",
+      "cost": "coût",
+      "from": "depuis",
+      "target": "cible",
+      "counterTrap": "contre-piège"
+    },
+    "effectN": "Effet {n}"
   }
 }

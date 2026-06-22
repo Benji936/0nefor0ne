@@ -15,6 +15,7 @@ import { writeFile } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { TOP_CARD_IDS } from "../src/data/card-ids.js";
+import { TOP_SET_SLUGS } from "../src/data/set-slugs.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(__dirname, "../public/sitemap.xml");
@@ -61,12 +62,27 @@ function cardUrlEntry({ path, changefreq, priority }) {
   </url>`;
 }
 
+// Set pages are English-only — same rationale as card pages.
+function setUrlEntry({ path, changefreq = 'monthly', priority = 0.7 }) {
+  const loc = `https://0nefor.one/en${path}`
+  return `
+  <url>
+    <loc>${loc}</loc>
+    <lastmod>${TODAY}</lastmod>
+    <changefreq>${changefreq}</changefreq>
+    <priority>${priority}</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="${loc}"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="${loc}"/>
+  </url>`
+}
+
 // ── Static pages ──────────────────────────────────────────────────────────────
 
 // Only include publicly useful pages — auth-required pages (library, trade, account)
 // show thin/empty content to Googlebot and waste crawl budget.
 const STATIC_PAGES = [
   { path: "/",        changefreq: "daily",  priority: 1.0 },
+  { path: "/cards",   changefreq: "weekly", priority: 0.9 },
   { path: "/privacy", changefreq: "yearly", priority: 0.3 },
 ];
 
@@ -125,6 +141,9 @@ async function main() {
   const cardEntries    = cards.map(c =>
     cardUrlEntry({ path: `/card/${c.image_id}`, changefreq: "weekly", priority: 0.6 })
   ).join("");
+  const setEntries     = TOP_SET_SLUGS
+    .map(name => setUrlEntry({ path: '/set/' + encodeURIComponent(name) }))
+    .join('');
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <!--
@@ -132,12 +151,14 @@ async function main() {
   ${new Date().toISOString()}
   Static pages: ${STATIC_PAGES.length} × ${LOCALES.length} locales
   Card pages:   ${cards.length} × en only (non-English locales redirect to /en/card/:id)
-  Total <url> entries: ${STATIC_PAGES.length * LOCALES.length + cards.length}
+  Set pages:    ${TOP_SET_SLUGS.length} × en only
+  Total <url> entries: ${STATIC_PAGES.length * LOCALES.length + cards.length + TOP_SET_SLUGS.length}
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${staticEntries}
 ${cardEntries}
+${setEntries}
 </urlset>
 `;
 
@@ -145,7 +166,8 @@ ${cardEntries}
   console.log(`\nWrote ${OUT}`);
   console.log(`  ${STATIC_PAGES.length} static pages × ${LOCALES.length} locales = ${STATIC_PAGES.length * LOCALES.length} entries`);
   console.log(`  ${cards.length} card pages × en only = ${cards.length} entries`);
-  console.log(`  Total: ${STATIC_PAGES.length * LOCALES.length + cards.length} <url> entries`);
+  console.log(`  ${TOP_SET_SLUGS.length} set pages × en only = ${TOP_SET_SLUGS.length} entries`);
+  console.log(`  Total: ${STATIC_PAGES.length * LOCALES.length + cards.length + TOP_SET_SLUGS.length} <url> entries`);
 }
 
 main().catch(err => { console.error(err); process.exit(1); });

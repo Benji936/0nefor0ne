@@ -37,14 +37,12 @@ import TraderProfileDialog from "@/components/TraderProfileDialog.vue";
       :login="login"
       :loading="isLoadingVisible"
       :all-matches-count="allMatches.length"
-      :match-search="matchSearch"
       :location-country="locationCountry"
       :location-city="locationCity"
       :available-countries="availableCountries"
       :filter-card-name="filterCardName"
       :buckets="buckets"
       :total-matches="totalMatches"
-      @update:matchSearch="matchSearch = $event"
       @update:locationCountry="locationCountry = $event"
       @update:locationCity="locationCity = $event"
       @clearFilter="$emit('clearFilter')"
@@ -102,7 +100,7 @@ function debounce(fn, ms) {
   let t;
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
-import { fetchMatches, fetchTradersWithCard, filterByCardName, bucketMatches } from "@/lib/matches";
+import { fetchMatches, fetchTradersWithCard, bucketMatches } from "@/lib/matches";
 import { fetchMyProposals, acceptTradeProposal, completeTradeProposal, cancelTradeProposal, declineTradeProposal } from "@/lib/proposals";
 
 export default {
@@ -120,7 +118,6 @@ export default {
       cardTraders:        [],
       loadingProposals:   false,
       proposals:          [],
-      matchSearch:        "",
       locationCountry:    "",
       locationCity:       "",
       profileDialogOpen:  false,
@@ -144,20 +141,11 @@ export default {
     visibleMatches() {
       return this.filterCardName ? this.cardTraders : this.allMatches;
     },
-    searchedMatches() {
-      const q = this.matchSearch.toLowerCase().trim();
-      if (!q) return this.visibleMatches;
-      return this.visibleMatches.filter(u =>
-        (u.name ?? "").toLowerCase().includes(q) ||
-        u.theyHave.some(c => c.name.toLowerCase().includes(q)) ||
-        u.theyWant.some(c => c.name.toLowerCase().includes(q))
-      );
-    },
     availableCountries() {
       return [...new Set(this.visibleMatches.map(u => u.country).filter(Boolean))].sort();
     },
     filteredMatches() {
-      let result = this.searchedMatches;
+      let result = this.visibleMatches;
       if (this.locationCountry) result = result.filter(u => u.country === this.locationCountry);
       if (this.locationCity.trim()) {
         const city = this.locationCity.trim().toLowerCase();

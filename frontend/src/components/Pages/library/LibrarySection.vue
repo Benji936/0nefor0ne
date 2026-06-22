@@ -13,6 +13,7 @@ defineProps({
   newCardId: { type: [String, Number], default: null },
   emptyText: { type: String,  default: "Nothing here yet." },
   ringClass: { type: String,  default: "ring-blue-400" },
+  view:      { type: String,  default: "list" }, // 'list' (rows) | 'grid' (tiles)
 });
 
 const emit = defineEmits(["added", "deleted"]);
@@ -44,11 +45,16 @@ const emit = defineEmits(["added", "deleted"]);
 
     <!-- Cards -->
     <template v-else>
-      <TransitionGroup name="card-slide" tag="div" class="grid grid-cols-2 sm:flex sm:flex-wrap gap-3">
+      <TransitionGroup
+        name="card-slide"
+        tag="div"
+        :class="view === 'grid' ? 'grid grid-cols-2 sm:flex sm:flex-wrap gap-3' : 'flex flex-col gap-2'"
+      >
         <CardElement
           v-for="card in cards"
           :key="card.id"
           :wish="card"
+          :layout="view"
           :class="newCardId === card.id ? `ring-2 ${ringClass}` : ''"
           @deleted="emit('deleted', $event)"
         />

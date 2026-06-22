@@ -9,7 +9,10 @@ const ROUTES = [
   ...['/en/', '/fr/', '/de/', '/it/'].map(p => ({ path: p, type: 'home' })),
   ...['/en/privacy', '/fr/privacy', '/de/privacy', '/it/privacy'].map(p => ({ path: p, type: 'privacy' })),
   ...[10966439, 18711696, 19144622, 27632520, 31533473, 38811586, 4026187, 54077752, 57847269, 69140098, 70088809, 81684048, 83232904, 91237821, 96334243, 98829635]
-    .map(id => ({ path: `/en/card/${id}`, type: 'card' }))
+    .map(id => ({ path: `/en/card/${id}`, type: 'card' })),
+  { path: '/en/set/Metal%20Raiders', type: 'set' },
+  { path: '/en/set/Legend%20of%20Blue%20Eyes%20White%20Dragon', type: 'set' },
+  { path: '/en/set/Invasion%20of%20Chaos', type: 'set' },
 ]
 
 // vite-ssg emits /en/index.html for /en/ and /en/privacy.html for /en/privacy
@@ -55,6 +58,25 @@ for (const { path, type } of ROUTES) {
       ...(locale === 'de' ? [['title contains German keyword', html.includes('Tausch')]] : []),
       ...(locale === 'it' ? [['title contains Italian keyword', html.includes('Scambio')]] : []),
     ] : []),
+    // Set page checks: H1, non-empty description, og:image, canonical, JSON-LD CollectionPage
+    ...(type === 'set' ? (() => {
+      const jldMatches = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+      let hasCollectionPage = false
+      for (const match of jldMatches) {
+        if (match[1].includes('"CollectionPage"')) hasCollectionPage = true
+      }
+      const ogImageMatch = html.match(/property="og:image"\s+content="([^"]*)"/) ||
+                           html.match(/content="([^"]*)"\s+property="og:image"/)
+      const ogImageContent = ogImageMatch ? ogImageMatch[1] : ''
+      return [
+        ['<h1', html.includes('<h1')],
+        ['non-empty description', descContent.length > 0],
+        ['og:image non-empty', ogImageContent.length > 0],
+        ['canonical', html.includes('rel="canonical"')],
+        ['json-ld', html.includes('application/ld+json')],
+        ['json-ld CollectionPage', hasCollectionPage],
+      ]
+    })() : []),
     // New assertion d: no "price" in JSON-LD on card routes (scoped to Product schema only)
     ...(type === 'card' ? (() => {
       const jldMatches = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]

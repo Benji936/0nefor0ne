@@ -5,15 +5,44 @@ import { useRouter, useRoute } from "vue-router";
 import { useHead } from "@unhead/vue";
 import AuthDialog from "@/components/AuthDialog.vue";
 import NavItem from "@/components/NavItem.vue";
+import SideNav from "@/components/SideNav.vue";
 import NotificationBell from "@/components/NotificationBell.vue";
 import UserMenuChip from "@/components/UserMenuChip.vue";
 import TcgPlayerAd from "@/components/TcgPlayerAd.vue";
+import CardHoverPreview from "@/components/CardHoverPreview.vue";
 import { setLocale, SUPPORTED } from "@/i18n.js";
 
 const { t, locale } = useI18n();
 const router = useRouter();
 const route  = useRoute();
 const langMenuOpen = ref(false);
+
+// ── Navbar search: navigation-only (KD-2). The navbar never instantiates
+// useCardSearch and never fetches; it routes to /:locale/cards?q=… and the
+// dedicated CardsPage owns all search state + fetching (the sole async writer).
+const navQuery = ref("");
+
+function goToCards() {
+  // Refining the text query must NOT drop active filters. When already on /cards,
+  // merge `q` into the existing query (filters/sort/density preserved); when
+  // arriving from another page there are no filters to keep, so start clean.
+  const query = route.name === "cards" ? { ...route.query } : {};
+  if (navQuery.value) query.q = navQuery.value;
+  else delete query.q;
+  router.push({
+    name: "cards",
+    params: { locale: route.params.locale || "en" },
+    query,
+  });
+}
+
+// Focusing the navbar search expresses navigate-to-cards intent: jump to the
+// dedicated page if we're not already there (don't clobber existing query).
+function focusSearch() {
+  if (route.name !== "cards") {
+    router.push({ name: "cards", params: { locale: route.params.locale || "en" } });
+  }
+}
 
 // ── SEO head: reactive, SSR-rendered via @unhead/vue ──
 const pageName = computed(() => route.name);
@@ -94,30 +123,32 @@ function switchLang(lang) {
 </script>
 
 <template>
+  <!-- ── Collapsible side rail (desktop ≥ sm) — primary navigation ── -->
+  <SideNav
+    v-model:collapsed="railCollapsed"
+    :authenticated="authenticated"
+    :page="page"
+    @navigate="changePage"
+    @matches="openMatches()"
+  />
+
+  <!-- App shell: everything to the right of the rail, shifted by its width. -->
+  <div class="app-shell" :style="{ '--rail-w': railCollapsed ? '64px' : '210px' }">
   <!-- ── Top navbar ── -->
   <nav
     class="flex flex-row py-2 px-3 md:py-3 md:px-5 gap-2 md:gap-6 shadow-xs items-center justify-between sticky top-0 z-30"
     style="background: var(--c-nav); border-bottom: 1px solid var(--c-border); transition: background 0.3s ease"
   >
 
-  <div class="flex flex-row justify-start w-2/3 gap-3">
-    <!-- Logo -->
-    <img
-      src="/logo.png"
-      alt="One for One"
-      class="shrink-0 cursor-pointer select-none align-center max-md:hidden"
-      style="height: 55px; width: 55px; object-fit: contain"
-      @click="changePage('search')"
-    />
-
+    <!-- Search — the core action, kept prominent at the top. -->
     <div
-      class="flex flex-1 rounded-lg md:flex-none my-1 w-full has-[input:focus-within]:outline-2"
+      class="flex flex-1 min-w-0 max-w-md md:max-w-lg rounded-lg my-1 has-[input:focus-within]:outline-2"
       style="background: var(--c-surface-2); outline-color: var(--c-accent)"
     >
       <input
-        v-model="searchQuery"
-        @focus="changePage('search')"
-        @keyup.enter="update"
+        v-model="navQuery"
+        @focus="focusSearch"
+        @keyup.enter="goToCards"
         class="placeholder:opacity-50 outline-none bg-transparent w-full"
         style="color: var(--c-text); font-size: 16px; font-weight: 500; padding: 10px 14px; letter-spacing: 0.01em;"
         :placeholder="$t('nav.searchPlaceholder')"
@@ -126,25 +157,8 @@ function switchLang(lang) {
         inputmode="search"
       />
     </div>
-  </div>
 
     <div class="flex items-center gap-1">
-      <div v-if="authenticated" class="flex max-md:hidden items-center gap-1">
-        <NavItem
-          :tooltip="$t('nav.collection')"
-          icon="mdi-cards"
-          img-src="/src/assets/library.svg"
-          :active="page === 'library'"
-          @click="changePage('library')"
-        />
-        <NavItem
-          :tooltip="$t('nav.tradeMatches')"
-          icon="mdi-swap-horizontal-bold"
-          :active="page === 'TradeCenter'"
-          @click="openMatches()"
-        />
-      </div>
-
       <NavItem
         :tooltip="isDarkTheme ? $t('nav.lightMode') : $t('nav.darkMode')"
         :icon="isDarkTheme ? 'mdi-white-balance-sunny' : 'mdi-moon-waning-crescent'"
@@ -236,14 +250,13 @@ function switchLang(lang) {
   />
 
   <main class="main-content-mobile-pb px-5 md:px-16 pt-5 md:pt-8 min-h-screen sm:pb-0" style="background: var(--c-bg); transition: background 0.3s ease">
-    <!-- RouterView renders the active page component; props are forwarded via slot -->
-     <TcgPlayerAd :ad-id="3913674" :width="1940" :height="500" />
+    <!-- RouterView renders the active page component; props are forwarded via slot 
+     <TcgPlayerAd :ad-id="3913674" :width="1940" :height="500" />-->
     <RouterView v-slot="{ Component }">
       <component
         :is="Component"
         ref="pageRef"
         :login="authenticated"
-        :search-cards="cards"
         :filter-card-name="filterCardName"
         @TradeCenter="openMatches($event)"
         @requireAuth="openLogin()"
@@ -256,9 +269,10 @@ function switchLang(lang) {
 
   </main>
 
-  <!-- ── TCGPlayer skyscraper — fixed right sidebar, desktop only ── -->
+  <!-- ── TCGPlayer skyscraper — fixed right sidebar, desktop only (disabled) ── -->
   <div
-    class="hidden xl:flex fixed right-4 top-1/2 -translate-y-1/2 z-20 flex-col items-center"
+    v-if="false"
+    class="max-xl:hidden flex fixed right-4 top-1/2 -translate-y-1/2 z-20 flex-col items-center"
     style="pointer-events: none"
   >
     <div style="pointer-events: auto">
@@ -278,13 +292,20 @@ function switchLang(lang) {
       <a href="mailto:hello@0nefor.one" class="no-underline transition-opacity hover:opacity-70" style="color: var(--c-muted)">{{ $t('footer.contact') }}</a>
     </nav>
   </footer>
+  </div>
+  <!-- /app-shell -->
+
+  <!-- Floating rich preview on card-thumbnail hover (client-only, self-installing) -->
+  <CardHoverPreview />
 </template>
 
 
 <script>
-import { searchCardByName, searchCardBySetCode, searchById } from "@/api";
 import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
 
+// Search state, the single async writer, and the URL serialization helpers now
+// live in @/composables/useCardSearch.js and are owned exclusively by
+// CardsPage.vue (KD-1/KD-2). App.vue is navbar/shell only — it does not search.
 
   export default {
     computed: {
@@ -296,9 +317,11 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
           return this.$route.name ?? 'search';
         },
         mobileTabs() {
+          // NOTE: 5 tabs on mobile — if layout requires exactly 4, consider removing one or grouping.
           return [
-            { key: 'search',      label: this.$t('nav.search'),  icon: 'mdi-magnify',                iconActive: 'mdi-magnify',                action: () => this.changePage('search') },
+            { key: 'search',      label: this.$t('cards.nav'),   icon: 'mdi-magnify',                iconActive: 'mdi-magnify',                action: () => this.changePage('cards') },
             { key: 'library',     label: this.$t('nav.library'), icon: 'mdi-cards-outline',           iconActive: 'mdi-cards',                  action: () => this.changePage('library') },
+            { key: 'decks',       label: this.$t('nav.decks'),   icon: 'mdi-cards-variant',           iconActive: 'mdi-cards-variant',          action: () => this.changePage('decks') },
             { key: 'TradeCenter', label: this.$t('nav.trades'),  icon: 'mdi-swap-horizontal',         iconActive: 'mdi-swap-horizontal-bold',   action: () => this.openMatches() },
             { key: 'account',     label: this.$t('nav.account'), icon: 'mdi-account-circle-outline',  iconActive: 'mdi-account-circle',         action: () => this.changePage('account') },
           ];
@@ -307,59 +330,21 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
       data() {
           return {
             filterCardName: "",
-            searchQuery: "",
-            cards: {},
             authenticated: null,
             authDialogOpen: false,
             authUnsubscribe: null,
-            _searchTimer: null,
+            // Side-rail pinned/collapsed state — restored from localStorage in mounted().
+            railCollapsed: false,
           };
       },
       watch: {
-        // Sync URL ?q= back into the input when the user navigates back/forward
-        '$route.query.q'(q) {
-          if (this.page === 'search' && q !== this.searchQuery) {
-            this.searchQuery = q ?? '';
-            if (q) this._doSearch(q);
-            else this.cards = {};
+        railCollapsed(val) {
+          if (typeof localStorage !== "undefined") {
+            localStorage.setItem("railCollapsed", val ? "true" : "false");
           }
         },
       },
       methods: {
-        update() {
-          clearTimeout(this._searchTimer);
-          this._searchTimer = setTimeout(() => this._doSearch(this.searchQuery), 300);
-        },
-        async _doSearch(query) {
-          if (!query.trim()) { this.cards = {}; return; }
-          try {
-            const locale = this.$route.params.locale || 'en';
-            const response = await searchCardByName(query); // always search English names
-            if (query !== this.searchQuery) return; // stale
-            if (response.data?.data?.length > 0) {
-              this.cards = response.data;
-            } else if (response.data?.length > 0) {
-              this.cards = { data: response.data };
-            } else {
-              const alt = await searchCardBySetCode(query);
-              if (query !== this.searchQuery) return;
-              if (alt?.data?.id) {
-                const byId = await searchById(alt.data.id, locale);
-                if (query !== this.searchQuery) return;
-                this.cards = byId.data?.data ? byId.data : { data: byId.data ?? [] };
-              } else {
-                this.cards = { data: [] };
-              }
-            }
-            // Reflect the query in the URL so the link is shareable / bookmarkable
-            const q = query.trim();
-            if (this.$route.name === 'search' && this.$route.query.q !== q) {
-              this.$router.replace({ name: 'search', query: q ? { q } : undefined });
-            }
-          } catch (err) {
-            console.error('Search failed', err);
-          }
-        },
         openLogin() {
           this.authDialogOpen = true;
         },
@@ -373,14 +358,14 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
           // immediately for snappier UI.
           this.authenticated = null;
           // Bounce back to search so we don't leave them on a logged-in page.
-          if (["library", "TradeCenter", "account"].includes(this.page)) {
+          if (["library", "TradeCenter", "account", "decks"].includes(this.page)) {
             this.page = "search";
           }
         },
 
         changePage(name) {
           const lc = this.$route.params.locale || 'en';
-          const pathMap = { search: `/${lc}/`, library: `/${lc}/library`, TradeCenter: `/${lc}/trade`, account: `/${lc}/account` };
+          const pathMap = { search: `/${lc}/`, library: `/${lc}/library`, decks: `/${lc}/decks`, TradeCenter: `/${lc}/trade`, account: `/${lc}/account`, cards: `/${lc}/cards` };
           this.$router.push(pathMap[name] ?? `/${lc}/`);
         },
         openMatches(card = null) {
@@ -409,12 +394,8 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
         this.$vuetify.theme.global.name = isDark ? 'neonDusk' : 'neonDuskLight';
         document.documentElement.classList.toggle('dark', isDark);
 
-        // Restore search query from URL on first load (e.g. shared link /?q=Dark+Magician)
-        const initialQuery = this.$route.query.q;
-        if (initialQuery) {
-          this.searchQuery = initialQuery;
-          this._doSearch(initialQuery);
-        }
+        // Restore the side-rail pinned state (default: expanded).
+        this.railCollapsed = localStorage.getItem('railCollapsed') === 'true';
 
         this.authenticated = await getCurrentSession();
 
@@ -431,3 +412,16 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
       },
   };
 </script>
+
+<style scoped>
+/* Shift the whole app right of the rail (desktop only — phones have no rail). */
+@media (min-width: 640px) {
+  .app-shell {
+    margin-left: var(--rail-w, 64px);
+    transition: margin-left 0.18s ease;
+  }
+}
+@media (min-width: 640px) and (prefers-reduced-motion: reduce) {
+  .app-shell { transition: none; }
+}
+</style>

@@ -10,7 +10,12 @@
     "sitemap": "node scripts/generate-sitemap.mjs",
     "sitemap:large": "node scripts/generate-sitemap.mjs --limit=500",
     "cards:bulk-upload": "node scripts/r2/bulk-upload.mjs",
-    "cards:sync": "node scripts/r2/sync-from-api.mjs"
+    "cards:sync": "node scripts/r2/sync-from-api.mjs",
+    "cards:tips": "node scripts/yugipedia-tips.mjs",
+    "cards:banlist": "node scripts/yugipedia-banlist.mjs",
+    "edopro:index": "node scripts/edopro/build-effect-index.mjs --out public/data/effect-index.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
@@ -31,6 +36,7 @@
     "sass": "^1.91.0",
     "vite": "^6.2.4",
     "vite-plugin-vue-devtools": "^7.7.2",
-    "vite-ssg": "^28.3.0"
+    "vite-ssg": "^28.3.0",
+    "vitest": "^4.1.8"
   }
 }

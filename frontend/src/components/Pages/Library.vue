@@ -7,9 +7,56 @@ const { t } = useI18n();
 <template>
   <div class="flex flex-col gap-6 md:gap-10 py-5 md:py-8">
 
+    <!-- ── Toolbar: Deck Import + view switch ── -->
+    <div>
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <button
+          class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          style="background-color: var(--c-surface-2); border: 1px solid var(--c-border); color: var(--c-text);"
+          @click="showDeckImport = !showDeckImport"
+        >
+          <v-icon :icon="showDeckImport ? 'mdi-chevron-up' : 'mdi-file-import-outline'" size="18" />
+          {{ $t('deckImport.title') }}
+        </button>
+
+        <!-- View switch (rows vs tiles) -->
+        <div
+          class="inline-flex items-center rounded-lg p-0.5 gap-0.5"
+          style="background: var(--c-surface-2); border: 1px solid var(--c-border)"
+          role="group"
+          :aria-label="$t('library.viewLabel')"
+        >
+          <button
+            v-for="opt in viewOptions"
+            :key="opt.key"
+            class="flex items-center justify-center rounded-md cursor-pointer transition-colors"
+            style="width: 44px; height: 36px"
+            :style="viewMode === opt.key
+              ? { background: 'var(--c-surface)', color: 'var(--c-accent)' }
+              : { color: 'var(--c-muted)' }"
+            :aria-pressed="viewMode === opt.key"
+            :aria-label="opt.label"
+            :title="opt.label"
+            @click="viewMode = opt.key"
+          >
+            <v-icon :icon="opt.icon" size="20" />
+          </button>
+        </div>
+      </div>
+
+      <div v-if="showDeckImport" class="mt-4">
+        <DeckImport
+          :login="login"
+          @requireAuth="$emit('requireAuth')"
+          @added="onDeckImportAdded"
+        />
+      </div>
+    </div>
+
     <LibrarySection
       :title="t('library.tradePile')"
       mode="trade"
+      :view="viewMode"
       :cards="trade_cards.value"
       :loading="loading"
       :new-card-id="newCardId"
@@ -22,6 +69,7 @@ const { t } = useI18n();
     <LibrarySection
       :title="t('library.wishlist')"
       mode="wish"
+      :view="viewMode"
       :cards="wished_cards.value"
       :loading="loading"
       :new-card-id="newCardId"
@@ -42,9 +90,12 @@ const { t } = useI18n();
 <script>
 import { getClient } from "@/lib/supabaseClient";
 import { ref } from "vue";
+import DeckImport from "@/components/DeckImport.vue";
 
 export default {
+  components: { DeckImport },
   props: ['login'],
+  emits: ['requireAuth'],
   data() {
     return {
       wished_cards: ref([]),
@@ -54,7 +105,24 @@ export default {
       loading: true,
       newCardId: null,
       snackbar: { open: false, message: '', color: '', icon: '' },
+      showDeckImport: false,
+      // Collection layout: 'list' (compact rows, default) | 'grid' (card tiles).
+      // Restored from localStorage in mounted().
+      viewMode: 'list',
     };
+  },
+  computed: {
+    viewOptions() {
+      return [
+        { key: 'list', icon: 'mdi-view-list',        label: this.$t('library.viewList') },
+        { key: 'grid', icon: 'mdi-view-grid-outline', label: this.$t('library.viewGrid') },
+      ];
+    },
+  },
+  watch: {
+    viewMode(val) {
+      if (typeof localStorage !== 'undefined') localStorage.setItem('libraryView', val);
+    },
   },
   methods: {
     filterCovered(cards) {
@@ -74,6 +142,15 @@ export default {
       this.wishes_quantity = this.wished_cards.value.length;
     },
 
+    onDeckImportAdded(count) {
+      this.snackbar = {
+        open: true,
+        message: this.$t('deckImport.added', count, { count }),
+        color: 'var(--c-accent)',
+        icon: 'mdi-heart-plus',
+      };
+    },
+
     onCardAdded(newCard) {
       if (newCard.wish) {
         this.wished_cards.value = [newCard, ...this.wished_cards.value];
@@ -89,6 +166,10 @@ export default {
     },
   },
   async mounted() {
+    // Restore the saved collection layout (default: compact rows).
+    const savedView = typeof localStorage !== 'undefined' ? localStorage.getItem('libraryView') : null;
+    if (savedView === 'grid' || savedView === 'list') this.viewMode = savedView;
+
     const [wishes, trades] = await Promise.all([
       getClient().from('Card').select('*').eq('wish', true).eq('trader', this.login.user.id).neq('status', 'traded'),
       getClient().from('Card').select('*').eq('wish', false).eq('trader', this.login.user.id).neq('status', 'traded'),

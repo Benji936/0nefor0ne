@@ -10,12 +10,13 @@ import 'vuetify/styles' // Global CSS
 import '@mdi/font/css/materialdesignicons.css' // Icons
 
 import i18n, { SUPPORTED, setLocale } from './i18n.js'
-import { routes } from './router/index.js'
+import { routes, scrollBehavior } from './router/index.js'
+import { installCardImageFallback } from './lib/cardImage.js'
 import App from './views/App.vue'
 
 export const createApp = ViteSSG(
   App,
-  { routes, base: '/' },
+  { routes, base: '/', scrollBehavior },
   ({ app, router, isClient }) => {
     // Note: @unhead/vue head is created by ViteSSG automatically (useHead: true default).
     // We must NOT call app.use(createUnhead()) here — that would create a second head
@@ -71,5 +72,8 @@ export const createApp = ViteSSG(
         setLocale(locale)
       }
     })
+
+    // Swap broken card images for the card-back placeholder (client-only).
+    if (isClient) installCardImageFallback()
   }
 )

@@ -8,7 +8,7 @@
 // with a delay between them — well under their ~20 requests/second cap.
 
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { s3, BUCKET, PREFIX, listExistingKeys } from "./_client.mjs";
+import { s3, BUCKET, PREFIX, CROPPED_PREFIX, listExistingKeys } from "./_client.mjs";
 
 const API_URL = "https://db.ygoprodeck.com/api/v7/cardinfo.php";
 const BATCH_SIZE = 5;
@@ -28,25 +28,33 @@ async function fetchCardList() {
  * Yu-Gi-Oh cards can have multiple printings (alt arts) — each gets its own id
  * inside card.card_images. We upload every one of them so the frontend can
  * reference any printing id and find an image.
+ *
+ * For each printing we sync two variants, keyed by their R2 path:
+ *   - cards/{id}.jpg          → the full bordered card (image_url)
+ *   - cards_cropped/{id}.jpg  → the borderless artwork only (image_url_cropped)
+ * The cropped art powers the hover preview; the bordered card is used everywhere else.
  */
 function buildImageList(cards) {
-  const pairs = [];
+  const items = [];
   for (const card of cards) {
     for (const img of card.card_images ?? []) {
-      pairs.push({ id: img.id, url: img.image_url });
+      items.push({ key: `${PREFIX}${img.id}.jpg`, url: img.image_url });
+      if (img.image_url_cropped) {
+        items.push({ key: `${CROPPED_PREFIX}${img.id}.jpg`, url: img.image_url_cropped });
+      }
     }
   }
-  return pairs;
+  return items;
 }
 
-async function uploadOne({ id, url }) {
+async function uploadOne({ key, url }) {
   const r = await fetch(url);
   if (!r.ok) throw new Error(`fetch ${url} → ${r.status}`);
   const buffer = Buffer.from(await r.arrayBuffer());
   await s3.send(
     new PutObjectCommand({
       Bucket: BUCKET,
-      Key: `${PREFIX}${id}.jpg`,
+      Key: key,
       Body: buffer,
       ContentType: "image/jpeg",
       CacheControl: "public, max-age=31536000, immutable",
@@ -55,11 +63,19 @@ async function uploadOne({ id, url }) {
 }
 
 async function main() {
-  const [existing, cards] = await Promise.all([listExistingKeys(), fetchCardList()]);
-  console.log(`R2 has ${existing.size} cards. API reports ${cards.length} unique cards.`);
+  const [existingFull, existingCropped, cards] = await Promise.all([
+    listExistingKeys(PREFIX),
+    listExistingKeys(CROPPED_PREFIX),
+    fetchCardList(),
+  ]);
+  const existing = new Set([...existingFull, ...existingCropped]);
+  console.log(
+    `R2 has ${existingFull.size} bordered + ${existingCropped.size} cropped. ` +
+      `API reports ${cards.length} unique cards.`
+  );
 
   const all = buildImageList(cards);
-  const missing = all.filter(({ id }) => !existing.has(`${PREFIX}${id}.jpg`));
+  const missing = all.filter(({ key }) => !existing.has(key));
   console.log(`${missing.length} new images to upload.`);
 
   if (missing.length === 0) {
@@ -79,7 +95,7 @@ async function main() {
           done++;
         } catch (err) {
           failed++;
-          console.error(`Failed ${item.id}: ${err.message}`);
+          console.error(`Failed ${item.key}: ${err.message}`);
         }
       })
     );
