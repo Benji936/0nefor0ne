@@ -84,7 +84,7 @@ function handleAction(action) {
         </div>
 
         <!-- Name — hidden on small screens -->
-        <span class="hidden md:inline text-sm font-semibold leading-none max-w-[96px] truncate" style="color: var(--c-text)">
+        <span class="max-md:hidden inline text-sm font-semibold leading-none max-w-[96px] truncate" style="color: var(--c-text)">
           {{ displayName }}
         </span>
 
@@ -92,7 +92,7 @@ function handleAction(action) {
         <v-icon
           icon="mdi-chevron-down"
           size="16"
-          class="hidden md:flex chip-chevron transition-transform duration-200 shrink-0"
+          class="max-md:hidden flex chip-chevron transition-transform duration-200 shrink-0"
           :class="{ 'rotate-180': menuOpen }"
           style="color: var(--c-muted)"
         />

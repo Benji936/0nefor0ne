@@ -8,7 +8,6 @@ defineProps({
   login:             { type: Object,  default: null },
   loading:           { type: Boolean, default: false },
   allMatchesCount:   { type: Number,  default: 0 },
-  matchSearch:       { type: String,  default: "" },
   locationCountry:   { type: String,  default: "" },
   locationCity:      { type: String,  default: "" },
   availableCountries:{ type: Array,   default: () => [] },
@@ -18,7 +17,6 @@ defineProps({
 });
 
 const emit = defineEmits([
-  "update:matchSearch",
   "update:locationCountry",
   "update:locationCity",
   "clearFilter",
@@ -35,28 +33,6 @@ const emit = defineEmits([
   </div>
 
   <template v-else>
-    <!-- Search bar -->
-    <div v-if="!loading && allMatchesCount > 0" class="relative">
-      <v-icon icon="mdi-magnify" size="16" class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" color="var(--c-muted)" />
-      <input
-        :value="matchSearch"
-        :placeholder="t('matches.filterPlaceholder')"
-        class="w-full rounded-xl pl-9 pr-4 py-3 text-sm border outline-none transition-colors"
-        :style="{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
-        @input="emit('update:matchSearch', $event.target.value)"
-        @focus="e => e.target.style.borderColor = 'var(--c-trade)'"
-        @blur="e => e.target.style.borderColor = 'var(--c-border)'"
-      />
-      <button
-        v-if="matchSearch"
-        class="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer transition-opacity hover:opacity-70"
-        style="color: var(--c-muted)"
-        @click="emit('update:matchSearch', '')"
-      >
-        <v-icon icon="mdi-close" size="14" />
-      </button>
-    </div>
-
     <!-- Location filters -->
     <div v-if="!loading && allMatchesCount > 0" class="flex flex-wrap items-center gap-2">
       <select

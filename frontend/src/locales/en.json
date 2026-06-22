@@ -9,7 +9,10 @@
     "search": "Search",
     "library": "Library",
     "trades": "Trades",
-    "account": "Account"
+    "account": "Account",
+    "decks": "Decks",
+    "collapseMenu": "Collapse menu",
+    "expandMenu": "Expand menu"
   },
   "footer": {
     "privacy": "Privacy Policy",
@@ -21,10 +24,22 @@
     "cta": "Get started — it's free",
     "learnMore": "How it works",
     "steps": {
-      "01": { "title": "Build your trade pile", "body": "List cards you're ready to trade away." },
-      "02": { "title": "Add your wishlist", "body": "Mark every card you're hunting for." },
-      "03": { "title": "Find your match", "body": "We surface traders who want yours and have yours." },
-      "04": { "title": "Propose & confirm", "body": "Send a proposal, chat, and close the trade." }
+      "01": {
+        "title": "Build your trade pile",
+        "body": "List cards you're ready to trade away."
+      },
+      "02": {
+        "title": "Add your wishlist",
+        "body": "Mark every card you're hunting for."
+      },
+      "03": {
+        "title": "Find your match",
+        "body": "We surface traders who want yours and have yours."
+      },
+      "04": {
+        "title": "Propose & confirm",
+        "body": "Send a proposal, chat, and close the trade."
+      }
     }
   },
   "auth": {
@@ -85,7 +100,10 @@
     "emptyTrade": "Nothing here yet — add cards you have for trade.",
     "emptyWish": "Nothing here yet — add cards you're hunting for.",
     "addedToWishlist": "\"{name}\" added to wishlist.",
-    "addedToTrade": "\"{name}\" added to trade pile."
+    "addedToTrade": "\"{name}\" added to trade pile.",
+    "viewLabel": "Collection view",
+    "viewList": "List view",
+    "viewGrid": "Grid view"
   },
   "addCard": {
     "addToTrade": "Add to trade pile",
@@ -125,7 +143,6 @@
   },
   "matches": {
     "loginRequired": "Log in to see your trade matches.",
-    "filterPlaceholder": "Filter by card or trader name…",
     "allCountries": "All countries",
     "city": "City",
     "clearFilters": "clear filters",
@@ -318,7 +335,14 @@
       "worldwide": "Worldwide"
     }
   },
+  "banlist": {
+    "label": "Banlist",
+    "forbidden": "Forbidden",
+    "limited": "Limited",
+    "semiLimited": "Semi-Limited"
+  },
   "cardPage": {
+    "yugipediaTips": "Strategy tips on Yugipedia",
     "back": "Back",
     "backToSearch": "Back to search",
     "cardNotFound": "Card not found",
@@ -340,6 +364,15 @@
     "priceCm": "Cardmarket {price}",
     "showAllPrintings": "Show all {count} printings",
     "showLess": "Show less"
+  },
+  "setPage": {
+    "title": "{setName} — Yu-Gi-Oh! Set | One for One",
+    "cardCount": "0 cards | 1 card | {count} cards",
+    "notFound": "Set not found",
+    "backToSearch": "Back to search",
+    "loading": "Loading cards…",
+    "rarityDistribution": "Rarity distribution",
+    "viewCard": "View card"
   },
   "privacy": {
     "title": "Privacy Policy",
@@ -367,7 +400,81 @@
     "last30days": "Last 30 days",
     "browseByExtension": "Browse by extension",
     "searchByNameOrCode": "Search by name or code…",
-    "latestReleases": "Latest releases"
+    "latestReleases": "Latest releases",
+    "filters": {
+      "title": "Advanced Filters",
+      "toggle": "Filters",
+      "clear": "Clear filters",
+      "activeCount": "{count} filter active | {count} filters active",
+      "noResults": "No cards match your filters",
+      "kind": {
+        "any": "Any",
+        "monster": "Monster",
+        "spell": "Spell",
+        "trap": "Trap"
+      },
+      "deck": {
+        "label": "Deck",
+        "main": "Main Deck",
+        "extra": "Extra Deck"
+      },
+      "category": {
+        "normal": "Normal",
+        "effect": "Effect",
+        "ritual": "Ritual",
+        "fusion": "Fusion",
+        "synchro": "Synchro",
+        "xyz": "Xyz",
+        "pendulum": "Pendulum",
+        "link": "Link",
+        "tuner": "Tuner",
+        "flip": "Flip",
+        "toon": "Toon",
+        "spirit": "Spirit",
+        "union": "Union",
+        "gemini": "Gemini",
+        "token": "Token"
+      },
+      "spellType": {
+        "normal": "Normal Spell",
+        "continuous": "Continuous",
+        "field": "Field",
+        "equip": "Equip",
+        "quickplay": "Quick-Play",
+        "ritual": "Ritual Spell"
+      },
+      "trapType": {
+        "normal": "Normal Trap",
+        "continuous": "Continuous",
+        "counter": "Counter"
+      },
+      "attribute": {
+        "label": "Attribute"
+      },
+      "level": {
+        "label": "Level / Rank"
+      },
+      "rank": {
+        "label": "Rank"
+      },
+      "comparator": {
+        "gte": "≥",
+        "eq": "=",
+        "lte": "≤"
+      },
+      "scale": {
+        "label": "Pendulum Scale"
+      },
+      "race": {
+        "label": "Type / Race"
+      },
+      "linkRating": {
+        "label": "Link Rating"
+      },
+      "linkArrows": {
+        "label": "Link Arrows"
+      }
+    }
   },
   "cardYugi": {
     "level": "Level",
@@ -421,6 +528,59 @@
     "typeMessage": "Type a message…",
     "readOnly": "Chat is read-only."
   },
+  "deckImport": {
+    "title": "Import Deck (.ydk)",
+    "dropzone": "Drop your .ydk file here, or click to browse",
+    "summary": "{total} cards · {owned} owned · {missing} missing · {unrecognized} unrecognized",
+    "addMissing": "Add 1 missing card to wishlist | Add {count} missing cards to wishlist",
+    "allOwned": "You already own all cards in this deck!",
+    "added": "1 card added to your wishlist | {count} cards added to your wishlist",
+    "missingBadge": "Missing",
+    "unknownBadge": "Unrecognized",
+    "sections": {
+      "main": "Main Deck",
+      "extra": "Extra Deck",
+      "side": "Side Deck"
+    },
+    "loading": "Resolving cards…",
+    "error": "Failed to parse deck file"
+  },
+  "deckDetail": {
+    "title": "Deck: {name}",
+    "backToDecks": "Back to Decks",
+    "notFound": "Deck not found.",
+    "loading": "Loading deck…",
+    "mainDeck": "Main Deck",
+    "extraDeck": "Extra Deck",
+    "sideDeck": "Side Deck",
+    "addMissingToWishlist": "Add missing to wishlist",
+    "allOwned": "You own all cards in this deck!",
+    "summary": "{total} cards · {owned} owned · {missing} missing",
+    "unrecognized": "{count} unrecognized"
+  },
+  "decks": {
+    "title": "My Decks",
+    "empty": "No decks yet. Import a .ydk file to get started.",
+    "importButton": "Import Deck (.ydk)",
+    "confirmName": "Deck name",
+    "confirmImport": "Save deck",
+    "sortByMissing": "Sort by missing",
+    "totalCards": "{total} cards",
+    "ownedCount": "{owned} owned",
+    "missingCount": "{missing} missing",
+    "addMissing": "Add {count} missing card to wishlist | Add {count} missing cards to wishlist",
+    "migratePartialFail": "{errors} deck(s) could not be saved.",
+    "allOwned": "You own all cards in this deck",
+    "rename": "Rename",
+    "delete": "Delete deck",
+    "deleteConfirm": "Delete this deck?",
+    "guestBanner": "Your decks are saved in your browser. Log in to save them permanently.",
+    "migratePrompt": "You have {count} deck(s) saved in your browser. Save them to your account?",
+    "migrateSave": "Save to account",
+    "migrateDiscard": "Discard",
+    "manageLink": "Save & manage all decks →",
+    "unrecognizedCount": "{count} unrecognized"
+  },
   "meta": {
     "search": {
       "title": "One for One — Yu-Gi-Oh! Card Trading",
@@ -447,6 +607,117 @@
     "privacy": {
       "title": "Privacy Policy — One for One",
       "desc": "Privacy policy for One for One, the free Yu-Gi-Oh! card trading platform."
+    },
+    "cards": {
+      "title": "Browse Yu-Gi-Oh! Cards — One for One",
+      "desc": "Search and filter the full Yu-Gi-Oh! card database by type, attribute, level, and more. Find cards to add to your trade pile or wishlist on One for One."
+    },
+    "combo": {
+      "title": "Combo Explorer — One for One",
+      "desc": "See every card a Yu-Gi-Oh! effect can search, Special Summon, or send to the GY. Explore what this card's effect can fetch on One for One."
     }
+  },
+  "deckIgnore": {
+    "ignore": "Ignore",
+    "unignore": "Unignore",
+    "skippedBadge": "SOURCED",
+    "ignoredCount": "{n} ignored"
+  },
+  "cards": {
+    "title": "Browse Cards",
+    "nav": "Cards",
+    "sort": {
+      "label": "Sort by",
+      "name": "Name (A → Z)",
+      "level": "Level/Rank (high → low)",
+      "atk": "ATK (high → low)",
+      "def": "DEF (high → low)",
+      "new": "Newest"
+    },
+    "density": {
+      "label": "View",
+      "comfortable": "Comfortable",
+      "compact": "Compact"
+    },
+    "loadMore": "Load more",
+    "results": {
+      "count": "0 cards | 1 card | {count} cards",
+      "noResults": "No cards match your search. Try adjusting your filters."
+    },
+    "filters": {
+      "button": "Filters",
+      "buttonWithCount": "Filters ({count})",
+      "activeLabel": "Active filters"
+    },
+    "emptyState": "Start typing a card name or apply a filter to browse the database."
+  },
+  "combo": {
+    "explore": "Explore combos",
+    "title": "Combo Explorer",
+    "backToCard": "Back to card",
+    "analyzing": "Analyzing effect…",
+    "noEffect": "No combo-relevant effect found",
+    "noEffectHint": "This card has no parsed search / summon / send effect, or its effect is too complex to resolve automatically.",
+    "resolving": "Resolving…",
+    "broad": "This effect matches a very broad pool (e.g. any monster) — too many cards to list usefully.",
+    "noMatches": "No matching cards found.",
+    "count": "0 cards | 1 card | {count} cards",
+    "approximate": "approximate",
+    "approximateHint": "The effect contains conditions (e.g. ATK, custom logic) the parser can't fully read — results may be approximate.",
+    "actions": {
+      "search": "Searches",
+      "special_summon": "Special Summons",
+      "send_to_gy": "Sends to GY",
+      "to_deck": "Adds to Deck",
+      "target": "Targets"
+    },
+    "locations": {
+      "deck": "from Deck",
+      "graveyard": "from GY",
+      "extra_deck": "from Extra Deck",
+      "banished": "from banished"
+    },
+    "summary": {
+      "level": "Level {v}",
+      "levelMax": "Level ≤ {v}",
+      "levelMin": "Level ≥ {v}",
+      "atk": "ATK {v}",
+      "atkMax": "ATK ≤ {v}",
+      "atkMin": "ATK ≥ {v}",
+      "def": "DEF {v}",
+      "defMax": "DEF ≤ {v}",
+      "defMin": "DEF ≥ {v}",
+      "any": "any card"
+    }
+  },
+  "breakdown": {
+    "title": "Effect breakdown",
+    "auto": "auto-generated",
+    "showOriginal": "Show original text",
+    "hideOriginal": "Hide original text",
+    "labels": {
+      "trigger": "Trigger",
+      "condition": "Condition",
+      "cost": "Cost",
+      "target": "Target",
+      "effect": "Effect",
+      "restriction": "Restriction",
+      "downside": "Downside"
+    },
+    "tags": {
+      "effectType": "Type",
+      "oncePerTurn": "once per turn",
+      "fromHand": "from hand",
+      "quickEffect": "quick effect",
+      "negates": "negates",
+      "banishes": "banishes",
+      "lock": "locks",
+      "amount": "amount",
+      "cost": "cost",
+      "from": "from",
+      "target": "target",
+      "counterTrap": "counter trap"
+    },
+    "effectN": "Effect {n}"
   }
 }

@@ -1,7 +1,6 @@
 <script setup>
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import CardYugi              from "@/components/CardYugi.vue";
 import SearchTrending        from "./search/SearchTrending.vue";
 import SearchSetBrowser      from "./search/SearchSetBrowser.vue";
 import SearchLatestReleases  from "./search/SearchLatestReleases.vue";
@@ -9,14 +8,10 @@ import SearchLatestReleases  from "./search/SearchLatestReleases.vue";
 const { t } = useI18n();
 
 defineProps({
-  searchCards: { type: Object, default: null },
-  login:       { type: Object, default: null },
+  login: { type: Object, default: null },
 });
 
 defineEmits(["TradeCenter", "requireAuth"]);
-
-const hasSearchResults = (searchCards) =>
-  Array.isArray(searchCards?.data) && searchCards.data.length > 0;
 
 // A handful of iconic cards used purely as visual texture in the hero
 const HERO_CARDS = [46986414, 89631139, 53129443, 14558127, 38033121, 55144522];
@@ -33,9 +28,9 @@ const HOW_IT_WORKS = computed(() => [
 <template>
   <div class="flex flex-col gap-6 md:gap-10 py-15 max-w-screen-xl mx-auto w-full md:px-6 lg:px-12">
 
-    <!-- ── Hero (logged-out, no search active) ───────────────────────────── -->
+    <!-- ── Hero (logged-out) ─────────────────────────────────────────────── -->
     <section
-      v-if="!login && !hasSearchResults(searchCards)"
+      v-if="!login"
       class="flex flex-col gap-10 py-6 md:py-12"
     >
       <!-- Card image strip — visual proof the database is real -->
@@ -70,6 +65,14 @@ const HOW_IT_WORKS = computed(() => [
           >
             {{ $t('hero.cta') }}
           </v-btn>
+          <v-btn
+            size="large"
+            variant="outlined"
+            :to="`/${$route.params.locale || 'en'}/cards`"
+            :style="{ borderColor: 'var(--c-border)', color: 'var(--c-text)', fontWeight: 700, minHeight: '48px', paddingInline: '28px' }"
+          >
+            {{ $t('cards.title') }}
+          </v-btn>
         </div>
       </div>
 
@@ -92,31 +95,6 @@ const HOW_IT_WORKS = computed(() => [
 
       <!-- Divider before trending -->
       <div class="h-px w-full" style="background: var(--c-border)" />
-    </section>
-
-    <!-- Search results -->
-    <section v-if="hasSearchResults(searchCards)">
-      <div class="flex items-center gap-3 mb-5">
-        <h1 class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">{{ t('search.results') }}</h1>
-        <span class="text-sm px-2 py-1 rounded-md border" style="color: var(--c-muted); border-color: var(--c-border)">
-          {{ t('search.cardsCount', { count: searchCards.data.length }) }}
-        </span>
-      </div>
-      <div class="flex flex-wrap gap-5">
-        <div v-for="card in searchCards.data" :key="card.id" class="relative" style="width: 136px; flex-shrink: 0">
-          <!-- SEO anchor: gives crawlers a followable link to the card permalink.
-               pointer-events-none keeps it invisible to mouse/touch so the
-               CardYugi overlay activator receives clicks normally. -->
-          <a
-            :href="`/${$route.params.locale || 'en'}/card/${card.id}`"
-            :aria-label="card.name"
-            class="absolute inset-0 z-0 pointer-events-none"
-            tabindex="-1"
-          />
-          <CardYugi :componentCard="card" @showTraders="$emit('TradeCenter', $event)" @requireAuth="$emit('requireAuth')" />
-        </div>
-      </div>
-      <div class="h-px w-full mt-10" style="background-color: var(--c-border)" />
     </section>
 
     <!-- Trending -->

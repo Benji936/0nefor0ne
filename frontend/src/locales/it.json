@@ -9,7 +9,10 @@
     "search": "Cerca",
     "library": "Collezione",
     "trades": "Scambi",
-    "account": "Account"
+    "account": "Account",
+    "decks": "Decks",
+    "collapseMenu": "Comprimi menu",
+    "expandMenu": "Espandi menu"
   },
   "footer": {
     "privacy": "Informativa sulla privacy",
@@ -21,10 +24,22 @@
     "cta": "Inizia gratuitamente",
     "learnMore": "Come funziona",
     "steps": {
-      "01": { "title": "Costruisci il tuo mazzo di scambio", "body": "Elenca le carte che sei pronto a scambiare." },
-      "02": { "title": "Aggiungi la tua lista desideri", "body": "Segna ogni carta che stai cercando." },
-      "03": { "title": "Trova il tuo match", "body": "Mostriamo i trader che vogliono le tue carte e hanno quelle che cerchi." },
-      "04": { "title": "Proponi e conferma", "body": "Invia una proposta, chatta e concludi lo scambio." }
+      "01": {
+        "title": "Costruisci il tuo mazzo di scambio",
+        "body": "Elenca le carte che sei pronto a scambiare."
+      },
+      "02": {
+        "title": "Aggiungi la tua lista desideri",
+        "body": "Segna ogni carta che stai cercando."
+      },
+      "03": {
+        "title": "Trova il tuo match",
+        "body": "Mostriamo i trader che vogliono le tue carte e hanno quelle che cerchi."
+      },
+      "04": {
+        "title": "Proponi e conferma",
+        "body": "Invia una proposta, chatta e concludi lo scambio."
+      }
     }
   },
   "auth": {
@@ -85,7 +100,10 @@
     "emptyTrade": "Niente qui ancora — aggiungi carte che hai da offrire.",
     "emptyWish": "Niente qui ancora — aggiungi carte che stai cercando.",
     "addedToWishlist": "\"{name}\" aggiunto alla lista desideri.",
-    "addedToTrade": "\"{name}\" aggiunto al mazzo di scambio."
+    "addedToTrade": "\"{name}\" aggiunto al mazzo di scambio.",
+    "viewLabel": "Vista collezione",
+    "viewList": "Vista elenco",
+    "viewGrid": "Vista griglia"
   },
   "addCard": {
     "addToTrade": "Aggiungi al mazzo di scambio",
@@ -125,7 +143,6 @@
   },
   "matches": {
     "loginRequired": "Accedi per vedere le tue corrispondenze di scambio.",
-    "filterPlaceholder": "Filtra per carta o nome trader…",
     "allCountries": "Tutti i paesi",
     "city": "Città",
     "clearFilters": "cancella filtri",
@@ -318,7 +335,14 @@
       "worldwide": "Mondiale"
     }
   },
+  "banlist": {
+    "label": "Banlist",
+    "forbidden": "Vietata",
+    "limited": "Limitata",
+    "semiLimited": "Semi-Limitata"
+  },
   "cardPage": {
+    "yugipediaTips": "Consigli di strategia su Yugipedia",
     "back": "Indietro",
     "backToSearch": "Torna alla ricerca",
     "cardNotFound": "Carta non trovata",
@@ -340,6 +364,15 @@
     "priceCm": "Cardmarket {price}",
     "showAllPrintings": "Mostra tutte le {count} edizioni",
     "showLess": "Mostra meno"
+  },
+  "setPage": {
+    "title": "{setName} — Set Yu-Gi-Oh! | One for One",
+    "cardCount": "0 carte | 1 carta | {count} carte",
+    "notFound": "Set non trovato",
+    "backToSearch": "Torna alla ricerca",
+    "loading": "Caricamento carte…",
+    "rarityDistribution": "Distribuzione rarità",
+    "viewCard": "Vedi carta"
   },
   "privacy": {
     "title": "Informativa sulla privacy",
@@ -367,7 +400,81 @@
     "last30days": "Ultimi 30 giorni",
     "browseByExtension": "Sfoglia per estensione",
     "searchByNameOrCode": "Cerca per nome o codice…",
-    "latestReleases": "Ultime uscite"
+    "latestReleases": "Ultime uscite",
+    "filters": {
+      "title": "Filtri avanzati",
+      "toggle": "Filtri",
+      "clear": "Cancella filtri",
+      "activeCount": "{count} filtro attivo | {count} filtri attivi",
+      "noResults": "Nessuna carta corrisponde ai tuoi filtri",
+      "kind": {
+        "any": "Qualsiasi",
+        "monster": "Mostro",
+        "spell": "Magia",
+        "trap": "Trappola"
+      },
+      "deck": {
+        "label": "Deck",
+        "main": "Deck Principale",
+        "extra": "Extra Deck"
+      },
+      "category": {
+        "normal": "Normale",
+        "effect": "Effetto",
+        "ritual": "Rituale",
+        "fusion": "Fusione",
+        "synchro": "Synchro",
+        "xyz": "Xyz",
+        "pendulum": "Pendolo",
+        "link": "Link",
+        "tuner": "Accordatore",
+        "flip": "Flip",
+        "toon": "Toon",
+        "spirit": "Spirito",
+        "union": "Unione",
+        "gemini": "Gemelli",
+        "token": "Token"
+      },
+      "spellType": {
+        "normal": "Magia Normale",
+        "continuous": "Continua",
+        "field": "Campo",
+        "equip": "Equipaggiamento",
+        "quickplay": "Gioco Rapido",
+        "ritual": "Magia Rituale"
+      },
+      "trapType": {
+        "normal": "Trappola Normale",
+        "continuous": "Continua",
+        "counter": "Contro"
+      },
+      "attribute": {
+        "label": "Attributo"
+      },
+      "level": {
+        "label": "Livello / Rango"
+      },
+      "rank": {
+        "label": "Rango"
+      },
+      "comparator": {
+        "gte": "≥",
+        "eq": "=",
+        "lte": "≤"
+      },
+      "scale": {
+        "label": "Scala Pendolo"
+      },
+      "race": {
+        "label": "Tipo / Razza"
+      },
+      "linkRating": {
+        "label": "Indice di Collegamento"
+      },
+      "linkArrows": {
+        "label": "Frecce di Collegamento"
+      }
+    }
   },
   "cardYugi": {
     "level": "Livello",
@@ -421,6 +528,59 @@
     "typeMessage": "Scrivi un messaggio…",
     "readOnly": "La chat è di sola lettura."
   },
+  "deckImport": {
+    "title": "Importa deck (.ydk)",
+    "dropzone": "Trascina il tuo file .ydk qui, o clicca per sfogliare",
+    "summary": "{total} carte · {owned} possedute · {missing} mancanti · {unrecognized} sconosciute",
+    "addMissing": "Aggiungi 1 carta mancante alla lista desideri | Aggiungi {count} carte mancanti alla lista desideri",
+    "allOwned": "Possiedi già tutte le carte di questo deck!",
+    "added": "1 carta aggiunta alla lista desideri | {count} carte aggiunte alla lista desideri",
+    "missingBadge": "Mancante",
+    "unknownBadge": "Sconosciuta",
+    "sections": {
+      "main": "Mazzo Principale",
+      "extra": "Mazzo Extra",
+      "side": "Mazzo Side"
+    },
+    "loading": "Risoluzione carte…",
+    "error": "Impossibile leggere il file deck"
+  },
+  "deckDetail": {
+    "title": "Deck: {name}",
+    "backToDecks": "Back to Decks",
+    "notFound": "Deck not found.",
+    "loading": "Loading deck…",
+    "mainDeck": "Main Deck",
+    "extraDeck": "Extra Deck",
+    "sideDeck": "Side Deck",
+    "addMissingToWishlist": "Add missing to wishlist",
+    "allOwned": "You own all cards in this deck!",
+    "summary": "{total} cards · {owned} owned · {missing} missing",
+    "unrecognized": "{count} unrecognized"
+  },
+  "decks": {
+    "title": "I miei Deck",
+    "empty": "Nessun deck ancora. Importa un file .ydk per iniziare.",
+    "importButton": "Importa deck (.ydk)",
+    "confirmName": "Nome del deck",
+    "confirmImport": "Salva deck",
+    "sortByMissing": "Ordina per mancanti",
+    "totalCards": "{total} carte",
+    "ownedCount": "{owned} possedute",
+    "missingCount": "{missing} mancanti",
+    "addMissing": "Aggiungi {count} carta mancante alla lista desideri | Aggiungi {count} carte mancanti alla lista desideri",
+    "migratePartialFail": "Non è stato possibile salvare {errors} deck.",
+    "allOwned": "Possiedi tutte le carte di questo deck",
+    "rename": "Rinomina",
+    "delete": "Elimina deck",
+    "deleteConfirm": "Eliminare questo deck?",
+    "guestBanner": "I tuoi deck sono salvati nel browser. Accedi per salvarli in modo permanente.",
+    "migratePrompt": "Hai {count} deck salvato/i nel browser. Salvarli nel tuo account?",
+    "migrateSave": "Salva nell'account",
+    "migrateDiscard": "Scarta",
+    "manageLink": "Salva e gestisci tutti i deck →",
+    "unrecognizedCount": "{count} sconosciuta/e"
+  },
   "meta": {
     "search": {
       "title": "One for One — Scambio Carte Yu-Gi-Oh!",
@@ -447,6 +607,117 @@
     "privacy": {
       "title": "Informativa sulla Privacy — One for One",
       "desc": "Informativa sulla privacy di One for One, la piattaforma di scambio gratuita di carte Yu-Gi-Oh!."
+    },
+    "cards": {
+      "title": "Sfoglia le carte Yu-Gi-Oh! — One for One",
+      "desc": "Cerca e filtra l'intero database di carte Yu-Gi-Oh! per tipo, attributo, livello e altro. Trova carte da aggiungere al tuo mazzo di scambio o alla lista desideri su One for One."
+    },
+    "combo": {
+      "title": "Esploratore di combo — One for One",
+      "desc": "Scopri ogni carta che un effetto Yu-Gi-Oh! può cercare, Evocare Specialmente o mandare al Cimitero. Esplora cosa può recuperare l'effetto di questa carta su One for One."
     }
+  },
+  "deckIgnore": {
+    "ignore": "Ignora",
+    "unignore": "Ripristina",
+    "skippedBadge": "OTTENUTO",
+    "ignoredCount": "{n} ignorata/e"
+  },
+  "cards": {
+    "title": "Sfoglia carte",
+    "nav": "Carte",
+    "sort": {
+      "label": "Ordina per",
+      "name": "Nome (A → Z)",
+      "level": "Livello/Rango (decrescente)",
+      "atk": "ATK (decrescente)",
+      "def": "DEF (decrescente)",
+      "new": "Novità"
+    },
+    "density": {
+      "label": "Visualizzazione",
+      "comfortable": "Comoda",
+      "compact": "Compatta"
+    },
+    "loadMore": "Carica altre",
+    "results": {
+      "count": "0 carte | 1 carta | {count} carte",
+      "noResults": "Nessuna carta corrisponde alla tua ricerca. Prova a modificare i filtri."
+    },
+    "filters": {
+      "button": "Filtri",
+      "buttonWithCount": "Filtri ({count})",
+      "activeLabel": "Filtri attivi"
+    },
+    "emptyState": "Inizia a digitare il nome di una carta o applica un filtro per sfogliare il database."
+  },
+  "combo": {
+    "explore": "Esplora combo",
+    "title": "Esploratore di combo",
+    "backToCard": "Torna alla carta",
+    "analyzing": "Analisi dell'effetto…",
+    "noEffect": "Nessun effetto combo trovato",
+    "noEffectHint": "Questa carta non ha un effetto di ricerca / evocazione / invio analizzabile, oppure il suo effetto è troppo complesso da risolvere automaticamente.",
+    "resolving": "Risoluzione…",
+    "broad": "Questo effetto corrisponde a un insieme molto ampio (es. qualsiasi mostro) — troppe carte da elencare.",
+    "noMatches": "Nessuna carta corrispondente trovata.",
+    "count": "0 carte | 1 carta | {count} carte",
+    "approximate": "approssimativo",
+    "approximateHint": "L'effetto contiene condizioni (es. ATK, logica personalizzata) che il parser non può leggere completamente — i risultati potrebbero essere approssimativi.",
+    "actions": {
+      "search": "Cerca",
+      "special_summon": "Evoca Specialmente",
+      "send_to_gy": "Manda al Cimitero",
+      "to_deck": "Aggiunge al Deck",
+      "target": "Bersaglia"
+    },
+    "locations": {
+      "deck": "dal Deck",
+      "graveyard": "dal Cimitero",
+      "extra_deck": "dall'Extra Deck",
+      "banished": "dalle bandite"
+    },
+    "summary": {
+      "level": "Livello {v}",
+      "levelMax": "Livello ≤ {v}",
+      "levelMin": "Livello ≥ {v}",
+      "atk": "ATK {v}",
+      "atkMax": "ATK ≤ {v}",
+      "atkMin": "ATK ≥ {v}",
+      "def": "DEF {v}",
+      "defMax": "DEF ≤ {v}",
+      "defMin": "DEF ≥ {v}",
+      "any": "qualsiasi carta"
+    }
+  },
+  "breakdown": {
+    "title": "Scomposizione dell'effetto",
+    "auto": "generato automaticamente",
+    "showOriginal": "Mostra testo originale",
+    "hideOriginal": "Nascondi testo originale",
+    "labels": {
+      "trigger": "Attivazione",
+      "condition": "Condizione",
+      "cost": "Costo",
+      "target": "Bersaglio",
+      "effect": "Effetto",
+      "restriction": "Restrizione",
+      "downside": "Svantaggio"
+    },
+    "tags": {
+      "effectType": "Tipo",
+      "oncePerTurn": "una volta per turno",
+      "fromHand": "dalla mano",
+      "quickEffect": "effetto rapido",
+      "negates": "annulla",
+      "banishes": "bandisce",
+      "lock": "blocca",
+      "amount": "quantità",
+      "cost": "costo",
+      "from": "da",
+      "target": "bersaglio",
+      "counterTrap": "trappola contro"
+    },
+    "effectN": "Effetto {n}"
   }
 }

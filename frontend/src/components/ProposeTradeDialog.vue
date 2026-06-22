@@ -860,7 +860,7 @@ function marketLinks(name, setCode) {
                 <span class="text-blue-300 font-semibold">{{ receivePayload.length }}</span>
               </span>
             </span>
-            <span v-else class="text-xs sm:text-sm hidden sm:block" style="color: var(--c-muted)">{{ t('proposeDialog.selectCards') }}</span>
+            <span v-else class="text-xs sm:text-sm max-sm:hidden block" style="color: var(--c-muted)">{{ t('proposeDialog.selectCards') }}</span>
           </div>
           <div class="flex gap-2">
             <v-btn variant="text" color="gray" size="small" @click="close" :disabled="submitting">{{ t('common.cancel') }}</v-btn>

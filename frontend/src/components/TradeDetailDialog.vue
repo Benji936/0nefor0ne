@@ -168,7 +168,7 @@ function confirmDecline() {
             </span>
           </div>
           <span
-            class="hidden sm:flex items-center gap-2 text-xs font-bold px-3 py-1 rounded-lg border shrink-0"
+            class="max-sm:hidden flex items-center gap-2 text-xs font-bold px-3 py-1 rounded-lg border shrink-0"
             :style="{ color: statusMeta.color, borderColor: statusMeta.color + '60', backgroundColor: statusMeta.color + '18' }"
           >
             <v-icon :icon="statusMeta.icon" size="14" :color="statusMeta.color" />

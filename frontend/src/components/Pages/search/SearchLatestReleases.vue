@@ -56,7 +56,7 @@ onMounted(async () => {
 
     <section v-for="set in latestSets" :key="set.set_name" class="flex flex-col gap-3">
       <div class="flex items-center gap-3">
-        <p class="text-lg font-semibold" style="color: var(--c-text)">{{ set.set_name }}</p>
+        <router-link :to="'/en/set/' + encodeURIComponent(set.set_name)" class="text-lg font-semibold no-underline transition-opacity hover:opacity-70" style="color: var(--c-text)">{{ set.set_name }}</router-link>
         <span class="text-xs" style="color: var(--c-muted)">{{ set.tcg_date }}</span>
         <span class="text-xs px-2 py-1 rounded border" style="color: var(--c-muted); border-color: var(--c-border)">
           {{ set.num_of_cards }} cards
