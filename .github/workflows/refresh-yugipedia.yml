@@ -1,8 +1,9 @@
 name: Refresh Yugipedia manifests
 
-# Re-crawls Yugipedia "Card Tips" pages and regenerates the static manifests
-# (frontend/public/yugipedia-tips.json + yugipedia-searchers.json), then commits
-# them only if they changed. The push triggers Vercel to redeploy automatically.
+# Re-crawls Yugipedia "Card Tips" pages and the current Forbidden & Limited Lists,
+# regenerating the static manifests (frontend/public/yugipedia-tips.json +
+# yugipedia-searchers.json + yugipedia-banlist.json), then commits them only if
+# they changed. The push triggers Vercel to redeploy automatically.
 #
 # The crawler is a polite batch job (~1 req/sec) using only Node built-ins +
 # global fetch — no dependency install needed.
@@ -35,7 +36,9 @@ jobs:
 
       - name: Crawl Yugipedia and regenerate manifests
         working-directory: frontend
-        run: node scripts/yugipedia-tips.mjs
+        run: |
+          node scripts/yugipedia-tips.mjs
+          node scripts/yugipedia-banlist.mjs
 
       - name: Sanity-check manifest size
         working-directory: frontend
@@ -53,16 +56,25 @@ jobs:
               console.error("Refusing to commit: manifest shrank >10% — likely a degraded crawl. Not committing.");
               process.exit(1);
             }
+            // Banlist is small (~hundreds of passcodes); a near-empty result means a
+            // degraded crawl, not a real list with zero restricted cards.
+            const bl = read(fs.readFileSync("public/yugipedia-banlist.json", "utf8"));
+            const b = Object.keys(bl).length;
+            console.log(`banlist manifest: ${b} entries`);
+            if (b < 50) {
+              console.error("Refusing to commit: banlist manifest has <50 entries — likely a degraded crawl.");
+              process.exit(1);
+            }
           '
 
       - name: Commit refreshed manifests (if changed)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add frontend/public/yugipedia-tips.json frontend/public/yugipedia-searchers.json
+          git add frontend/public/yugipedia-tips.json frontend/public/yugipedia-searchers.json frontend/public/yugipedia-banlist.json
           if git diff --cached --quiet; then
             echo "No manifest changes — nothing to commit."
           else
-            git commit -m "chore(data): refresh Yugipedia tips + searchers manifests"
+            git commit -m "chore(data): refresh Yugipedia tips + searchers + banlist manifests"
             git push
           fi

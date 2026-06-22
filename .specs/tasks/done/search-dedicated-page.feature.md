@@ -89,92 +89,92 @@
 
 ### Functional Requirements
 
-- [ ] **AC-1 — Dedicated route**: A dedicated search/browse page exists at `/cards`.
+- [x] **AC-1 — Dedicated route**: A dedicated search/browse page exists at `/cards`.
   - Given the app is running
   - When the user navigates to `/:locale/cards` (e.g. `/en/cards`)
   - Then the dedicated search page renders; and navigating to the legacy `/cards` (no locale) redirects to `/{detectedLocale}/cards`; and an unsupported locale falls back to the detected locale.
 
-- [ ] **AC-2 — Home has no live search**: The home page is landing/discovery only.
+- [x] **AC-2 — Home has no live search**: The home page is landing/discovery only.
   - Given the home route `/:locale/`
   - When it loads
   - Then no filter panel and no live search results grid are present, and the hero, trending, set browser, and latest releases are present.
 
-- [ ] **AC-3 — Navbar search handoff**: The global navbar search routes to the dedicated page.
+- [x] **AC-3 — Navbar search handoff**: The global navbar search routes to the dedicated page.
   - Given the user is on any page (e.g. `/en/library`)
   - When they type a query in the navbar search input and submit
   - Then the app navigates to `/:locale/cards?q=<query>` and the dedicated page applies and runs that query.
 
-- [ ] **AC-4 — Filter sidebar (desktop) / drawer (mobile)**: All existing filter dimensions are available beside the grid.
+- [x] **AC-4 — Filter sidebar (desktop) / drawer (mobile)**: All existing filter dimensions are available beside the grid.
   - Given the dedicated page is open with the full set of filter dimensions from `SearchFiltersPanel` (kind, category/sub-type, attribute, level/rank, scale, race, link rating, link arrows)
   - When viewed on desktop, the filters render as a persistent left sidebar alongside the results grid; and when viewed on mobile, the filters are hidden behind a drawer/bottom-sheet toggle that exposes the same controls
   - Then applying a filter narrows the results identically to the current search behavior.
 
-- [ ] **AC-5 — Results grid and states**: Results render as card tiles with loading and empty states.
+- [x] **AC-5 — Results grid and states**: Results render as card tiles with loading and empty states.
   - Given a query or active filter on the dedicated page
   - When results are loading, loading skeletons (59:86 aspect) are shown; when results return, matching cards render as `CardYugi` tiles in a grid; when a query/filter returns zero cards, a zero-results empty state is shown
   - Then the user can open a card tile's overlay and add it to their trade pile / wishlist (prompted to sign in if unauthenticated — existing behavior).
 
-- [ ] **AC-6 — Sort control**: Results can be sorted.
+- [x] **AC-6 — Sort control**: Results can be sorted.
   - Given results are displayed for a query/filter
   - When the user selects a sort option (e.g. "ATK, high→low")
   - Then the results re-order accordingly (each adjacent pair satisfies the chosen ordering, e.g. ATK of card N ≥ card N+1) and a sort key is reflected in the URL.
 
-- [ ] **AC-7 — Browse beyond the first page**: Results are no longer capped at 40.
+- [x] **AC-7 — Browse beyond the first page**: Results are no longer capped at 40.
   - Given a query/filter that matches more than one page of cards
   - When the user advances to the next page or scrolls to the end of the current results (whichever mechanism is implemented)
   - Then additional, distinct cards load via the `num`/`offset` params, the current page/offset is reflected in the URL, and reloading the URL restores the same position.
 
-- [ ] **AC-8 — Results header**: A header summarizes the result set.
+- [x] **AC-8 — Results header**: A header summarizes the result set.
   - Given a query/filter that yields results
   - When the results load
   - Then a header shows the result count (API total when present, else loaded-so-far) and a summary of the active query/filters; and clearing a filter updates the header accordingly.
 
-- [ ] **AC-9 — View density toggle**: The user can change result density.
+- [x] **AC-9 — View density toggle**: The user can change result density.
   - Given the dedicated page with results displayed
   - When the user toggles between densities (at least "comfortable" and "compact")
   - Then the grid rendering changes (tile size and/or column count), a view key is reflected in the URL, and reloading preserves the selected density.
 
-- [ ] **AC-10 — Full URL persistence**: The complete search state is shareable and restorable.
+- [x] **AC-10 — Full URL persistence**: The complete search state is shareable and restorable.
   - Given a URL on `/cards` encoding query + filters + sort + page + density using the short-key schema (existing `q,k,t,a,lv,lvc,ps,psc,r,lr,lrc,la` plus new keys for sort/page/view)
   - When the URL is opened in a fresh tab, or the user uses browser back/forward, or switches locale on `/cards`
   - Then the exact state and results are restored (locale switch keeps the user on `/cards` with state intact and the UI re-localized), with no echo/redirect loop.
 
-- [ ] **AC-11 — Single async writer**: Stale responses never overwrite newer results.
+- [x] **AC-11 — Single async writer**: Stale responses never overwrite newer results.
   - Given the user fires several queries/filter changes in rapid succession
   - When the responses return out of order
   - Then only the result set for the most recent request is rendered; earlier (slower) responses are discarded.
 
-- [ ] **AC-12 — i18n complete**: All new UI is localized in all four locales.
+- [x] **AC-12 — i18n complete**: All new UI is localized in all four locales.
   - Given the app in each of en, fr, de, it
   - When the dedicated page and its new controls (sort fields and directions, density options, pagination/"load more", results-header text, page meta) are displayed
   - Then every label is localized and no raw i18n key is visible.
 
-- [ ] **AC-13 — SEO / SSG**: The route is prerendered, in the sitemap, and has meta.
+- [x] **AC-13 — SEO / SSG**: The route is prerendered, in the sitemap, and has meta.
   - Given a production build
   - When the build completes
   - Then a per-locale `/cards` HTML file is emitted, the sitemap includes `/cards`, the page source contains title + description + canonical meta (following the existing `useHead` pattern), and the page hydrates with no hydration-mismatch warning. Search execution remains client-only behind the established SSG guards.
 
 ### Error / Edge-Case Criteria
 
-- [ ] **AC-14 — Zero results**: A search/filter combination that matches nothing shows the zero-results empty state, the header reflects a count of 0, and the user can adjust filters to recover.
-- [ ] **AC-15 — API failure**: If a card request fails or times out, the page stays usable (no crash), results render as an empty list, and changing the query/filters retries.
-- [ ] **AC-16 — Empty initial state**: Opening `/cards` with no query and no filters shows a neutral initial state (no error, no skeletons) and triggers no fetch until a query or filter is set.
-- [ ] **AC-17 — End of results**: At the last page / end of the result set, the "next page" control is disabled (pagination) or infinite scroll stops fetching, with no duplicate or phantom loads.
+- [x] **AC-14 — Zero results**: A search/filter combination that matches nothing shows the zero-results empty state, the header reflects a count of 0, and the user can adjust filters to recover.
+- [x] **AC-15 — API failure**: If a card request fails or times out, the page stays usable (no crash), results render as an empty list, and changing the query/filters retries.
+- [x] **AC-16 — Empty initial state**: Opening `/cards` with no query and no filters shows a neutral initial state (no error, no skeletons) and triggers no fetch until a query or filter is set.
+- [x] **AC-17 — End of results**: At the last page / end of the result set, the "next page" control is disabled (pagination) or infinite scroll stops fetching, with no duplicate or phantom loads.
 
 ### Non-Functional Requirements
 
-- [ ] **Performance**: Query/filter changes are debounced (~300ms, preserving current behavior); card images use `loading="lazy"`; skeletons use the fixed 59:86 aspect so the grid does not shift layout (CLS) when images arrive.
-- [ ] **Accessibility (WCAG AA)**: The sidebar/drawer, sort control, density toggle, and pagination/load-more are fully keyboard-operable with visible focus indicators; the mobile filter drawer is focus-trapped and dismissible; `prefers-reduced-motion` is respected for any non-essential motion.
-- [ ] **Design fidelity**: Dark-first tokens; amethyst for selection/primary, hot-pink for wishlist actions, lime reserved for mutual-match signals only; no pure grays; no `transition: all`.
-- [ ] **Build integrity**: The vite-ssg static build and SPA hydration both succeed; existing pages (Library, Trade Center, Decks, Account) and the `CardYugi` overlay are unchanged.
+- [x] **Performance**: Query/filter changes are debounced (~300ms, preserving current behavior); card images use `loading="lazy"`; skeletons use the fixed 59:86 aspect so the grid does not shift layout (CLS) when images arrive.
+- [x] **Accessibility (WCAG AA)**: The sidebar/drawer, sort control, density toggle, and pagination/load-more are fully keyboard-operable with visible focus indicators; the mobile filter drawer is focus-trapped and dismissible; `prefers-reduced-motion` is respected for any non-essential motion.
+- [x] **Design fidelity**: Dark-first tokens; amethyst for selection/primary, hot-pink for wishlist actions, lime reserved for mutual-match signals only; no pure grays; no `transition: all`.
+- [x] **Build integrity**: The vite-ssg static build and SPA hydration both succeed; existing pages (Library, Trade Center, Decks, Account) and the `CardYugi` overlay are unchanged.
 
 ### Definition of Done
 
-- [ ] All functional and error/edge acceptance criteria pass.
-- [ ] Non-functional requirements verified.
-- [ ] i18n keys added for en, fr, de, it.
-- [ ] Production build prerenders `/cards`, sitemap updated, hydration clean.
-- [ ] Tests written and passing where applicable; code reviewed.
+- [x] All functional and error/edge acceptance criteria pass.
+- [x] Non-functional requirements verified.
+- [x] i18n keys added for en, fr, de, it.
+- [x] Production build prerenders `/cards`, sitemap updated, hydration clean.
+- [x] Tests written and passing where applicable; code reviewed.
 
 ---
 
@@ -442,7 +442,7 @@ WAVE 6 (1)
 
 ### Phase A — Foundational
 
-#### Step 1 — Extract `useCardSearch` composable from `App.vue` **[critical]**
+#### Step 1 — Extract `useCardSearch` composable from `App.vue` **[critical]** [DONE]
 
 > **Wave 1.** **Depends on:** nothing (foundational). **Parallel with:** S2, S3, S9 (disjoint files). **Agent:** general-purpose (model: opus).
 
@@ -505,7 +505,7 @@ WAVE 6 (1)
 
 ---
 
-#### Step 2 — Add server-side `sort` param to `searchByFilters` **[critical]**
+#### Step 2 — Add server-side `sort` param to `searchByFilters` **[critical]** [DONE]
 
 > **Wave 1.** **Depends on:** nothing (foundational). **Parallel with:** S1, S3, S9 (disjoint files — only `api.js`). **Agent:** general-purpose (model: sonnet).
 
@@ -545,7 +545,7 @@ WAVE 6 (1)
 
 ---
 
-#### Step 3 — Add `layout` prop to `SearchFiltersPanel.vue` **[critical]**
+#### Step 3 — Add `layout` prop to `SearchFiltersPanel.vue` **[critical]** [DONE]
 
 > **Wave 1.** **Depends on:** nothing (foundational, additive prop). **Parallel with:** S1, S2, S9 (disjoint files — only `SearchFiltersPanel.vue`). **Agent:** general-purpose (model: sonnet).
 
@@ -590,7 +590,7 @@ WAVE 6 (1)
 
 ### Phase B — Main implementation
 
-#### Step 4a — Create `CardsPage.vue` shell (layout + composable wiring + empty-first render) **[critical]**
+#### Step 4a — Create `CardsPage.vue` shell (layout + composable wiring + empty-first render) **[critical]** [DONE]
 
 > **Wave 2.** **Depends on:** S1 (instantiates `useCardSearch()`), S3 (`SearchFiltersPanel layout="sidebar"`). **Parallel with:** none (runs alone — S4b conflicts on the same file; downstream steps need this file to exist). **Agent:** general-purpose (model: opus).
 
@@ -650,7 +650,7 @@ WAVE 6 (1)
 
 ---
 
-#### Step 4b — `CardsPage.vue` results: grid, header, sort, density, load-more, states **[critical]**
+#### Step 4b — `CardsPage.vue` results: grid, header, sort, density, load-more, states **[critical]** [DONE]
 
 > **Wave 3.** **Depends on:** S4a (extends the same `CardsPage.vue`), S9 (consumes `cards.*` labels), S2 (runtime — `sort` param, already landed in Wave 1). **Parallel with:** S5 (disjoint files — S4b edits `CardsPage.vue`, S5 edits `router/index.js` + `App.vue`). **Agent:** general-purpose (model: opus).
 
@@ -718,7 +718,7 @@ WAVE 6 (1)
 
 ---
 
-#### Step 5 — Router route + navigation wiring
+#### Step 5 — Router route + navigation wiring [DONE]
 
 > **Wave 3.** **Depends on:** S4a (lazy-import target `CardsPage.vue` must exist). **Parallel with:** S4b (disjoint files — S5 edits `router/index.js` + `App.vue` nav wiring; S4b edits `CardsPage.vue`). **Agent:** general-purpose (model: sonnet). *Note: S5 edits `App.vue` (changePage/mobileTabs only); S6 also edits `App.vue` but runs in the next wave, so no same-wave file conflict.*
 
@@ -762,7 +762,7 @@ WAVE 6 (1)
 
 ---
 
-#### Step 6 — `App.vue`: navbar → navigation-only; remove search state/writer; RouterView stub **[critical]**
+#### Step 6 — `App.vue`: navbar → navigation-only; remove search state/writer; RouterView stub **[critical]** [DONE]
 
 > **Wave 4.** **Depends on:** S1 (composable now owns the search logic), S5 (`cards` route to `router.push` to), **and S4a + S4b** (single-writer safety window — the new writer must work before the old one is removed). **Parallel with:** none — **single-writer cutover; runs alone** (conflicts with S5 on `App.vue`; S7 must follow). **GATE:** do not start until search is verified working on `/cards`. **Agent:** general-purpose (model: opus).
 
@@ -820,7 +820,7 @@ WAVE 6 (1)
 
 ---
 
-#### Step 7 — `Search.vue` → landing/discovery page
+#### Step 7 — `Search.vue` → landing/discovery page [DONE]
 
 > **Wave 5.** **Depends on:** S6 (the RouterView stub must be in place; this step drops those stub bindings once `Search.vue` no longer declares the props). **Parallel with:** S8 (disjoint files — S7 edits `Search.vue` + drops the now-free `App.vue` stub bindings; S8 edits `vite.config.js` + `generate-sitemap.mjs`). **Agent:** general-purpose (model: opus).
 
@@ -867,7 +867,7 @@ WAVE 6 (1)
 
 ### Phase C — Polish & SEO
 
-#### Step 9 — i18n keys (`cards.*` + `meta.cards.*`) across en/fr/de/it
+#### Step 9 — i18n keys (`cards.*` + `meta.cards.*`) across en/fr/de/it [DONE]
 
 > Ordered before Step 8 and consumed by Step 4b. Listed in Polish for grouping; **add before/with Step 4b's label work.**
 
@@ -914,7 +914,7 @@ WAVE 6 (1)
 
 ---
 
-#### Step 8 — vite-ssg prerender + sitemap + meta registration
+#### Step 8 — vite-ssg prerender + sitemap + meta registration [DONE]
 
 > **Wave 5.** **Depends on:** S5 (route name `cards` must exist), S9 (`meta.cards.*` keys must exist). **Parallel with:** S7 (disjoint files — S8 edits `vite.config.js` + `generate-sitemap.mjs`; S7 edits `Search.vue`). **Agent:** general-purpose (model: sonnet). *Note: deps S5+S9 are satisfied after Wave 3, so S8 could fold into Wave 4; it is held to Wave 5 to keep Wave 4 a clean single-writer cutover (S6 alone). Moving S8 to Wave 4 is a safe optional optimization since it shares no file with S6.*
 
@@ -957,7 +957,7 @@ WAVE 6 (1)
 
 ---
 
-#### Step 10 — SSG hydration verification (empty-first render parity) **[verification]**
+#### Step 10 — SSG hydration verification (empty-first render parity) **[verification]** [DONE]
 
 > **Wave 6.** **Depends on:** ALL prior steps (final build + hydration + deep-link verification). **Parallel with:** none (runs alone, last). **Agent:** general-purpose (model: opus). *Optional `pr-review-toolkit:code-reviewer` pass may precede this over the full diff.*
 
@@ -1055,25 +1055,25 @@ Each implementation step carries a `#### Verification` rubric (LLM-as-Judge). Le
 
 Derived from the 17 acceptance criteria; each maps to its owning step(s).
 
-- [ ] **AC-1** Dedicated `/cards` route renders; bare `/cards` → `/{detectedLocale}/cards`; unsupported locale falls back. → **S5** (route/redirect) + **S4a** (render).
-- [ ] **AC-2** Home is landing/discovery only (no panel, no results grid; hero/trending/set-browser/latest-releases present). → **S7**.
-- [ ] **AC-3** Global navbar search routes to `/:locale/cards?q=…` and the page applies+runs it; nav "Search" tab points to `/cards`; logo → `/`. → **S6** (navbar) + **S5** (tab).
-- [ ] **AC-4** Filter sidebar on desktop / drawer (dialog) on mobile with all existing dimensions; filtering narrows results identically. → **S3** (`layout` prop) + **S4a** (sidebar/dialog wiring).
-- [ ] **AC-5** Results render as `CardYugi` tiles with loading skeletons (59:86) and zero-results state; overlay add-to-pile/wishlist works. → **S4b**.
-- [ ] **AC-6** Sort control (Name/Level/ATK/DEF/Newest) re-orders results and writes `so` to the URL. → **S2** (API) + **S4b** (UI).
-- [ ] **AC-7** Browse beyond 40 via `num`/`offset`; current page reflected in URL (`pg`) and restorable on reload. → **S1** (load-more logic) + **S4b** (control).
-- [ ] **AC-8** Results header shows count (API total else loaded) + active-filter summary; clearing a filter updates it. → **S4b** (+ `activeChips` from **S1/S3**).
-- [ ] **AC-9** Density toggle (comfortable/compact) changes grid, writes `vw`, persists on reload. → **S4b** (+ `setDensity`/URL in **S1**).
-- [ ] **AC-10** Full URL state (query+filters+sort+page+density) shareable/restorable; back/forward + locale switch keep state with no echo/redirect loop. → **S1** (serialize/echo guard) + **S10** (verify).
-- [ ] **AC-11** Single async writer — stale responses never overwrite newer results. → **S1** (seq guard) + **S6** (old writer removed).
-- [ ] **AC-12** All new UI localized in en/fr/de/it; no raw key visible. → **S9**.
-- [ ] **AC-13** `/cards` prerendered per locale, in the sitemap, with title+description+canonical meta; hydrates with no mismatch; search stays client-only. → **S8** + **S4a** (meta/empty-first) + **S10** (verify).
-- [ ] **AC-14** Zero-results shows empty state, header count 0, recoverable by adjusting filters. → **S4b**.
-- [ ] **AC-15** API failure keeps page usable (empty list, no crash); changing query/filters retries. → **S1** (catch) + **S4b** (state).
-- [ ] **AC-16** Empty initial `/cards` (no query/filters) shows neutral state and fetches nothing. → **S4a** (`init` gate).
-- [ ] **AC-17** End of results disables "next"/stops fetching, no duplicate/phantom loads. → **S4b** (+ `hasMore`/seq guard in **S1**).
-- [ ] **NFR — Performance:** 300 ms debounce preserved; `loading="lazy"` images; 59:86 skeletons (CLS-safe). → **S1** + **S4b**.
-- [ ] **NFR — Accessibility (WCAG AA):** sidebar/drawer, sort, density, load-more keyboard-operable with visible focus; mobile dialog focus-trapped + dismissible; `prefers-reduced-motion` respected. → **S3** + **S4a** + **S4b**.
-- [ ] **NFR — Design fidelity:** dark-first tokens; amethyst selection/primary, hot-pink wishlist, lime mutual-only; no pure grays; no `transition: all`. → **S3** + **S4a** + **S4b**.
-- [ ] **NFR — Build integrity:** vite-ssg build + SPA hydration both succeed; Library/Trade/Decks/Account + `CardYugi` overlay unchanged. → **S8** + **S10**.
-- [ ] i18n keys added for en/fr/de/it; production build prerenders `/cards`; sitemap updated; hydration clean; code reviewed. → **S8** + **S9** + **S10**.
+- [x] **AC-1** Dedicated `/cards` route renders; bare `/cards` → `/{detectedLocale}/cards`; unsupported locale falls back. → **S5** (route/redirect) + **S4a** (render).
+- [x] **AC-2** Home is landing/discovery only (no panel, no results grid; hero/trending/set-browser/latest-releases present). → **S7**.
+- [x] **AC-3** Global navbar search routes to `/:locale/cards?q=…` and the page applies+runs it; nav "Search" tab points to `/cards`; logo → `/`. → **S6** (navbar) + **S5** (tab).
+- [x] **AC-4** Filter sidebar on desktop / drawer (dialog) on mobile with all existing dimensions; filtering narrows results identically. → **S3** (`layout` prop) + **S4a** (sidebar/dialog wiring).
+- [x] **AC-5** Results render as `CardYugi` tiles with loading skeletons (59:86) and zero-results state; overlay add-to-pile/wishlist works. → **S4b**.
+- [x] **AC-6** Sort control (Name/Level/ATK/DEF/Newest) re-orders results and writes `so` to the URL. → **S2** (API) + **S4b** (UI).
+- [x] **AC-7** Browse beyond 40 via `num`/`offset`; current page reflected in URL (`pg`) and restorable on reload. → **S1** (load-more logic) + **S4b** (control).
+- [x] **AC-8** Results header shows count (API total else loaded) + active-filter summary; clearing a filter updates it. → **S4b** (+ `activeChips` from **S1/S3**).
+- [x] **AC-9** Density toggle (comfortable/compact) changes grid, writes `vw`, persists on reload. → **S4b** (+ `setDensity`/URL in **S1**).
+- [x] **AC-10** Full URL state (query+filters+sort+page+density) shareable/restorable; back/forward + locale switch keep state with no echo/redirect loop. → **S1** (serialize/echo guard) + **S10** (verify).
+- [x] **AC-11** Single async writer — stale responses never overwrite newer results. → **S1** (seq guard) + **S6** (old writer removed).
+- [x] **AC-12** All new UI localized in en/fr/de/it; no raw key visible. → **S9**.
+- [x] **AC-13** `/cards` prerendered per locale, in the sitemap, with title+description+canonical meta; hydrates with no mismatch; search stays client-only. → **S8** + **S4a** (meta/empty-first) + **S10** (verify).
+- [x] **AC-14** Zero-results shows empty state, header count 0, recoverable by adjusting filters. → **S4b**.
+- [x] **AC-15** API failure keeps page usable (empty list, no crash); changing query/filters retries. → **S1** (catch) + **S4b** (state).
+- [x] **AC-16** Empty initial `/cards` (no query/filters) shows neutral state and fetches nothing. → **S4a** (`init` gate).
+- [x] **AC-17** End of results disables "next"/stops fetching, no duplicate/phantom loads. → **S4b** (+ `hasMore`/seq guard in **S1**).
+- [x] **NFR — Performance:** 300 ms debounce preserved; `loading="lazy"` images; 59:86 skeletons (CLS-safe). → **S1** + **S4b**.
+- [x] **NFR — Accessibility (WCAG AA):** sidebar/drawer, sort, density, load-more keyboard-operable with visible focus; mobile dialog focus-trapped + dismissible; `prefers-reduced-motion` respected. → **S3** + **S4a** + **S4b**.
+- [x] **NFR — Design fidelity:** dark-first tokens; amethyst selection/primary, hot-pink wishlist, lime mutual-only; no pure grays; no `transition: all`. → **S3** + **S4a** + **S4b**.
+- [x] **NFR — Build integrity:** vite-ssg build + SPA hydration both succeed; Library/Trade/Decks/Account + `CardYugi` overlay unchanged. → **S8** + **S10**.
+- [x] i18n keys added for en/fr/de/it; production build prerenders `/cards`; sitemap updated; hydration clean; code reviewed. → **S8** + **S9** + **S10**.
