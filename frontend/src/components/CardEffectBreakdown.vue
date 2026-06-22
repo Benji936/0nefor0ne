@@ -56,8 +56,6 @@ function tagText(k, v) {
     </div>
 
     <div class="px-4 py-3 flex flex-col gap-3" style="background: var(--c-surface)">
-      <!-- Summary -->
-      <p v-if="data.summary" class="text-sm italic" style="color: var(--c-muted)">{{ data.summary }}</p>
 
       <!-- Effect groups -->
       <div class="flex flex-col gap-4">
@@ -84,16 +82,6 @@ function tagText(k, v) {
             <span class="text-sm leading-snug" style="color: var(--c-text)">{{ seg.text }}</span>
           </div>
         </div>
-      </div>
-
-      <!-- Tags -->
-      <div v-if="data.tags && Object.keys(data.tags).length" class="flex flex-wrap gap-1.5">
-        <span
-          v-for="(v, k) in data.tags"
-          :key="k"
-          class="text-[11px] px-2 py-0.5 rounded-full"
-          style="background: rgba(148,163,184,0.15); color: var(--c-muted)"
-        >{{ tagText(k, v) }}</span>
       </div>
 
       <!-- Original text toggle -->
