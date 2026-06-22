@@ -88,11 +88,17 @@
               :href="link.url"
               target="_blank"
               rel="noopener noreferrer"
-              class="text-xs no-underline flex items-center gap-1 transition-opacity hover:opacity-70"
-              style="color: var(--c-muted)"
+              :title="link.label"
+              :aria-label="link.label"
+              class="no-underline flex items-center transition-opacity hover:opacity-80"
+              style="height: 28px"
             >
-              <v-icon icon="mdi-open-in-new" size="13" />
-              {{ link.label }}
+              <img
+                :src="isDarkTheme && link.logoDark ? link.logoDark : link.logo"
+                :alt="link.label"
+                loading="lazy"
+                :style="{ maxHeight: '24px', maxWidth: '90px', objectFit: 'contain', display: 'block', filter: (isDarkTheme ? link.filterDark : link.filterLight) || 'none' }"
+              />
             </a>
             <!-- Strategy tips (outbound link only — no content reproduced).
                  Shown only when the crawler confirmed a real Card Tips page. -->
@@ -567,6 +573,9 @@ export default {
 
   computed: {
     cardId()     { return this.$route.params.id; },
+    // Tracks the active Vuetify theme so the market logos can swap to their
+    // light/white treatment on the dark theme (and back on the light one).
+    isDarkTheme() { return this.$vuetify?.theme?.global?.name !== 'neonDuskLight'; },
     cardImageUrl() { return cardImage(this.selectedImageId ?? this.card?.id); },
     // All printing artworks for this card (each has its own passcode id, already
     // synced to R2). Populated lazily by loadArtworks(); length<=1 → no alternates.
@@ -607,10 +616,14 @@ export default {
     },
     marketLinks() {
       const name = encodeURIComponent(this.card?.name ?? "");
+      // Logos are theme-aware. `logoDark` swaps to a white asset on the dark theme;
+      // `filterLight` recolors a white (monochrome) logo to black on the light theme.
+      // TCGplayer keeps its colored icon, so it uses two real assets (no filter).
+      // Cardmarket is a single white wordmark: white on dark, filtered black on light.
       return [
-        { label: "TCGPlayer",  url: `https://www.tcgplayer.com/search/yugioh/product?q=${name}` },
-        { label: "eBay",       url: `https://www.ebay.com/sch/i.html?_nkw=${name}+yugioh` },
-        { label: "Cardmarket", url: `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${name}` },
+        { label: "TCGPlayer",  logo: "/logos/tcgplayer.svg",        logoDark: "/logos/tcgplayer-white.png", url: `https://www.tcgplayer.com/search/yugioh/product?q=${name}` },
+        { label: "eBay",       logo: "/logos/ebay.png",             url: `https://www.ebay.com/sch/i.html?_nkw=${name}+yugioh` },
+        { label: "Cardmarket", logo: "/logos/cardmarket-white.png", filterLight: "brightness(0)", url: `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${name}` },
       ];
     },
     // Outbound Yugipedia strategy-tips link — only present when the crawler
