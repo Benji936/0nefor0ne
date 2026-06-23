@@ -19,6 +19,15 @@ const { t } = useI18n();
           {{ $t('deckImport.title') }}
         </button>
 
+        <button
+          class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          style="background-color: var(--c-surface-2); border: 1px solid var(--c-border); color: var(--c-text);"
+          @click="showBulkAdd = !showBulkAdd"
+        >
+          <v-icon :icon="showBulkAdd ? 'mdi-chevron-up' : 'mdi-playlist-plus'" size="18" />
+          {{ $t('bulkAdd.title') }}
+        </button>
+
         <!-- View switch (rows vs tiles) -->
         <div
           class="inline-flex items-center rounded-lg p-0.5 gap-0.5"
@@ -49,6 +58,13 @@ const { t } = useI18n();
           :login="login"
           @requireAuth="$emit('requireAuth')"
           @added="onDeckImportAdded"
+        />
+      </div>
+
+      <div v-if="showBulkAdd" class="mt-4">
+        <BulkAddCards
+          @requireAuth="$emit('requireAuth')"
+          @added="onBulkAdded"
         />
       </div>
     </div>
@@ -91,9 +107,10 @@ const { t } = useI18n();
 import { getClient } from "@/lib/supabaseClient";
 import { ref } from "vue";
 import DeckImport from "@/components/DeckImport.vue";
+import BulkAddCards from "@/components/BulkAddCards.vue";
 
 export default {
-  components: { DeckImport },
+  components: { DeckImport, BulkAddCards },
   props: ['login'],
   emits: ['requireAuth'],
   data() {
@@ -106,6 +123,7 @@ export default {
       newCardId: null,
       snackbar: { open: false, message: '', color: '', icon: '' },
       showDeckImport: false,
+      showBulkAdd: false,
       // Collection layout: 'list' (compact rows, default) | 'grid' (card tiles).
       // Restored from localStorage in mounted().
       viewMode: 'list',
@@ -148,6 +166,15 @@ export default {
         message: this.$t('deckImport.added', count, { count }),
         color: 'var(--c-accent)',
         icon: 'mdi-heart-plus',
+      };
+    },
+
+    onBulkAdded(count) {
+      this.snackbar = {
+        open: true,
+        message: this.$t('bulkAdd.added', count, { count }),
+        color: 'var(--c-accent)',
+        icon: 'mdi-playlist-plus',
       };
     },
 

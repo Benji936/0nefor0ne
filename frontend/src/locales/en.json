@@ -125,6 +125,26 @@
     "condition": "Condition",
     "quantity": "Quantity"
   },
+  "bulkAdd": {
+    "title": "Bulk Add Cards",
+    "subtitle": "Paste a list of cards to add them all at once.",
+    "placeholder": "Paste one card per line, e.g. 3x Ash Blossom",
+    "destination": "Destination",
+    "tradePile": "Trade pile",
+    "wishlist": "Wishlist",
+    "resolve": "Resolve cards",
+    "resolving": "Resolving {current} of {total}…",
+    "reviewTitle": "Review results",
+    "matched": "Matched",
+    "ambiguous": "Ambiguous",
+    "unmatched": "Unmatched",
+    "remove": "Remove",
+    "addAll": "Add all",
+    "adding": "Adding…",
+    "added": "{count} card added | {count} cards added",
+    "skipped": "{count} line skipped | {count} lines skipped",
+    "noLines": "Nothing to add — paste at least one card."
+  },
   "tradeCenter": {
     "matches": "Matches",
     "proposals": "Proposals",

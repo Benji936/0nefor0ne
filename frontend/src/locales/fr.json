@@ -125,6 +125,26 @@
     "condition": "État",
     "quantity": "Quantité"
   },
+  "bulkAdd": {
+    "title": "Ajout en masse",
+    "subtitle": "Collez une liste de cartes pour les ajouter toutes en une fois.",
+    "placeholder": "Collez une carte par ligne, ex. : 3x Ash Blossom",
+    "destination": "Destination",
+    "tradePile": "Pile d'échange",
+    "wishlist": "Liste de souhaits",
+    "resolve": "Résoudre les cartes",
+    "resolving": "Résolution de {current} sur {total}…",
+    "reviewTitle": "Vérifier les résultats",
+    "matched": "Trouvé",
+    "ambiguous": "Ambigu",
+    "unmatched": "Non trouvé",
+    "remove": "Supprimer",
+    "addAll": "Tout ajouter",
+    "adding": "Ajout en cours…",
+    "added": "{count} carte ajoutée | {count} cartes ajoutées",
+    "skipped": "{count} ligne ignorée | {count} lignes ignorées",
+    "noLines": "Rien à ajouter — collez au moins une carte."
+  },
   "tradeCenter": {
     "matches": "Correspondances",
     "proposals": "Propositions",
