@@ -80,7 +80,7 @@ watch(() => props.open, (open) => {
     uploadError.value = "";
     if (photoSub) { getClient().removeChannel(photoSub); photoSub = null; }
   }
-});
+}, { immediate: true });
 </script>
 
 <template>
