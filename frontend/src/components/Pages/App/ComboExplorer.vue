@@ -71,7 +71,18 @@ async function load() {
   }
 
   // Seed the rows immediately (with a loading state), then resolve each in turn.
-  effects.value = entry.fetches.map((f) => ({ ...f, cards: [], broad: false, loading: true }));
+  // Add UI state per-row for client-side search + filtering.
+  effects.value = entry.fetches.map((f) => ({
+    ...f,
+    cards: [],
+    broad: false,
+    loading: true,
+    // UI state
+    query: '',
+    selectedAttribute: null,
+    selectedRace: null,
+    selectedType: null,
+  }));
   loading.value = false;
 
   for (const row of effects.value) {
@@ -79,8 +90,15 @@ async function load() {
       const { cards, broad } = await resolveFetch(row.filter, { location: row.location, actions: row.actions });
       row.cards = cards;
       row.broad = broad;
+      // derive available filter options from returned cards
+      row._attributes = Array.from(new Set(cards.map((c) => c.attribute).filter(Boolean))).sort();
+      row._races = Array.from(new Set(cards.map((c) => c.race).filter(Boolean))).sort();
+      row._types = Array.from(new Set(cards.map((c) => c.type).filter(Boolean))).sort();
     } catch {
       row.cards = [];
+      row._attributes = [];
+      row._races = [];
+      row._types = [];
     } finally {
       row.loading = false;
     }
@@ -92,6 +110,26 @@ onMounted(() => {
   load();
 });
 watch(cardId, () => isMounted.value && load());
+
+/** Client-side filtering for a single row. */
+function matchesRowQuery(card, row) {
+  if (!card) return false;
+  const q = (row.query || '').trim().toLowerCase();
+  if (q) {
+    const inName = (card.name || '').toLowerCase().includes(q);
+    const inText = (card.desc || '').toLowerCase().includes(q);
+    if (!inName && !inText) return false;
+  }
+  if (row.selectedAttribute && card.attribute !== row.selectedAttribute) return false;
+  if (row.selectedRace && card.race !== row.selectedRace) return false;
+  if (row.selectedType && card.type !== row.selectedType) return false;
+  return true;
+}
+
+function filteredCards(row) {
+  if (!row || !Array.isArray(row.cards)) return [];
+  return row.cards.filter((c) => matchesRowQuery(c, row));
+}
 </script>
 
 <template>
@@ -162,26 +200,45 @@ watch(cardId, () => isMounted.value && load());
           {{ t('combo.noMatches') }}
         </p>
 
-        <div
-          v-else
-          class="grid gap-3"
-          style="grid-template-columns: repeat(auto-fill, minmax(92px, 1fr))"
-        >
-          <router-link
-            v-for="c in row.cards"
-            :key="c.id"
-            :to="`/${locale}/card/${c.id}`"
-            class="no-underline group"
-            :title="c.name"
+        <div v-else>
+          <!-- Search + lightweight filter controls -->
+          <div class="flex flex-wrap gap-2 items-center mb-3">
+            <input v-model="row.query" placeholder="Search name or text" class="px-2 py-1 rounded border" />
+            <select v-model="row.selectedAttribute" class="px-2 py-1 rounded border">
+              <option :value="null">All attributes</option>
+              <option v-for="a in row._attributes" :key="a" :value="a">{{ a }}</option>
+            </select>
+            <select v-model="row.selectedRace" class="px-2 py-1 rounded border">
+              <option :value="null">All races / properties</option>
+              <option v-for="r in row._races" :key="r" :value="r">{{ r }}</option>
+            </select>
+            <select v-model="row.selectedType" class="px-2 py-1 rounded border">
+              <option :value="null">All types</option>
+              <option v-for="t in row._types" :key="t" :value="t">{{ t }}</option>
+            </select>
+            <button @click="row.query=''; row.selectedAttribute=null; row.selectedRace=null; row.selectedType=null" class="px-2 py-1 rounded border">Clear</button>
+          </div>
+
+          <div
+            class="grid gap-3"
+            style="grid-template-columns: repeat(auto-fill, minmax(92px, 1fr))"
           >
-            <img
-              :src="cardImage(c.id)"
-              :alt="c.name"
-              loading="lazy"
-              class="w-full rounded transition-transform group-hover:scale-105"
-              style="aspect-ratio: 59/86; object-fit: cover"
-            />
-          </router-link>
+            <router-link
+              v-for="c in filteredCards(row)"
+              :key="c.id"
+              :to="`/${locale}/card/${c.id}`"
+              class="no-underline group"
+              :title="c.name"
+            >
+              <img
+                :src="cardImage(c.id)"
+                :alt="c.name"
+                loading="lazy"
+                class="w-full rounded transition-transform group-hover:scale-105"
+                style="aspect-ratio: 59/86; object-fit: cover"
+              />
+            </router-link>
+          </div>
         </div>
       </section>
     </div>

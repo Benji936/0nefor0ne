@@ -16,6 +16,13 @@
   --c-mutual:    #0882A8;
   --c-nav:       #FFFFFF;
   --c-skeleton:  #E2D2F8;
+  /* Landing-page design tokens (exact values from the "One for One" design).
+     --c-surface-2 already exists above as the rail hover surface; the landing
+     design's secondary surface (inputs, progress track) is a distinct, paler
+     value, so it gets its own token to avoid changing the rail. */
+  --c-on-accent: #FFFFFF;
+  --c-ring:      rgba(201,24,90,.35);
+  --c-input-bg:  #FBF9FF;
 }
 
 /* ── DARK THEME ── Variation A: Amethyst Nights
@@ -33,6 +40,9 @@ html.dark {
   --c-mutual:    #2DD4BF;
   --c-nav:       #0B0617;
   --c-skeleton:  #1E1248;
+  --c-on-accent: #13031A;
+  --c-ring:      rgba(244,45,135,.45);
+  --c-input-bg:  #190C33;
 }
 
 /* ── VARIATION B: Orchid ──────────────────────────────────

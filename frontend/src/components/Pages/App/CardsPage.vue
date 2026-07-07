@@ -18,7 +18,7 @@ import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import { useHead } from "@unhead/vue";
 import { useCardSearch } from "@/composables/useCardSearch";
-import CardYugi from "@/components/CardYugi.vue";
+import CardYugi from "@/components/ui/card/CardYugi.vue";
 import SearchFiltersPanel from "./search/SearchFiltersPanel.vue";
 
 const { t } = useI18n();

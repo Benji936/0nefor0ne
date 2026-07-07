@@ -7,6 +7,7 @@
     "darkMode": "Dark mode",
     "loginSignup": "Login / Sign up",
     "search": "Search",
+    "home": "Home",
     "library": "Library",
     "trades": "Trades",
     "account": "Account",
@@ -21,7 +22,7 @@
   "hero": {
     "headline": "Trade duplicates.<br>Hunt your targets.",
     "subheadline": "One for One connects Yu-Gi-Oh! collectors who have what each other wants. No fees, no auctions, just direct peer-to-peer trades.",
-    "cta": "Get started — it's free",
+    "cta": "Get started  it's free",
     "learnMore": "How it works",
     "steps": {
       "01": {
@@ -40,6 +41,105 @@
         "title": "Propose & confirm",
         "body": "Send a proposal, chat, and close the trade."
       }
+    }
+  },
+  "landing": {
+    "nav": {
+      "search": "Search",
+      "decks": "Decks",
+      "collection": "Collection",
+      "trade": "Trade",
+      "login": "Log in"
+    },
+    "hero": {
+      "eyebrow": "Peer-to-peer Yu-Gi-Oh! trading",
+      "eyebrowAuthed": "Welcome back",
+      "productName": "One for One",
+      "headline": "Trade duplicates.<br>Hunt your targets.",
+      "subheadline": "One for One connects Yu-Gi-Oh! collectors who have what each other wants. No fees, no auctions  just direct peer-to-peer trades, plus a full card search engine, deck builder, and collection tracker.",
+      "ctaGetStarted": "Get started  it's free",
+      "ctaGetStartedShort": "Get started",
+      "ctaGoToApp": "Go to app",
+      "ctaBrowse": "Browse cards",
+      "bullets": {
+        "noFees": "No fees",
+        "noAuctions": "No auctions",
+        "directP2P": "Direct P2P",
+        "mutualMatches": "Mutual matches"
+      }
+    },
+    "marquee": {
+      "ariaLabel": "Yu-Gi-Oh! card artwork"
+    },
+    "howItWorks": {
+      "heading": "How it works",
+      "subheading": "Four steps from duplicate pile to a closed, card-for-card trade.",
+      "steps": {
+        "01": {
+          "title": "Build your trade pile",
+          "body": "List the cards you're ready to trade away."
+        },
+        "02": {
+          "title": "Add your wishlist",
+          "body": "Mark every card you're hunting for."
+        },
+        "03": {
+          "title": "Find your match",
+          "body": "We surface traders who want yours and have yours."
+        },
+        "04": {
+          "title": "Propose & confirm",
+          "body": "Send a proposal, chat, and close the trade."
+        }
+      }
+    },
+    "features": {
+      "heading": "Everything for the cards you collect",
+      "subheading": "Search, build, track, and trade  one place for your whole Yu-Gi-Oh! collection.",
+      "coreBadge": "CORE",
+      "search": {
+        "title": "Search cards",
+        "body": "A fast, full card search engine  every set, rarity, and printing at your fingertips.",
+        "cta": "Search the database"
+      },
+      "decks": {
+        "title": "Decks",
+        "body": "Build decks from scratch or import a list  see exactly what you own and what you need.",
+        "cta": "Build or import a deck"
+      },
+      "collection": {
+        "title": "Collection tracking",
+        "body": "Track your progress across sets and instantly see which cards you're still missing.",
+        "cta": "Track your collection"
+      },
+      "trade": {
+        "title": "Trade",
+        "body": "Add cards to your trade pile and wishlist  we surface mutual matches for direct, one-for-one trades.",
+        "cta": "Find your matches"
+      }
+    },
+    "tradeShowcase": {
+      "eyebrow": "The core flow",
+      "heading": "One card for one card",
+      "body": "When your trade pile holds a card on someone's wishlist  and they hold one on yours  One for One flags the mutual match. No money, no bidding. Just a fair, direct swap.",
+      "cta": "Open the Trade Center",
+      "labelPile": "Your pile",
+      "labelMatch": "MATCH",
+      "labelWishlist": "Your wishlist"
+    },
+    "footer": {
+      "blurb": "Direct peer-to-peer Yu-Gi-Oh! card trading. No fees, no auctions.",
+      "colProduct": "Product",
+      "colMore": "More",
+      "search": "Search cards",
+      "decks": "Decks",
+      "collection": "Collection tracking",
+      "trade": "Trade",
+      "about": "About",
+      "privacy": "Privacy",
+      "contact": "Contact",
+      "copyright": "© 2026 One for One. Not affiliated with Konami. Yu-Gi-Oh! is a trademark of its respective owners.",
+      "privacyPolicy": "Privacy Policy"
     }
   },
   "auth": {
@@ -97,8 +197,8 @@
     "tradePileEmpty": "No cards to trade yet. Add some to get started.",
     "wishlistEmpty": "Your wishlist is empty. Add cards you're looking for.",
     "searchCards": "Search for cards to add",
-    "emptyTrade": "Nothing here yet — add cards you have for trade.",
-    "emptyWish": "Nothing here yet — add cards you're hunting for.",
+    "emptyTrade": "Nothing here yet  add cards you have for trade.",
+    "emptyWish": "Nothing here yet  add cards you're hunting for.",
     "addedToWishlist": "\"{name}\" added to wishlist.",
     "addedToTrade": "\"{name}\" added to trade pile.",
     "viewLabel": "Collection view",
@@ -143,13 +243,14 @@
     "adding": "Adding…",
     "added": "{count} card added | {count} cards added",
     "skipped": "{count} line skipped | {count} lines skipped",
-    "noLines": "Nothing to add — paste at least one card."
+    "noLines": "Nothing to add  paste at least one card."
   },
   "tradeCenter": {
     "matches": "Matches",
     "proposals": "Proposals",
+    "announces": "Announces",
     "proposalUpdated": "Proposal updated.",
-    "exchangeComplete": "Exchange complete — cards have been updated.",
+    "exchangeComplete": "Exchange complete  cards have been updated.",
     "yourSideConfirmed": "Your side confirmed. Waiting for the other trader.",
     "failedToConfirm": "Failed to confirm.",
     "tradeAccepted": "Trade accepted!",
@@ -175,6 +276,40 @@
     "noMatchesTitle": "No matches yet",
     "noMatchesDesc": "The more cards you add to your trade pile and wishlist, the more traders you'll find here.",
     "goToCollection": "Go to My Collection to add cards"
+  },
+  "announces": {
+    "loginRequired": "Log in to browse and post announces",
+    "noAnnouncesTitle": "No announces yet",
+    "noAnnouncesDesc": "Be the first to post a listing!",
+    "newAnnounce": "New Announce",
+    "search": "Search announces...",
+    "myAnnounces": "My Announces",
+    "unknownSeller": "Unknown seller",
+    "yourAnnounce": "Your listing",
+    "yourAnnounceHint": "Only you can see the delete & mark as sold options",
+    "allAnnounces": "All announces",
+    "noSearchResults": "No announces match your search.",
+    "onlyYours": "No other announces yet — yours is the first!"
+  },
+  "announce": {
+    "title": "Title",
+    "titlePlaceholder": "e.g. Holographic Blue-Eyes White Dragon",
+    "description": "Description",
+    "descPlaceholder": "Condition, language, shipping info…",
+    "price": "Starting Price",
+    "currency": "Currency",
+    "images": "Photos",
+    "addImages": "Add photos",
+    "maxImages": "Up to {max} photos",
+    "create": "Post Announce",
+    "edit": "Edit",
+    "delete": "Delete",
+    "markSold": "Mark as Sold",
+    "sold": "Sold",
+    "archived": "Archived",
+    "contactSeller": "Contact Seller",
+    "postedBy": "Posted by",
+    "deleteConfirm": "Delete this announce?"
   },
   "proposals": {
     "loginRequired": "Log in to see your proposals.",
@@ -281,11 +416,11 @@
     "cardCount": "0 cards | 1 card | {count} cards",
     "uploadBothBeforeConfirm": "Upload photos on both sides before confirming.",
     "waitingForConfirmDetail": "Waiting for {name} to confirm.",
-    "bothUploadedConfirmHint": "Both sides have uploaded — confirm when you've received your cards.",
+    "bothUploadedConfirmHint": "Both sides have uploaded  confirm when you've received your cards.",
     "uploadBothToAccept": "Upload photos on both sides to enable accepting.",
-    "photosVerifiedCanAccept": "Photos verified — you can now accept.",
+    "photosVerifiedCanAccept": "Photos verified  you can now accept.",
     "waitingForReview": "Waiting for {name} to review and accept.",
-    "declinePlaceholder": "Optional — let them know why you're declining…"
+    "declinePlaceholder": "Optional  let them know why you're declining…"
   },
   "traderProfile": {
     "wishlistEmpty": "Wishlist is empty.",
@@ -386,7 +521,7 @@
     "showLess": "Show less"
   },
   "setPage": {
-    "title": "{setName} — Yu-Gi-Oh! Set | One for One",
+    "title": "{setName}  Yu-Gi-Oh! Set | One for One",
     "cardCount": "0 cards | 1 card | {count} cards",
     "notFound": "Set not found",
     "backToSearch": "Back to search",
@@ -602,38 +737,42 @@
     "unrecognizedCount": "{count} unrecognized"
   },
   "meta": {
+    "home": {
+      "title": "One for One  Peer-to-peer Yu-Gi-Oh! card trading",
+      "desc": "Trade Yu-Gi-Oh! duplicates and hunt your targets with One for One  direct peer-to-peer trades with no fees and no auctions, plus a full card search engine, deck builder, and collection tracker."
+    },
     "search": {
-      "title": "One for One — Yu-Gi-Oh! Card Trading",
-      "titleWithQuery": "{query} — Yu-Gi-Oh! Trading | One for One",
+      "title": "One for One  Yu-Gi-Oh! Card Trading",
+      "titleWithQuery": "{query}  Yu-Gi-Oh! Trading | One for One",
       "desc": "Trade Yu-Gi-Oh! cards directly with other collectors. List your trade pile, build your wishlist, and find perfect one-for-one matches near you.",
       "descWithQuery": "Find traders for {query} on One for One, the free Yu-Gi-Oh! card trading platform."
     },
     "library": {
-      "title": "My Collection — One for One",
+      "title": "My Collection  One for One",
       "desc": "Manage your Yu-Gi-Oh! card collection, trade pile, and wishlist on One for One."
     },
     "trade": {
-      "title": "Trade Center — One for One",
+      "title": "Trade Center  One for One",
       "desc": "Browse your trade matches, send proposals, and complete card trades on One for One."
     },
     "account": {
-      "title": "My Account — One for One",
+      "title": "My Account  One for One",
       "desc": "Manage your One for One profile, location, and trade preferences."
     },
     "card": {
-      "title": "Yu-Gi-Oh! Card — One for One",
+      "title": "Yu-Gi-Oh! Card  One for One",
       "desc": "Trade Yu-Gi-Oh! cards on One for One. Find collectors who have it or want it."
     },
     "privacy": {
-      "title": "Privacy Policy — One for One",
+      "title": "Privacy Policy  One for One",
       "desc": "Privacy policy for One for One, the free Yu-Gi-Oh! card trading platform."
     },
     "cards": {
-      "title": "Browse Yu-Gi-Oh! Cards — One for One",
+      "title": "Browse Yu-Gi-Oh! Cards  One for One",
       "desc": "Search and filter the full Yu-Gi-Oh! card database by type, attribute, level, and more. Find cards to add to your trade pile or wishlist on One for One."
     },
     "combo": {
-      "title": "Combo Explorer — One for One",
+      "title": "Combo Explorer  One for One",
       "desc": "See every card a Yu-Gi-Oh! effect can search, Special Summon, or send to the GY. Explore what this card's effect can fetch on One for One."
     }
   },
@@ -679,11 +818,11 @@
     "noEffect": "No combo-relevant effect found",
     "noEffectHint": "This card has no parsed search / summon / send effect, or its effect is too complex to resolve automatically.",
     "resolving": "Resolving…",
-    "broad": "This effect matches a very broad pool (e.g. any monster) — too many cards to list usefully.",
+    "broad": "This effect matches a very broad pool (e.g. any monster)  too many cards to list usefully.",
     "noMatches": "No matching cards found.",
     "count": "0 cards | 1 card | {count} cards",
     "approximate": "approximate",
-    "approximateHint": "The effect contains conditions (e.g. ATK, custom logic) the parser can't fully read — results may be approximate.",
+    "approximateHint": "The effect contains conditions (e.g. ATK, custom logic) the parser can't fully read  results may be approximate.",
     "actions": {
       "search": "Searches",
       "special_summon": "Special Summons",
@@ -739,5 +878,108 @@
       "counterTrap": "counter trap"
     },
     "effectN": "Effect {n}"
+  },
+  "simulator": {
+    "title": "Simulator — Engine mode",
+    "engineLoadError": "Engine unavailable — using manual board",
+    "loading": "Engine loading…",
+    "error": "Engine error",
+    "engineBadge": "Engine",
+    "errorFetch": "Could not load that card's script — injection cancelled.",
+    "manualMoveDisabled": "Manual repositioning is off in engine mode — the rules engine owns the board. Use the card picker to inject, or the action menu and decision prompts to move cards.",
+    "pending": {
+      "title": "Engine decision required",
+      "prompt": "Choose an option:"
+    },
+    "rewind": {
+      "title": "History",
+      "undo": "Undo",
+      "start": "Start",
+      "empty": "No actions yet.",
+      "injectStep": "Inject {code} → {zone}",
+      "responseStep": "Decision response"
+    },
+    "phase": {
+      "draw": "Draw Phase",
+      "standby": "Standby Phase",
+      "main1": "Main Phase 1",
+      "battle": "Battle Phase",
+      "main2": "Main Phase 2",
+      "end": "End Phase"
+    },
+    "agpl": {
+      "label": "Powered by ocgcore / ygopro-core (AGPL-3.0)",
+      "source": "Source"
+    },
+    "extraDeck": {
+      "sectionTitle": "Extra Deck Summon"
+    }
+  },
+  "playground": {
+    "search": "Search cards…",
+    "loading": "Searching…",
+    "noResults": "No cards found.",
+    "deck": "Deck",
+    "hand": "Hand",
+    "zones": {
+      "hand": "Hand",
+      "monster": "Monster",
+      "spellTrap": "Spell/Trap",
+      "fieldSpell": "Field",
+      "extraMonster": "Extra Monster",
+      "gy": "GY",
+      "banished": "Banished",
+      "extraDeck": "Extra Deck",
+      "deck": "Deck"
+    },
+    "actions": {
+      "menu": "Card actions",
+      "change-position": "Change position",
+      "flip": "Flip",
+      "send-gy": "Send to GY",
+      "banish": "Banish",
+      "return-hand": "Return to hand",
+      "return-deck": "Return to deck"
+    },
+    "state": {
+      "atk": "ATK",
+      "def": "DEF",
+      "set": "SET"
+    },
+    "toolbar": {
+      "draw": "Draw",
+      "shuffle": "Shuffle",
+      "reset": "Reset"
+    },
+    "inject": {
+      "zoneLabel": "Destination zone",
+      "slot": "Slot",
+      "slotAriaLabel": "Zone slot index (0–4)",
+      "monster": "Monster Zone",
+      "spellTrap": "Spell/Trap Zone",
+      "gy": "GY",
+      "banished": "Banished",
+      "extra": "Extra Deck",
+      "loadMore": "Load more"
+    },
+    "extraDeckPicker": {
+      "title": "Extra Deck Summon",
+      "hint": "Materials skipped — place directly onto field",
+      "searchPlaceholder": "Search Fusion / Synchro / Xyz / Link…",
+      "formatLabel": "Format / banlist"
+    },
+    "title": "Simulator playground",
+    "openMenu": "Open search menu",
+    "closeMenu": "Close search menu",
+    "searchMenu": "Search menu",
+    "close": "Close",
+    "cardSearch": "Card search",
+    "comboSuggestions": "Combo suggestions",
+    "comboSearch": "Search a card to inspect combos",
+    "noCardsSelected": "No cards selected yet. Add some to inspect their combo reach.",
+    "analyzingEffects": "Analyzing card effects…",
+    "noComboData": "No EDOPRO combo data for this card yet.",
+    "broadResult": "Broad result; no exact card set shown.",
+    "noCandidates": "No candidate cards found for this effect."
   }
 }

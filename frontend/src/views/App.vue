@@ -3,13 +3,13 @@ import { ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter, useRoute } from "vue-router";
 import { useHead } from "@unhead/vue";
-import AuthDialog from "@/components/AuthDialog.vue";
-import NavItem from "@/components/NavItem.vue";
-import SideNav from "@/components/SideNav.vue";
-import NotificationBell from "@/components/NotificationBell.vue";
-import UserMenuChip from "@/components/UserMenuChip.vue";
-import TcgPlayerAd from "@/components/TcgPlayerAd.vue";
-import CardHoverPreview from "@/components/CardHoverPreview.vue";
+import AuthDialog from "@/components/dialogs/AuthDialog.vue";
+import NavItem from "@/components/nav/NavItem.vue";
+import SideNav from "@/components/nav/SideNav.vue";
+import NotificationBell from "@/components/nav/NotificationBell.vue";
+import UserMenuChip from "@/components/nav/UserMenuChip.vue";
+import TcgPlayerAd from "@/components/ads/TcgPlayerAd.vue";
+import CardHoverPreview from "@/components/ui/card/CardHoverPreview.vue";
 import { setLocale, SUPPORTED } from "@/i18n.js";
 
 const { t, locale } = useI18n();
@@ -125,17 +125,21 @@ function switchLang(lang) {
 <template>
   <!-- ── Collapsible side rail (desktop ≥ sm) — primary navigation ── -->
   <SideNav
+    v-if="page !== 'home'"
     v-model:collapsed="railCollapsed"
     :authenticated="authenticated"
     :page="page"
+    :active-trade-tab="activeTradeTab"
     @navigate="changePage"
     @matches="openMatches()"
+    @tradeTab="openTradeTab"
   />
 
   <!-- App shell: everything to the right of the rail, shifted by its width. -->
-  <div class="app-shell" :style="{ '--rail-w': railCollapsed ? '64px' : '210px' }">
+  <div class="app-shell" :style="{ '--rail-w': page === 'home' ? '0px' : (railCollapsed ? '64px' : '210px') }">
   <!-- ── Top navbar ── -->
   <nav
+    v-if="page !== 'home'"
     class="flex flex-row py-2 px-3 md:py-3 md:px-5 gap-2 md:gap-6 shadow-xs items-center justify-between sticky top-0 z-30"
     style="background: var(--c-nav); border-bottom: 1px solid var(--c-border); transition: background 0.3s ease"
   >
@@ -225,7 +229,7 @@ function switchLang(lang) {
 
   <!-- ── Mobile bottom tab bar (authenticated only, phones < 640 px) ── -->
   <nav
-    v-if="authenticated"
+    v-if="authenticated && page !== 'home'"
     class="mobile-bottom-nav fixed bottom-0 left-0 right-0 z-40 flex sm:hidden items-stretch"
     style="background: var(--c-nav); border-top: 1px solid var(--c-border); touch-action: manipulation"
   >
@@ -244,12 +248,12 @@ function switchLang(lang) {
 
   <!-- Click-outside overlay for lang menu (z-20 so it doesn't block the sticky nav at z-30) -->
   <div
-    v-if="langMenuOpen"
+    v-if="langMenuOpen && page !== 'home'"
     class="fixed inset-0 z-20"
     @click="langMenuOpen = false"
   />
 
-  <main class="main-content-mobile-pb px-5 md:px-16 pt-5 md:pt-8 min-h-screen sm:pb-0" style="background: var(--c-bg); transition: background 0.3s ease">
+  <main :class="['main-content-mobile-pb pt-5 md:pt-8 min-h-screen sm:pb-0', page === 'dashboard' ? 'dashboard-compact-horizontal' : 'px-5 md:px-16']" style="background: var(--c-bg); transition: background 0.3s ease">
     <!-- RouterView renders the active page component; props are forwarded via slot 
      <TcgPlayerAd :ad-id="3913674" :width="1940" :height="500" />-->
     <RouterView v-slot="{ Component }">
@@ -258,7 +262,9 @@ function switchLang(lang) {
         ref="pageRef"
         :login="authenticated"
         :filter-card-name="filterCardName"
+        :initial-tab="activeTradeTab"
         @TradeCenter="openMatches($event)"
+        @tabChange="activeTradeTab = $event"
         @requireAuth="openLogin()"
         @logout="logout"
         @clear-filter="filterCardName = ''"
@@ -282,6 +288,7 @@ function switchLang(lang) {
 
   <!-- ── Footer ── -->
   <footer
+    v-if="page !== 'home'"
     class="flex flex-wrap items-center justify-between gap-3 px-5 md:px-16 py-5 text-xs sm:pb-5"
     style="border-top: 1px solid var(--c-border); color: var(--c-muted)"
     :class="authenticated ? 'pb-20' : 'pb-5'"
@@ -335,6 +342,8 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
             authUnsubscribe: null,
             // Side-rail pinned/collapsed state — restored from localStorage in mounted().
             railCollapsed: false,
+            // Active Trade Center sub-tab — kept here so SideNav can highlight it.
+            activeTradeTab: "matches",
           };
       },
       watch: {
@@ -365,13 +374,29 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
 
         changePage(name) {
           const lc = this.$route.params.locale || 'en';
-          const pathMap = { search: `/${lc}/`, library: `/${lc}/library`, decks: `/${lc}/decks`, TradeCenter: `/${lc}/trade`, account: `/${lc}/account`, cards: `/${lc}/cards` };
+          const pathMap = {
+            dashboard: `/${lc}/dashboard`,
+            search: `/${lc}/`,
+            library: `/${lc}/library`,
+            decks: `/${lc}/decks`,
+            TradeCenter: `/${lc}/trade`,
+            account: `/${lc}/account`,
+            cards: `/${lc}/cards`,
+            simulator: `/${lc}/simulator`,
+          };
           this.$router.push(pathMap[name] ?? `/${lc}/`);
         },
         openMatches(card = null) {
           this.filterCardName = card?.name ?? "";
           const lc = this.$route.params.locale || 'en';
           this.$router.push(`/${lc}/trade`);
+        },
+        openTradeTab(tab) {
+          this.activeTradeTab = tab;
+          const lc = this.$route.params.locale || 'en';
+          this.$router.push(`/${lc}/trade`).then(() => {
+            this.$nextTick(() => this.$refs.pageRef?.switchToTab?.(tab));
+          });
         },
         openProposals() {
           const lc = this.$route.params.locale || 'en';
@@ -419,6 +444,16 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
   .app-shell {
     margin-left: var(--rail-w, 64px);
     transition: margin-left 0.18s ease;
+  }
+}
+.dashboard-compact-horizontal {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+@media (min-width: 768px) {
+  .dashboard-compact-horizontal {
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 }
 @media (min-width: 640px) and (prefers-reduced-motion: reduce) {

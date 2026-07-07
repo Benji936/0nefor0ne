@@ -1,7 +1,7 @@
 <script setup>
 import { useI18n } from "vue-i18n";
-import AddCard     from "@/components/AddCard.vue";
-import CardElement from "@/components/CardElement.vue";
+import AddCard     from "@/components/library/AddCard.vue";
+import CardElement from "@/components/ui/card/CardElement.vue";
 
 const { t } = useI18n();
 

@@ -229,7 +229,7 @@ Each step below carries a **Dependencies**, **Parallel with**, and **Agent** ann
 
 ### Phase A — Setup
 
-#### Step 1 — Confirm test harness & scaffold files (Setup)
+#### Step 1 — Confirm test harness & scaffold files (Setup) [DONE]
 - **Goal:** Verify the vitest runner works in this repo and create empty target files so later steps only edit, never wonder about paths.
 - **Subtasks:**
   - Run `cd frontend && npm test` once to confirm `vitest run` is green on the existing suite (`src/lib/ydk.test.js`, `src/composables/useCardSearch.spec.js`).
@@ -249,7 +249,7 @@ Each step below carries a **Dependencies**, **Parallel with**, and **Agent** ann
 
 ### Phase B — Foundational
 
-#### Step 2 — Pure line parser + unit test (Foundational, **CRITICAL**)
+#### Step 2 — Pure line parser + unit test (Foundational, **CRITICAL**) [DONE]
 - **Goal:** Implement `frontend/src/lib/bulkAddParser.js` exporting `parseBulkLines(text) → {qty, query}[]` and `isSetCode(query) → boolean`, plus the **required** vitest spec `frontend/src/lib/bulkAddParser.test.js`.
 - **Subtasks:**
   - `parseBulkLines`: split → trim → skip blank/`#`-comment lines (mirror `ydk.js` `parseYdk` structure). Quantity prefixes `3x` / `x3` / `3 ` / none → qty default 1, always a positive integer (SKILL.md regex lines 24–32). Strip the prefix to get `query`; drop lines that have no query left.
@@ -277,7 +277,7 @@ Each step below carries a **Dependencies**, **Parallel with**, and **Agent** ann
   | 0.20 | Edge-case & blank/comment handling | Blank lines and `#`-comment lines are skipped; lines that reduce to an empty query after prefix-stripping are dropped; trimming is applied. Mirrors `ydk.js` `parseYdk` structure. |
   | 0.15 | Test coverage & assertions | The vitest spec contains explicit assertions for every AC1/AC2/R5 case above (including `isSetCode('LOB') === false`) plus blank/comment skipping; the spec runs green under `vitest run`. |
 
-#### Step 3 — Resolver logic with sequential retry + chunking (Foundational, **CRITICAL**)
+#### Step 3 — Resolver logic with sequential retry + chunking (Foundational, **CRITICAL**) [DONE]
 - **Goal:** Implement the per-line resolution and the batch-insert helpers used by the dialog (can live inside `BulkAddCards.vue` methods or a small local module; `api.js` stays unchanged — `getWithRetry` is private, so implement a **local** retry).
 - **Subtasks:**
   - Per-line resolve: if `isSetCode(query)` → `searchCardBySetCode(query)` → on hit `searchById(result.id)`; else `searchCardByName(query)`. Apply exact case-insensitive name-match gating before declaring `ambiguous` (R3, SKILL.md lines 59–64). Classify each line `matched | ambiguous | unmatched` into the Resolved-row shape from the Component & Data Contracts section.
@@ -308,7 +308,7 @@ Each step below carries a **Dependencies**, **Parallel with**, and **Agent** ann
 
 ### Phase C — User Stories
 
-#### Step 4 — `BulkAddCards.vue` dialog/wizard (User Story, **CRITICAL**, ⚠️ HIGHEST-RISK STEP)
+#### Step 4 — `BulkAddCards.vue` dialog/wizard (User Story, **CRITICAL**, ⚠️ HIGHEST-RISK STEP) [DONE]
 - **Goal:** Build the Vuetify dialog mirroring `AddCard.vue` / `DeckImport.vue` patterns: paste → resolve (progress) → review → confirm → insert.
 - **Subtasks:**
   - `v-dialog v-model` (Options API, `@after-leave="reset"`); prop `mode: String` default `'trade'` seeds the Trade/Wishlist `v-btn-toggle` (default Trade = `wish:false`, **AC6**).

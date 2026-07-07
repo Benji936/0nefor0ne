@@ -1,23 +1,29 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { SUPPORTED, detectLocale, setLocale } from "@/i18n.js";
-// Search is eagerly loaded — it's the landing page every user hits first.
+// LandingPage is eagerly loaded — it's the public home every user hits first.
 // All other pages are lazy-loaded so their code is only downloaded when needed.
-import Search from "@/components/Pages/Search.vue";
+import LandingPage from "@/components/Pages/Public/LandingPage.vue";
 
 // Pages shared by every locale
 const localeChildren = [
-  { path: "",          name: "search",      component: Search },
-  { path: "library",   name: "library",     component: () => import(/* webpackChunkName: "library" */     "@/components/Pages/Library.vue") },
-  { path: "trade",     name: "TradeCenter", component: () => import(/* webpackChunkName: "trade" */       "@/components/Pages/TradeCenter.vue") },
-  { path: "account",   name: "account",     component: () => import(/* webpackChunkName: "account" */     "@/components/Pages/Account.vue") },
-  { path: "card/:id",  name: "card",        component: () => import(/* webpackChunkName: "card" */        "@/components/Pages/CardPage.vue") },
-  { path: "combo/:id", name: "combo",       component: () => import(/* webpackChunkName: "combo" */       "@/components/Pages/ComboExplorer.vue") },
-  { path: 'set/:setSlug', name: 'set', component: () => import(/* webpackChunkName: "set" */ '@/components/Pages/SetPage.vue') },
-  { path: "privacy",   name: "privacy",     component: () => import(/* webpackChunkName: "privacy" */     "@/components/Pages/PrivacyPage.vue") },
-  { path: 'decks',     name: 'decks',       component: () => import(/* webpackChunkName: "decks" */        '@/components/Pages/DecksPage.vue') },
-  { path: 'decks/:deckId', name: 'deckDetail', component: () => import(/* webpackChunkName: "deck-detail" */ '@/components/Pages/DeckDetailPage.vue') },
-  { path: 'cards',     name: 'cards',       component: () => import(/* webpackChunkName: "cards" */         '@/components/Pages/CardsPage.vue') },
+  { path: "",          name: "home",        component: LandingPage },
+  { path: "library",   name: "library",     component: () => import(/* webpackChunkName: "library" */     "@/components/Pages/App/Library.vue") },
+  { path: "trade",     name: "TradeCenter", component: () => import(/* webpackChunkName: "trade" */       "@/components/Pages/App/TradeCenter.vue") },
+  { path: "account",   name: "account",     component: () => import(/* webpackChunkName: "account" */     "@/components/Pages/App/Account.vue") },
+  { path: "card/:id",  name: "card",        component: () => import(/* webpackChunkName: "card" */        "@/components/Pages/App/CardPage.vue") },
+  { path: "combo/:id", name: "combo",       component: () => import(/* webpackChunkName: "combo" */       "@/components/Pages/App/ComboExplorer.vue") },
+  { path: 'set/:setSlug', name: 'set', component: () => import(/* webpackChunkName: "set" */ '@/components/Pages/App/SetPage.vue') },
+  { path: "privacy",   name: "privacy",     component: () => import(/* webpackChunkName: "privacy" */     "@/components/Pages/App/PrivacyPage.vue") },
+  { path: 'decks',     name: 'decks',       component: () => import(/* webpackChunkName: "decks" */        '@/components/Pages/App/DecksPage.vue') },
+  { path: 'decks/:deckId', name: 'deckDetail', component: () => import(/* webpackChunkName: "deck-detail" */ '@/components/Pages/App/DeckDetailPage.vue') },
+  { path: 'cards',     name: 'cards',       component: () => import(/* webpackChunkName: "cards" */         '@/components/Pages/App/CardsPage.vue') },
+  { path: 'dashboard', name: 'dashboard',   component: () => import(/* webpackChunkName: "dashboard" */   '@/components/Pages/App/AppHome.vue') },
+  // Discord / Supabase OAuth callback — Supabase JS picks up the token from the
+  // URL hash automatically; we just need this route to exist so the SPA doesn't
+  // 404. The component redirects straight to the locale home.
+  { path: 'auth/callback', name: 'auth-callback', component: () => import(/* webpackChunkName: "auth-callback" */ '@/components/Pages/App/AuthCallback.vue') },
 ];
+
 
 export const routes = [
   // Bare root → detected locale

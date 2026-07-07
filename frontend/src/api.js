@@ -180,18 +180,34 @@ export const getArchetypes = async () => {
  *  @param {string}        [sort]       - server-side sort field: "name"|"atk"|"def"|"level"|"new"
  *  @param {number}        [num=40]     - max number of results
  *  @param {number}        [offset=0]   - pagination offset (YGOPRODeck requires num & offset together)
+ *  @param {string}        [banlist]    - format/banlist filter: "tcg"|"ocg"|"goat" (YGOPRODeck-native).
+ *                                        Restricts the candidate pool to cards legal in that format.
+ *                                        Additive — omitting this param preserves current behavior.
+ *  @param {string}        [format]     - alias for `banlist` (convenience — one or the other is used,
+ *                                        `banlist` takes precedence when both are supplied).
  */
-export const searchByFilters = ({ fname, type, attribute, level, race, link, scale, linkmarker, sort, num = 40, offset = 0 } = {}) => {
+export const searchByFilters = ({ fname, type, attribute, level, race, atk, atkMin, atkMax, def, defMin, defMax, link, scale, linkmarker, sort, num = 40, offset = 0, banlist, format } = {}) => {
     const p = new URLSearchParams();
     if (fname)                          p.set("fname", fname);
     if (type)                           p.set("type", type);
     if (attribute)                      p.set("attribute", String(attribute).toLowerCase());
     if (level != null && level !== "")  p.set("level", level);
+    if (atk != null && atk !== "")      p.set("atk", atk);
+    if (atkMin != null && atkMin !== "") p.set("atkMin", atkMin);
+    if (atkMax != null && atkMax !== "") p.set("atkMax", atkMax);
+    if (def != null && def !== "")      p.set("def", def);
+    if (defMin != null && defMin !== "") p.set("defMin", defMin);
+    if (defMax != null && defMax !== "") p.set("defMax", defMax);
     if (race)                           p.set("race", race);
     if (link != null && link !== "")    p.set("link", link);
     if (scale != null && scale !== "")  p.set("scale", scale);
     if (linkmarker)                     p.set("linkmarker", linkmarker);
     if (sort)                           p.set("sort", sort);
+    // Format/banlist constraint: restrict to cards legal in a given format.
+    // `banlist` takes precedence; `format` is an accepted alias for convenience.
+    // YGOPRODeck accepts "tcg", "ocg", "goat" (case-insensitive in the API).
+    const banlistParam = banlist || format;
+    if (banlistParam)                   p.set("banlist", String(banlistParam).toLowerCase());
     // YGOPRODeck rejects `num` unless `offset` is also present ("use both or none").
     if (num != null) {
         p.set("num", num);

@@ -1,6 +1,6 @@
 <script setup>
 import { useI18n } from "vue-i18n";
-import UserCard from "@/components/UserCard.vue";
+import UserCard from "@/components/trade/UserCard.vue";
 
 const { t } = useI18n();
 

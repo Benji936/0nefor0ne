@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import ProposalRow from "@/components/ProposalRow.vue";
+import ProposalRow from "@/components/trade/ProposalRow.vue";
 
 const { t } = useI18n();
 

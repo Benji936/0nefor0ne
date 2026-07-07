@@ -8,8 +8,8 @@ import { useI18n } from "vue-i18n";
 import { cardImage, cardImageCropped } from "@/lib/cardImage";
 import { isSpellTrap, levelIconFor } from "@/lib/cardIcons";
 import { hasAnyBanlist, ensureBanlistManifest } from "@/lib/banlist";
-import CardKindIcons from "@/components/CardKindIcons.vue";
-import CardBanlistBadge from "@/components/CardBanlistBadge.vue";
+import CardKindIcons from "@/components/ui/card/CardKindIcons.vue";
+import CardBanlistBadge from "@/components/ui/card/CardBanlistBadge.vue";
 
 const props = defineProps({
   card: { type: Object, default: null },

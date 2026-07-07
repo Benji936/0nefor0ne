@@ -33,3 +33,9 @@ coverage
 *.sw?
 
 *.tsbuildinfo
+
+# Engine sandbox local assets (regenerate with: npm run copy:engine && npm run edopro:card-db)
+# CardScripts are GPL-2.0; the WASM is AGPL-3.0 — served from R2 in prod, local-only in dev.
+public/engine/scripts/
+public/engine/card-db.json
+public/engine/ocgcore.sync.wasm

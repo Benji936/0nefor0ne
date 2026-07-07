@@ -1,15 +1,18 @@
 <script setup>
 import MatchesTab          from "./trade-center/MatchesTab.vue";
 import ProposalsTab        from "./trade-center/ProposalsTab.vue";
-import ProposeTradeDialog  from "@/components/ProposeTradeDialog.vue";
-import TraderProfileDialog from "@/components/TraderProfileDialog.vue";
+import AnnouncesTab        from "./trade-center/AnnouncesTab.vue";
+import ProposeTradeDialog  from "@/components/trade/ProposeTradeDialog.vue";
+import TraderProfileDialog from "@/components/trade/TraderProfileDialog.vue";
+import CreateAnnounceDialog from "@/components/trade/CreateAnnounceDialog.vue";
+import AnnounceDetailDialog from "@/components/trade/AnnounceDetailDialog.vue";
 </script>
 
 <template>
   <div class="flex flex-col gap-4 md:gap-6 py-4 md:py-10">
 
-    <!-- Tab bar -->
-    <div class="flex items-center" style="border-bottom: 1px solid var(--c-border)">
+    <!-- Tab bar — hidden on desktop (tabs are in the side nav); shown only on mobile -->
+    <div class="flex items-center sm:hidden" style="border-bottom: 1px solid var(--c-border)">
       <button
         v-for="tab in tabs"
         :key="tab.key"
@@ -69,6 +72,16 @@ import TraderProfileDialog from "@/components/TraderProfileDialog.vue";
       @openProfile="onOpenProfile"
     />
 
+    <!-- Announces tab -->
+    <AnnouncesTab
+      v-if="activeTab === 'announces'"
+      :login="login"
+      :loading="loadingAnnounces"
+      :announces="announces"
+      @openCreate="createAnnounceOpen = true"
+      @openDetail="onOpenAnnounceDetail"
+    />
+
     <!-- Dialogs -->
     <ProposeTradeDialog
       v-model="dialogOpen"
@@ -87,6 +100,20 @@ import TraderProfileDialog from "@/components/TraderProfileDialog.vue";
       @propose="onProposeFromProfile"
     />
 
+    <CreateAnnounceDialog
+      v-model="createAnnounceOpen"
+      @created="onAnnounceCreated"
+    />
+
+    <AnnounceDetailDialog
+      v-model="announceDetailOpen"
+      :announce="selectedAnnounce"
+      :current-user-id="login?.user?.id"
+      @deleted="onAnnounceDeleted"
+      @updated="onAnnounceUpdated"
+      @propose="onProposeFromProfile"
+    />
+
     <v-snackbar v-model="snackbar.open" :timeout="4000" :color="snackbar.color ?? 'var(--c-mutual)'">
       {{ snackbar.message }}
     </v-snackbar>
@@ -102,16 +129,18 @@ function debounce(fn, ms) {
 }
 import { fetchMatches, fetchTradersWithCard, bucketMatches } from "@/lib/matches";
 import { fetchMyProposals, acceptTradeProposal, completeTradeProposal, cancelTradeProposal, declineTradeProposal } from "@/lib/proposals";
+import { fetchAnnounces } from "@/lib/announces";
 
 export default {
   props: {
     login:          { type: Object, default: null },
     filterCardName: { type: String, default: "" },
+    initialTab:     { type: String, default: "matches" },
   },
-  emits: ["clearFilter"],
+  emits: ["clearFilter", "tabChange"],
   data() {
     return {
-      activeTab:          "matches",
+      activeTab:          this.initialTab ?? "matches",
       loadingMatches:     false,
       allMatches:         [],
       loadingCardTraders: false,
@@ -128,6 +157,16 @@ export default {
       editProposal:       null,
       counterProposal:    null,
       snackbar:           { open: false, message: "", color: null },
+      // Current user's trade scope profile
+      myTradeScope:       "worldwide",
+      myCountry:          "",
+      myCity:             "",
+      // Announces
+      loadingAnnounces:   false,
+      announces:          [],
+      createAnnounceOpen: false,
+      announceDetailOpen: false,
+      selectedAnnounce:   null,
     };
   },
   computed: {
@@ -136,16 +175,35 @@ export default {
       return [
         { key: "matches",   label: this.$t("tradeCenter.matches"),   icon: "mdi-account-group-outline", badge: 0 },
         { key: "proposals", label: this.$t("tradeCenter.proposals"), icon: "mdi-swap-horizontal-bold",  badge: pendingCount },
+        { key: "announces", label: this.$t("tradeCenter.announces"), icon: "mdi-bullhorn-outline",  badge: 0 },
       ];
     },
     visibleMatches() {
       return this.filterCardName ? this.cardTraders : this.allMatches;
     },
+    /** Apply the current user's trade_scope preference to narrow matches. */
+    scopeFilteredMatches() {
+      const scope = this.myTradeScope;
+      if (scope === 'worldwide' || !scope) return this.visibleMatches;
+      if (scope === 'national') {
+        if (!this.myCountry) return this.visibleMatches;
+        return this.visibleMatches.filter(u => u.country === this.myCountry);
+      }
+      if (scope === 'local') {
+        if (!this.myCity) return this.visibleMatches;
+        const myCity = this.myCity.toLowerCase();
+        return this.visibleMatches.filter(u =>
+          (u.city ?? '').toLowerCase() === myCity
+          && (!this.myCountry || u.country === this.myCountry)
+        );
+      }
+      return this.visibleMatches;
+    },
     availableCountries() {
-      return [...new Set(this.visibleMatches.map(u => u.country).filter(Boolean))].sort();
+      return [...new Set(this.scopeFilteredMatches.map(u => u.country).filter(Boolean))].sort();
     },
     filteredMatches() {
-      let result = this.visibleMatches;
+      let result = this.scopeFilteredMatches;
       if (this.locationCountry) result = result.filter(u => u.country === this.locationCountry);
       if (this.locationCity.trim()) {
         const city = this.locationCity.trim().toLowerCase();
@@ -164,6 +222,23 @@ export default {
     history()         { return this.proposals.filter(p => !["pending", "accepted"].includes(p.status)); },
   },
   methods: {
+    async loadMyProfile() {
+      if (!this.login?.user?.id) return;
+      try {
+        const { data } = await getClient()
+          .from('Trader')
+          .select('trade_scope, Country, City')
+          .eq('id', this.login.user.id)
+          .single();
+        if (data) {
+          this.myTradeScope = data.trade_scope ?? 'worldwide';
+          this.myCountry    = data.Country     ?? '';
+          this.myCity       = data.City        ?? '';
+        }
+      } catch (err) {
+        console.error('loadMyProfile failed', err);
+      }
+    },
     async loadMatches() {
       if (!this.login?.user?.id || this.loadingMatches) return;
       this.loadingMatches = true;
@@ -177,6 +252,13 @@ export default {
       try   { this.proposals = await fetchMyProposals(); }
       catch (err) { console.error(err); }
       finally { this.loadingProposals = false; }
+    },
+    async loadAnnounces() {
+      if (!this.login?.user?.id || this.loadingAnnounces) return;
+      this.loadingAnnounces = true;
+      try   { this.announces = await fetchAnnounces(); }
+      catch (err) { console.error(err); }
+      finally { this.loadingAnnounces = false; }
     },
     onOpenTrade(user) {
       this.editProposal = null; this.counterProposal = null;
@@ -255,7 +337,8 @@ export default {
       this.dialogUser = existing ?? { id: traderId, name: null, theyWant: [], theyHave: [] };
       this.dialogOpen = true;
     },
-    switchToProposals()  { this.activeTab = "proposals"; },
+    switchToProposals() { this.activeTab = "proposals"; },
+    switchToTab(tab)    { if (tab) this.activeTab = tab; },
     async loadCardTraders(cardName) {
       if (!cardName) { this.cardTraders = []; return; }
       this.loadingCardTraders = true;
@@ -263,23 +346,41 @@ export default {
       catch (err) { console.error(err); this.cardTraders = []; }
       finally { this.loadingCardTraders = false; }
     },
+    onOpenAnnounceDetail(announce) {
+      this.selectedAnnounce = announce;
+      this.announceDetailOpen = true;
+    },
+    onAnnounceCreated() {
+      this.loadAnnounces();
+    },
+    onAnnounceDeleted() {
+      this.loadAnnounces();
+    },
+    onAnnounceUpdated() {
+      this.loadAnnounces();
+    },
   },
   watch: {
     filterCardName(val) { this.loadCardTraders(val); },
+    activeTab(val)       { this.$emit('tabChange', val); },
+    initialTab(val)      { this.activeTab = val; },
   },
   async mounted() {
+    await this.loadMyProfile();
     const matchesLoad = this.filterCardName
       ? this.loadCardTraders(this.filterCardName)
       : this.loadMatches();
-    await Promise.all([matchesLoad, this.loadProposals()]);
+    await Promise.all([matchesLoad, this.loadProposals(), this.loadAnnounces()]);
 
     const debouncedLoadMatches   = debounce(() => { if (!this.filterCardName) this.loadMatches(); }, 600);
     const debouncedLoadProposals = debounce(() => this.loadProposals(), 600);
+    const debouncedLoadAnnounces = debounce(() => this.loadAnnounces(), 600);
 
     this.subscription = getClient()
       .channel("trade-center-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "Card" },  debouncedLoadMatches)
       .on("postgres_changes", { event: "*", schema: "public", table: "Trade" }, debouncedLoadProposals)
+      .on("postgres_changes", { event: "*", schema: "public", table: "announce" }, debouncedLoadAnnounces)
       .subscribe();
   },
   beforeUnmount() {

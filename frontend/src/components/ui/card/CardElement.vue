@@ -1,6 +1,6 @@
 <script setup>
-import LanguageTooltip from './tooltips/LanguageTooltip.vue';
-import ConditionTooltip from './tooltips/ConditionTooltip.vue';
+import LanguageTooltip from '@/components/tooltips/LanguageTooltip.vue';
+import ConditionTooltip from '@/components/tooltips/ConditionTooltip.vue';
 import { cardImage } from '@/lib/cardImage';
 defineEmits(['deleted']);
 </script>

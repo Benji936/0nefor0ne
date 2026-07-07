@@ -106,8 +106,8 @@ const { t } = useI18n();
 <script>
 import { getClient } from "@/lib/supabaseClient";
 import { ref } from "vue";
-import DeckImport from "@/components/DeckImport.vue";
-import BulkAddCards from "@/components/BulkAddCards.vue";
+import DeckImport from "@/components/library/DeckImport.vue";
+import BulkAddCards from "@/components/library/BulkAddCards.vue";
 
 export default {
   components: { DeckImport, BulkAddCards },

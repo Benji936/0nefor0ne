@@ -327,12 +327,12 @@
 import { ref, computed, onServerPrefetch } from "vue";
 import { useRoute } from "vue-router";
 import { useHead } from "@unhead/vue";
-import AddCard           from "@/components/AddCard.vue";
-import ProposeTradeDialog from "@/components/ProposeTradeDialog.vue";
-import CardKindIcons      from "@/components/CardKindIcons.vue";
-import CardBanlistBadge   from "@/components/CardBanlistBadge.vue";
-import ComboExplorerLink  from "@/components/ComboExplorerLink.vue";
-import CardEffectBreakdown from "@/components/CardEffectBreakdown.vue";
+import AddCard           from "@/components/library/AddCard.vue";
+import ProposeTradeDialog from "@/components/trade/ProposeTradeDialog.vue";
+import CardKindIcons      from "@/components/ui/card/CardKindIcons.vue";
+import CardBanlistBadge   from "@/components/ui/card/CardBanlistBadge.vue";
+import ComboExplorerLink  from "@/components/ui/card/ComboExplorerLink.vue";
+import CardEffectBreakdown from "@/components/ui/card/CardEffectBreakdown.vue";
 import { parseCardText }  from "@/lib/psctParser";
 import { cardImage }      from "@/lib/cardImage";
 import { isSpellTrap, levelIconFor } from "@/lib/cardIcons";

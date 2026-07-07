@@ -4,7 +4,7 @@ import { useI18n } from "vue-i18n";
 import { cardImage } from "@/lib/cardImage";
 import { getClient } from "@/lib/supabaseClient";
 import { timeAgo } from "@/lib/notifications";
-import TradeDetailDialog from "@/components/TradeDetailDialog.vue";
+import TradeDetailDialog from "@/components/trade/TradeDetailDialog.vue";
 
 const { t } = useI18n();
 

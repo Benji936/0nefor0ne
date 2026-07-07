@@ -7,6 +7,7 @@
     "darkMode": "Modalità scura",
     "loginSignup": "Accedi / Registrati",
     "search": "Cerca",
+    "home": "Home",
     "library": "Collezione",
     "trades": "Scambi",
     "account": "Account",
@@ -40,6 +41,105 @@
         "title": "Proponi e conferma",
         "body": "Invia una proposta, chatta e concludi lo scambio."
       }
+    }
+  },
+  "landing": {
+    "nav": {
+      "search": "Ricerca",
+      "decks": "Deck",
+      "collection": "Collezione",
+      "trade": "Scambi",
+      "login": "Accedi"
+    },
+    "hero": {
+      "eyebrow": "Scambi Yu-Gi-Oh! tra giocatori",
+      "eyebrowAuthed": "Bentornato",
+      "productName": "One for One",
+      "headline": "Scambia i doppioni.<br>Trova le carte che cerchi.",
+      "subheadline": "One for One mette in contatto i collezionisti Yu-Gi-Oh! che hanno ciò che gli altri cercano. Niente commissioni, niente aste  solo scambi diretti tra giocatori, con un motore di ricerca carte completo, un costruttore di deck e un tracker della collezione.",
+      "ctaGetStarted": "Inizia  è gratis",
+      "ctaGetStartedShort": "Inizia",
+      "ctaGoToApp": "Vai all'app",
+      "ctaBrowse": "Sfoglia le carte",
+      "bullets": {
+        "noFees": "Nessuna commissione",
+        "noAuctions": "Nessuna asta",
+        "directP2P": "Diretto tra giocatori",
+        "mutualMatches": "Corrispondenze reciproche"
+      }
+    },
+    "marquee": {
+      "ariaLabel": "Illustrazioni di carte Yu-Gi-Oh!"
+    },
+    "howItWorks": {
+      "heading": "Come funziona",
+      "subheading": "Quattro passi, dal mucchio di doppioni a uno scambio carta per carta concluso.",
+      "steps": {
+        "01": {
+          "title": "Crea il tuo mucchio di scambio",
+          "body": "Elenca le carte che sei pronto a scambiare."
+        },
+        "02": {
+          "title": "Aggiungi la tua lista dei desideri",
+          "body": "Segna ogni carta che stai cercando."
+        },
+        "03": {
+          "title": "Trova la tua corrispondenza",
+          "body": "Ti mostriamo i giocatori che vogliono le tue carte e hanno quelle che cerchi."
+        },
+        "04": {
+          "title": "Proponi e conferma",
+          "body": "Invia una proposta, chatta e concludi lo scambio."
+        }
+      }
+    },
+    "features": {
+      "heading": "Tutto per le carte che collezioni",
+      "subheading": "Cerca, costruisci, monitora e scambia  un unico posto per tutta la tua collezione Yu-Gi-Oh!.",
+      "coreBadge": "CHIAVE",
+      "search": {
+        "title": "Cerca carte",
+        "body": "Un motore di ricerca carte rapido e completo  ogni set, rarità ed edizione a portata di mano.",
+        "cta": "Esplora il database"
+      },
+      "decks": {
+        "title": "Deck",
+        "body": "Costruisci deck da zero o importa una lista  vedi esattamente cosa possiedi e cosa ti manca.",
+        "cta": "Costruisci o importa un deck"
+      },
+      "collection": {
+        "title": "Monitoraggio collezione",
+        "body": "Monitora i tuoi progressi in ogni set e scopri all'istante quali carte ti mancano ancora.",
+        "cta": "Monitora la collezione"
+      },
+      "trade": {
+        "title": "Scambi",
+        "body": "Aggiungi carte al tuo mucchio di scambio e alla lista dei desideri  facciamo emergere le corrispondenze reciproche per scambi diretti, una carta per una carta.",
+        "cta": "Trova le tue corrispondenze"
+      }
+    },
+    "tradeShowcase": {
+      "eyebrow": "Il principio fondamentale",
+      "heading": "Una carta per una carta",
+      "body": "Quando il tuo mucchio di scambio contiene una carta presente nella lista dei desideri di qualcuno  e lui ne ha una della tua  One for One segnala la corrispondenza reciproca. Niente soldi, niente offerte. Solo uno scambio equo e diretto.",
+      "cta": "Apri il centro scambi",
+      "labelPile": "Il tuo mucchio",
+      "labelMatch": "MATCH",
+      "labelWishlist": "La tua lista dei desideri"
+    },
+    "footer": {
+      "blurb": "Scambio di carte Yu-Gi-Oh! diretto tra giocatori. Niente commissioni, niente aste.",
+      "colProduct": "Prodotto",
+      "colMore": "Altro",
+      "search": "Cerca carte",
+      "decks": "Deck",
+      "collection": "Monitoraggio collezione",
+      "trade": "Scambi",
+      "about": "Chi siamo",
+      "privacy": "Privacy",
+      "contact": "Contatti",
+      "copyright": "© 2026 One for One. Non affiliato a Konami. Yu-Gi-Oh! è un marchio dei rispettivi proprietari.",
+      "privacyPolicy": "Informativa sulla privacy"
     }
   },
   "auth": {
@@ -97,8 +197,8 @@
     "tradePileEmpty": "Nessuna carta da scambiare ancora. Aggiungine alcune per iniziare.",
     "wishlistEmpty": "La tua lista desideri è vuota. Aggiungi le carte che stai cercando.",
     "searchCards": "Cerca carte da aggiungere",
-    "emptyTrade": "Niente qui ancora — aggiungi carte che hai da offrire.",
-    "emptyWish": "Niente qui ancora — aggiungi carte che stai cercando.",
+    "emptyTrade": "Niente qui ancora  aggiungi carte che hai da offrire.",
+    "emptyWish": "Niente qui ancora  aggiungi carte che stai cercando.",
     "addedToWishlist": "\"{name}\" aggiunto alla lista desideri.",
     "addedToTrade": "\"{name}\" aggiunto al mazzo di scambio.",
     "viewLabel": "Vista collezione",
@@ -143,13 +243,14 @@
     "adding": "Aggiunta in corso…",
     "added": "{count} carta aggiunta | {count} carte aggiunte",
     "skipped": "{count} riga saltata | {count} righe saltate",
-    "noLines": "Niente da aggiungere — incolla almeno una carta."
+    "noLines": "Niente da aggiungere  incolla almeno una carta."
   },
   "tradeCenter": {
     "matches": "Corrispondenze",
     "proposals": "Proposte",
+    "announces": "Annunci",
     "proposalUpdated": "Proposta aggiornata.",
-    "exchangeComplete": "Scambio completato — le carte sono state aggiornate.",
+    "exchangeComplete": "Scambio completato  le carte sono state aggiornate.",
     "yourSideConfirmed": "Il tuo lato confermato. In attesa dell'altro trader.",
     "failedToConfirm": "Conferma fallita.",
     "tradeAccepted": "Scambio accettato!",
@@ -175,6 +276,40 @@
     "noMatchesTitle": "Nessuna corrispondenza ancora",
     "noMatchesDesc": "Più carte aggiungi al tuo mazzo e alla lista desideri, più trader troverai qui.",
     "goToCollection": "Vai alla mia collezione per aggiungere carte"
+  },
+  "announces": {
+    "loginRequired": "Accedi per navigare e pubblicare annunci",
+    "noAnnouncesTitle": "Nessun annuncio ancora",
+    "noAnnouncesDesc": "Sii il primo a pubblicare un annuncio!",
+    "newAnnounce": "Nuovo annuncio",
+    "search": "Cerca annunci...",
+    "myAnnounces": "I miei annunci",
+    "unknownSeller": "Venditore sconosciuto",
+    "yourAnnounce": "Il tuo annuncio",
+    "yourAnnounceHint": "Solo tu puoi eliminare o segnare come venduto",
+    "allAnnounces": "Tutti gli annunci",
+    "noSearchResults": "Nessun annuncio corrisponde alla tua ricerca.",
+    "onlyYours": "Nessun altro annuncio ancora — il tuo è il primo!"
+  },
+  "announce": {
+    "title": "Titolo",
+    "titlePlaceholder": "es. Drago Bianco Dagli Occhi Blu Olografico",
+    "description": "Descrizione",
+    "descPlaceholder": "Condizione, lingua, informazioni sulla spedizione…",
+    "price": "Prezzo di partenza",
+    "currency": "Valuta",
+    "images": "Foto",
+    "addImages": "Aggiungi foto",
+    "maxImages": "Fino a {max} foto",
+    "create": "Pubblica annuncio",
+    "edit": "Modifica",
+    "delete": "Elimina",
+    "markSold": "Segna come venduto",
+    "sold": "Venduto",
+    "archived": "Archiviato",
+    "contactSeller": "Contatta il venditore",
+    "postedBy": "Pubblicato da",
+    "deleteConfirm": "Eliminare questo annuncio?"
   },
   "proposals": {
     "loginRequired": "Accedi per vedere le tue proposte.",
@@ -281,11 +416,11 @@
     "cardCount": "0 carte | 1 carta | {count} carte",
     "uploadBothBeforeConfirm": "Entrambe le parti devono caricare le foto prima di confermare.",
     "waitingForConfirmDetail": "In attesa che {name} confermi.",
-    "bothUploadedConfirmHint": "Entrambi hanno caricato — conferma quando hai ricevuto le tue carte.",
+    "bothUploadedConfirmHint": "Entrambi hanno caricato  conferma quando hai ricevuto le tue carte.",
     "uploadBothToAccept": "Entrambe le parti devono caricare le foto per poter accettare.",
-    "photosVerifiedCanAccept": "Foto verificate — puoi ora accettare.",
+    "photosVerifiedCanAccept": "Foto verificate  puoi ora accettare.",
     "waitingForReview": "In attesa che {name} esamini e accetti.",
-    "declinePlaceholder": "Facoltativo — spiega perché rifiuti…"
+    "declinePlaceholder": "Facoltativo  spiega perché rifiuti…"
   },
   "traderProfile": {
     "wishlistEmpty": "Lista desideri vuota.",
@@ -386,7 +521,7 @@
     "showLess": "Mostra meno"
   },
   "setPage": {
-    "title": "{setName} — Set Yu-Gi-Oh! | One for One",
+    "title": "{setName}  Set Yu-Gi-Oh! | One for One",
     "cardCount": "0 carte | 1 carta | {count} carte",
     "notFound": "Set non trovato",
     "backToSearch": "Torna alla ricerca",
@@ -602,38 +737,42 @@
     "unrecognizedCount": "{count} sconosciuta/e"
   },
   "meta": {
+    "home": {
+      "title": "One for One  Scambio di carte Yu-Gi-Oh! tra giocatori",
+      "desc": "Scambia i doppioni Yu-Gi-Oh! e trova le carte che cerchi con One for One  scambi diretti tra giocatori, senza commissioni né aste, con un motore di ricerca carte completo, un costruttore di deck e un tracker della collezione."
+    },
     "search": {
-      "title": "One for One — Scambio Carte Yu-Gi-Oh!",
-      "titleWithQuery": "{query} — Scambio Yu-Gi-Oh! | One for One",
+      "title": "One for One  Scambio Carte Yu-Gi-Oh!",
+      "titleWithQuery": "{query}  Scambio Yu-Gi-Oh! | One for One",
       "desc": "Scambia carte Yu-Gi-Oh! direttamente con altri collezionisti. Gestisci la tua pila di scambio e trova corrispondenze perfette vicino a te.",
       "descWithQuery": "Trova trader per {query} su One for One, la piattaforma di scambio gratuita."
     },
     "library": {
-      "title": "La Mia Collezione — One for One",
+      "title": "La Mia Collezione  One for One",
       "desc": "Gestisci la tua collezione di carte Yu-Gi-Oh!, la pila di scambio e la lista dei desideri su One for One."
     },
     "trade": {
-      "title": "Centro Scambi — One for One",
+      "title": "Centro Scambi  One for One",
       "desc": "Sfoglia i tuoi match, invia proposte e completa gli scambi di carte su One for One."
     },
     "account": {
-      "title": "Il Mio Account — One for One",
+      "title": "Il Mio Account  One for One",
       "desc": "Gestisci il tuo profilo One for One, la posizione e le preferenze di scambio."
     },
     "card": {
-      "title": "Carta Yu-Gi-Oh! — One for One",
+      "title": "Carta Yu-Gi-Oh!  One for One",
       "desc": "Scambia carte Yu-Gi-Oh! su One for One. Trova collezionisti che le possiedono o le cercano."
     },
     "privacy": {
-      "title": "Informativa sulla Privacy — One for One",
+      "title": "Informativa sulla Privacy  One for One",
       "desc": "Informativa sulla privacy di One for One, la piattaforma di scambio gratuita di carte Yu-Gi-Oh!."
     },
     "cards": {
-      "title": "Sfoglia le carte Yu-Gi-Oh! — One for One",
+      "title": "Sfoglia le carte Yu-Gi-Oh!  One for One",
       "desc": "Cerca e filtra l'intero database di carte Yu-Gi-Oh! per tipo, attributo, livello e altro. Trova carte da aggiungere al tuo mazzo di scambio o alla lista desideri su One for One."
     },
     "combo": {
-      "title": "Esploratore di combo — One for One",
+      "title": "Esploratore di combo  One for One",
       "desc": "Scopri ogni carta che un effetto Yu-Gi-Oh! può cercare, Evocare Specialmente o mandare al Cimitero. Esplora cosa può recuperare l'effetto di questa carta su One for One."
     }
   },
@@ -679,11 +818,11 @@
     "noEffect": "Nessun effetto combo trovato",
     "noEffectHint": "Questa carta non ha un effetto di ricerca / evocazione / invio analizzabile, oppure il suo effetto è troppo complesso da risolvere automaticamente.",
     "resolving": "Risoluzione…",
-    "broad": "Questo effetto corrisponde a un insieme molto ampio (es. qualsiasi mostro) — troppe carte da elencare.",
+    "broad": "Questo effetto corrisponde a un insieme molto ampio (es. qualsiasi mostro)  troppe carte da elencare.",
     "noMatches": "Nessuna carta corrispondente trovata.",
     "count": "0 carte | 1 carta | {count} carte",
     "approximate": "approssimativo",
-    "approximateHint": "L'effetto contiene condizioni (es. ATK, logica personalizzata) che il parser non può leggere completamente — i risultati potrebbero essere approssimativi.",
+    "approximateHint": "L'effetto contiene condizioni (es. ATK, logica personalizzata) che il parser non può leggere completamente  i risultati potrebbero essere approssimativi.",
     "actions": {
       "search": "Cerca",
       "special_summon": "Evoca Specialmente",
@@ -739,5 +878,108 @@
       "counterTrap": "trappola contro"
     },
     "effectN": "Effetto {n}"
+  },
+  "simulator": {
+    "title": "Simulatore — Modalità motore",
+    "engineLoadError": "Motore non disponibile — uso del campo manuale",
+    "loading": "Caricamento motore…",
+    "error": "Errore motore",
+    "engineBadge": "Motore",
+    "errorFetch": "Impossibile caricare lo script di questa carta — iniezione annullata.",
+    "manualMoveDisabled": "Il riposizionamento manuale è disattivato in modalità motore — il motore delle regole gestisce il campo. Usa il selettore di carte per iniettare, oppure il menu azioni e le decisioni del motore per spostare le carte.",
+    "pending": {
+      "title": "Decisione motore richiesta",
+      "prompt": "Scegli un'opzione:"
+    },
+    "rewind": {
+      "title": "Cronologia",
+      "undo": "Annulla",
+      "start": "Inizio",
+      "empty": "Nessuna azione ancora.",
+      "injectStep": "Inietta {code} → {zone}",
+      "responseStep": "Risposta alla decisione"
+    },
+    "phase": {
+      "draw": "Fase Pesca",
+      "standby": "Fase Standby",
+      "main1": "Fase Principale 1",
+      "battle": "Fase Battaglia",
+      "main2": "Fase Principale 2",
+      "end": "Fase Fine"
+    },
+    "agpl": {
+      "label": "Alimentato da ocgcore / ygopro-core (AGPL-3.0)",
+      "source": "Sorgente"
+    },
+    "extraDeck": {
+      "sectionTitle": "Evocazione Extra Deck"
+    }
+  },
+  "playground": {
+    "search": "Cerca carte…",
+    "loading": "Ricerca in corso…",
+    "noResults": "Nessuna carta trovata.",
+    "deck": "Deck",
+    "hand": "Mano",
+    "zones": {
+      "hand": "Mano",
+      "monster": "Mostro",
+      "spellTrap": "Magia/Trappola",
+      "fieldSpell": "Terreno",
+      "extraMonster": "Zona Extra Mostro",
+      "gy": "Cimitero",
+      "banished": "Bandito",
+      "extraDeck": "Extra Deck",
+      "deck": "Deck"
+    },
+    "actions": {
+      "menu": "Azioni carta",
+      "change-position": "Cambia posizione",
+      "flip": "Girare",
+      "send-gy": "Manda al Cimitero",
+      "banish": "Bandire",
+      "return-hand": "Ritorna in mano",
+      "return-deck": "Ritorna nel deck"
+    },
+    "state": {
+      "atk": "ATK",
+      "def": "DEF",
+      "set": "POSATO"
+    },
+    "toolbar": {
+      "draw": "Pesca",
+      "shuffle": "Mescola",
+      "reset": "Azzera"
+    },
+    "inject": {
+      "zoneLabel": "Zona di destinazione",
+      "slot": "Slot",
+      "slotAriaLabel": "Indice slot nella zona (0–4)",
+      "monster": "Zona Mostro",
+      "spellTrap": "Zona Magia/Trappola",
+      "gy": "Cimitero",
+      "banished": "Bandito",
+      "extra": "Extra Deck",
+      "loadMore": "Carica altri"
+    },
+    "extraDeckPicker": {
+      "title": "Evocazione Extra Deck",
+      "hint": "Materiali ignorati — piazza direttamente sul campo",
+      "searchPlaceholder": "Cerca Fusione / Synchro / Xyz / Link…",
+      "formatLabel": "Formato / lista ban"
+    },
+    "title": "Simulatore di gioco",
+    "openMenu": "Apri menu di ricerca",
+    "closeMenu": "Chiudi menu di ricerca",
+    "searchMenu": "Menu di ricerca",
+    "close": "Chiudi",
+    "cardSearch": "Ricerca carta",
+    "comboSuggestions": "Suggerimenti combo",
+    "comboSearch": "Cerca una carta per esplorare i suoi combo",
+    "noCardsSelected": "Nessuna carta selezionata. Aggiungine alcune per esplorare i loro combo.",
+    "analyzingEffects": "Analisi degli effetti della carta…",
+    "noComboData": "Nessun dato combo EDOPRO per questa carta.",
+    "broadResult": "Risultato ampio; nessun set di carte preciso mostrato.",
+    "noCandidates": "Nessuna carta candidata trovata per questo effetto."
   }
 }

@@ -16,28 +16,50 @@ const props = defineProps({
   authenticated: { type: Object, default: null },
   // Active route name, so the matching item lights up.
   page: { type: String, default: "search" },
+  // Active trade sub-tab (matches | proposals | announces)
+  activeTradeTab: { type: String, default: "matches" },
 });
 
-const emit = defineEmits(["update:collapsed", "navigate", "matches"]);
+const emit = defineEmits(["update:collapsed", "navigate", "matches", "tradeTab"]);
 
 const { t } = useI18n();
 
 // `guest: true` items show for everyone; the rest require a session.
 const items = computed(() => {
   const all = [
-    { key: "cards",   label: t("nav.search"),     icon: "mdi-magnify",              event: "navigate", arg: "cards",   match: ["cards", "search"], guest: true },
-    { key: "library", label: t("nav.collection"), icon: "mdi-cards",                event: "navigate", arg: "library", match: ["library"],         guest: false },
-    { key: "decks",   label: t("nav.decks"),      icon: "mdi-cards-variant",        event: "navigate", arg: "decks",   match: ["decks", "deckDetail"], guest: false },
-    { key: "trade",   label: t("nav.trades"),     icon: "mdi-swap-horizontal-bold", event: "matches",  arg: null,      match: ["TradeCenter"],     guest: false },
+    { key: "cards",     label: t("nav.search"),     icon: "mdi-magnify",              event: "navigate", arg: "cards",    match: ["cards", "search"], guest: true },
+    { key: "dashboard", label: t("nav.home"),       icon: "mdi-home-outline",         event: "navigate", arg: "dashboard", match: ["dashboard"],       guest: true },
+    { key: "simulator", label: "Simulator",        icon: "mdi-play-circle-outline",  event: "navigate", arg: "simulator", match: ["simulator"],      guest: true },
+    { key: "library",   label: t("nav.collection"), icon: "mdi-cards",                event: "navigate", arg: "library",   match: ["library"],           guest: false },
+    { key: "decks",     label: t("nav.decks"),      icon: "mdi-cards-variant",        event: "navigate", arg: "decks",     match: ["decks", "deckDetail"], guest: false },
+    {
+      key: "trade",
+      label: t("nav.trades"),
+      icon: "mdi-swap-horizontal-bold",
+      event: "matches",
+      arg: null,
+      match: ["TradeCenter"],
+      guest: false,
+      children: [
+        { key: "trade-matches",   label: t("tradeCenter.matches"),   icon: "mdi-account-group-outline", tab: "matches" },
+        { key: "trade-proposals", label: t("tradeCenter.proposals"), icon: "mdi-swap-horizontal-bold",  tab: "proposals" },
+        { key: "trade-announces", label: t("tradeCenter.announces"), icon: "mdi-bullhorn-outline",       tab: "announces" },
+      ],
+    },
   ];
   return props.authenticated ? all : all.filter((i) => i.guest);
 });
 
 const isActive = (item) => item.match.includes(props.page);
+const isTradeOpen = computed(() => props.page === "TradeCenter");
 
 function activate(item) {
   if (item.event === "matches") emit("matches");
   else emit("navigate", item.arg);
+}
+
+function activateTradeTab(tab) {
+  emit("tradeTab", tab);
 }
 </script>
 
@@ -54,26 +76,61 @@ function activate(item) {
 
     <!-- Primary destinations (labels become tooltips when collapsed) -->
     <nav class="sn-list flex flex-col gap-1 mt-2">
-      <v-tooltip
-        v-for="item in items"
-        :key="item.key"
-        location="right"
-        :text="item.label"
-        :disabled="!collapsed"
-      >
-        <template #activator="{ props: tip }">
+      <template v-for="item in items" :key="item.key">
+        <v-tooltip
+          location="right"
+          :text="item.label"
+          :disabled="!collapsed"
+        >
+          <template #activator="{ props: tip }">
+            <button
+              v-bind="tip"
+              class="sn-item"
+              :class="{ 'sn-item--active': isActive(item) }"
+              :aria-current="isActive(item) ? 'page' : undefined"
+              @click="activate(item)"
+            >
+              <v-icon :icon="item.icon" size="24" class="sn-ico" />
+              <span v-show="!collapsed" class="sn-label">{{ item.label }}</span>
+            </button>
+          </template>
+        </v-tooltip>
+
+        <!-- Sub-items: shown when this item is active and nav is expanded -->
+        <template v-if="item.children && isActive(item) && !collapsed">
           <button
-            v-bind="tip"
-            class="sn-item"
-            :class="{ 'sn-item--active': isActive(item) }"
-            :aria-current="isActive(item) ? 'page' : undefined"
-            @click="activate(item)"
+            v-for="child in item.children"
+            :key="child.key"
+            class="sn-item sn-subitem"
+            :class="{ 'sn-subitem--active': activeTradeTab === child.tab }"
+            @click="activateTradeTab(child.tab)"
           >
-            <v-icon :icon="item.icon" size="24" class="sn-ico" />
-            <span v-show="!collapsed" class="sn-label">{{ item.label }}</span>
+            <v-icon :icon="child.icon" size="18" class="sn-ico" />
+            <span class="sn-label">{{ child.label }}</span>
           </button>
         </template>
-      </v-tooltip>
+
+        <!-- Collapsed tooltips for sub-items -->
+        <template v-if="item.children && isActive(item) && collapsed">
+          <v-tooltip
+            v-for="child in item.children"
+            :key="child.key + '-tip'"
+            location="right"
+            :text="child.label"
+          >
+            <template #activator="{ props: tip }">
+              <button
+                v-bind="tip"
+                class="sn-item sn-subitem"
+                :class="{ 'sn-subitem--active': activeTradeTab === child.tab }"
+                @click="activateTradeTab(child.tab)"
+              >
+                <v-icon :icon="child.icon" size="18" class="sn-ico" />
+              </button>
+            </template>
+          </v-tooltip>
+        </template>
+      </template>
     </nav>
 
     <!-- Collapse / expand toggle -->
@@ -142,6 +199,22 @@ function activate(item) {
 
 .sn-item--active { background: var(--c-surface-2); color: var(--c-accent); }
 .sn-item--active .sn-ico { color: var(--c-accent); }
+
+.sn-subitem {
+  padding-left: 28px;
+  height: 36px;
+  font-size: 13px;
+  color: var(--c-muted);
+  opacity: 0.85;
+}
+.side-nav--collapsed .sn-subitem {
+  padding-left: 0;
+  justify-content: center;
+  height: 36px;
+}
+.sn-subitem--active { color: var(--c-accent); opacity: 1; }
+.sn-subitem--active .sn-ico { color: var(--c-accent); }
+.sn-subitem:hover { opacity: 1; background: var(--c-surface-2); }
 
 .sn-toggle { color: var(--c-muted); }
 .sn-toggle .sn-label { font-weight: 500; }

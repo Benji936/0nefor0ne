@@ -4,7 +4,7 @@ import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import { fetchTrendingCards } from "@/lib/matches";
 import { searchById } from "@/api";
-import CardYugi from "@/components/CardYugi.vue";
+import CardYugi from "@/components/ui/card/CardYugi.vue";
 
 const { t } = useI18n();
 const route  = useRoute();

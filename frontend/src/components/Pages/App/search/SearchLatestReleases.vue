@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
-import CardYugi from "@/components/CardYugi.vue";
+import CardYugi from "@/components/ui/card/CardYugi.vue";
 import { getCardSets, getCardsBySet } from "@/api";
 
 const { t } = useI18n();

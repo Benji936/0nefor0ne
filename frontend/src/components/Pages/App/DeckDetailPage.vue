@@ -125,7 +125,7 @@ import { useI18n } from 'vue-i18n';
 import { parseYdk } from '@/lib/ydk';
 import { getCardsByIds } from '@/api';
 import { getClient } from '@/lib/supabaseClient';
-import DeckSection from '@/components/DeckSection.vue';
+import DeckSection from '@/components/library/DeckSection.vue';
 import { loadIgnoredIds, toggleIgnoredId, loadIgnoredIdsFromRecord, saveIgnoredIdsToDb } from '@/lib/deckIgnore';
 
 const GUEST_KEY = 'tm_guest_decks';

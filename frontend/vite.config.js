@@ -31,6 +31,8 @@ export default defineConfig(({ command }) => ({
           if (id.includes('@supabase')) return 'supabase';
           // Axios → used for API calls, shared but small
           if (id.includes('axios')) return 'axios';
+          // ocgcore-wasm → lazy engine bundle for /simulator only
+          if (id.includes('ocgcore-wasm')) return 'ocgcore';
         },
       },
     },

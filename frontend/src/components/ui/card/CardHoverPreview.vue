@@ -4,7 +4,7 @@
 // cardHoverPreview store, which a global listener drives.
 import { ref, watch, nextTick, onMounted, computed } from "vue";
 import { useRoute } from "vue-router";
-import CardInfoPanel from "@/components/CardInfoPanel.vue";
+import CardInfoPanel from "@/components/ui/card/CardInfoPanel.vue";
 import { hoverState, installCardHoverPreview } from "@/lib/cardHoverPreview";
 
 const route = useRoute();

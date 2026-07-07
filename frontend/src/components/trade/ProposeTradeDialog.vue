@@ -6,7 +6,7 @@ import { fetchMyLibrary, fetchUserWishlist, fetchUserTradePile, fetchMyWishlistN
 import { createTradeProposal, updateTradeProposal, counterTradeProposal, uploadTradePhoto } from "@/lib/proposals";
 import { searchById } from "@/api";
 import { getClient, getCurrentSession } from "@/lib/supabaseClient";
-import AddCard from "@/components/AddCard.vue";
+import AddCard from "@/components/library/AddCard.vue";
 
 const props = defineProps({
   modelValue:      { type: Boolean, default: false },
