@@ -1,0 +1,20 @@
+{
+  "name": "0nefor0ne-discord-bot",
+  "version": "1.0.0",
+  "description": "Discord bot that syncs #announces posts to 0nefor.one",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.4",
+    "discord.js": "^13.17.1",
+    "dotenv": "^16.4.5",
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

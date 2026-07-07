@@ -50,6 +50,21 @@ export async function signInWithEmail(email, password) {
 }
 
 /**
+ * Sign in (or sign up) via Discord OAuth.
+ * Redirects to Discord → returns to /auth/callback → Supabase exchanges the token.
+ * On success, Supabase creates or updates the user account using their real Discord email.
+ */
+export async function signInWithDiscord() {
+    return await supabase.auth.signInWithOAuth({
+        provider: 'discord',
+        options: {
+            redirectTo: `${window.location.origin}/auth/callback`,
+            scopes: 'identify email',
+        },
+    })
+}
+
+/**
  * Sign out the current user.
  */
 export async function signOut() {
