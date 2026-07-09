@@ -53,15 +53,54 @@ export async function signInWithEmail(email, password) {
  * Sign in (or sign up) via Discord OAuth.
  * Redirects to Discord → returns to /auth/callback → Supabase exchanges the token.
  * On success, Supabase creates or updates the user account using their real Discord email.
+ * Use this for UNAUTHENTICATED users (login / signup flow).
  */
 export async function signInWithDiscord() {
     return await supabase.auth.signInWithOAuth({
         provider: 'discord',
         options: {
-            redirectTo: `${window.location.origin}/auth/callback`,
+            redirectTo: `${window.location.origin}/en/auth/callback`,
             scopes: 'identify email',
         },
     })
+}
+
+/**
+ * Link Discord to an EXISTING logged-in account.
+ * Use this on the Account page for users who already have an email/password account.
+ * This will NOT create a new account — it attaches Discord as a second identity.
+ */
+export async function linkDiscordAccount() {
+    return await supabase.auth.linkIdentity({
+        provider: 'discord',
+        options: {
+            redirectTo: `${window.location.origin}/en/auth/callback`,
+            scopes: 'identify email',
+        },
+    })
+}
+
+/**
+ * After OAuth callback (or on manual re-sync), read the Discord identity from
+ * the current session and write it to the Trader table.
+ * Always force-updates so the re-sync button on the Account page works correctly.
+ * Returns the Discord identity object (includes username, avatar, etc.) or null.
+ */
+export async function syncDiscordIdToTrader() {
+    const { data } = await supabase.auth.getSession()
+    const user = data?.session?.user
+    if (!user) return null
+
+    const discordIdentity = user.identities?.find(i => i.provider === 'discord')
+    if (!discordIdentity) return null
+
+    // Force-update every time so manual re-sync always works
+    await supabase
+        .from('Trader')
+        .update({ discord_id: discordIdentity.id })
+        .eq('id', user.id)
+
+    return discordIdentity
 }
 
 /**

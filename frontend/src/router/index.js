@@ -41,6 +41,11 @@ export const routes = [
   { path: "/combo/:id", redirect: (to) => `/${detectLocale()}/combo/${to.params.id}` },
   { path: '/set/:setSlug', redirect: to => '/en/set/' + to.params.setSlug },
 
+  // OAuth callback safety net: Supabase may strip the redirectTo and land on the
+  // Site URL root, OR it may redirect to /auth/callback without a locale prefix.
+  // Either way, we preserve the full query string + hash so the token isn't lost.
+  { path: '/auth/callback', redirect: to => ({ path: '/en/auth/callback', query: to.query, hash: to.hash }) },
+
   // Non-English locale set URLs → redirect to English
   { path: '/:locale(fr|de|it)/set/:setSlug', redirect: to => '/en/set/' + to.params.setSlug },
 

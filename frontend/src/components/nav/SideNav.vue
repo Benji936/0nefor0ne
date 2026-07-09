@@ -29,7 +29,6 @@ const items = computed(() => {
   const all = [
     { key: "cards",     label: t("nav.search"),     icon: "mdi-magnify",              event: "navigate", arg: "cards",    match: ["cards", "search"], guest: true },
     { key: "dashboard", label: t("nav.home"),       icon: "mdi-home-outline",         event: "navigate", arg: "dashboard", match: ["dashboard"],       guest: true },
-    { key: "simulator", label: "Simulator",        icon: "mdi-play-circle-outline",  event: "navigate", arg: "simulator", match: ["simulator"],      guest: true },
     { key: "library",   label: t("nav.collection"), icon: "mdi-cards",                event: "navigate", arg: "library",   match: ["library"],           guest: false },
     { key: "decks",     label: t("nav.decks"),      icon: "mdi-cards-variant",        event: "navigate", arg: "decks",     match: ["decks", "deckDetail"], guest: false },
     {

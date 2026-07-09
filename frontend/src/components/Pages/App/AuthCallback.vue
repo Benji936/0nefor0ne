@@ -5,23 +5,29 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { supabase } from '@/lib/supabaseClient'
+import { supabase, syncDiscordIdToTrader } from '@/lib/supabaseClient'
 
 const router = useRouter()
 const route  = useRoute()
 
 onMounted(async () => {
   // Supabase JS v2 handles the hash fragment automatically on client load.
-  // We wait up to 3 s for the session to be available, then bounce home.
+  // We wait up to 3 s for the session to be available, then sync + redirect.
   let attempts = 0
   const check = async () => {
     const { data } = await supabase.auth.getSession()
-    if (data?.session || attempts >= 15) {
+    if (data?.session) {
+      // Explicitly sync discord_id → Trader table.
+      // Works for both new OAuth signups and linkIdentity flows.
+      await syncDiscordIdToTrader()
       const locale = route.params.locale || 'en'
       router.replace(`/${locale}/`)
-    } else {
+    } else if (attempts < 15) {
       attempts++
       setTimeout(check, 200)
+    } else {
+      // Timed out — redirect anyway
+      router.replace(`/${route.params.locale || 'en'}/`)
     }
   }
   await check()

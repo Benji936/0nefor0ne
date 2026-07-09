@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
-import { getClient, updateTraderProfile } from "@/lib/supabaseClient";
+import { getClient, updateTraderProfile, linkDiscordAccount, syncDiscordIdToTrader } from "@/lib/supabaseClient";
 import { COUNTRIES } from "@/lib/countries";
 import { countryByCode } from "@/lib/countries";
 
@@ -20,6 +20,12 @@ const name        = ref("");
 const countryCode = ref("");
 const city        = ref("");
 const tradeScope  = ref("worldwide");
+const discordId       = ref(null);  // null = not linked, string = linked
+const discordUsername = ref(null);  // Discord display name from session
+const discordLinking  = ref(false);
+const discordSyncing  = ref(false);
+const discordSynced   = ref(false); // shows ✓ briefly after re-sync
+const discordError    = ref("");
 
 const SCOPES = computed(() => [
   { value: "local",     label: t('account.scopes.local'),     icon: "mdi-map-marker"  },
@@ -58,7 +64,7 @@ async function loadProfile() {
   try {
     const { data } = await getClient()
       .from("Trader")
-      .select("Name, country_code, City, trade_scope")
+      .select("Name, country_code, City, trade_scope, discord_id")
       .eq("id", props.login.user.id)
       .single();
     if (data) {
@@ -66,6 +72,15 @@ async function loadProfile() {
       countryCode.value = data.country_code ?? "";
       city.value        = data.City        ?? "";
       tradeScope.value  = data.trade_scope  ?? "worldwide";
+      discordId.value   = data.discord_id   ?? null;
+    }
+    // Also read Discord username from current session identities (instant, no extra query)
+    const discordIdentity = props.login?.user?.identities?.find(i => i.provider === 'discord');
+    if (discordIdentity) {
+      discordUsername.value = discordIdentity.identity_data?.full_name
+        || discordIdentity.identity_data?.name
+        || discordIdentity.identity_data?.preferred_username
+        || null;
     }
   } finally {
     loading.value = false;
@@ -98,6 +113,43 @@ async function saveProfile() {
     setTimeout(() => { saved.value = false; }, 3000);
   } finally {
     saving.value = false;
+  }
+}
+
+async function connectDiscord() {
+  discordLinking.value = true;
+  discordError.value = "";
+  try {
+    const { error } = await linkDiscordAccount();
+    if (error) discordError.value = error.message ?? "Could not start Discord linking.";
+    // On success the browser redirects to Discord — no further action needed here.
+  } catch (err) {
+    discordError.value = err?.message ?? "Unexpected error.";
+    discordLinking.value = false;
+  }
+}
+
+async function resyncDiscord() {
+  discordSyncing.value = true;
+  discordError.value = "";
+  discordSynced.value = false;
+  try {
+    const identity = await syncDiscordIdToTrader();
+    if (identity) {
+      discordId.value = identity.id;
+      discordUsername.value = identity.identity_data?.full_name
+        || identity.identity_data?.name
+        || identity.identity_data?.preferred_username
+        || null;
+      discordSynced.value = true;
+      setTimeout(() => { discordSynced.value = false; }, 3000);
+    } else {
+      discordError.value = "No Discord identity found in your session. Try connecting again.";
+    }
+  } catch (err) {
+    discordError.value = err?.message ?? "Re-sync failed.";
+  } finally {
+    discordSyncing.value = false;
   }
 }
 
@@ -238,6 +290,92 @@ watch(() => props.login?.user?.id, (id) => {
             class="ml-auto shrink-0 text-xs font-semibold px-2 py-1 rounded-md"
             :style="{ color: (statusMeta[trade.status] ?? statusMeta.pending).color, background: `color-mix(in srgb, ${(statusMeta[trade.status] ?? statusMeta.pending).color} 12%, transparent)` }"
           >{{ (statusMeta[trade.status] ?? statusMeta.pending).label }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Discord connection -->
+    <div class="rounded-2xl border overflow-hidden" style="background: var(--c-surface); border-color: var(--c-border)">
+      <div class="flex items-center gap-2 px-5 py-4" style="border-bottom: 1px solid var(--c-border)">
+        <svg width="16" height="16" viewBox="0 0 127.14 96.36" style="fill: var(--c-muted); flex-shrink:0">
+          <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/>
+        </svg>
+        <span class="text-sm font-semibold" style="color: var(--c-text)">Discord</span>
+      </div>
+
+      <div class="flex items-center justify-between gap-4 px-5 py-4">
+        <!-- Left: status text -->
+        <div class="flex flex-col gap-1 min-w-0">
+          <span class="text-sm font-semibold" style="color: var(--c-text)">
+            {{ discordId ? 'Connected' : 'Not connected' }}
+          </span>
+
+          <!-- When linked: show username + discord_id for verification -->
+          <template v-if="discordId">
+            <span v-if="discordUsername" class="text-xs font-medium" style="color: #5865F2">
+              @{{ discordUsername }}
+            </span>
+            <span class="text-xs font-mono truncate" style="color: var(--c-muted)" :title="discordId">
+              ID: {{ discordId }}
+            </span>
+          </template>
+          <span v-else class="text-xs" style="color: var(--c-muted)">
+            Link your Discord account to post announces from the server
+          </span>
+
+          <v-alert v-if="discordError" type="error" variant="tonal" density="compact" class="mt-1 text-xs">
+            {{ discordError }}
+          </v-alert>
+        </div>
+
+        <!-- Right: action buttons -->
+        <div class="flex flex-col items-end gap-2 shrink-0">
+
+          <!-- Re-sync button (only when linked) -->
+          <button
+            v-if="discordId"
+            id="discord-resync-btn"
+            :disabled="discordSyncing"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all"
+            style="border: 1px solid var(--c-border); background: transparent; color: var(--c-muted)"
+            :style="discordSyncing ? { opacity: 0.6 } : {}"
+            @click="resyncDiscord"
+          >
+            <v-icon
+              :icon="discordSynced ? 'mdi-check-circle' : 'mdi-refresh'"
+              size="13"
+              :style="discordSynced ? { color: '#57f287' } : {}"
+              :class="discordSyncing ? 'animate-spin' : ''"
+            />
+            {{ discordSynced ? 'Synced!' : discordSyncing ? 'Syncing…' : 'Re-sync' }}
+          </button>
+
+          <!-- Linked badge (alongside re-sync) -->
+          <div
+            v-if="discordId"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+            style="background: color-mix(in srgb, #57f287 12%, transparent); border: 1px solid color-mix(in srgb, #57f287 30%, transparent)"
+          >
+            <v-icon icon="mdi-check-circle" size="13" style="color: #57f287" />
+            <span class="text-xs font-semibold" style="color: #57f287">Linked</span>
+          </div>
+
+          <!-- Connect button (when not linked) -->
+          <button
+            v-else
+            id="discord-link-btn"
+            :disabled="discordLinking || loading"
+            class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer transition-opacity"
+            style="background: #5865F2; color: white; border: none;"
+            :style="discordLinking ? { opacity: 0.6, cursor: 'not-allowed' } : {}"
+            @click="connectDiscord"
+          >
+            <svg width="14" height="14" viewBox="0 0 127.14 96.36" fill="white">
+              <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/>
+            </svg>
+            {{ discordLinking ? 'Redirecting…' : 'Connect Discord' }}
+          </button>
+
         </div>
       </div>
     </div>
