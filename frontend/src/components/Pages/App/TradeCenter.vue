@@ -78,7 +78,7 @@ import AnnounceDetailDialog from "@/components/trade/AnnounceDetailDialog.vue";
       :login="login"
       :loading="loadingAnnounces"
       :announces="announces"
-      @openCreate="createAnnounceOpen = true"
+      @openCreate="onOpenCreateAnnounce"
       @openDetail="onOpenAnnounceDetail"
     />
 
@@ -102,7 +102,9 @@ import AnnounceDetailDialog from "@/components/trade/AnnounceDetailDialog.vue";
 
     <CreateAnnounceDialog
       v-model="createAnnounceOpen"
+      :announce="editAnnounce"
       @created="onAnnounceCreated"
+      @updated="onAnnounceUpdated"
     />
 
     <AnnounceDetailDialog
@@ -111,6 +113,7 @@ import AnnounceDetailDialog from "@/components/trade/AnnounceDetailDialog.vue";
       :current-user-id="login?.user?.id"
       @deleted="onAnnounceDeleted"
       @updated="onAnnounceUpdated"
+      @edit="onEditAnnounce"
       @propose="onProposeFromProfile"
     />
 
@@ -167,6 +170,7 @@ export default {
       createAnnounceOpen: false,
       announceDetailOpen: false,
       selectedAnnounce:   null,
+      editAnnounce:       null,
     };
   },
   computed: {
@@ -349,6 +353,14 @@ export default {
     onOpenAnnounceDetail(announce) {
       this.selectedAnnounce = announce;
       this.announceDetailOpen = true;
+    },
+    onOpenCreateAnnounce() {
+      this.editAnnounce = null;          // create mode
+      this.createAnnounceOpen = true;
+    },
+    onEditAnnounce(announce) {
+      this.editAnnounce = announce;      // edit mode (detail dialog already closed itself)
+      this.createAnnounceOpen = true;
     },
     onAnnounceCreated() {
       this.loadAnnounces();

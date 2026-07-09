@@ -10,7 +10,7 @@ export async function fetchAnnounces() {
     .from("announce")
     .select(`
       *,
-      images:announce_image(url, sort_order)
+      images:announce_image(id, url, sort_order)
     `)
     .eq("status", "active")
     .order("created_at", { ascending: false });
@@ -27,7 +27,7 @@ export async function fetchAnnounces() {
   const sellerIds = [...new Set(announces.map(a => a.seller))];
   const { data: traderData, error: traderError } = await getClient()
     .from("Trader")
-    .select("id, Name, City, Country, avatar_url, avg_rating")
+    .select("id, Name, City, Country, avatar_url")
     .in("id", sellerIds);
 
   if (traderError) {
@@ -58,7 +58,7 @@ export async function fetchMyAnnounces() {
     .from("announce")
     .select(`
       *,
-      images:announce_image(url, sort_order)
+      images:announce_image(id, url, sort_order)
     `)
     .eq("seller", me)
     .order("created_at", { ascending: false });
@@ -112,6 +112,47 @@ export async function createAnnounce(title, description, price, currency, imageF
   }
 
   return announceId;
+}
+
+/**
+ * Upload new images to an existing announce (used by the edit flow).
+ * @param {number} announceId
+ * @param {File[]} files
+ * @param {number} startSortOrder  sort_order to assign the first new image
+ */
+export async function addAnnounceImages(announceId, files, startSortOrder = 0) {
+  if (!files || files.length === 0) return;
+  const me = (await getClient().auth.getSession()).data?.session?.user?.id;
+  if (!me) throw new Error("Not authenticated");
+  await Promise.all(
+    files.map((file, i) => uploadAnnounceImage(announceId, me, file, startSortOrder + i))
+  );
+}
+
+/**
+ * Delete a single announce image: removes the DB row and best-effort removes
+ * the underlying storage object (parsed from its public URL).
+ * @param {number} imageId  announce_image.id
+ * @param {string} url      the image's public URL
+ */
+export async function deleteAnnounceImage(imageId, url) {
+  const { error } = await getClient()
+    .from("announce_image")
+    .delete()
+    .eq("id", imageId);
+  if (error) throw error;
+
+  // Best-effort storage cleanup — never fatal to the edit.
+  try {
+    const marker = "/announce-images/";
+    const idx = (url ?? "").indexOf(marker);
+    if (idx !== -1) {
+      const path = url.slice(idx + marker.length);
+      await getClient().storage.from("announce-images").remove([path]);
+    }
+  } catch (err) {
+    console.warn("announce image storage cleanup failed", err);
+  }
 }
 
 /**

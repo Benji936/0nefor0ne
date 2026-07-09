@@ -309,7 +309,22 @@
     "archived": "Archiviato",
     "contactSeller": "Contatta il venditore",
     "postedBy": "Pubblicato da",
-    "deleteConfirm": "Eliminare questo annuncio?"
+    "deleteConfirm": "Eliminare questo annuncio?",
+    "editTitle": "Modifica annuncio",
+    "saveChanges": "Salva modifiche",
+    "viewOnDiscord": "Vedi su Discord"
+  },
+  "announceChat": {
+    "withSeller": "Chatta con il venditore",
+    "messages": "Messaggi",
+    "buyer": "Acquirente",
+    "loginToChat": "Accedi per chattare con il venditore.",
+    "noConversations": "Ancora nessun messaggio.",
+    "noMessages": "Ancora nessun messaggio. Saluta!",
+    "typeMessage": "Scrivi un messaggio…",
+    "justNow": "ora",
+    "tabDetails": "Dettagli",
+    "tabChat": "Chat"
   },
   "proposals": {
     "loginRequired": "Accedi per vedere le tue proposte.",

@@ -309,7 +309,22 @@
     "archived": "Archiviert",
     "contactSeller": "Verkäufer kontaktieren",
     "postedBy": "Gepostet von",
-    "deleteConfirm": "Diese Anzeige löschen?"
+    "deleteConfirm": "Diese Anzeige löschen?",
+    "editTitle": "Anzeige bearbeiten",
+    "saveChanges": "Änderungen speichern",
+    "viewOnDiscord": "Auf Discord ansehen"
+  },
+  "announceChat": {
+    "withSeller": "Mit Verkäufer chatten",
+    "messages": "Nachrichten",
+    "buyer": "Käufer",
+    "loginToChat": "Melde dich an, um mit dem Verkäufer zu chatten.",
+    "noConversations": "Noch keine Nachrichten.",
+    "noMessages": "Noch keine Nachrichten. Sag Hallo!",
+    "typeMessage": "Nachricht schreiben…",
+    "justNow": "jetzt",
+    "tabDetails": "Details",
+    "tabChat": "Chat"
   },
   "proposals": {
     "loginRequired": "Melde dich an, um deine Vorschläge zu sehen.",

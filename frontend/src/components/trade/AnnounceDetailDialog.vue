@@ -3,20 +3,22 @@ import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { timeAgo } from "@/lib/notifications";
 import { deleteAnnounce, updateAnnounce } from "@/lib/announces";
+import AnnounceChatPanel from "@/components/trade/AnnounceChatPanel.vue";
 
 const props = defineProps({
   modelValue:    { type: Boolean, default: false },
   announce:      { type: Object,  default: null  },
   currentUserId: { type: String,  default: null  },
 });
-const emit = defineEmits(["update:modelValue", "deleted", "updated", "propose"]);
+const emit = defineEmits(["update:modelValue", "deleted", "updated", "propose", "edit"]);
 const { t } = useI18n();
 
 const deleting  = ref(false);
 const updating  = ref(false);
 const imgIdx    = ref(0);
+const mobileTab = ref("details"); // mobile-only: 'details' | 'chat'
 
-watch(() => props.modelValue, open => { if (open) imgIdx.value = 0; });
+watch(() => props.modelValue, open => { if (open) { imgIdx.value = 0; mobileTab.value = "details"; } });
 
 const isOwner = computed(() => props.announce?.seller === props.currentUserId);
 
@@ -36,6 +38,9 @@ const location = computed(() => {
 });
 const rating = computed(() => props.announce?.Trader?.avg_rating ?? null);
 const images = computed(() => props.announce?.images ?? []);
+const discordUrl  = computed(() => props.announce?.discord_url ?? null);
+const guildName   = computed(() => props.announce?.discord_guild_name ?? null);
+const guildIcon   = computed(() => props.announce?.discord_guild_icon ?? null);
 
 function close() { emit("update:modelValue", false); }
 
@@ -54,6 +59,8 @@ async function handleMarkSold() {
   finally { updating.value = false; }
 }
 
+function handleEdit() { emit("edit", props.announce); close(); }
+
 function handlePropose() { emit("propose", props.announce.seller); close(); }
 </script>
 
@@ -61,12 +68,44 @@ function handlePropose() { emit("propose", props.announce.seller); close(); }
   <v-dialog
     :model-value="modelValue"
     @update:model-value="emit('update:modelValue', $event)"
-    max-width="560"
+    max-width="920"
     content-class="!m-0 sm:!m-6 items-end sm:items-center"
     transition="dialog-bottom-transition"
     scrollable
   >
-    <div v-if="announce" class="dlg">
+    <div v-if="announce" class="shell">
+
+      <!-- Mobile-only Details / Chat toggle -->
+      <div v-if="currentUserId" class="mtabs">
+        <button class="mtab" :class="{ 'mtab--active': mobileTab === 'details' }" @click="mobileTab = 'details'">
+          {{ t('announceChat.tabDetails') }}
+        </button>
+        <button class="mtab" :class="{ 'mtab--active': mobileTab === 'chat' }" @click="mobileTab = 'chat'">
+          {{ t('announceChat.tabChat') }}
+        </button>
+      </div>
+
+      <!-- Chat pane (left on desktop; only for logged-in users) -->
+      <div
+        v-if="currentUserId"
+        class="chat-pane"
+        :class="{ 'pane--hidden-mobile': mobileTab !== 'chat' }"
+      >
+        <AnnounceChatPanel
+          :announce-id="announce.id"
+          :seller-id="announce.seller"
+          :current-user-id="currentUserId"
+          :is-owner="isOwner"
+          :active="modelValue"
+        />
+      </div>
+
+      <!-- Detail pane (right) -->
+      <div
+        class="detail-pane"
+        :class="{ 'pane--hidden-mobile': currentUserId && mobileTab !== 'details' }"
+      >
+        <div class="dlg">
 
       <!-- Image gallery (full bleed at top) -->
       <div class="gallery">
@@ -131,6 +170,22 @@ function handlePropose() { emit("propose", props.announce.seller); close(); }
         <!-- Description -->
         <p v-if="announce.description" class="info-desc">{{ announce.description }}</p>
 
+        <!-- Discord source link (only for announces posted from Discord) -->
+        <a
+          v-if="discordUrl"
+          :href="discordUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="discord-link"
+        >
+          <img v-if="guildIcon" :src="guildIcon" class="discord-link__logo" :alt="guildName || ''" />
+          <v-icon v-else icon="mdi-discord" size="17" />
+          <span class="discord-link__label">
+            {{ guildName || t('announce.viewOnDiscord') }}
+          </span>
+          <v-icon icon="mdi-open-in-new" size="13" class="discord-link__ext" />
+        </a>
+
         <!-- Divider -->
         <div class="divider" />
 
@@ -162,6 +217,10 @@ function handlePropose() { emit("propose", props.announce.seller); close(); }
             <v-icon v-else icon="mdi-delete-outline" size="16" />
             {{ t('announce.delete') }}
           </button>
+          <button class="btn-edit" @click="handleEdit">
+            <v-icon icon="mdi-pencil-outline" size="16" />
+            {{ t('announce.edit') }}
+          </button>
           <button class="btn-sold" :disabled="updating" @click="handleMarkSold">
             <v-progress-circular v-if="updating" indeterminate size="14" width="2" />
             <v-icon v-else icon="mdi-check-circle-outline" size="16" />
@@ -176,22 +235,77 @@ function handlePropose() { emit("propose", props.announce.seller); close(); }
         </template>
       </div>
 
-    </div>
+        </div><!-- /.dlg -->
+      </div><!-- /.detail-pane -->
+    </div><!-- /.shell -->
   </v-dialog>
 </template>
 
 <style scoped>
-/* ── Dialog shell ─────────────────────────────────── */
+/* ── Two-pane shell ───────────────────────────────── */
+.shell {
+  display: flex;
+  flex-direction: row;
+  background: var(--c-bg);
+  border-radius: 20px;
+  overflow: hidden;
+  max-height: 92vh;
+  width: 100%;
+}
+.chat-pane {
+  width: 340px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--c-border);
+}
+.detail-pane {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .dlg {
   display: flex;
   flex-direction: column;
   background: var(--c-bg);
-  border-radius: 20px 20px 0 0;
   overflow: hidden;
-  max-height: 92vh;
+  height: 100%;
+  min-height: 0;
 }
-@media (min-width: 640px) {
-  .dlg { border-radius: 20px; }
+
+/* ── Mobile Details / Chat toggle ─────────────────── */
+.mtabs { display: none; }
+.mtab {
+  flex: 1;
+  padding: 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--c-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.mtab--active {
+  color: var(--c-trade);
+  border-bottom-color: var(--c-trade);
+}
+
+/* Mobile: stack into one toggled pane */
+@media (max-width: 859px) {
+  .shell { flex-direction: column; border-radius: 20px 20px 0 0; }
+  .chat-pane { width: auto; flex: 1; border-right: none; }
+  .detail-pane { flex: 1; }
+  .mtabs {
+    display: flex;
+    flex-shrink: 0;
+    background: var(--c-surface);
+    border-bottom: 1px solid var(--c-border);
+  }
+  .pane--hidden-mobile { display: none !important; }
 }
 
 /* ── Gallery ──────────────────────────────────────── */
@@ -301,6 +415,24 @@ function handlePropose() { emit("propose", props.announce.seller); close(); }
 }
 .divider { height: 1px; background: var(--c-border); }
 
+/* Discord source link */
+.discord-link {
+  display: inline-flex; align-items: center; gap: 7px;
+  align-self: flex-start;
+  padding: 7px 13px; border-radius: 10px;
+  background: color-mix(in srgb, #5865F2 14%, transparent);
+  color: #5865F2; font-size: 12.5px; font-weight: 700;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+.discord-link:hover { background: color-mix(in srgb, #5865F2 24%, transparent); }
+.discord-link__logo {
+  width: 20px; height: 20px; border-radius: 50%;
+  object-fit: cover; flex-shrink: 0;
+}
+.discord-link__label { line-height: 1; }
+.discord-link__ext { opacity: 0.7; }
+
 /* ── Seller ───────────────────────────────────────── */
 .seller {
   display: flex; align-items: center; gap: 12px;
@@ -349,9 +481,18 @@ function handlePropose() { emit("propose", props.announce.seller); close(); }
 .btn-del:hover { background: color-mix(in srgb, #ef4444 22%, transparent); }
 .btn-del:disabled { opacity: 0.4; pointer-events: none; }
 
-.btn-sold {
+.btn-edit {
   display: flex; align-items: center; gap: 6px;
   padding: 9px 15px; border-radius: 11px; margin-left: auto;
+  background: color-mix(in srgb, var(--c-trade) 12%, transparent);
+  color: var(--c-trade); font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: background 0.15s ease;
+}
+.btn-edit:hover { background: color-mix(in srgb, var(--c-trade) 22%, transparent); }
+
+.btn-sold {
+  display: flex; align-items: center; gap: 6px;
+  padding: 9px 15px; border-radius: 11px;
   background: var(--c-surface-2); color: var(--c-text);
   font-size: 13px; font-weight: 700;
   cursor: pointer; transition: background 0.15s ease;

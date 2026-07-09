@@ -309,7 +309,22 @@
     "archived": "Archived",
     "contactSeller": "Contact Seller",
     "postedBy": "Posted by",
-    "deleteConfirm": "Delete this announce?"
+    "deleteConfirm": "Delete this announce?",
+    "editTitle": "Edit announce",
+    "saveChanges": "Save changes",
+    "viewOnDiscord": "View on Discord"
+  },
+  "announceChat": {
+    "withSeller": "Chat with seller",
+    "messages": "Messages",
+    "buyer": "Buyer",
+    "loginToChat": "Log in to chat with the seller.",
+    "noConversations": "No messages yet.",
+    "noMessages": "No messages yet. Say hello!",
+    "typeMessage": "Type a message…",
+    "justNow": "now",
+    "tabDetails": "Details",
+    "tabChat": "Chat"
   },
   "proposals": {
     "loginRequired": "Log in to see your proposals.",

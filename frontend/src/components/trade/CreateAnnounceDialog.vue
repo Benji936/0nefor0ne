@@ -1,21 +1,31 @@
 <script setup>
 import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { createAnnounce } from "@/lib/announces";
+import { createAnnounce, updateAnnounce, addAnnounceImages, deleteAnnounceImage } from "@/lib/announces";
 
-const props = defineProps({ modelValue: { type: Boolean, default: false } });
-const emit  = defineEmits(["update:modelValue", "created"]);
+const props = defineProps({
+  modelValue: { type: Boolean, default: false },
+  // When set, the dialog opens in EDIT mode for this announce; otherwise CREATE mode.
+  announce:   { type: Object,  default: null },
+});
+const emit  = defineEmits(["update:modelValue", "created", "updated"]);
 const { t } = useI18n();
+
+const isEdit = computed(() => !!props.announce);
 
 const title       = ref("");
 const description = ref("");
 const price       = ref("");
 const currency    = ref("EUR");
-const images      = ref([]);
+const newImages      = ref([]);   // freshly picked: { file, preview }
+const existingImages = ref([]);   // already uploaded: { id, url, sort_order }
+const removedImages  = ref([]);   // existing images the user removed: { id, url }
 const submitting  = ref(false);
 const errorMsg    = ref("");
 const fileInput   = ref(null);
 const MAX         = 5;
+
+const totalCount = computed(() => existingImages.value.length + newImages.value.length);
 
 const canSubmit = computed(() =>
   title.value.trim().length > 0 &&
@@ -25,22 +35,41 @@ const canSubmit = computed(() =>
 );
 
 watch(() => props.modelValue, open => {
-  if (open) { title.value = ""; description.value = ""; price.value = ""; currency.value = "EUR"; images.value = []; errorMsg.value = ""; }
+  if (!open) return;
+  errorMsg.value = "";
+  newImages.value = [];
+  removedImages.value = [];
+  if (props.announce) {
+    title.value       = props.announce.title ?? "";
+    description.value  = props.announce.description ?? "";
+    price.value        = props.announce.price ?? "";
+    currency.value     = props.announce.currency ?? "EUR";
+    existingImages.value = [...(props.announce.images ?? [])].sort((a, b) => a.sort_order - b.sort_order);
+  } else {
+    title.value = ""; description.value = ""; price.value = ""; currency.value = "EUR";
+    existingImages.value = [];
+  }
 });
 
 function close() { emit("update:modelValue", false); }
 
 function pickFiles(e) {
   Array.from(e.target.files).filter(f => f.type.startsWith("image/")).forEach(file => {
-    if (images.value.length >= MAX) { errorMsg.value = t("announce.maxImages", { max: MAX }); return; }
-    images.value.push({ file, preview: URL.createObjectURL(file) });
+    if (totalCount.value >= MAX) { errorMsg.value = t("announce.maxImages", { max: MAX }); return; }
+    newImages.value.push({ file, preview: URL.createObjectURL(file) });
   });
   if (fileInput.value) fileInput.value.value = "";
 }
 
-function remove(i) {
-  URL.revokeObjectURL(images.value[i].preview);
-  images.value.splice(i, 1);
+function removeNew(i) {
+  URL.revokeObjectURL(newImages.value[i].preview);
+  newImages.value.splice(i, 1);
+  errorMsg.value = "";
+}
+
+function removeExisting(i) {
+  const [img] = existingImages.value.splice(i, 1);
+  removedImages.value.push(img);
   errorMsg.value = "";
 }
 
@@ -48,15 +77,33 @@ async function submit() {
   if (!canSubmit.value) return;
   submitting.value = true; errorMsg.value = "";
   try {
-    const id = await createAnnounce(
-      title.value.trim(), description.value.trim(),
-      Number(price.value), currency.value,
-      images.value.map(i => i.file)
-    );
-    emit("created", id);
+    if (isEdit.value) {
+      const id = props.announce.id;
+      await updateAnnounce(id, {
+        title:       title.value.trim(),
+        description: description.value.trim(),
+        price:       Number(price.value),
+        currency:    currency.value,
+      });
+      // Remove images the user deleted.
+      for (const img of removedImages.value) {
+        await deleteAnnounceImage(img.id, img.url);
+      }
+      // Append new images after the highest existing sort_order.
+      const startSort = existingImages.value.reduce((m, img) => Math.max(m, img.sort_order ?? 0), -1) + 1;
+      await addAnnounceImages(id, newImages.value.map(i => i.file), startSort);
+      emit("updated", id);
+    } else {
+      const id = await createAnnounce(
+        title.value.trim(), description.value.trim(),
+        Number(price.value), currency.value,
+        newImages.value.map(i => i.file)
+      );
+      emit("created", id);
+    }
     close();
   } catch (err) {
-    errorMsg.value = err.message ?? "Failed to create announce";
+    errorMsg.value = err.message ?? "Failed to save announce";
   } finally {
     submitting.value = false;
   }
@@ -78,7 +125,7 @@ async function submit() {
         <div class="dlg-head__icon">
           <v-icon icon="mdi-bullhorn-outline" size="18" />
         </div>
-        <span class="dlg-head__title">{{ t('announce.create') }}</span>
+        <span class="dlg-head__title">{{ isEdit ? t('announce.editTitle') : t('announce.create') }}</span>
         <button class="dlg-close" @click="close">
           <v-icon icon="mdi-close" size="19" />
         </button>
@@ -92,17 +139,26 @@ async function submit() {
           <div class="photo-col">
             <div class="field-label-row" style="margin-bottom:8px">
               <span class="field-label">{{ t('announce.images') }}</span>
-              <span class="field-hint">{{ images.length }} / {{ MAX }}</span>
+              <span class="field-hint">{{ totalCount }} / {{ MAX }}</span>
             </div>
             <div class="photo-grid">
-              <div v-for="(img, i) in images" :key="i" class="photo-thumb">
-                <img :src="img.preview" class="photo-thumb__img" />
-                <button class="photo-thumb__del" @click="remove(i)">
+              <!-- Already-uploaded images (edit mode) -->
+              <div v-for="(img, i) in existingImages" :key="'ex-' + img.id" class="photo-thumb">
+                <img :src="img.url" class="photo-thumb__img" />
+                <button class="photo-thumb__del" @click="removeExisting(i)">
                   <v-icon icon="mdi-close" size="13" />
                 </button>
                 <span v-if="i === 0" class="photo-thumb__cover">Cover</span>
               </div>
-              <button v-if="images.length < MAX" class="photo-add" @click="fileInput?.click()">
+              <!-- Newly picked images -->
+              <div v-for="(img, i) in newImages" :key="'new-' + i" class="photo-thumb">
+                <img :src="img.preview" class="photo-thumb__img" />
+                <button class="photo-thumb__del" @click="removeNew(i)">
+                  <v-icon icon="mdi-close" size="13" />
+                </button>
+                <span v-if="existingImages.length === 0 && i === 0" class="photo-thumb__cover">Cover</span>
+              </div>
+              <button v-if="totalCount < MAX" class="photo-add" @click="fileInput?.click()">
                 <v-icon icon="mdi-camera-plus-outline" size="28" style="color: var(--c-muted)" />
                 <span class="photo-add__label">{{ t('announce.addImages') }}</span>
               </button>
@@ -184,8 +240,8 @@ async function submit() {
             <v-progress-circular indeterminate size="16" width="2" color="white" />
           </template>
           <template v-else>
-            <v-icon icon="mdi-send-outline" size="16" />
-            {{ t('announce.create') }}
+            <v-icon :icon="isEdit ? 'mdi-content-save-outline' : 'mdi-send-outline'" size="16" />
+            {{ isEdit ? t('announce.saveChanges') : t('announce.create') }}
           </template>
         </button>
       </div>
