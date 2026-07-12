@@ -1,5 +1,3 @@
-# Railway deployment config — auto-detected as Node.js, no Dockerfile needed.
-# Railway will run `npm start` (node index.js) automatically.
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
