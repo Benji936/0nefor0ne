@@ -13,7 +13,8 @@
     "account": "Account",
     "decks": "Decks",
     "collapseMenu": "Collapse menu",
-    "expandMenu": "Expand menu"
+    "expandMenu": "Expand menu",
+    "joinDiscord": "Join our Discord"
   },
   "footer": {
     "privacy": "Privacy Policy",
@@ -649,7 +650,9 @@
   "cardYugi": {
     "level": "Level",
     "tradersWithCard": "Traders with this card",
+    "tradersLookingForCard": "Traders looking for this card",
     "noTraders": "No one is trading this card yet.",
+    "noTradersLookingForCard": "No one is looking for this card yet.",
     "moreTraders": "+{count} more traders",
     "permalink": "Permalink",
     "match": "Match",

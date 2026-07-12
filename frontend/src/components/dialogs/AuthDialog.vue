@@ -162,7 +162,7 @@ async function loginWithDiscord() {
           id="discord-oauth-btn"
           type="button"
           :disabled="submitting || discordSubmitting"
-          class="w-full flex items-center justify-center gap-3 py-2.5 rounded-lg font-semibold text-sm transition-opacity cursor-pointer mb-4"
+          class="w-full flex items-center justify-center gap-3 py-3 rounded-lg font-semibold text-sm transition-opacity cursor-pointer mb-4"
           style="background: #5865F2; color: white; border: none; opacity: 1;"
           :style="discordSubmitting ? { opacity: 0.6, cursor: 'not-allowed' } : {}"
           @click="loginWithDiscord"

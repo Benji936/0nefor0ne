@@ -51,6 +51,7 @@ const items = computed(() => {
 
 const isActive = (item) => item.match.includes(props.page);
 const isTradeOpen = computed(() => props.page === "TradeCenter");
+const discordUrl = "https://discord.gg/0neforone";
 
 function activate(item) {
   if (item.event === "matches") emit("matches");
@@ -132,15 +133,36 @@ function activateTradeTab(tab) {
       </template>
     </nav>
 
-    <!-- Collapse / expand toggle -->
-    <button
-      class="sn-item sn-toggle mt-auto"
-      :aria-label="collapsed ? $t('nav.expandMenu') : $t('nav.collapseMenu')"
-      @click="emit('update:collapsed', !collapsed)"
-    >
-      <v-icon :icon="collapsed ? 'mdi-chevron-right' : 'mdi-chevron-left'" size="22" class="sn-ico" />
-      <span v-show="!collapsed" class="sn-label">{{ $t('nav.collapseMenu') }}</span>
-    </button>
+    <div class="sn-footer mt-auto">
+      <v-tooltip
+        location="right"
+        :text="$t('nav.joinDiscord')"
+        :disabled="!collapsed"
+      >
+        <template #activator="{ props: tip }">
+          <a
+            v-bind="tip"
+            class="sn-item sn-discord"
+            :href="discordUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <v-icon icon="mdi-discord" size="20" class="sn-ico" />
+            <span v-show="!collapsed" class="sn-label">{{ $t('nav.joinDiscord') }}</span>
+          </a>
+        </template>
+      </v-tooltip>
+
+      <!-- Collapse / expand toggle -->
+      <button
+        class="sn-item sn-toggle"
+        :aria-label="collapsed ? $t('nav.expandMenu') : $t('nav.collapseMenu')"
+        @click="emit('update:collapsed', !collapsed)"
+      >
+        <v-icon :icon="collapsed ? 'mdi-chevron-right' : 'mdi-chevron-left'" size="22" class="sn-ico" />
+        <span v-show="!collapsed" class="sn-label">{{ $t('nav.collapseMenu') }}</span>
+      </button>
+    </div>
   </aside>
 </template>
 
@@ -215,6 +237,19 @@ function activateTradeTab(tab) {
 .sn-subitem--active .sn-ico { color: var(--c-accent); }
 .sn-subitem:hover { opacity: 1; background: var(--c-surface-2); }
 
+.sn-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+}
+.sn-discord {
+  text-decoration: none;
+  color: var(--c-text);
+}
+.sn-discord:hover {
+  background: var(--c-surface-2);
+}
 .sn-toggle { color: var(--c-muted); }
 .sn-toggle .sn-label { font-weight: 500; }
 

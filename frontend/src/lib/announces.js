@@ -81,9 +81,10 @@ export async function fetchMyAnnounces() {
  * @param {number} price 
  * @param {string} currency 
  * @param {File[]} imageFiles 
+ * @param {{ ygo_card_id: number, card_name: string, extension: string, rarity: string } | null} [card]
  * @returns {Promise<number>} the new announce id
  */
-export async function createAnnounce(title, description, price, currency, imageFiles) {
+export async function createAnnounce(title, description, price, currency, imageFiles, card = null) {
   const me = (await getClient().auth.getSession()).data?.session?.user?.id;
   if (!me) throw new Error("Not authenticated");
 
@@ -96,13 +97,34 @@ export async function createAnnounce(title, description, price, currency, imageF
       description,
       price,
       currency,
-      status: 'active'
+      status: 'active',
+      ygo_card_id: card?.ygo_card_id ?? null,
+      card_name:   card?.card_name   ?? null,
     })
     .select('id')
     .single();
 
   if (announceError) throw announceError;
   const announceId = announceData.id;
+
+  // 1b. If a card was specified, add it to the seller's trade list
+  if (card?.ygo_card_id) {
+    await getClient()
+      .from('Card')
+      .insert({
+        trader:    me,
+        name:      card.card_name,
+        image_id:  card.ygo_card_id,
+        extension: card.extension ?? '',
+        rarity:    card.rarity    ?? 'common',
+        wish:      false,
+        status:    'active',
+        quantity:  1,
+        game:      'YGO',
+      });
+    // We intentionally ignore errors here — failing to add to trade list
+    // should never block the announce from being created.
+  }
 
   // 2. Upload images and create records
   if (imageFiles && imageFiles.length > 0) {

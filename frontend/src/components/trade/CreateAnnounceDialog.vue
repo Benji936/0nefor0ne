@@ -2,6 +2,7 @@
 import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { createAnnounce, updateAnnounce, addAnnounceImages, deleteAnnounceImage } from "@/lib/announces";
+import { searchCardByName, searchCardBySetCode } from "@/api";
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -25,6 +26,72 @@ const errorMsg    = ref("");
 const fileInput   = ref(null);
 const MAX         = 5;
 
+// ── Card picker ───────────────────────────────────────────────────────────────
+const cardQuery      = ref("");      // what the user is typing
+const cardResults    = ref([]);      // YGOPRODeck results dropdown
+const cardSearching  = ref(false);  // spinner while fetching
+const cardSearchErr  = ref("");      // inline error
+const selectedCard   = ref(null);   // { ygo_card_id, card_name, extension, rarity, image_url }
+let   cardDebounce   = null;
+
+const SET_CODE_RE = /^[A-Z0-9]{2,6}-[A-Z]{0,2}\d{3,4}$/i;
+
+function onCardInput() {
+  clearTimeout(cardDebounce);
+  cardResults.value = [];
+  cardSearchErr.value = "";
+  if (selectedCard.value) selectedCard.value = null; // clear selection on new typing
+  const q = cardQuery.value.trim();
+  if (q.length < 2) return;
+  cardDebounce = setTimeout(() => searchCard(q), 350);
+}
+
+async function searchCard(q) {
+  cardSearching.value = true;
+  cardSearchErr.value = "";
+  try {
+    let cards = [];
+    if (SET_CODE_RE.test(q)) {
+      // searchCardBySetCode returns an axios response; card data is at res.data
+      const res = await searchCardBySetCode(q);
+      const card = res?.data;
+      if (card?.id) {
+        cards = [card]; // already has id, name, card_sets, card_images
+      }
+    } else {
+      const res = await searchCardByName(q);
+      cards = res?.data?.data ?? [];
+    }
+    cardResults.value = cards.slice(0, 8);
+    if (cards.length === 0) cardSearchErr.value = "No card found.";
+  } catch {
+    cardSearchErr.value = "Search failed. Try again.";
+  } finally {
+    cardSearching.value = false;
+  }
+}
+
+function pickCard(card) {
+  const firstSet  = card.card_sets?.[0] ?? {};
+  const firstImg  = card.card_images?.[0];
+  selectedCard.value = {
+    ygo_card_id: card.id,
+    card_name:   card.name,
+    extension:   firstSet.set_name  ?? '',
+    rarity:      firstSet.set_rarity?.toLowerCase() ?? 'common',
+    image_url:   firstImg?.image_url_small ?? firstImg?.image_url ?? null,
+  };
+  cardQuery.value   = card.name;
+  cardResults.value = [];
+}
+
+function clearCard() {
+  selectedCard.value = null;
+  cardQuery.value    = "";
+  cardResults.value  = [];
+  cardSearchErr.value = "";
+}
+
 const totalCount = computed(() => existingImages.value.length + newImages.value.length);
 
 const canSubmit = computed(() =>
@@ -39,6 +106,7 @@ watch(() => props.modelValue, open => {
   errorMsg.value = "";
   newImages.value = [];
   removedImages.value = [];
+  clearCard();
   if (props.announce) {
     title.value       = props.announce.title ?? "";
     description.value  = props.announce.description ?? "";
@@ -97,7 +165,8 @@ async function submit() {
       const id = await createAnnounce(
         title.value.trim(), description.value.trim(),
         Number(price.value), currency.value,
-        newImages.value.map(i => i.file)
+        newImages.value.map(i => i.file),
+        selectedCard.value  // null if no card picked
       );
       emit("created", id);
     }
@@ -207,6 +276,62 @@ async function submit() {
                   <option value="GBP">GBP £</option>
                 </select>
               </div>
+            </div>
+
+            <!-- Card picker (create mode only) -->
+            <div v-if="!isEdit" class="field-block" style="position:relative">
+              <label class="field-label">Card <span style="color:var(--c-muted);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+
+              <!-- Selected card chip -->
+              <div v-if="selectedCard" class="card-chip">
+                <img v-if="selectedCard.image_url" :src="selectedCard.image_url" class="card-chip__img" />
+                <div class="card-chip__info">
+                  <span class="card-chip__name">{{ selectedCard.card_name }}</span>
+                  <span class="card-chip__sub">{{ selectedCard.extension }}</span>
+                </div>
+                <button class="card-chip__clear" @click="clearCard" title="Remove">
+                  <v-icon icon="mdi-close" size="13" />
+                </button>
+              </div>
+
+              <!-- Search input -->
+              <div v-else class="card-search-wrap">
+                <v-icon icon="mdi-magnify" size="15" class="card-search-icon" />
+                <input
+                  v-model="cardQuery"
+                  type="text"
+                  placeholder="Search by name or set code (LOB-EN001)"
+                  class="field-input card-search-input"
+                  @input="onCardInput"
+                  autocomplete="off"
+                />
+                <v-progress-circular v-if="cardSearching" indeterminate size="14" width="2" class="card-search-spinner" />
+              </div>
+
+              <!-- Dropdown results -->
+              <div v-if="cardResults.length > 0 && !selectedCard" class="card-dropdown">
+                <button
+                  v-for="c in cardResults"
+                  :key="c.id"
+                  class="card-result"
+                  @click="pickCard(c)"
+                >
+                  <img
+                    v-if="c.card_images?.[0]?.image_url_small"
+                    :src="c.card_images[0].image_url_small"
+                    class="card-result__img"
+                  />
+                  <div class="card-result__info">
+                    <span class="card-result__name">{{ c.name }}</span>
+                    <span class="card-result__sub">{{ c.card_sets?.[0]?.set_name ?? '' }}</span>
+                  </div>
+                </button>
+              </div>
+
+              <span v-if="cardSearchErr && !cardSearching" class="field-hint" style="color:#ef4444">{{ cardSearchErr }}</span>
+              <span v-if="selectedCard" class="field-hint" style="color:var(--c-muted)">
+                🃏 This card will be added to your trade list automatically.
+              </span>
             </div>
 
             <!-- Description -->
@@ -449,4 +574,126 @@ async function submit() {
 }
 .btn-submit:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
 .btn-submit:disabled { opacity: 0.4; pointer-events: none; }
+
+/* ── Card picker ───────────────────────────────────── */
+.card-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.card-search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--c-muted);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+.card-search-input { padding-left: 34px; }
+.card-search-spinner {
+  position: absolute;
+  right: 12px;
+  color: var(--c-muted);
+}
+
+.card-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  background: var(--c-surface);
+  border: 1.5px solid var(--c-border);
+  border-radius: 14px;
+  overflow: hidden;
+  z-index: 50;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.card-result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease;
+  border-bottom: 1px solid var(--c-border);
+}
+.card-result:last-child { border-bottom: none; }
+.card-result:hover { background: var(--c-surface-2); }
+.card-result__img {
+  width: 32px;
+  height: 46px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+  border: 1px solid var(--c-border);
+}
+.card-result__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.card-result__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-result__sub {
+  font-size: 11px;
+  color: var(--c-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Selected card chip */
+.card-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--c-trade) 10%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--c-trade) 35%, transparent);
+  border-radius: 12px;
+}
+.card-chip__img {
+  width: 28px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.card-chip__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.card-chip__name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-chip__sub {
+  font-size: 11px;
+  color: var(--c-muted);
+}
+.card-chip__clear {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--c-muted); cursor: pointer; flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.card-chip__clear:hover { background: var(--c-surface-2); color: var(--c-text); }
+
 </style>

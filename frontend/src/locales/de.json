@@ -13,7 +13,8 @@
     "account": "Konto",
     "decks": "Decks",
     "collapseMenu": "Menü einklappen",
-    "expandMenu": "Menü ausklappen"
+    "expandMenu": "Menü ausklappen",
+    "joinDiscord": "Tritt unserem Discord bei"
   },
   "footer": {
     "privacy": "Datenschutzerklärung",
@@ -649,7 +650,9 @@
   "cardYugi": {
     "level": "Level",
     "tradersWithCard": "Händler mit dieser Karte",
+    "tradersLookingForCard": "Händler suchen diese Karte",
     "noTraders": "Noch niemand handelt diese Karte.",
+    "noTradersLookingForCard": "Noch niemand sucht diese Karte.",
     "moreTraders": "+{count} weitere Händler",
     "permalink": "Permalink",
     "match": "Match",
