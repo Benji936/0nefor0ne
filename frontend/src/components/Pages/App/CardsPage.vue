@@ -40,10 +40,10 @@ const {
   density,
   isFiltersActive,
   activeCount,
-  activeChips,
   hasMore,
   setSort,
   setDensity,
+  clearFilters,
   loadMore,
   init,
 } = useCardSearch();
@@ -98,34 +98,6 @@ const resultCountLabel = computed(() =>
 const isNoResults = computed(
   () => !isEmptyInitial.value && !loading.value && cards.value.length === 0
 );
-
-// ── Localized active-filter chips ──
-// The composable's chips carry RAW values + a clear() (it has no i18n). We
-// localize each label here. Kind/category/spell/trap/race map to existing
-// search.* dictionaries; numeric comparators read as "≥ 8" / "= 4" / "≤ 2";
-// attributes/link-arrows fall back to their (already human) raw token.
-const CMP_SYMBOL = { gte: "≥", eq: "=", lte: "≤" };
-const chipLabel = (chip) => {
-  const raw = chip.label;
-  switch (chip.id) {
-    case "kind":
-      return t(`search.kind.${raw}`, raw);
-    case "cat":
-      return t(`search.category.${raw}`, raw);
-    case "sp":
-      return t(`search.spellType.${raw}`, raw);
-    case "tr":
-      return t(`search.trapType.${raw}`, raw);
-    case "race":
-      return t(`search.race.${raw}`, raw);
-    default: {
-      // Comparator chips arrive as "gte 8" / "eq 4" / "lte 2".
-      const m = /^(gte|eq|lte)\s+(.+)$/.exec(raw);
-      if (m) return `${CMP_SYMBOL[m[1]]} ${m[2]}`;
-      return raw; // attribute / link-arrow tokens are already display-ready
-    }
-  }
-};
 
 // Fixed-count skeleton placeholders shown while loading (CLS-safe 59:86).
 const SKELETONS = Array.from({ length: 12 }, (_, i) => i);
@@ -213,6 +185,24 @@ onMounted(() => {
 
           <!-- Push sort + density to the trailing edge. -->
           <div class="cards-toolbar__controls">
+            <!-- Clear-all filters. Lives here beside Sort (there is no clear
+                 button inside the panel anymore); shown only when a filter is set. -->
+            <button
+              v-if="isMounted && isFiltersActive"
+              type="button"
+              class="cards-clear"
+              @click="clearFilters"
+            >
+              <svg
+                width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.4"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+              >
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+              {{ t("search.filters.clear") }}
+            </button>
+
             <!-- Sort control (KD-3). Native <select> = keyboard-operable with a
                  visible focus ring; descending fields are labeled "high → low". -->
             <label class="cards-select">
@@ -284,37 +274,6 @@ onMounted(() => {
               </button>
             </div>
           </div>
-        </div>
-
-        <!-- Active-filter summary — removable chips built from the composable's
-             activeChips (raw values + clear()); localized here via chipLabel().
-             Gated on `isMounted` since filters hydrate client-side (AC-8). -->
-        <div
-          v-if="isMounted && activeChips.length"
-          class="cards-chips"
-          :aria-label="t('cards.filters.activeLabel')"
-        >
-          <span
-            v-for="chip in activeChips"
-            :key="chip.id"
-            class="cards-chip"
-          >
-            {{ chipLabel(chip) }}
-            <button
-              type="button"
-              class="cards-chip__x"
-              :aria-label="`✕ ${chipLabel(chip)}`"
-              @click="chip.clear()"
-            >
-              <svg
-                width="12" height="12" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2.5"
-                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
-              >
-                <path d="M18 6 6 18M6 6l12 12" />
-              </svg>
-            </button>
-          </span>
         </div>
 
         <!-- Neutral empty-initial state: no query and no filters. No skeletons,
@@ -463,7 +422,7 @@ onMounted(() => {
 .cards-page {
   --sel: var(--c-trade);
   --sel-line: color-mix(in oklch, var(--c-trade) 48%, transparent);
-
+  height: 50%;
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
@@ -472,14 +431,18 @@ onMounted(() => {
 }
 
 /* Heading -------------------------------------------------------------------*/
+/* Kept in the DOM for SEO/indexability, but visually hidden so the search
+   surface starts at the filters/results (sr-only pattern). */
 .cards-page__head {
-  margin-bottom: 20px;
-}
-.cards-page__title {
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  color: var(--c-text);
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* Grid shell ----------------------------------------------------------------*/
@@ -499,6 +462,9 @@ onMounted(() => {
   /* The sidebar can grow tall; let it scroll independently of the page. */
   max-height: calc(100vh - 96px);
   overflow-y: auto;
+  /* Breathing room at the end of the scroll so the last filter isn't flush
+     against the viewport edge. */
+  padding-bottom: 32px;
 }
 
 /* Below ~960px the sidebar collapses; filters move into the mobile dialog. */
@@ -519,12 +485,29 @@ onMounted(() => {
   gap: 20px;
 }
 
+/* Desktop: let the results scroll independently of the page so the filters
+   stay put and only the card list moves. The toolbar sticks to the top of the
+   scroll area so sort/count/filters remain visible. */
+@media (min-width: 961px) {
+  .cards-results {
+    max-height: calc(100vh - 96px);
+    overflow-y: auto;
+    padding-bottom: 32px;
+  }
+  .cards-toolbar {
+    padding: 20px 0px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--c-bg);
+  }
+}
+
 .cards-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
-  min-height: 40px;      /* reserve space so the toolbar doesn't shift on mount */
 }
 
 /* Result count -------------------------------------------------------------*/
@@ -542,6 +525,33 @@ onMounted(() => {
   align-items: center;
   gap: 12px;
   margin-left: auto;
+}
+
+/* Clear-filters button -----------------------------------------------------*/
+.cards-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--c-border);
+  background-color: var(--c-surface);
+  color: var(--c-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.16s ease-out, color 0.16s ease-out, background-color 0.16s ease-out;
+}
+.cards-clear:hover {
+  border-color: var(--sel);
+  color: var(--c-text);
+  background-color: color-mix(in oklch, var(--sel) 12%, var(--c-surface));
+}
+.cards-clear:focus-visible {
+  outline: 2px solid var(--sel-line);
+  outline-offset: 2px;
+  border-color: var(--sel);
 }
 
 /* Sort <select> ------------------------------------------------------------*/
@@ -620,47 +630,6 @@ onMounted(() => {
 .cards-density__btn:focus-visible {
   outline: 2px solid var(--sel-line);
   outline-offset: -2px;
-}
-
-/* Active-filter chips ------------------------------------------------------*/
-.cards-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.cards-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 6px 5px 12px;
-  border-radius: 9999px;
-  border: 1px solid var(--sel-line);
-  background: color-mix(in oklch, var(--sel) 12%, transparent);
-  color: var(--c-text);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  line-height: 1.2;
-}
-.cards-chip__x {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 9999px;
-  border: none;
-  background: transparent;
-  color: var(--c-muted);
-  cursor: pointer;
-  transition: background-color 0.16s ease-out, color 0.16s ease-out;
-}
-.cards-chip__x:hover {
-  background: color-mix(in oklch, var(--sel) 22%, transparent);
-  color: var(--c-text);
-}
-.cards-chip__x:focus-visible {
-  outline: 2px solid var(--sel-line);
-  outline-offset: 1px;
 }
 
 /* Results grid -------------------------------------------------------------*/
@@ -848,7 +817,6 @@ onMounted(() => {
   .cards-dialog__close,
   .cards-select__field,
   .cards-density__btn,
-  .cards-chip__x,
   .cards-loadmore__btn {
     transition: none;
   }

@@ -334,6 +334,10 @@ export function useCardSearch({ routeName = 'cards', pageSize = 40 } = {}) {
   // the deep watcher fires. Mirrors SearchFiltersPanel's emit_() semantics.
   const patchFilters = (delta) => { activeFilters.value = { ...activeFilters.value, ...delta }; };
 
+  // Clear only the filters (leaves the text query, sort and density intact),
+  // unlike `reset` which wipes the whole search state.
+  const clearFilters = () => { activeFilters.value = defaultFilters(); };
+
   // Removable active-filter summary for the results header. Same chip set as
   // SearchFiltersPanel.vue (≈ line 138); labels default to the raw value (the
   // page localizes richer labels via its own i18n if desired). Each clear()
@@ -609,6 +613,6 @@ export function useCardSearch({ routeName = 'cards', pageSize = 40 } = {}) {
     // derived
     hasMore, isFiltersActive, activeChips, activeCount,
     // actions
-    init, update, loadMore, setSort, setDensity, reset, runSearch, syncUrl,
+    init, update, loadMore, setSort, setDensity, reset, clearFilters, runSearch, syncUrl,
   };
 }
