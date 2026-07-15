@@ -112,14 +112,31 @@ const isAny       = computed(() => typeCategory.value === 'any')
 const isPendulum  = computed(() => props.filters?.category === PENDULUM_VALUE)
 const isLink      = computed(() => props.filters?.category === LINK_VALUE)
 
-const showAttribute = computed(() => isMonster.value || isAny.value)
-const showLevel     = computed(() => isMonster.value)
-const showScale     = computed(() => isMonster.value && isPendulum.value)
-const showRace      = computed(() => isMonster.value || isAny.value)
-const showLink      = computed(() => isMonster.value && isLink.value)
-const showCategory  = computed(() => isMonster.value)
-const showSpellType = computed(() => isSpell.value)
-const showTrapType  = computed(() => isTrap.value)
+const canUseMonsterFilters = computed(() => isMonster.value || isAny.value)
+
+// The card kind (monster/spell/trap) is auto-detected from whichever sub-filter
+// the user clicks — there is no manual any/monster/spell/trap switch — so every
+// section stays enabled; clicking a filter switches the kind and clears the
+// incompatible ones (see the setters below).
+const disabledMonsterFilters = computed(() => false)
+const disabledSpellFilters   = computed(() => false)
+const disabledTrapFilters    = computed(() => false)
+
+const showAttribute = computed(() => true)
+const showLevel     = computed(() => true)
+const showScale     = computed(() => canUseMonsterFilters.value && isPendulum.value)
+const showRace      = computed(() => true)
+const showLink      = computed(() => canUseMonsterFilters.value && isLink.value)
+const showCategory  = computed(() => true)
+const showSpellType = computed(() => true)
+const showTrapType  = computed(() => true)
+
+// Level/Rank is picked via a 12-star strip (like a rating). `hoverLevel` drives
+// the hover preview; the glyph switches to the Rank asset when Xyz is active.
+const LEVEL_STARS = 12
+const hoverLevel   = ref(0)
+const isRankMode   = computed(() => props.filters?.category === 'XYZ Monster')
+const levelStarUrl = computed(() => iconUrl(isRankMode.value ? 'rank' : 'level'))
 
 // A divider sits between the "what kind of card" block and the "stats" block.
 const showStatsBlock = computed(() =>
@@ -235,6 +252,10 @@ function setKind(kind) {
 
 function setCategory(value) {
   const newVal = props.filters?.category === value ? null : value
+  if (props.filters?.kind !== 'monster') {
+    emit('update:filters', { ...defaultFilters(), kind: 'monster', category: newVal })
+    return
+  }
   emit_({
     category: newVal,
     // Link/pendulum sub-filters only make sense for their category.
@@ -244,38 +265,78 @@ function setCategory(value) {
 }
 
 function setSpellType(value) {
-  emit_({ spellType: props.filters?.spellType === value ? null : value })
+  const same = props.filters?.spellType === value
+  if (props.filters?.kind !== 'spell') {
+    emit('update:filters', { ...defaultFilters(), kind: 'spell', spellType: same ? null : value })
+    return
+  }
+  emit_({ spellType: same ? null : value })
 }
 
 function setTrapType(value) {
-  emit_({ trapType: props.filters?.trapType === value ? null : value })
+  const same = props.filters?.trapType === value
+  if (props.filters?.kind !== 'trap') {
+    emit('update:filters', { ...defaultFilters(), kind: 'trap', trapType: same ? null : value })
+    return
+  }
+  emit_({ trapType: same ? null : value })
 }
 
 function toggleAttribute(attr) {
   const current = props.filters?.attribute ?? []
-  const next = current.includes(attr) ? current.filter(a => a !== attr) : [...current, attr]
+  // Single-select: picking a new attribute replaces the previous one; clicking
+  // the active attribute clears it.
+  const next = current.includes(attr) ? [] : [attr]
+  if (props.filters?.kind !== 'monster' && next.length > 0) {
+    emit('update:filters', { ...defaultFilters(), kind: 'monster', attribute: next })
+    return
+  }
   emit_({ attribute: next })
 }
 
 function toggleLinkArrow(token) {
   const current = props.filters?.linkArrows ?? []
   const next = current.includes(token) ? current.filter(a => a !== token) : [...current, token]
+  if (props.filters?.kind !== 'monster' && next.length > 0) {
+    emit('update:filters', { ...defaultFilters(), kind: 'monster', linkArrows: next })
+    return
+  }
   emit_({ linkArrows: next })
 }
 
 function setLevel(val) {
   const n = val === '' || val == null ? null : Number(val)
+  if (props.filters?.kind !== 'monster' && n != null) {
+    emit('update:filters', { ...defaultFilters(), kind: 'monster', level: Number.isNaN(n) ? null : n })
+    return
+  }
   emit_({ level: Number.isNaN(n) ? null : n })
 }
 
 function setScale(val) {
   const n = val === '' || val == null ? null : Number(val)
+  if (props.filters?.kind !== 'monster' && n != null) {
+    emit('update:filters', { ...defaultFilters(), kind: 'monster', scale: Number.isNaN(n) ? null : n })
+    return
+  }
   emit_({ scale: Number.isNaN(n) ? null : n })
 }
 
 function setLinkRating(val) {
   const n = val === '' || val == null ? null : Number(val)
+  if (props.filters?.kind !== 'monster' && n != null) {
+    emit('update:filters', { ...defaultFilters(), kind: 'monster', linkRating: Number.isNaN(n) ? null : n })
+    return
+  }
   emit_({ linkRating: Number.isNaN(n) ? null : n })
+}
+
+function setRace(value) {
+  if (value && props.filters?.kind !== 'monster') {
+    emit('update:filters', { ...defaultFilters(), kind: 'monster', race: value })
+    return
+  }
+  emit_({ race: value || null })
 }
 
 function clearAll() {
@@ -320,32 +381,9 @@ function clearAll() {
     <component :is="bodyWrapper" v-bind="bodyWrapperProps">
       <div v-if="expanded" class="body">
 
-        <!-- Kind pills + clear -->
-        <div class="bar">
-          <div class="pills">
-            <button
-              v-for="kind in [null, 'monster', 'spell', 'trap']"
-              :key="kind ?? 'any'"
-              class="chip"
-              :class="{ 'chip--on': (filters?.kind ?? null) === kind }"
-              :aria-pressed="(filters?.kind ?? null) === kind"
-              @click="setKind(kind)"
-            >
-              {{
-                kind === null        ? t('search.filters.kind.any')
-                : kind === 'monster' ? t('search.filters.kind.monster')
-                : kind === 'spell'   ? t('search.filters.kind.spell')
-                :                      t('search.filters.kind.trap')
-              }}
-            </button>
-          </div>
-          <button v-if="activeCount > 0" class="clear" @click="clearAll">
-            {{ t('search.filters.clear') }}
-          </button>
-        </div>
-
-        <!-- Deck location (broad monster grouping) -->
-        <div v-if="showCategory" class="group">
+        <!-- Deck location (broad monster grouping). Kind is auto-detected from the
+             sub-filter you pick; clearing lives in the results toolbar now. -->
+        <div class="group type-grid" style="--type-grid-cols: 2" :class="{ 'group--disabled': disabledMonsterFilters }">
           <span class="legend">{{ t('search.filters.deck.label') }}</span>
           <div class="pills">
             <button
@@ -354,6 +392,7 @@ function clearAll() {
               class="chip chip--sm"
               :class="{ 'chip--on': filters?.category === g.value }"
               :aria-pressed="filters?.category === g.value"
+              :disabled="disabledMonsterFilters"
               @click="setCategory(g.value)"
             >
               {{ t(`search.filters.deck.${g.key}`) }}
@@ -361,8 +400,46 @@ function clearAll() {
           </div>
         </div>
 
+        <!-- Spell sub-type -->
+        <div class="group spell-trap-inline" :class="{ 'group--disabled': disabledSpellFilters }">
+          <span class="legend">{{ t('search.filters.kind.spell') }}</span>
+          <div class="pills">
+            <button
+              v-for="st in SPELL_SUBTYPES"
+              :key="st.value"
+              class="chip chip--sm spell-trap-inline__chip"
+              :class="{ 'chip--on': filters?.spellType === st.value }"
+              :aria-pressed="filters?.spellType === st.value"
+              :disabled="disabledSpellFilters"
+              :title="t(`search.filters.spellType.${st.label}`)"
+              @click="setSpellType(st.value)"
+            >
+              <img v-if="iconUrl(st.value)" :src="iconUrl(st.value)" alt="" aria-hidden="true" class="chip__icon" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Trap sub-type -->
+        <div class="group spell-trap-inline" :class="{ 'group--disabled': disabledTrapFilters }">
+          <span class="legend">{{ t('search.filters.kind.trap') }}</span>
+          <div class="pills">
+            <button
+              v-for="tt in TRAP_SUBTYPES"
+              :key="tt.value"
+              class="chip chip--sm spell-trap-inline__chip"
+              :class="{ 'chip--on': filters?.trapType === tt.value }"
+              :aria-pressed="filters?.trapType === tt.value"
+              :disabled="disabledTrapFilters"
+              :title="t(`search.filters.trapType.${tt.label}`)"
+              @click="setTrapType(tt.value)"
+            >
+              <img v-if="iconUrl(tt.value)" :src="iconUrl(tt.value)" alt="" aria-hidden="true" class="chip__icon" />
+            </button>
+          </div>
+        </div>
+
         <!-- Monster category -->
-        <div v-if="showCategory" class="group">
+        <div class="group type-grid" :class="{ 'group--disabled': disabledMonsterFilters }">
           <span class="legend">{{ t('search.filters.kind.monster') }}</span>
           <div class="pills">
             <button
@@ -371,6 +448,7 @@ function clearAll() {
               class="chip chip--sm"
               :class="{ 'chip--on': filters?.category === cat.value }"
               :aria-pressed="filters?.category === cat.value"
+              :disabled="disabledMonsterFilters"
               @click="setCategory(cat.value)"
             >
               {{ t(`search.filters.category.${cat.label}`) }}
@@ -378,46 +456,10 @@ function clearAll() {
           </div>
         </div>
 
-        <!-- Spell sub-type -->
-        <div v-if="showSpellType" class="group">
-          <span class="legend">{{ t('search.filters.kind.spell') }}</span>
-          <div class="pills">
-            <button
-              v-for="st in SPELL_SUBTYPES"
-              :key="st.value"
-              class="chip chip--sm"
-              :class="{ 'chip--on': filters?.spellType === st.value }"
-              :aria-pressed="filters?.spellType === st.value"
-              @click="setSpellType(st.value)"
-            >
-              <img v-if="iconUrl(st.value)" :src="iconUrl(st.value)" alt="" aria-hidden="true" class="chip__icon" />
-              {{ t(`search.filters.spellType.${st.label}`) }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Trap sub-type -->
-        <div v-if="showTrapType" class="group">
-          <span class="legend">{{ t('search.filters.kind.trap') }}</span>
-          <div class="pills">
-            <button
-              v-for="tt in TRAP_SUBTYPES"
-              :key="tt.value"
-              class="chip chip--sm"
-              :class="{ 'chip--on': filters?.trapType === tt.value }"
-              :aria-pressed="filters?.trapType === tt.value"
-              @click="setTrapType(tt.value)"
-            >
-              <img v-if="iconUrl(tt.value)" :src="iconUrl(tt.value)" alt="" aria-hidden="true" class="chip__icon" />
-              {{ t(`search.filters.trapType.${tt.label}`) }}
-            </button>
-          </div>
-        </div>
-
         <hr v-if="showStatsBlock" class="divider" />
 
         <!-- Attribute -->
-        <div v-if="showAttribute" class="group">
+        <div class="group attribute-row" :class="{ 'group--disabled': disabledMonsterFilters }">
           <span class="legend">{{ t('search.filters.attribute.label') }}</span>
           <div class="pills">
             <button
@@ -428,6 +470,7 @@ function clearAll() {
               :aria-pressed="(filters?.attribute ?? []).includes(attr)"
               :aria-label="attr"
               :title="attr"
+              :disabled="disabledMonsterFilters"
               @click="toggleAttribute(attr)"
             >
               <img v-if="iconUrl(attr)" :src="iconUrl(attr)" :alt="attr" class="chip__icon chip__icon--lg" />
@@ -437,7 +480,7 @@ function clearAll() {
         </div>
 
         <!-- Level / Rank -->
-        <div v-if="showLevel" class="group">
+        <div class="group" :class="{ 'group--disabled': disabledMonsterFilters }">
           <span class="legend">{{ t('search.filters.level.label') }}</span>
           <div class="row">
             <div class="seg" role="group" :aria-label="t('search.filters.level.label')">
@@ -446,21 +489,35 @@ function clearAll() {
                 :key="cmp.value"
                 :class="{ on: (filters?.levelComparator ?? 'eq') === cmp.value }"
                 :aria-pressed="(filters?.levelComparator ?? 'eq') === cmp.value"
+                :disabled="disabledMonsterFilters"
                 @click="emit_({ levelComparator: cmp.value })"
               >{{ cmp.label }}</button>
             </div>
-            <input
-              class="field"
-              type="number" min="1" max="12" placeholder="1–12"
-              :value="filters?.level ?? ''"
-              @input="setLevel($event.target.value)"
-            />
-            <button v-if="filters?.level != null" class="iconbtn" :aria-label="`✕ ${t('search.filters.level.label')}`" @click="emit_({ level: null, levelComparator: 'eq' })">✕</button>
+            <div class="stars" role="group" :aria-label="t('search.filters.level.label')" @mouseleave="hoverLevel = 0">
+              <button
+                v-for="n in LEVEL_STARS"
+                :key="n"
+                class="star"
+                :class="{ 'star--on': n <= (hoverLevel || filters?.level || 0) }"
+                :aria-pressed="filters?.level === n"
+                :aria-label="String(n)"
+                :title="String(n)"
+                :disabled="disabledMonsterFilters"
+                @mouseenter="hoverLevel = n"
+                @focus="hoverLevel = n"
+                @blur="hoverLevel = 0"
+                @click="setLevel(filters?.level === n ? null : n)"
+              >
+                <img v-if="levelStarUrl" :src="levelStarUrl" alt="" aria-hidden="true" class="star__img" />
+                <template v-else>★</template>
+              </button>
+            </div>
+            <button v-if="filters?.level != null" class="iconbtn" :aria-label="`✕ ${t('search.filters.level.label')}`" :disabled="disabledMonsterFilters" @click="emit_({ level: null, levelComparator: 'eq' })">✕</button>
           </div>
         </div>
 
         <!-- Pendulum scale -->
-        <div v-if="showScale" class="group">
+        <div v-if="showScale" class="group" :class="{ 'group--disabled': disabledMonsterFilters }">
           <span class="legend">{{ t('search.filters.scale.label') }}</span>
           <div class="row">
             <div class="seg" role="group" :aria-label="t('search.filters.scale.label')">
@@ -469,6 +526,7 @@ function clearAll() {
                 :key="cmp.value"
                 :class="{ on: (filters?.scaleComparator ?? 'eq') === cmp.value }"
                 :aria-pressed="(filters?.scaleComparator ?? 'eq') === cmp.value"
+                :disabled="disabledMonsterFilters"
                 @click="emit_({ scaleComparator: cmp.value })"
               >{{ cmp.label }}</button>
             </div>
@@ -476,29 +534,30 @@ function clearAll() {
               class="field"
               type="number" min="0" max="13" placeholder="0–13"
               :value="filters?.scale ?? ''"
+              :disabled="disabledMonsterFilters"
               @input="setScale($event.target.value)"
             />
-            <button v-if="filters?.scale != null" class="iconbtn" :aria-label="`✕ ${t('search.filters.scale.label')}`" @click="emit_({ scale: null, scaleComparator: 'eq' })">✕</button>
+            <button v-if="filters?.scale != null" class="iconbtn" :aria-label="`✕ ${t('search.filters.scale.label')}`" :disabled="disabledMonsterFilters" @click="emit_({ scale: null, scaleComparator: 'eq' })">✕</button>
           </div>
         </div>
 
         <!-- Type / Race -->
-        <div v-if="showRace" class="group">
+        <div class="group" :class="{ 'group--disabled': disabledMonsterFilters }">
           <span class="legend">{{ t('search.filters.race.label') }}</span>
           <div class="row">
             <span class="select">
-              <select :value="filters?.race ?? ''" @change="emit_({ race: $event.target.value || null })">
+              <select :value="filters?.race ?? ''" :disabled="disabledMonsterFilters" @change="setRace($event.target.value || null)">
                 <option value="">—</option>
                 <option v-for="race in RACES" :key="race" :value="race">{{ race }}</option>
               </select>
               <svg class="select__chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6" /></svg>
             </span>
-            <button v-if="filters?.race" class="iconbtn" :aria-label="`✕ ${t('search.filters.race.label')}`" @click="emit_({ race: null })">✕</button>
+            <button v-if="filters?.race" class="iconbtn" :aria-label="`✕ ${t('search.filters.race.label')}`" :disabled="disabledMonsterFilters" @click="setRace(null)">✕</button>
           </div>
         </div>
 
         <!-- Link rating + arrows -->
-        <div v-if="showLink" class="group">
+        <div v-if="showLink" class="group" :class="{ 'group--disabled': disabledMonsterFilters }">
           <span class="legend">{{ t('search.filters.linkRating.label') }}</span>
           <div class="row">
             <div class="seg" role="group" :aria-label="t('search.filters.linkRating.label')">
@@ -507,6 +566,7 @@ function clearAll() {
                 :key="cmp.value"
                 :class="{ on: (filters?.linkRatingComparator ?? 'eq') === cmp.value }"
                 :aria-pressed="(filters?.linkRatingComparator ?? 'eq') === cmp.value"
+                :disabled="disabledMonsterFilters"
                 @click="emit_({ linkRatingComparator: cmp.value })"
               >{{ cmp.label }}</button>
             </div>
@@ -514,9 +574,10 @@ function clearAll() {
               class="field"
               type="number" min="1" max="6" placeholder="1–6"
               :value="filters?.linkRating ?? ''"
+              :disabled="disabledMonsterFilters"
               @input="setLinkRating($event.target.value)"
             />
-            <button v-if="filters?.linkRating != null" class="iconbtn" :aria-label="`✕ ${t('search.filters.linkRating.label')}`" @click="emit_({ linkRating: null, linkRatingComparator: 'eq' })">✕</button>
+            <button v-if="filters?.linkRating != null" class="iconbtn" :aria-label="`✕ ${t('search.filters.linkRating.label')}`" :disabled="disabledMonsterFilters" @click="emit_({ linkRating: null, linkRatingComparator: 'eq' })">✕</button>
           </div>
 
           <span class="legend" style="margin-top: 8px">{{ t('search.filters.linkArrows.label') }}</span>
@@ -531,6 +592,7 @@ function clearAll() {
                 :class="{ 'arrow--on': (filters?.linkArrows ?? []).includes(arrow.token) }"
                 :aria-pressed="(filters?.linkArrows ?? []).includes(arrow.token)"
                 :aria-label="arrow.token"
+                :disabled="disabledMonsterFilters"
                 @click="toggleLinkArrow(arrow.token)"
               >{{ arrow.label }}</button>
             </template>
@@ -550,11 +612,13 @@ function clearAll() {
   --sel-soft: color-mix(in oklch, var(--c-trade) 15%, transparent);
   --sel-line: color-mix(in oklch, var(--c-trade) 48%, transparent);
 
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: 16px;
+  font-weight: bold;
+  border-right: 1px solid var(--c-border);
+  border-radius: 10px;
   color: var(--c-text);
   overflow: clip;
+
+  overflow: scroll;
 }
 
 /* Toggle ------------------------------------------------------------------- */
@@ -603,11 +667,10 @@ function clearAll() {
 .facet__x:focus-visible { outline: 2px solid var(--sel-line); outline-offset: 1px; }
 
 /* Expanded body ------------------------------------------------------------ */
-.body { display: flex; flex-direction: column; gap: 18px; padding: 2px 16px 18px; }
+.body { display: flex; flex-direction: column; gap: 18px; padding: 20px 20px;  scrollbar-color: transparent !important; scrollbar-width: 0px;}
 /* Sidebar mode hides the toggle header, so the body needs its own top padding
    (panel mode gets that gap from the toggle row above it). */
 .filters--sidebar .body { padding-top: 16px; }
-.bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 
 .clear {
   background: transparent; border: none; color: var(--c-muted);
@@ -619,8 +682,52 @@ function clearAll() {
 .clear:focus-visible { outline: 2px solid var(--sel-line); outline-offset: 2px; }
 
 .group { display: flex; flex-direction: column; gap: 8px; }
-.legend { font-size: .6875rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--c-muted); }
-.pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  /* Borderless text cells in an equal-width grid — shared by the Monster type
+     grid and the Deck (Main/Extra) grid. Column count via --type-grid-cols. */
+  .type-grid .pills {
+    display: grid;
+    grid-template-columns: repeat(var(--type-grid-cols, 3), minmax(0, 1fr));
+    gap: 6px;
+
+  }
+  .type-grid .chip {
+    width: 100%;
+    justify-content: center;
+    border: 0;
+    border-radius: 0px;
+    min-height: 40px;
+    background: var(--c-surface);
+  }
+  .type-grid .chip:hover,
+  .type-grid .chip.chip--on {
+    background: var(--c-surface-2);
+    color: var(--c-text);
+  }
+  .spell-trap-inline .pills {
+    display: flex;
+    flex-wrap: nowrap;
+  }
+  /* Bare-icon spell/trap chips. Qualified with `.chip` to out-specify the base
+     `.chip` / `.chip--sm` rules that are declared later in this stylesheet.
+     Each chip is an equal-width box (flex: 1) with its icon centered inside. */
+  .spell-trap-inline__chip.chip {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 32px;
+    padding: 0;
+    justify-content: center;
+    border: 0;
+    border-radius: 0;
+    background: var(--c-surface-2);
+    opacity: .5;
+  }
+  .spell-trap-inline__chip.chip .chip__icon {width: 24px; height: 24px; }
+  .spell-trap-inline__chip.chip:hover { background: var(--c-surface-2); opacity: .8; }
+  .spell-trap-inline__chip.chip.chip--on { background: transparent; border: 0; opacity: 1; }
+  .spell-trap-inline__chip.chip:disabled { background: transparent; opacity: .4; }
+.pills { display: flex; flex-wrap: wrap; gap: 3px; }
+/* Each icon fills an equal-width box across the row, centered inside it. */
+.attribute-row .pills { flex-wrap: nowrap;}
 .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .divider { height: 1px; width: 100%; background: var(--c-border); border: none; }
 
@@ -642,7 +749,21 @@ function clearAll() {
 /* Icon-bearing chips (attribute / spell-trap sub-type) */
 .chip__icon { width: 18px; height: 18px; object-fit: contain; display: block; flex-shrink: 0; }
 .chip__icon--lg { width: 22px; height: 22px; }
-.chip--icon { padding: 5px 10px; }   /* tighter padding for icon-only attribute chips */
+/* Icon-only attribute chips: bare icon, no border/background/padding.
+   Selection state is shown via opacity instead of the pill treatment. */
+.chip--icon {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  opacity: .5;
+}
+.chip--icon:hover { background: transparent; opacity: .8; }
+.chip--icon.chip--on { background: transparent; border: 0; opacity: 1; }
+.chip--icon:disabled { background: transparent; }
 
 /* Segmented comparator ----------------------------------------------------- */
 .seg { display: inline-flex; border: 1px solid var(--c-border); border-radius: 9999px; overflow: clip; }
@@ -658,6 +779,24 @@ function clearAll() {
 .seg button:hover { background: var(--c-surface-2); color: var(--c-text); }
 .seg button.on { background: var(--sel-soft); color: var(--c-text); }
 .seg button:focus-visible { outline: 2px solid var(--sel-line); outline-offset: -2px; }
+
+/* Level/Rank star strip ---------------------------------------------------- */
+/* The strip claims its own row and the 12 stars share its width, each shrinking
+   to fit while staying square (aspect-ratio) — so they never distort even in the
+   narrow sidebar. flex-grow 0 caps them at ~20px in the wider panel layout. */
+.stars { display: flex; align-items: center; gap: 3px; flex: 1 1 100%; }
+.star {
+  appearance: none; cursor: pointer;
+  border: 0; background: transparent; padding: 0;
+  line-height: 0; border-radius: 6px;
+  flex: 0 1 20px; min-width: 0;
+  opacity: .3;
+  transition: opacity .12s ease-out;
+}
+.star__img { width: 100%; height: auto; aspect-ratio: 1 / 1; display: block; }
+.star.star--on { opacity: 1; }
+.star:focus-visible { outline: 2px solid var(--sel-line); outline-offset: 1px; }
+.star:disabled { cursor: not-allowed; }
 
 /* Inputs (sit in a darker well for inset depth) ---------------------------- */
 .field {
@@ -679,6 +818,34 @@ function clearAll() {
 }
 .select select:focus { outline: none; border-color: var(--sel); box-shadow: 0 0 0 3px var(--sel-soft); }
 .select__chev { position: absolute; right: 10px; pointer-events: none; color: var(--c-muted); }
+
+.group--disabled { opacity: .56; }
+.group--disabled .legend { color: var(--c-muted); }
+.chip:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+  background: var(--c-surface-2);
+  color: var(--c-muted);
+  border-color: var(--c-border);
+}
+.seg button:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+  color: var(--c-muted);
+  background: transparent;
+}
+.field:disabled,
+.select select:disabled {
+  background: var(--c-surface-2);
+  color: var(--c-muted);
+  border-color: var(--c-border);
+  cursor: not-allowed;
+}
+.iconbtn:disabled,
+.arrow:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+}
 
 .iconbtn {
   display: inline-flex; align-items: center; justify-content: center;
