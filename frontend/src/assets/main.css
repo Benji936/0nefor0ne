@@ -149,9 +149,15 @@ a, button, [role="button"], input, select, textarea, label {
   touch-action: manipulation;
 }
 
-/* Prevent scroll-pull-to-refresh interference inside scrollable panels */
-.overflow-y-auto, .overflow-x-auto {
-  overscroll-behavior: contain;
+/* Prevent scroll-pull-to-refresh interference inside scrollable panels.
+   Contain only the axis each panel actually scrolls, so vertical wheel over a
+   horizontal card list (overflow-x-auto) still chains to the page instead of
+   getting trapped and halting the page scroll. */
+.overflow-y-auto {
+  overscroll-behavior-y: contain;
+}
+.overflow-x-auto {
+  overscroll-behavior-x: contain;
 }
 
 .hidden { display: none; }
