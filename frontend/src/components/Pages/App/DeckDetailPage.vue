@@ -42,6 +42,15 @@
         </span>
       </p>
 
+      <!-- Completion bar (owned + sourced / total) -->
+      <div v-if="!loadingStats && stats" class="mb-2" style="max-width: 420px">
+        <DeckCompletionBar
+          :owned="stats.owned"
+          :sourced="stats.sourcedCount"
+          :total="stats.total"
+        />
+      </div>
+
       <!-- Stats loading -->
       <div v-if="loadingStats" class="d-flex align-center gap-2 mb-4">
         <v-progress-circular indeterminate size="20" width="2" color="primary" />
@@ -69,6 +78,15 @@
         >
           {{ $t('deckDetail.addMissingToWishlist') }}
         </v-btn>
+      </div>
+
+      <!-- ── Deck stats breakdown (type mix + estimated value) ── -->
+      <div v-if="!loadingStats && stats" class="mb-6">
+        <DeckStatsBreakdown
+          :entries="deckEntries"
+          :card-map="stats.cardMap"
+          :missing-entries="stats.missingEntries"
+        />
       </div>
 
       <!-- ── Card sections ── -->
@@ -126,13 +144,16 @@ import { parseYdk } from '@/lib/ydk';
 import { getCardsByIds } from '@/api';
 import { getClient } from '@/lib/supabaseClient';
 import DeckSection from '@/components/library/DeckSection.vue';
+import DeckCompletionBar from '@/components/library/DeckCompletionBar.vue';
+import DeckStatsBreakdown from '@/components/library/DeckStatsBreakdown.vue';
+import { computeSourcedCount } from '@/lib/deckStats';
 import { loadIgnoredIds, toggleIgnoredId, loadIgnoredIdsFromRecord, saveIgnoredIdsToDb } from '@/lib/deckIgnore';
 
 const GUEST_KEY = 'tm_guest_decks';
 
 export default {
   name: 'DeckDetailPage',
-  components: { DeckSection },
+  components: { DeckSection, DeckCompletionBar, DeckStatsBreakdown },
 
   props: {
     login: { type: Object, default: null },
@@ -147,7 +168,10 @@ export default {
       title,
       meta: [{ name: 'robots', content: 'noindex' }],
     });
-    return {};
+    // Exposed so loadDeck() can retitle the tab once the deck name is known.
+    // Calling useHead() again from a method throws after an await (no component
+    // context), so the head is registered once here and driven via this ref.
+    return { headTitle: title };
   },
 
   data() {
@@ -169,6 +193,7 @@ export default {
         total: 0,
         owned: 0,
         missing: 0,
+        sourcedCount: 0,
         unrecognized: 0,
         missingEntries: [],
       },
@@ -184,6 +209,13 @@ export default {
   computed: {
     isGuest() {
       return !this.login?.user?.id;
+    },
+
+    // All parsed YDK rows across main/extra/side — the entry list the deckStats.js
+    // derivations operate over (breakdown + estimated value), consumed by
+    // <DeckStatsBreakdown> which recomputes the type mix and value from these props.
+    deckEntries() {
+      return [...this.stats.main, ...this.stats.extra, ...this.stats.side];
     },
   },
 
@@ -242,8 +274,9 @@ export default {
           };
         }
 
-        // Update page title now that we have the deck name
-        useHead({ title: this.$t('deckDetail.title', { name: this.deck.name }) + ' — One for One' });
+        // Update page title now that we have the deck name (via the head ref
+        // registered in setup(); see comment there)
+        this.headTitle = this.$t('deckDetail.title', { name: this.deck.name }) + ' — One for One';
 
         // Load ignored card IDs — from Supabase record for auth users, localStorage for guests
         // (SSR-safe: only called from mounted())
@@ -315,6 +348,9 @@ export default {
         );
         const missing = missingEntries.reduce((s, c) => s + c.qty, 0);
 
+        // sourced = recognized, not owned, but marked ignored (symmetric to missing)
+        const sourcedCount = computeSourcedCount(allEntries, cardMap, ownedIds, ignoredIds);
+
         this.stats = {
           cardMap,
           ownedIds,
@@ -324,6 +360,7 @@ export default {
           total,
           owned,
           missing,
+          sourcedCount,
           unrecognized,
           missingEntries,
         };
@@ -422,6 +459,11 @@ export default {
       );
       this.stats.missing = missingEntries.reduce((sum, e) => sum + e.qty, 0);
       this.stats.missingEntries = missingEntries;
+      // Keep sourcedCount in lock-step with missing so the bar's segments and the
+      // headline stay reactive without re-fetching card/ownership data (Risk R1).
+      this.stats.sourcedCount = computeSourcedCount(
+        allEntries, this.stats.cardMap, this.stats.ownedIds, this.ignoredIds
+      );
     },
 
     // ── Realtime subscription (auth users only) ──────────────────────────

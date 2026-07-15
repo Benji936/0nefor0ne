@@ -419,3 +419,189 @@ The user request asks to **select which cards are missing** before adding to wis
 import { cardImage } from '@/lib/cardImage'
 // cardImage(numericId) → full URL to card image (R2 or YGOPRODeck CDN fallback)
 ```
+
+---
+
+## 9. Deck Completion Bar & Richer Deck Data
+
+> Added from research phase for the `deck-completion-page` feature (dedicated
+> deck page with a visual completion bar + more deck statistics).
+
+### What already exists vs. what's missing
+
+Both `DecksPage.vue` and `DeckDetailPage.vue` **already compute** owned/total
+counts per deck — `computeStats(deck)` in `DecksPage.vue` (~lines 641–706) and
+`resolveStats()` in `DeckDetailPage.vue` build a `stats` object shaped:
+
+```js
+{
+  cardMap, ownedIds,           // Object<id, card>, Set<number>
+  main, extra, side,           // parsed YDK entries [{id, qty}]
+  total, owned, missing, unrecognized,
+  missingEntries,              // entries eligible for "add to wishlist"
+}
+```
+
+Today this is only ever rendered as **plain text** (`decks.ownedCount` /
+`decks.missingCount` spans, `deckDetail.summary` interpolated string). There is
+**no visual progress bar anywhere in the decks area** — grepping the repo shows
+the only live `v-progress-linear` usage is an upload progress bar in
+`frontend/src/components/library/BulkAddCards.vue` (unrelated). Do not go
+hunting for an existing deck completion-bar component to reuse — there isn't
+one yet; build it fresh, reusing the `stats.owned`/`stats.total` numbers that
+already exist.
+
+### Completion bar — reuse existing stats, add a computed + a bar element
+
+No new Supabase query is needed for the bar itself. Add a `completionPct`
+computed on top of the existing `stats` (or per-deck `deckStats[deck.id]`):
+
+```js
+computed: {
+  completionPct() {
+    return this.stats.total > 0
+      ? Math.round((this.stats.owned / this.stats.total) * 100)
+      : 0;
+  },
+},
+```
+
+Render with Vuetify's `v-progress-linear`, themed via CSS vars (never hardcode
+colors), matching the pattern documented in `.claude/skills/collection-progress/
+SKILL.md` for `SetPage.vue`'s (still-unbuilt, `todo/`) set-level progress bar —
+treat that skill as a **design reference**, not working code to copy, since
+`SetPage.vue` does not implement it yet either:
+
+```vue
+<v-progress-linear
+  :model-value="completionPct"
+  color="var(--c-accent)"
+  bg-color="var(--c-surface-2)"
+  rounded
+  height="8"
+  :aria-label="$t('deckDetail.completionAria', { owned: stats.owned, total: stats.total, pct: completionPct })"
+/>
+```
+
+For the `DecksPage.vue` list view, add the same computed per deck (e.g. a
+`completionPct(deckId)` method reading `this.deckStats[deckId]`) and render a
+compact bar inside each deck card/row, next to the existing owned/missing text.
+
+### Open product question — does "SOURCED" (ignored) count toward completion?
+
+Per `.claude/skills/deck-card-ignore/SKILL.md`, users can mark a missing card as
+"not needed" (`ignoredIds` Set, persisted per-deck). Ignored cards are already
+excluded from `stats.missing` / `missingEntries`. Decide explicitly during
+architecture whether the completion % denominator/numerator should:
+- **A. Strict**: `completionPct = owned / total` (ignored cards still count
+  against you) — simplest, matches `stats.owned`/`stats.total` as-is.
+- **B. Adjusted**: `completionPct = (owned + ignoredCount) / total` — a
+  "practically complete" view consistent with `missing` already excluding
+  ignored cards.
+Flag this to the user/PM rather than silently picking one; whichever is chosen,
+compute `ignoredCount` the same way `resolveStats()`/`onToggleIgnore()` already
+do (`allEntries.filter(c => cardMap[c.id] && !ownedIds.has(c.id) &&
+ignoredIds.has(c.id))`).
+
+### Richer deck data — data sources already available, no new API needed
+
+`stats.cardMap` (built via `getCardsByIds()` in `frontend/src/api.js`) already
+holds full YGOPRODeck card objects for every card in the deck — `type`,
+`frameType`, `race`, `attribute`, `level`, `card_prices`, `card_sets`, etc. Build
+breakdown computeds directly off `stats.cardMap` + `stats.main/extra/side`
+instead of fetching anything new:
+
+```js
+computed: {
+  // Monster / Spell / Trap counts (and sub-types) via frameType, reusing the
+  // same classification helpers SetPage/CardPage already use:
+  typeBreakdown() {
+    const counts = {};
+    for (const entry of [...this.stats.main, ...this.stats.extra, ...this.stats.side]) {
+      const card = this.stats.cardMap[entry.id];
+      if (!card) continue;
+      const key = card.frameType || 'unknown'; // 'normal','effect','fusion','synchro','xyz','link','pendulum*','spell','trap'
+      counts[key] = (counts[key] || 0) + entry.qty;
+    }
+    return counts;
+  },
+  // Approximate deck market value from card_prices (cardmarket_price is EUR,
+  // matches the trading-market context of this app)
+  estimatedPriceEur() {
+    let total = 0;
+    for (const entry of [...this.stats.main, ...this.stats.extra, ...this.stats.side]) {
+      const card = this.stats.cardMap[entry.id];
+      const price = parseFloat(card?.card_prices?.[0]?.cardmarket_price ?? '0');
+      if (!Number.isNaN(price)) total += price * entry.qty;
+    }
+    return total;
+  },
+},
+```
+
+Reuse `frontend/src/lib/cardIcons.js` helpers (`attributeIconFor`,
+`propertyIconFor`, `levelIconFor`, `isSpellTrap`) instead of re-deriving
+frame-type/attribute logic when rendering breakdown chips/icons — they already
+handle the `frameType`/`race` normalization and icon-asset lookup used
+elsewhere (e.g. attribute icons, Spell/Trap property icons).
+
+### i18n keys — extend `deckDetail.*` / `decks.*`, don't create a new namespace
+
+Existing keys already cover summary text (`deckDetail.summary`,
+`decks.ownedCount`, `decks.missingCount`). Add new keys alongside them, in all
+4 locale files (`en.json`, `fr.json`, `de.json`, `it.json`), matching the
+interpolation style already used (`{owned}`, `{total}`, `{missing}`):
+
+```json
+"deckDetail": {
+  "completionPct": "{pct}% complete",
+  "completionAria": "Deck completion: {owned} of {total} cards owned ({pct}%)",
+  "typeBreakdown": "Card types",
+  "estimatedValue": "Estimated value"
+}
+```
+
+No em dashes in any locale copy (repo-wide UI copy convention) — use commas or
+periods instead.
+
+### Pitfalls specific to this feature
+
+- **Don't add a second card/ownership fetch.** `DeckDetailPage.vue` and
+  `DecksPage.vue` already fetch `cardMap` and `ownedIds` once per deck
+  (`resolveStats()` / `computeStats()`). Compute the bar % and richer-data
+  breakdowns as `computed` properties over the existing `stats` object — adding
+  a parallel fetch duplicates YGOPRODeck API calls and risks stats/bar
+  disagreeing after a realtime update.
+- **Realtime resync already recomputes `stats`.** Both pages subscribe to a
+  Supabase `postgres_changes` channel on the `Card` table
+  (`deck-owned-${deckId}` / `decks-page-owned-watch`) and call
+  `resolveStats()`/`computeStats()` on change. Any computed built on top of
+  `stats` updates for free — no new subscription needed for the completion bar.
+- **`card_prices` can be an empty array** for cards YGOPRODeck hasn't priced;
+  guard `card?.card_prices?.[0]` before reading `cardmarket_price`, and treat
+  `NaN`/missing as `0` rather than throwing off the total.
+- **SSR/SSG risk is low here** (unlike `SetPage.vue`): deck pages are
+  auth-gated and already excluded from `vite.config.js`
+  `ssgOptions.includedRoutes`, so there's no prerendered-HTML leak risk to
+  guard against — still call all Supabase/localStorage reads from `mounted()`
+  only, per existing convention, but this is not a build-breaking risk class
+  the way it is for `SetPage.vue`.
+- **Vue 3 Set reactivity**: if the completion feature adds any new
+  Set-typed reactive state, reassign rather than mutate in place (see §
+  Deck Card Ignore skill for the canonical `next = new Set(...); this.x =
+  next;` pattern) — plain `.add()`/`.delete()` on a `data()` Set does not
+  trigger a re-render.
+
+### File references for this feature
+
+| File | Role |
+|---|---|
+| `frontend/src/components/Pages/App/DecksPage.vue` | List view — add completion bar per deck card, reuse `deckStats` |
+| `frontend/src/components/Pages/App/DeckDetailPage.vue` | Detail view — add completion bar + richer stats block, reuse `stats` |
+| `frontend/src/components/library/DeckSection.vue` | Card grid renderer — unchanged; bar/stats live in the parent page |
+| `frontend/src/api.js` | `getCardsByIds()` — source of `type`/`frameType`/`card_prices` etc., already fetched |
+| `frontend/src/lib/cardIcons.js` | Reuse `attributeIconFor`/`propertyIconFor`/`levelIconFor`/`isSpellTrap` for breakdown chips |
+| `frontend/src/lib/deckIgnore.js` | `ignoredIds` load/save — needed if completion % adjusts for ignored/SOURCED cards |
+| `frontend/src/locales/{en,fr,de,it}.json` | Extend `deckDetail.*` / `decks.*` with completion/breakdown keys |
+| `.claude/skills/collection-progress/SKILL.md` | Design reference for progress-bar UX/copy (SetPage's analogous, not-yet-built feature) |
+| `.claude/skills/deck-card-ignore/SKILL.md` | `ignoredIds` semantics — read before deciding the completion % formula |

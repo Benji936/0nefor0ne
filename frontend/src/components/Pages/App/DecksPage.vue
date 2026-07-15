@@ -179,6 +179,15 @@
                   @click.stop="askDelete(deck)"
                   :title="$t('decks.delete')"
                 />
+                <v-btn
+                  :to="{ name: 'deckDetail', params: { locale: $route.params.locale, deckId: deck.id || deck.localId } }"
+                  size="small"
+                  variant="tonal"
+                  color="primary"
+                  class="ml-auto flex-shrink-0"
+                  append-icon="mdi-arrow-right"
+                  @click.stop
+                >{{ $t('decks.openDeck') }}</v-btn>
               </div>
               <div class="text-caption mt-1" style="color: var(--c-muted)">
                 <template v-if="deckStats[deck.id]">
@@ -195,6 +204,20 @@
                   </template>
                 </template>
                 <span v-else>&nbsp;</span>
+              </div>
+
+              <!-- Compact completion bar + percentage -->
+              <div v-if="deckStats[deck.id]" class="d-flex align-center gap-2 mt-1" style="max-width: 320px">
+                <DeckCompletionBar
+                  compact
+                  :owned="deckStats[deck.id].owned"
+                  :sourced="deckStats[deck.id].sourcedCount"
+                  :total="deckStats[deck.id].total"
+                  class="flex-grow-1"
+                />
+                <span class="text-caption" style="color: var(--c-muted); white-space: nowrap">
+                  {{ deckCompletionPct(deck) }}%
+                </span>
               </div>
             </template>
           </div>
@@ -280,13 +303,15 @@ import { parseYdk } from '@/lib/ydk';
 import { getCardsByIds } from '@/api';
 import { getClient } from '@/lib/supabaseClient';
 import DeckSection from '@/components/library/DeckSection.vue';
+import DeckCompletionBar from '@/components/library/DeckCompletionBar.vue';
 import { loadIgnoredIds, toggleIgnoredId, loadIgnoredIdsFromRecord, saveIgnoredIdsToDb } from '@/lib/deckIgnore';
+import { computeSourcedCount, computeCompletionPct } from '@/lib/deckStats';
 
 const GUEST_KEY = 'tm_guest_decks';
 
 export default {
   name: 'DecksPage',
-  components: { DeckSection },
+  components: { DeckSection, DeckCompletionBar },
 
   props: {
     login: { type: Object, default: null },
@@ -390,6 +415,13 @@ export default {
   },
 
   methods: {
+    // ── Completion bar helper ───────────────────────────────────────────
+    deckCompletionPct(deck) {
+      const stats = this.deckStats[deck.id];
+      if (!stats) return 0;
+      return computeCompletionPct({ owned: stats.owned, sourced: stats.sourcedCount, total: stats.total });
+    },
+
     // ── Persistence: load ───────────────────────────────────────────────
     async loadDecks() {
       const userId = this.login?.user?.id ?? null;
@@ -622,9 +654,10 @@ export default {
           c => stats.cardMap[c.id] && !stats.ownedIds.has(c.id) && !ignoredIds.has(c.id)
         );
         const missing = missingEntries.reduce((s, c) => s + c.qty, 0);
+        const sourcedCount = computeSourcedCount(allEntries, stats.cardMap, stats.ownedIds, ignoredIds);
         this.deckStats = {
           ...this.deckStats,
-          [deckId]: { ...stats, missing, missingEntries },
+          [deckId]: { ...stats, missing, missingEntries, sourcedCount },
         };
       }
     },
@@ -682,6 +715,7 @@ export default {
         const unrecognized = allEntries
           .filter(c => !cardMap[c.id])
           .reduce((s, c) => s + c.qty, 0);
+        const sourcedCount = computeSourcedCount(allEntries, cardMap, ownedIds, ignoredIds);
 
         this.deckStats = {
           ...this.deckStats,
@@ -696,6 +730,7 @@ export default {
             missing,
             unrecognized,
             missingEntries,
+            sourcedCount,
           },
         };
       } catch (err) {
