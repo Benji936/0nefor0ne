@@ -14,11 +14,14 @@
     "decks": "Decks",
     "collapseMenu": "Comprimi menu",
     "expandMenu": "Espandi menu",
-    "joinDiscord": "Unisciti al nostro Discord"
+    "joinDiscord": "Unisciti al nostro Discord",
+    "support": "Sostienici"
   },
   "footer": {
     "privacy": "Informativa sulla privacy",
-    "contact": "Contatti"
+    "terms": "Termini",
+    "contact": "Contatti",
+    "builtWith": "Realizzato con"
   },
   "hero": {
     "headline": "Scambia i tuoi doppioni.<br>Caccia i tuoi obiettivi.",
@@ -128,6 +131,28 @@
       "labelMatch": "MATCH",
       "labelWishlist": "La tua lista dei desideri"
     },
+    "discord": {
+      "eyebrow": "Community",
+      "heading": "Scambia direttamente da Discord",
+      "body": "Pubblica una carta sul nostro Discord e apparirà sul sito in pochi secondi. Trova corrispondenze reciproche, chatta con i collezionisti in tempo reale e non perderti nessuna novità.",
+      "bullets": {
+        "sync": "Pubblica nel server, si sincronizza sul sito",
+        "chat": "Chatta con i collezionisti in tempo reale",
+        "alerts": "Sii il primo a scoprire novità ed eventi"
+      },
+      "cta": "Entra nel nostro Discord"
+    },
+    "donate": {
+      "eyebrow": "Supporto",
+      "heading": "Mantieni One for One gratuito",
+      "body": "One for One è creato e gestito da una sola persona, senza commissioni e senza pubblicità. Se il sito ti fa risparmiare tempo, una piccola mancia aiuta a coprire i server e mantiene ogni funzione gratuita per tutti.",
+      "bullets": {
+        "servers": "Copre l'hosting e i costi di gestione",
+        "free": "Mantiene tutto il sito gratuito, senza pubblicità",
+        "solo": "Sostiene direttamente uno sviluppatore indipendente"
+      },
+      "cta": "Offrimi un caffè"
+    },
     "footer": {
       "blurb": "Scambio di carte Yu-Gi-Oh! diretto tra giocatori. Niente commissioni, niente aste.",
       "colProduct": "Prodotto",
@@ -138,9 +163,13 @@
       "trade": "Scambi",
       "about": "Chi siamo",
       "privacy": "Privacy",
+      "terms": "Termini",
+      "termsOfService": "Termini di servizio",
       "contact": "Contatti",
-      "copyright": "© 2026 One for One. Non affiliato a Konami. Yu-Gi-Oh! è un marchio dei rispettivi proprietari.",
-      "privacyPolicy": "Informativa sulla privacy"
+      "copyright": "© 2026 One for One di Benjamin Sitbon. Non affiliato a Konami. Yu-Gi-Oh! è un marchio dei rispettivi proprietari.",
+      "privacyPolicy": "Informativa sulla privacy",
+      "builtWith": "Realizzato con",
+      "builtWithStripTitle": "Realizzato con & partner"
     }
   },
   "auth": {
@@ -290,7 +319,7 @@
     "yourAnnounceHint": "Solo tu puoi eliminare o segnare come venduto",
     "allAnnounces": "Tutti gli annunci",
     "noSearchResults": "Nessun annuncio corrisponde alla tua ricerca.",
-    "onlyYours": "Nessun altro annuncio ancora — il tuo è il primo!"
+    "onlyYours": "Nessun altro annuncio ancora, il tuo è il primo!"
   },
   "announce": {
     "title": "Titolo",
@@ -313,7 +342,14 @@
     "deleteConfirm": "Eliminare questo annuncio?",
     "editTitle": "Modifica annuncio",
     "saveChanges": "Salva modifiche",
-    "viewOnDiscord": "Vedi su Discord"
+    "viewOnDiscord": "Vedi su Discord",
+    "addToTradeList": "Aggiungi alla lista scambi",
+    "addedToList": "Aggiunto alla lista",
+    "linkCard": "Collega una carta",
+    "cardSearchPlaceholder": "Cerca per nome o codice (LOB-EN001)",
+    "cardNotFound": "Nessuna carta trovata.",
+    "cardSearchFailed": "Ricerca fallita. Riprova.",
+    "cardLinkFailed": "Impossibile collegare la carta."
   },
   "announceChat": {
     "withSeller": "Chatta con il venditore",
@@ -729,7 +765,16 @@
     "addMissingToWishlist": "Add missing to wishlist",
     "allOwned": "You own all cards in this deck!",
     "summary": "{total} cards · {owned} owned · {missing} missing",
-    "unrecognized": "{count} unrecognized"
+    "unrecognized": "{count} unrecognized",
+    "completionPct": "{pct}% completato",
+    "completionAria": "{owned} di {total} carte possedute, {pct}% completato",
+    "ownedSegment": "Posseduta",
+    "sourcedSegment": "Ottenuta",
+    "missingSegment": "Mancante",
+    "typeBreakdown": "Ripartizione per tipo",
+    "estimatedValue": "Valore stimato: {value}",
+    "estimatedApprox": "Approssimativo, basato sui prezzi più bassi elencati",
+    "priceUnavailable": "Prezzo non disponibile"
   },
   "decks": {
     "title": "I miei Deck",
@@ -744,6 +789,7 @@
     "addMissing": "Aggiungi {count} carta mancante alla lista desideri | Aggiungi {count} carte mancanti alla lista desideri",
     "migratePartialFail": "Non è stato possibile salvare {errors} deck.",
     "allOwned": "Possiedi tutte le carte di questo deck",
+    "openDeck": "Apri il deck",
     "rename": "Rinomina",
     "delete": "Elimina deck",
     "deleteConfirm": "Eliminare questo deck?",
@@ -785,6 +831,10 @@
       "title": "Informativa sulla Privacy  One for One",
       "desc": "Informativa sulla privacy di One for One, la piattaforma di scambio gratuita di carte Yu-Gi-Oh!."
     },
+    "terms": {
+      "title": "Termini di servizio  One for One",
+      "desc": "Termini di servizio di One for One, la piattaforma gratuita di scambio di carte Yu-Gi-Oh! gestita da Benjamin Sitbon."
+    },
     "cards": {
       "title": "Sfoglia le carte Yu-Gi-Oh!  One for One",
       "desc": "Cerca e filtra l'intero database di carte Yu-Gi-Oh! per tipo, attributo, livello e altro. Trova carte da aggiungere al tuo mazzo di scambio o alla lista desideri su One for One."
@@ -792,6 +842,10 @@
     "combo": {
       "title": "Esploratore di combo  One for One",
       "desc": "Scopri ogni carta che un effetto Yu-Gi-Oh! può cercare, Evocare Specialmente o mandare al Cimitero. Esplora cosa può recuperare l'effetto di questa carta su One for One."
+    },
+    "built-with": {
+      "title": "Realizzato con & partner | One for One",
+      "desc": "I servizi che alimentano One for One e i marketplace dove i collezionisti comprano e vendono carte Yu-Gi-Oh!."
     }
   },
   "deckIgnore": {
@@ -898,13 +952,13 @@
     "effectN": "Effetto {n}"
   },
   "simulator": {
-    "title": "Simulatore — Modalità motore",
-    "engineLoadError": "Motore non disponibile — uso del campo manuale",
+    "title": "Simulatore: Modalità motore",
+    "engineLoadError": "Motore non disponibile, uso del campo manuale",
     "loading": "Caricamento motore…",
     "error": "Errore motore",
     "engineBadge": "Motore",
-    "errorFetch": "Impossibile caricare lo script di questa carta — iniezione annullata.",
-    "manualMoveDisabled": "Il riposizionamento manuale è disattivato in modalità motore — il motore delle regole gestisce il campo. Usa il selettore di carte per iniettare, oppure il menu azioni e le decisioni del motore per spostare le carte.",
+    "errorFetch": "Impossibile caricare lo script di questa carta, iniezione annullata.",
+    "manualMoveDisabled": "Il riposizionamento manuale è disattivato in modalità motore, il motore delle regole gestisce il campo. Usa il selettore di carte per iniettare, oppure il menu azioni e le decisioni del motore per spostare le carte.",
     "pending": {
       "title": "Decisione motore richiesta",
       "prompt": "Scegli un'opzione:"
@@ -982,7 +1036,7 @@
     },
     "extraDeckPicker": {
       "title": "Evocazione Extra Deck",
-      "hint": "Materiali ignorati — piazza direttamente sul campo",
+      "hint": "Materiali ignorati, piazza direttamente sul campo",
       "searchPlaceholder": "Cerca Fusione / Synchro / Xyz / Link…",
       "formatLabel": "Formato / lista ban"
     },
@@ -999,5 +1053,26 @@
     "noComboData": "Nessun dato combo EDOPRO per questa carta.",
     "broadResult": "Risultato ampio; nessun set di carte preciso mostrato.",
     "noCandidates": "Nessuna carta candidata trovata per questo effetto."
+  },
+  "builtWith": {
+    "back": "Indietro",
+    "heading": "Realizzato con & partner",
+    "intro": "One for One è sviluppato e ospitato grazie a questi servizi e collabora con i marketplace dove i collezionisti comprano e vendono.",
+    "disclosure": "Alcuni link qui sotto sono link di referral. Se ti iscrivi o acquisti tramite questi link, sostieni One for One senza costi aggiuntivi per te.",
+    "groups": {
+      "marketplace": "Dove comprare",
+      "stack": "Realizzato con"
+    },
+    "visit": "Visita {name}",
+    "tools": {
+      "tcgplayer": "Compra e vendi carte singole da migliaia di venditori affidabili.",
+      "ebay": "Prodotti sigillati, carte singole e oggetti da collezione da venditori di tutto il mondo.",
+      "railway": "Hosting cloud che fa funzionare il nostro bot Discord 24 ore su 24."
+    },
+    "support": {
+      "title": "Sostieni One for One",
+      "body": "One for One è gratuito e non applica commissioni di scambio. Se vuoi aiutare a coprire i costi di hosting e a mantenere attivo il progetto, puoi offrirmi un caffè.",
+      "cta": "Sostienici su Ko-fi"
+    }
   }
 }

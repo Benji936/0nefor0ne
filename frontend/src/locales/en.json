@@ -14,11 +14,14 @@
     "decks": "Decks",
     "collapseMenu": "Collapse menu",
     "expandMenu": "Expand menu",
-    "joinDiscord": "Join our Discord"
+    "joinDiscord": "Join our Discord",
+    "support": "Support us"
   },
   "footer": {
     "privacy": "Privacy Policy",
-    "contact": "Contact"
+    "terms": "Terms",
+    "contact": "Contact",
+    "builtWith": "Built with"
   },
   "hero": {
     "headline": "Trade duplicates.<br>Hunt your targets.",
@@ -128,6 +131,28 @@
       "labelMatch": "MATCH",
       "labelWishlist": "Your wishlist"
     },
+    "discord": {
+      "eyebrow": "Community",
+      "heading": "Trade straight from Discord",
+      "body": "Post a card in our Discord and it shows up on the site in seconds. Find mutual matches, chat with collectors in real time, and never miss a drop.",
+      "bullets": {
+        "sync": "Post in the server, it syncs to the site",
+        "chat": "Chat with collectors in real time",
+        "alerts": "Be first to hear about drops & events"
+      },
+      "cta": "Join our Discord"
+    },
+    "donate": {
+      "eyebrow": "Support",
+      "heading": "Keep One for One free",
+      "body": "One for One is built and run by one person, with no fees and no ads. If it saves you time, a small tip helps cover the servers and keeps every feature free for everyone.",
+      "bullets": {
+        "servers": "Covers hosting and running costs",
+        "free": "Keeps the whole site free, no ads",
+        "solo": "Directly supports a solo builder"
+      },
+      "cta": "Buy me a coffee"
+    },
     "footer": {
       "blurb": "Direct peer-to-peer Yu-Gi-Oh! card trading. No fees, no auctions.",
       "colProduct": "Product",
@@ -138,9 +163,13 @@
       "trade": "Trade",
       "about": "About",
       "privacy": "Privacy",
+      "terms": "Terms",
+      "termsOfService": "Terms of Service",
       "contact": "Contact",
-      "copyright": "© 2026 One for One. Not affiliated with Konami. Yu-Gi-Oh! is a trademark of its respective owners.",
-      "privacyPolicy": "Privacy Policy"
+      "copyright": "© 2026 One for One by Benjamin Sitbon. Not affiliated with Konami. Yu-Gi-Oh! is a trademark of its respective owners.",
+      "privacyPolicy": "Privacy Policy",
+      "builtWith": "Built with",
+      "builtWithStripTitle": "Built with & partners"
     }
   },
   "auth": {
@@ -290,7 +319,7 @@
     "yourAnnounceHint": "Only you can see the delete & mark as sold options",
     "allAnnounces": "All announces",
     "noSearchResults": "No announces match your search.",
-    "onlyYours": "No other announces yet — yours is the first!"
+    "onlyYours": "No other announces yet, yours is the first!"
   },
   "announce": {
     "title": "Title",
@@ -313,7 +342,14 @@
     "deleteConfirm": "Delete this announce?",
     "editTitle": "Edit announce",
     "saveChanges": "Save changes",
-    "viewOnDiscord": "View on Discord"
+    "viewOnDiscord": "View on Discord",
+    "addToTradeList": "Add to Trade List",
+    "addedToList": "Added to list",
+    "linkCard": "Link a card",
+    "cardSearchPlaceholder": "Search by name or set code (LOB-EN001)",
+    "cardNotFound": "No card found.",
+    "cardSearchFailed": "Search failed. Try again.",
+    "cardLinkFailed": "Failed to link card."
   },
   "announceChat": {
     "withSeller": "Chat with seller",
@@ -729,7 +765,16 @@
     "addMissingToWishlist": "Add missing to wishlist",
     "allOwned": "You own all cards in this deck!",
     "summary": "{total} cards · {owned} owned · {missing} missing",
-    "unrecognized": "{count} unrecognized"
+    "unrecognized": "{count} unrecognized",
+    "completionPct": "{pct}% complete",
+    "completionAria": "{owned} of {total} cards owned, {pct}% complete",
+    "ownedSegment": "Owned",
+    "sourcedSegment": "Sourced",
+    "missingSegment": "Missing",
+    "typeBreakdown": "Type breakdown",
+    "estimatedValue": "Estimated value: {value}",
+    "estimatedApprox": "Approximate, based on lowest listed prices",
+    "priceUnavailable": "Price unavailable"
   },
   "decks": {
     "title": "My Decks",
@@ -746,6 +791,7 @@
     "allOwned": "You own all cards in this deck",
     "rename": "Rename",
     "delete": "Delete deck",
+    "openDeck": "Open deck",
     "deleteConfirm": "Delete this deck?",
     "guestBanner": "Your decks are saved in your browser. Log in to save them permanently.",
     "migratePrompt": "You have {count} deck(s) saved in your browser. Save them to your account?",
@@ -785,6 +831,10 @@
       "title": "Privacy Policy  One for One",
       "desc": "Privacy policy for One for One, the free Yu-Gi-Oh! card trading platform."
     },
+    "terms": {
+      "title": "Terms of Service  One for One",
+      "desc": "Terms of Service for One for One, the free peer-to-peer Yu-Gi-Oh! card trading platform operated by Benjamin Sitbon."
+    },
     "cards": {
       "title": "Browse Yu-Gi-Oh! Cards  One for One",
       "desc": "Search and filter the full Yu-Gi-Oh! card database by type, attribute, level, and more. Find cards to add to your trade pile or wishlist on One for One."
@@ -792,6 +842,10 @@
     "combo": {
       "title": "Combo Explorer  One for One",
       "desc": "See every card a Yu-Gi-Oh! effect can search, Special Summon, or send to the GY. Explore what this card's effect can fetch on One for One."
+    },
+    "built-with": {
+      "title": "Built with & partners | One for One",
+      "desc": "The services that power One for One, and the marketplaces where collectors buy and sell Yu-Gi-Oh! cards."
     }
   },
   "deckIgnore": {
@@ -898,13 +952,13 @@
     "effectN": "Effect {n}"
   },
   "simulator": {
-    "title": "Simulator — Engine mode",
-    "engineLoadError": "Engine unavailable — using manual board",
+    "title": "Simulator: Engine mode",
+    "engineLoadError": "Engine unavailable, using manual board",
     "loading": "Engine loading…",
     "error": "Engine error",
     "engineBadge": "Engine",
-    "errorFetch": "Could not load that card's script — injection cancelled.",
-    "manualMoveDisabled": "Manual repositioning is off in engine mode — the rules engine owns the board. Use the card picker to inject, or the action menu and decision prompts to move cards.",
+    "errorFetch": "Could not load that card's script, injection cancelled.",
+    "manualMoveDisabled": "Manual repositioning is off in engine mode, the rules engine owns the board. Use the card picker to inject, or the action menu and decision prompts to move cards.",
     "pending": {
       "title": "Engine decision required",
       "prompt": "Choose an option:"
@@ -982,7 +1036,7 @@
     },
     "extraDeckPicker": {
       "title": "Extra Deck Summon",
-      "hint": "Materials skipped — place directly onto field",
+      "hint": "Materials skipped, place directly onto field",
       "searchPlaceholder": "Search Fusion / Synchro / Xyz / Link…",
       "formatLabel": "Format / banlist"
     },
@@ -999,5 +1053,26 @@
     "noComboData": "No EDOPRO combo data for this card yet.",
     "broadResult": "Broad result; no exact card set shown.",
     "noCandidates": "No candidate cards found for this effect."
+  },
+  "builtWith": {
+    "back": "Back",
+    "heading": "Built with & partners",
+    "intro": "One for One is built and run with these services, and partners with the marketplaces where collectors buy and sell.",
+    "disclosure": "Some links below are referral links. If you sign up or shop through them, you support One for One at no extra cost to you.",
+    "groups": {
+      "marketplace": "Where to buy",
+      "stack": "Built with"
+    },
+    "visit": "Visit {name}",
+    "tools": {
+      "tcgplayer": "Buy and sell single cards from thousands of trusted sellers.",
+      "ebay": "Sealed product, singles, and collectibles from sellers worldwide.",
+      "railway": "Cloud hosting that runs our Discord bot around the clock."
+    },
+    "support": {
+      "title": "Support One for One",
+      "body": "One for One is free and takes no trading fees. If you'd like to help cover hosting and keep it running, you can buy me a coffee.",
+      "cta": "Support us on Ko-fi"
+    }
   }
 }
