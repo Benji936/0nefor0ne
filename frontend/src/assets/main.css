@@ -111,35 +111,17 @@ html.dark {
 ──────────────────────────────────────────────────────── */
 
 /* ── Scrollbars ─────────────────────────────────────────────
-   Firefox: scrollbar-color uses (thumb track).
-   WebKit: custom pseudo-elements.
-   Both modes are automatic — the variables switch with html.dark.
+   Hidden everywhere (scrolling still works via wheel/touch/keys).
+   Firefox: scrollbar-width: none. WebKit: zero-size + display:none.
    ──────────────────────────────────────────────────────────── */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: var(--c-border) transparent;
+  scrollbar-width: none;
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--c-border);
-  border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--c-muted);
-}
-
-::-webkit-scrollbar-corner {
-  background: transparent;
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 body {
