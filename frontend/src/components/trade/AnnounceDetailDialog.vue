@@ -1,8 +1,12 @@
 <script setup>
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRoute } from "vue-router";
 import { timeAgo } from "@/lib/notifications";
 import { deleteAnnounce, updateAnnounce } from "@/lib/announces";
+import { getClient } from "@/lib/supabaseClient";
+import { searchById, searchCardByName, searchCardBySetCode } from "@/api";
+import AddCard from "@/components/library/AddCard.vue";
 import AnnounceChatPanel from "@/components/trade/AnnounceChatPanel.vue";
 
 const props = defineProps({
@@ -12,13 +16,90 @@ const props = defineProps({
 });
 const emit = defineEmits(["update:modelValue", "deleted", "updated", "propose", "edit"]);
 const { t } = useI18n();
+const route = useRoute();
 
-const deleting  = ref(false);
-const updating  = ref(false);
-const imgIdx    = ref(0);
-const mobileTab = ref("details"); // mobile-only: 'details' | 'chat'
+const deleting      = ref(false);
+const updating      = ref(false);
+const addingToList  = ref(false);
+const addedToList   = ref(false);
+const addCardRef    = ref(null);
+const imgIdx        = ref(0);
+const mobileTab     = ref("details"); // mobile-only: 'details' | 'chat'
 
-watch(() => props.modelValue, open => { if (open) { imgIdx.value = 0; mobileTab.value = "details"; } });
+watch(() => props.modelValue, open => {
+  if (open) {
+    imgIdx.value = 0;
+    mobileTab.value = "details";
+    addedToList.value = false;
+    // reset card link state
+    cardLinkOpen.value    = false;
+    cardQuery.value       = "";
+    cardResults.value     = [];
+    cardSearchErr.value   = "";
+    linkingCard.value     = false;
+  }
+});
+
+// ── Card linking (owner only, when ygo_card_id is not set) ─────────────────
+const SET_CODE_RE     = /^[A-Z0-9]{2,6}-[A-Z]{0,2}\d{3,4}$/i;
+const cardLinkOpen    = ref(false);
+const cardQuery       = ref("");
+const cardResults     = ref([]);
+const cardSearching   = ref(false);
+const cardSearchErr   = ref("");
+const linkingCard     = ref(false);
+let   cardDebounce    = null;
+
+function onCardInput() {
+  clearTimeout(cardDebounce);
+  cardResults.value = [];
+  cardSearchErr.value = "";
+  const q = cardQuery.value.trim();
+  if (q.length < 2) return;
+  cardDebounce = setTimeout(() => doCardSearch(q), 350);
+}
+
+async function doCardSearch(q) {
+  cardSearching.value = true;
+  cardSearchErr.value = "";
+  try {
+    let cards = [];
+    if (SET_CODE_RE.test(q)) {
+      const res = await searchCardBySetCode(q);
+      const card = res?.data;
+      if (card?.id) cards = [card];
+    } else {
+      const res = await searchCardByName(q);
+      cards = res?.data?.data ?? [];
+    }
+    cardResults.value = cards.slice(0, 8);
+    if (cards.length === 0) cardSearchErr.value = t('announce.cardNotFound');
+  } catch {
+    cardSearchErr.value = t('announce.cardSearchFailed');
+  } finally {
+    cardSearching.value = false;
+  }
+}
+
+async function pickAndLinkCard(card) {
+  linkingCard.value = true;
+  cardResults.value = [];
+  try {
+    await updateAnnounce(props.announce.id, {
+      ygo_card_id: card.id,
+      card_name:   card.name,
+    });
+    // Patch the local object so the UI reflects instantly
+    props.announce.ygo_card_id = card.id;
+    props.announce.card_name   = card.name;
+    cardLinkOpen.value = false;
+    emit('updated', props.announce.id);
+  } catch (err) {
+    cardSearchErr.value = err.message ?? t('announce.cardLinkFailed');
+  } finally {
+    linkingCard.value = false;
+  }
+}
 
 const isOwner = computed(() => props.announce?.seller === props.currentUserId);
 
@@ -62,6 +143,27 @@ async function handleMarkSold() {
 function handleEdit() { emit("edit", props.announce); close(); }
 
 function handlePropose() { emit("propose", props.announce.seller); close(); }
+
+async function handleAddToTradeList() {
+  if (addingToList.value || addedToList.value) return;
+  addingToList.value = true;
+  try {
+    const locale = route?.params?.locale || 'en';
+    const res = await searchById(props.announce.ygo_card_id, locale);
+    const card = res?.data?.data?.[0] ?? res?.data?.[0] ?? null;
+    if (!card) throw new Error('Card not found');
+    addCardRef.value.openWith(card);
+    addedToList.value = false; // will be set by @added event
+  } catch (err) {
+    alert(err.message ?? 'Failed to load card');
+  } finally {
+    addingToList.value = false;
+  }
+}
+
+function onCardAdded() {
+  addedToList.value = true;
+}
 </script>
 
 <template>
@@ -186,6 +288,68 @@ function handlePropose() { emit("propose", props.announce.seller); close(); }
           <v-icon icon="mdi-open-in-new" size="13" class="discord-link__ext" />
         </a>
 
+        <!-- Card link section (owner only) -->
+        <div v-if="isOwner" class="card-link-section">
+
+          <!-- Already linked: show chip -->
+          <div v-if="announce.ygo_card_id" class="card-linked-chip">
+            <v-icon icon="mdi-cards-playing-outline" size="14" />
+            <span class="card-linked-chip__name">{{ announce.card_name }}</span>
+          </div>
+
+          <!-- Not linked yet: show button / inline search -->
+          <template v-else>
+            <button v-if="!cardLinkOpen" class="btn-link-card" @click="cardLinkOpen = true">
+              <v-icon icon="mdi-cards-playing-outline" size="14" />
+              {{ t('announce.linkCard') }}
+            </button>
+
+            <div v-else class="card-link-picker">
+              <!-- Search input -->
+              <div class="card-link-input-wrap">
+                <v-icon icon="mdi-magnify" size="14" class="card-link-icon" />
+                <input
+                  v-model="cardQuery"
+                  type="text"
+                  :placeholder="t('announce.cardSearchPlaceholder')"
+                  class="card-link-input"
+                  @input="onCardInput"
+                  autocomplete="off"
+                  autofocus
+                />
+                <v-progress-circular v-if="cardSearching" indeterminate size="13" width="2" class="card-link-spinner" />
+                <button class="card-link-cancel" @click="cardLinkOpen = false; cardQuery = ''; cardResults = []">
+                  <v-icon icon="mdi-close" size="13" />
+                </button>
+              </div>
+
+              <!-- Dropdown -->
+              <div v-if="cardResults.length > 0" class="card-link-dropdown">
+                <button
+                  v-for="c in cardResults"
+                  :key="c.id"
+                  class="card-link-result"
+                  :disabled="linkingCard"
+                  @click="pickAndLinkCard(c)"
+                >
+                  <img
+                    v-if="c.card_images?.[0]?.image_url_small"
+                    :src="c.card_images[0].image_url_small"
+                    class="card-link-result__img"
+                  />
+                  <div class="card-link-result__info">
+                    <span class="card-link-result__name">{{ c.name }}</span>
+                    <span class="card-link-result__sub">{{ c.card_sets?.[0]?.set_name ?? '' }}</span>
+                  </div>
+                  <v-progress-circular v-if="linkingCard" indeterminate size="13" width="2" />
+                </button>
+              </div>
+
+              <span v-if="cardSearchErr" class="card-link-err">{{ cardSearchErr }}</span>
+            </div>
+          </template>
+        </div>
+
         <!-- Divider -->
         <div class="divider" />
 
@@ -217,6 +381,19 @@ function handlePropose() { emit("propose", props.announce.seller); close(); }
             <v-icon v-else icon="mdi-delete-outline" size="16" />
             {{ t('announce.delete') }}
           </button>
+          <!-- Add to trade list — only when a card is linked -->
+          <button
+            v-if="announce.ygo_card_id"
+            class="btn-tradelist"
+            :class="{ 'btn-tradelist--done': addedToList }"
+            :disabled="addingToList || addedToList"
+            @click="handleAddToTradeList"
+          >
+            <v-progress-circular v-if="addingToList" indeterminate size="14" width="2" />
+            <v-icon v-else-if="addedToList" icon="mdi-check" size="16" />
+            <v-icon v-else icon="mdi-cards-playing-outline" size="16" />
+            {{ addedToList ? t('announce.addedToList') : t('announce.addToTradeList') }}
+          </button>
           <button class="btn-edit" @click="handleEdit">
             <v-icon icon="mdi-pencil-outline" size="16" />
             {{ t('announce.edit') }}
@@ -239,6 +416,9 @@ function handlePropose() { emit("propose", props.announce.seller); close(); }
       </div><!-- /.detail-pane -->
     </div><!-- /.shell -->
   </v-dialog>
+
+  <!-- Headless AddCard — opens when user clicks "Add to trade list" -->
+  <AddCard ref="addCardRef" mode="trade" :headless="true" @added="onCardAdded" />
 </template>
 
 <style scoped>
@@ -499,6 +679,108 @@ function handlePropose() { emit("propose", props.announce.seller); close(); }
 }
 .btn-sold:hover { background: var(--c-border); }
 .btn-sold:disabled { opacity: 0.4; pointer-events: none; }
+
+.btn-tradelist {
+  display: flex; align-items: center; gap: 6px;
+  padding: 9px 15px; border-radius: 11px;
+  background: color-mix(in srgb, #22c55e 12%, transparent);
+  color: #22c55e; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: background 0.15s ease;
+  white-space: nowrap;
+}
+.btn-tradelist:hover { background: color-mix(in srgb, #22c55e 22%, transparent); }
+.btn-tradelist:disabled { opacity: 0.5; pointer-events: none; }
+.btn-tradelist--done {
+  background: var(--c-surface-2);
+  color: var(--c-muted);
+}
+
+/* ── Card link section ────────────────────────────── */
+.card-link-section {
+  position: relative;
+}
+
+/* "Link a card" ghost button */
+.btn-link-card {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 9px;
+  border: 1.5px dashed var(--c-border);
+  background: transparent;
+  color: var(--c-muted); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: border-color 0.15s, color 0.15s;
+}
+.btn-link-card:hover { border-color: var(--c-trade); color: var(--c-trade); }
+
+/* Linked card chip (read-only) */
+.card-linked-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 11px; border-radius: 9px;
+  background: color-mix(in srgb, var(--c-trade) 10%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--c-trade) 30%, transparent);
+  color: var(--c-trade); font-size: 12px; font-weight: 600;
+}
+.card-linked-chip__name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+
+/* Expanded picker */
+.card-link-picker { display: flex; flex-direction: column; gap: 6px; }
+.card-link-input-wrap {
+  position: relative; display: flex; align-items: center;
+}
+.card-link-icon {
+  position: absolute; left: 10px; color: var(--c-muted); pointer-events: none;
+}
+.card-link-input {
+  width: 100%;
+  background: var(--c-surface);
+  border: 1.5px solid var(--c-border);
+  border-radius: 10px;
+  padding: 8px 60px 8px 30px;
+  font-size: 13px; color: var(--c-text); outline: none;
+  transition: border-color 0.15s;
+}
+.card-link-input:focus { border-color: var(--c-trade); }
+.card-link-input::placeholder { color: var(--c-muted); opacity: 0.5; }
+.card-link-spinner { position: absolute; right: 34px; color: var(--c-muted); }
+.card-link-cancel {
+  position: absolute; right: 8px;
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--c-muted); cursor: pointer;
+  transition: background 0.12s;
+}
+.card-link-cancel:hover { background: var(--c-surface-2); }
+
+/* Dropdown */
+.card-link-dropdown {
+  background: var(--c-surface);
+  border: 1.5px solid var(--c-border);
+  border-radius: 12px; overflow: hidden;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.16);
+  max-height: 220px; overflow-y: auto;
+}
+.card-link-result {
+  display: flex; align-items: center; gap: 9px;
+  width: 100%; padding: 8px 11px; cursor: pointer; text-align: left;
+  transition: background 0.1s;
+  border-bottom: 1px solid var(--c-border);
+}
+.card-link-result:last-child { border-bottom: none; }
+.card-link-result:hover { background: var(--c-surface-2); }
+.card-link-result:disabled { opacity: 0.5; pointer-events: none; }
+.card-link-result__img {
+  width: 28px; height: 40px; object-fit: cover;
+  border-radius: 3px; border: 1px solid var(--c-border); flex-shrink: 0;
+}
+.card-link-result__info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.card-link-result__name {
+  font-size: 12.5px; font-weight: 600; color: var(--c-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card-link-result__sub { font-size: 11px; color: var(--c-muted); }
+
+.card-link-err { font-size: 11px; color: #ef4444; }
+
+
 
 .btn-contact {
   display: flex; align-items: center; gap: 7px;
