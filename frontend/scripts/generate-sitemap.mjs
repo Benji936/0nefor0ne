@@ -84,6 +84,8 @@ const STATIC_PAGES = [
   { path: "/",        changefreq: "daily",  priority: 1.0 },
   { path: "/cards",   changefreq: "weekly", priority: 0.9 },
   { path: "/privacy", changefreq: "yearly", priority: 0.3 },
+  { path: "/terms",   changefreq: "yearly", priority: 0.3 },
+  { path: "/built-with", changefreq: "monthly", priority: 0.3 },
 ];
 
 // ── Fetch trending cards from Supabase ────────────────────────────────────────
