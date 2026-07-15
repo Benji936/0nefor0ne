@@ -9,6 +9,7 @@
 //  the toggle did nothing.)
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRoute } from "vue-router";
 
 const props = defineProps({
   // Pinned state. Drives the rail width AND the content margin (owned by App).
@@ -23,6 +24,8 @@ const props = defineProps({
 const emit = defineEmits(["update:collapsed", "navigate", "matches", "tradeTab"]);
 
 const { t } = useI18n();
+const route = useRoute();
+const locale = computed(() => route.params.locale || "en");
 
 // `guest: true` items show for everyone; the rest require a session.
 const items = computed(() => {
@@ -31,35 +34,21 @@ const items = computed(() => {
     { key: "dashboard", label: t("nav.home"),       icon: "mdi-home-outline",         event: "navigate", arg: "dashboard", match: ["dashboard"],       guest: true },
     { key: "library",   label: t("nav.collection"), icon: "mdi-cards",                event: "navigate", arg: "library",   match: ["library"],           guest: false },
     { key: "decks",     label: t("nav.decks"),      icon: "mdi-cards-variant",        event: "navigate", arg: "decks",     match: ["decks", "deckDetail"], guest: false },
-    {
-      key: "trade",
-      label: t("nav.trades"),
-      icon: "mdi-swap-horizontal-bold",
-      event: "matches",
-      arg: null,
-      match: ["TradeCenter"],
-      guest: false,
-      children: [
-        { key: "trade-matches",   label: t("tradeCenter.matches"),   icon: "mdi-account-group-outline", tab: "matches" },
-        { key: "trade-proposals", label: t("tradeCenter.proposals"), icon: "mdi-swap-horizontal-bold",  tab: "proposals" },
-        { key: "trade-announces", label: t("tradeCenter.announces"), icon: "mdi-bullhorn-outline",       tab: "announces" },
-      ],
-    },
+    { key: "trade-matches",   label: t("tradeCenter.matches"),   icon: "mdi-account-group-outline", event: "tradeTab", arg: "matches", match: ["TradeCenter"], guest: false, tab: "matches" },
+    { key: "trade-proposals", label: t("tradeCenter.proposals"), icon: "mdi-swap-horizontal-bold",  event: "tradeTab", arg: "proposals", match: ["TradeCenter"], guest: false, tab: "proposals" },
+    { key: "trade-announces", label: t("tradeCenter.announces"), icon: "mdi-bullhorn-outline",       event: "tradeTab", arg: "announces", match: ["TradeCenter"], guest: false, tab: "announces" },
   ];
   return props.authenticated ? all : all.filter((i) => i.guest);
 });
 
 const isActive = (item) => item.match.includes(props.page);
-const isTradeOpen = computed(() => props.page === "TradeCenter");
-const discordUrl = "https://discord.gg/0neforone";
+const isItemActive = (item) => item.tab ? props.page === "TradeCenter" && props.activeTradeTab === item.tab : isActive(item);
+const discordUrl = "https://discord.gg/MeaQcR29Fa";
 
 function activate(item) {
-  if (item.event === "matches") emit("matches");
+  if (item.event === "tradeTab") emit("tradeTab", item.arg);
+  else if (item.event === "matches") emit("matches");
   else emit("navigate", item.arg);
-}
-
-function activateTradeTab(tab) {
-  emit("tradeTab", tab);
 }
 </script>
 
@@ -86,8 +75,8 @@ function activateTradeTab(tab) {
             <button
               v-bind="tip"
               class="sn-item"
-              :class="{ 'sn-item--active': isActive(item) }"
-              :aria-current="isActive(item) ? 'page' : undefined"
+              :class="{ 'sn-item--active': isItemActive(item) }"
+              :aria-current="isItemActive(item) ? 'page' : undefined"
               @click="activate(item)"
             >
               <v-icon :icon="item.icon" size="24" class="sn-ico" />
@@ -95,45 +84,28 @@ function activateTradeTab(tab) {
             </button>
           </template>
         </v-tooltip>
-
-        <!-- Sub-items: shown when this item is active and nav is expanded -->
-        <template v-if="item.children && isActive(item) && !collapsed">
-          <button
-            v-for="child in item.children"
-            :key="child.key"
-            class="sn-item sn-subitem"
-            :class="{ 'sn-subitem--active': activeTradeTab === child.tab }"
-            @click="activateTradeTab(child.tab)"
-          >
-            <v-icon :icon="child.icon" size="18" class="sn-ico" />
-            <span class="sn-label">{{ child.label }}</span>
-          </button>
-        </template>
-
-        <!-- Collapsed tooltips for sub-items -->
-        <template v-if="item.children && isActive(item) && collapsed">
-          <v-tooltip
-            v-for="child in item.children"
-            :key="child.key + '-tip'"
-            location="right"
-            :text="child.label"
-          >
-            <template #activator="{ props: tip }">
-              <button
-                v-bind="tip"
-                class="sn-item sn-subitem"
-                :class="{ 'sn-subitem--active': activeTradeTab === child.tab }"
-                @click="activateTradeTab(child.tab)"
-              >
-                <v-icon :icon="child.icon" size="18" class="sn-ico" />
-              </button>
-            </template>
-          </v-tooltip>
-        </template>
       </template>
     </nav>
 
     <div class="sn-footer mt-auto">
+      <v-tooltip
+        location="right"
+        :text="$t('nav.support')"
+        :disabled="!collapsed"
+      >
+        <template #activator="{ props: tip }">
+          <router-link
+            v-bind="tip"
+            class="sn-item sn-support"
+            :class="{ 'sn-item--active': page === 'built-with' }"
+            :to="`/${locale}/built-with`"
+          >
+            <v-icon icon="mdi-heart-outline" size="22" class="sn-ico" />
+            <span v-show="!collapsed" class="sn-label">{{ $t('nav.support') }}</span>
+          </router-link>
+        </template>
+      </v-tooltip>
+
       <v-tooltip
         location="right"
         :text="$t('nav.joinDiscord')"
@@ -147,7 +119,12 @@ function activateTradeTab(tab) {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <v-icon icon="mdi-discord" size="20" class="sn-ico" />
+            <svg class="sn-discord-logo" viewBox="0 0 127.14 96.36" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83A97.68 97.68 0 0 0 49 6.83 72.37 72.37 0 0 0 45.64 0a105.89 105.89 0 0 0-26.25 8.09C2.79 32.65-1.71 56.6.54 80.21h0A105.73 105.73 0 0 0 32.71 96.36 77.7 77.7 0 0 0 39.6 85.25a68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1A105.25 105.25 0 0 0 126.6 80.22h0C129.24 52.84 122.09 29.11 107.7 8.07ZM42.45 65.69C36.18 65.69 31 60 31 53s5-12.74 11.43-12.74S54 46 53.89 53 48.84 65.69 42.45 65.69Zm42.24 0C78.41 65.69 73.25 60 73.25 53s5-12.74 11.44-12.74S96.23 46 96.12 53 91.08 65.69 84.69 65.69Z"
+              />
+            </svg>
             <span v-show="!collapsed" class="sn-label">{{ $t('nav.joinDiscord') }}</span>
           </a>
         </template>
@@ -243,9 +220,18 @@ function activateTradeTab(tab) {
   gap: 8px;
   margin-top: auto;
 }
+.sn-support {
+  text-decoration: none;
+  color: var(--c-text);
+}
 .sn-discord {
   text-decoration: none;
   color: var(--c-text);
+}
+.sn-discord-logo {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
 }
 .sn-discord:hover {
   background: var(--c-surface-2);

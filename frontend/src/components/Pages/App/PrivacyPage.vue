@@ -15,9 +15,11 @@
     </div>
 
     <p class="text-sm leading-relaxed" style="color: var(--c-muted)">
-      One for One ("we", "us", "our") is a free, peer-to-peer Yu-Gi-Oh! card trading platform.
+      One for One ("we", "us", "our") is a free, peer-to-peer Yu-Gi-Oh! card trading platform
+      operated by <strong style="color: inherit">Benjamin Sitbon</strong>, an individual based in
+      Switzerland, who is the data controller for your personal data.
       This policy explains what data we collect, why we collect it, and what we do with it.
-      We keep it plain English — no legalese.
+      We keep it plain English, no legalese.
     </p>
 
     <section v-for="section in SECTIONS" :key="section.title" class="flex flex-col gap-3">

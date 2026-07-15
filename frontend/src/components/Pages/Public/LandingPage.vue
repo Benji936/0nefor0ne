@@ -14,6 +14,8 @@
 // (never `hidden sm:flex` — Tailwind v4 base `.hidden` defeats `sm:` here).
 import { computed } from "vue";
 import { useRoute } from "vue-router";
+import { useTheme } from "vuetify";
+import { BUILT_WITH_TOOLS as builtWithTools } from "@/lib/builtWithTools";
 
 const props = defineProps({
   // Session | null, forwarded by App.vue's RouterView. Drives the auth-aware CTAs.
@@ -27,6 +29,17 @@ const route = useRoute();
 const locale = computed(() => route.params.locale || "en");
 
 const isAuthed = computed(() => !!props.login);
+
+// Theme tracking for brand-image logos (TCGplayer) in the footer strip.
+const theme = useTheme();
+const isDark = computed(() => theme.global.name.value !== "neonDuskLight");
+
+// Community Discord invite (mirrors SideNav.vue's discordUrl).
+const DISCORD_URL = "https://discord.gg/MeaQcR29Fa";
+
+// Direct donation link (Ko-fi), mirroring BuiltWithPage.vue's KOFI_URL/KOFI_PATH.
+const KOFI_URL = "https://ko-fi.com/T5S0233R1W";
+const KOFI_PATH = "M11.351 2.715c-2.7 0-4.986.025-6.83.26C2.078 3.285 0 5.154 0 8.61c0 3.506.182 6.13 1.585 8.493 1.584 2.701 4.233 4.182 7.662 4.182h.83c4.209 0 6.494-2.234 7.637-4a9.5 9.5 0 0 0 1.091-2.338C21.792 14.688 24 12.22 24 9.208v-.415c0-3.247-2.13-5.507-5.792-5.87-1.558-.156-2.65-.208-6.857-.208m0 1.947c4.208 0 5.09.052 6.571.182 2.624.311 4.13 1.584 4.13 4v.39c0 2.156-1.792 3.844-3.87 3.844h-.935l-.156.649c-.208 1.013-.597 1.818-1.039 2.546-.909 1.428-2.545 3.064-5.922 3.064h-.805c-2.571 0-4.831-.883-6.078-3.195-1.09-2-1.298-4.155-1.298-7.506 0-2.181.857-3.402 3.012-3.714 1.533-.233 3.559-.26 6.39-.26m6.547 2.287c-.416 0-.65.234-.65.546v2.935c0 .311.234.545.65.545 1.324 0 2.051-.754 2.051-2s-.727-2.026-2.052-2.026m-10.39.182c-1.818 0-3.013 1.48-3.013 3.142 0 1.533.858 2.857 1.949 3.897.727.701 1.87 1.429 2.649 1.896a1.47 1.47 0 0 0 1.507 0c.78-.467 1.922-1.195 2.623-1.896 1.117-1.039 1.974-2.364 1.974-3.897 0-1.662-1.247-3.142-3.039-3.142-1.065 0-1.792.545-2.338 1.298-.493-.753-1.246-1.298-2.312-1.298";
 
 // ── Card pool (static, SSR-safe). IDs + names from the design's `pool`. ──
 const thumb = (id) => `https://images.ygoprodeck.com/images/cards_small/${id}.jpg`;
@@ -401,6 +414,64 @@ function onImgError(e) {
       </div>
     </section>
 
+    <!-- ===== Discord community ===== -->
+    <section class="lp-section lp-discord" aria-labelledby="lp-discord-heading">
+      <div class="lp-discord-panel">
+        <div class="lp-discord-glow" aria-hidden="true" />
+        <div class="lp-discord-copy">
+          <span class="lp-eyebrow lp-eyebrow-discord">
+            <span class="lp-eyebrow-dot lp-eyebrow-dot-discord" />{{ $t("landing.discord.eyebrow") }}
+          </span>
+          <h2 id="lp-discord-heading" class="lp-h2 lp-discord-h2">{{ $t("landing.discord.heading") }}</h2>
+          <p class="lp-discord-body">{{ $t("landing.discord.body") }}</p>
+          <ul class="lp-discord-bullets">
+            <li v-for="k in ['sync', 'chat', 'alerts']" :key="k">
+              <svg class="lp-ico-sm lp-discord-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+              {{ $t(`landing.discord.bullets.${k}`) }}
+            </li>
+          </ul>
+          <a :href="DISCORD_URL" target="_blank" rel="noopener noreferrer" class="lp-btn lp-btn-lg lp-btn-discord">
+            <svg class="lp-ico lp-discord-glyph" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.317 4.3698a19.7913 19.7913 0 0 0-4.8851-1.5152.0741.0741 0 0 0-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 0 0-.0785-.037 19.7363 19.7363 0 0 0-4.8852 1.515.0699.0699 0 0 0-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 0 0 .0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 0 0 .0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 0 0-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 0 1-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 0 1 .0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 0 1 .0785.0095c.1202.099.246.198.3728.2924a.077.077 0 0 1-.0066.1276 12.2986 12.2986 0 0 1-1.873.8914.0766.0766 0 0 0-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 0 0 .0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 0 0 .0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 0 0-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" /></svg>
+            {{ $t("landing.discord.cta") }}
+          </a>
+        </div>
+        <div class="lp-discord-visual" aria-hidden="true">
+          <span class="lp-discord-logo">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.3698a19.7913 19.7913 0 0 0-4.8851-1.5152.0741.0741 0 0 0-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 0 0-.0785-.037 19.7363 19.7363 0 0 0-4.8852 1.515.0699.0699 0 0 0-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 0 0 .0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 0 0 .0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 0 0-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 0 1-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 0 1 .0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 0 1 .0785.0095c.1202.099.246.198.3728.2924a.077.077 0 0 1-.0066.1276 12.2986 12.2986 0 0 1-1.873.8914.0766.0766 0 0 0-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 0 0 .0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 0 0 .0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 0 0-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" /></svg>
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Donate / support ===== -->
+    <section class="lp-section lp-donate" aria-labelledby="lp-donate-heading">
+      <div class="lp-donate-panel">
+        <div class="lp-donate-glow" aria-hidden="true" />
+        <div class="lp-donate-copy">
+          <span class="lp-eyebrow lp-eyebrow-donate">
+            <span class="lp-eyebrow-dot lp-eyebrow-dot-donate" />{{ $t("landing.donate.eyebrow") }}
+          </span>
+          <h2 id="lp-donate-heading" class="lp-h2 lp-donate-h2">{{ $t("landing.donate.heading") }}</h2>
+          <p class="lp-donate-body">{{ $t("landing.donate.body") }}</p>
+          <ul class="lp-donate-bullets">
+            <li v-for="k in ['servers', 'free', 'solo']" :key="k">
+              <svg class="lp-ico-sm lp-donate-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+              {{ $t(`landing.donate.bullets.${k}`) }}
+            </li>
+          </ul>
+          <a :href="KOFI_URL" target="_blank" rel="noopener noreferrer" class="lp-btn lp-btn-lg lp-btn-donate">
+            <svg class="lp-ico lp-donate-glyph" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path :d="KOFI_PATH" /></svg>
+            {{ $t("landing.donate.cta") }}
+          </a>
+        </div>
+        <div class="lp-donate-visual" aria-hidden="true">
+          <span class="lp-donate-logo">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path :d="KOFI_PATH" /></svg>
+          </span>
+        </div>
+      </div>
+    </section>
+
     <!-- ===== Footer ===== -->
     <footer class="lp-footer">
       <div class="lp-footer-inner">
@@ -423,13 +494,32 @@ function onImgError(e) {
         <nav class="lp-footer-col" :aria-label="$t('landing.footer.colMore')">
           <span class="lp-footer-col-title">{{ $t("landing.footer.colMore") }}</span>
           <router-link :to="`/${locale}/privacy`" class="lp-footer-link">{{ $t("landing.footer.about") }}</router-link>
+          <router-link :to="`/${locale}/built-with`" class="lp-footer-link">{{ $t("landing.footer.builtWith") }}</router-link>
           <router-link :to="`/${locale}/privacy`" class="lp-footer-link">{{ $t("landing.footer.privacy") }}</router-link>
+          <router-link :to="`/${locale}/terms`" class="lp-footer-link">{{ $t("landing.footer.terms") }}</router-link>
           <a href="mailto:hello@0nefor.one" class="lp-footer-link">{{ $t("landing.footer.contact") }}</a>
         </nav>
       </div>
+
+      <!-- Built-with / partners logo strip → links to the /built-with page (which
+           carries the referral disclosure). -->
+      <router-link :to="`/${locale}/built-with`" class="lp-builtwith-strip" :aria-label="$t('landing.footer.builtWithStripTitle')">
+        <span class="lp-builtwith-title">{{ $t("landing.footer.builtWithStripTitle") }}</span>
+        <span class="lp-builtwith-logos">
+          <span v-for="tool in builtWithTools" :key="tool.key" class="lp-builtwith-logo">
+            <img v-if="tool.img" :src="isDark ? tool.img.dark : tool.img.light" :alt="tool.name" class="lp-builtwith-img" />
+            <svg v-else-if="tool.path" :viewBox="tool.viewBox" fill="currentColor" :aria-label="tool.name" role="img">
+              <path :d="tool.path" />
+            </svg>
+            <span v-else class="lp-builtwith-wordmark">{{ tool.name }}</span>
+          </span>
+        </span>
+      </router-link>
+
       <div class="lp-footer-sub">
         <div class="lp-footer-sub-inner">
           <span class="lp-copyright">{{ $t("landing.footer.copyright") }}</span>
+          <router-link :to="`/${locale}/terms`" class="lp-footer-link">{{ $t("landing.footer.termsOfService") }}</router-link>
           <router-link :to="`/${locale}/privacy`" class="lp-footer-link">{{ $t("landing.footer.privacyPolicy") }}</router-link>
         </div>
       </div>
@@ -902,8 +992,145 @@ function onImgError(e) {
 .lp-swap-ring { width: 46px; height: 46px; border-color: var(--c-mutual); animation: ofo-ring 2.8s ease-out infinite; }
 .lp-match-tag { font-size: 10.5px; font-weight: 700; color: var(--c-mutual); }
 
+/* ── Discord community ── */
+.lp-discord { padding: clamp(20px, 3vw, 30px) clamp(18px, 4vw, 40px) clamp(48px, 7vw, 84px); }
+.lp-discord-panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  border: 1px solid color-mix(in srgb, #5865f2 42%, var(--c-border));
+  background: linear-gradient(150deg, color-mix(in srgb, #5865f2 14%, var(--c-surface)), var(--c-surface) 68%);
+  box-shadow: var(--c-shadow-card, 0 1px 2px rgba(28, 8, 82, 0.05));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(20px, 3vw, 40px);
+  padding: clamp(28px, 4vw, 52px);
+}
+.lp-discord-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(520px 320px at 90% 8%, color-mix(in srgb, #5865f2 30%, transparent), transparent 70%);
+}
+.lp-discord-copy { position: relative; flex: 1 1 400px; min-width: 280px; }
+.lp-eyebrow-discord { color: #5865f2; }
+.lp-eyebrow-dot-discord { background: #5865f2; }
+.lp-discord-h2 { margin: 16px 0 0; }
+.lp-discord-body { margin: 14px 0 0; font-size: 16px; line-height: 1.55; color: var(--c-muted); max-width: 460px; }
+.lp-discord-bullets { list-style: none; margin: 20px 0 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.lp-discord-bullets li { display: flex; align-items: center; gap: 9px; font-size: 14.5px; font-weight: 600; color: var(--c-text); }
+.lp-discord-check { color: #5865f2; }
+.lp-btn-discord {
+  background: #5865f2;
+  color: #fff;
+  margin-top: 26px;
+  box-shadow: 0 14px 30px -12px rgba(88, 101, 242, 0.6);
+}
+.lp-btn-discord:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.lp-discord-glyph { width: 21px; height: 21px; }
+.lp-discord-visual { position: relative; flex: 0 0 auto; display: grid; place-items: center; padding: 4px; }
+.lp-discord-logo {
+  display: grid;
+  place-items: center;
+  width: clamp(116px, 15vw, 164px);
+  height: clamp(116px, 15vw, 164px);
+  border-radius: 32px;
+  background: #5865f2;
+  color: #fff;
+  box-shadow: 0 24px 60px -18px rgba(88, 101, 242, 0.7);
+}
+.lp-discord-logo svg { width: 54%; height: 54%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-btn-discord:hover { transform: none; }
+}
+
+/* ── Donate / support ── */
+.lp-donate { padding: clamp(4px, 1vw, 10px) clamp(18px, 4vw, 40px) clamp(48px, 7vw, 84px); }
+.lp-donate-panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  border: 1px solid color-mix(in srgb, #ff5e5b 42%, var(--c-border));
+  background: linear-gradient(150deg, color-mix(in srgb, #ff5e5b 13%, var(--c-surface)), var(--c-surface) 68%);
+  box-shadow: var(--c-shadow-card, 0 1px 2px rgba(28, 8, 82, 0.05));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(20px, 3vw, 40px);
+  padding: clamp(28px, 4vw, 52px);
+}
+.lp-donate-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(520px 320px at 90% 8%, color-mix(in srgb, #ff5e5b 28%, transparent), transparent 70%);
+}
+.lp-donate-copy { position: relative; flex: 1 1 400px; min-width: 280px; }
+.lp-eyebrow-donate { color: #ff5e5b; }
+.lp-eyebrow-dot-donate { background: #ff5e5b; }
+.lp-donate-h2 { margin: 16px 0 0; }
+.lp-donate-body { margin: 14px 0 0; font-size: 16px; line-height: 1.55; color: var(--c-muted); max-width: 460px; }
+.lp-donate-bullets { list-style: none; margin: 20px 0 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.lp-donate-bullets li { display: flex; align-items: center; gap: 9px; font-size: 14.5px; font-weight: 600; color: var(--c-text); }
+.lp-donate-check { color: #ff5e5b; }
+.lp-btn-donate {
+  background: #ff5e5b;
+  color: #fff;
+  margin-top: 26px;
+  box-shadow: 0 14px 30px -12px rgba(255, 94, 91, 0.6);
+}
+.lp-btn-donate:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.lp-donate-glyph { width: 21px; height: 21px; }
+.lp-donate-visual { position: relative; flex: 0 0 auto; display: grid; place-items: center; padding: 4px; }
+.lp-donate-logo {
+  display: grid;
+  place-items: center;
+  width: clamp(116px, 15vw, 164px);
+  height: clamp(116px, 15vw, 164px);
+  border-radius: 32px;
+  background: #ff5e5b;
+  color: #fff;
+  box-shadow: 0 24px 60px -18px rgba(255, 94, 91, 0.7);
+}
+.lp-donate-logo svg { width: 52%; height: 52%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-btn-donate:hover { transform: none; }
+}
+
 /* ── Footer ── */
 .lp-footer { border-top: 1px solid color-mix(in srgb, var(--c-border) 55%, transparent); background: var(--c-surface); }
+
+/* Built-with / partners logo strip */
+.lp-builtwith-strip {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 4px clamp(18px, 4vw, 40px) clamp(20px, 3vw, 28px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 24px;
+  text-decoration: none;
+}
+.lp-builtwith-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--c-muted);
+}
+.lp-builtwith-logos { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 26px; }
+.lp-builtwith-logo { display: inline-flex; align-items: center; color: var(--c-muted); transition: color 0.18s ease; }
+.lp-builtwith-strip:hover .lp-builtwith-logo { color: var(--c-text); }
+.lp-builtwith-logo svg { height: 20px; width: auto; display: block; }
+.lp-builtwith-img { height: 18px; width: auto; max-width: 110px; object-fit: contain; display: block; }
+.lp-builtwith-wordmark { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 16px; letter-spacing: -0.4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-builtwith-logo { transition: none; }
+}
 .lp-footer-inner {
   max-width: 1200px;
   margin: 0 auto;

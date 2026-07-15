@@ -275,30 +275,7 @@ function switchLang(lang) {
 
   </main>
 
-  <!-- ── TCGPlayer skyscraper — fixed right sidebar, desktop only (disabled) ── -->
-  <div
-    v-if="false"
-    class="max-xl:hidden flex fixed right-4 top-1/2 -translate-y-1/2 z-20 flex-col items-center"
-    style="pointer-events: none"
-  >
-    <div style="pointer-events: auto">
-      <TcgPlayerAd :ad-id="3913676" :width="240" :height="1200" />
-    </div>
-  </div> 
 
-  <!-- ── Footer ── -->
-  <footer
-    v-if="page !== 'home'"
-    class="flex flex-wrap items-center justify-between gap-3 px-5 md:px-16 py-5 text-xs sm:pb-5"
-    style="border-top: 1px solid var(--c-border); color: var(--c-muted)"
-    :class="authenticated ? 'pb-20' : 'pb-5'"
-  >
-    <span>© {{ new Date().getFullYear() }} One for One</span>
-    <nav class="flex items-center gap-4">
-      <router-link :to="`/${$route.params.locale || 'en'}/privacy`" class="no-underline transition-opacity hover:opacity-70" style="color: var(--c-muted)">{{ $t('footer.privacy') }}</router-link>
-      <a href="mailto:hello@0nefor.one" class="no-underline transition-opacity hover:opacity-70" style="color: var(--c-muted)">{{ $t('footer.contact') }}</a>
-    </nav>
-  </footer>
   </div>
   <!-- /app-shell -->
 
