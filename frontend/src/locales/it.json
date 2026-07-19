@@ -414,7 +414,8 @@
     "tradeMethodMail": "Per posta",
     "tradeMethodOther": "Altro",
     "youPay": "Paghi tu",
-    "theyPay": "Paga {name}"
+    "theyPay": "Paga {name}",
+    "meetupAt": "Meet at"
   },
   "proposeDialog": {
     "title": "Proponi uno scambio",
@@ -449,7 +450,17 @@
     "save": "Salva",
     "send": "Invia proposta",
     "update": "Aggiorna proposta",
-    "anonymous": "Anonimo"
+    "anonymous": "Anonimo",
+    "meetupLocation": "Meetup location",
+    "meetAtLocation": "Meet at a location",
+    "shipByMail": "Ship by mail / remote",
+    "nearMe": "Near me",
+    "searchPlaces": "Search stores or events...",
+    "noPlaces": "No locations match your search.",
+    "stores": "Stores",
+    "events": "Events",
+    "locationDenied": "Location access denied. Search instead.",
+    "kmAway": "{km} km away"
   },
   "tradeDetail": {
     "you": "Tu",

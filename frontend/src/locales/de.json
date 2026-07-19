@@ -414,7 +414,8 @@
     "tradeMethodMail": "Per Post",
     "tradeMethodOther": "Sonstiges",
     "youPay": "Du zahlst",
-    "theyPay": "{name} zahlt"
+    "theyPay": "{name} zahlt",
+    "meetupAt": "Meet at"
   },
   "proposeDialog": {
     "title": "Tausch vorschlagen",
@@ -449,7 +450,17 @@
     "save": "Speichern",
     "send": "Vorschlag senden",
     "update": "Vorschlag aktualisieren",
-    "anonymous": "Anonym"
+    "anonymous": "Anonym",
+    "meetupLocation": "Meetup location",
+    "meetAtLocation": "Meet at a location",
+    "shipByMail": "Ship by mail / remote",
+    "nearMe": "Near me",
+    "searchPlaces": "Search stores or events...",
+    "noPlaces": "No locations match your search.",
+    "stores": "Stores",
+    "events": "Events",
+    "locationDenied": "Location access denied. Search instead.",
+    "kmAway": "{km} km away"
   },
   "tradeDetail": {
     "you": "Du",

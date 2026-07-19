@@ -414,7 +414,8 @@
     "tradeMethodMail": "By mail",
     "tradeMethodOther": "Other",
     "youPay": "You pay",
-    "theyPay": "{name} pays"
+    "theyPay": "{name} pays",
+    "meetupAt": "Meet at"
   },
   "proposeDialog": {
     "title": "Propose a trade",
@@ -449,7 +450,17 @@
     "save": "Save",
     "send": "Send proposal",
     "update": "Update proposal",
-    "anonymous": "Anonymous"
+    "anonymous": "Anonymous",
+    "meetupLocation": "Meetup location",
+    "meetAtLocation": "Meet at a location",
+    "shipByMail": "Ship by mail / remote",
+    "nearMe": "Near me",
+    "searchPlaces": "Search stores or events...",
+    "noPlaces": "No locations match your search.",
+    "stores": "Stores",
+    "events": "Events",
+    "locationDenied": "Location access denied. Search instead.",
+    "kmAway": "{km} km away"
   },
   "tradeDetail": {
     "you": "You",

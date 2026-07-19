@@ -414,7 +414,8 @@
     "tradeMethodMail": "Par courrier",
     "tradeMethodOther": "Autre",
     "youPay": "Vous payez",
-    "theyPay": "{name} paie"
+    "theyPay": "{name} paie",
+    "meetupAt": "Meet at"
   },
   "proposeDialog": {
     "title": "Proposer un échange",
@@ -449,7 +450,17 @@
     "save": "Enregistrer",
     "send": "Envoyer la proposition",
     "update": "Mettre à jour la proposition",
-    "anonymous": "Anonyme"
+    "anonymous": "Anonyme",
+    "meetupLocation": "Meetup location",
+    "meetAtLocation": "Meet at a location",
+    "shipByMail": "Ship by mail / remote",
+    "nearMe": "Near me",
+    "searchPlaces": "Search stores or events...",
+    "noPlaces": "No locations match your search.",
+    "stores": "Stores",
+    "events": "Events",
+    "locationDenied": "Location access denied. Search instead.",
+    "kmAway": "{km} km away"
   },
   "tradeDetail": {
     "you": "Vous",
