@@ -15,7 +15,8 @@ data/events.json                        # Generated: upcoming events
 scrapers/
 ├── __init__.py
 ├── common.py                           # Shared HTTP/retry/region/IO helpers
-├── stores_scraper.py                   # Stores -> data/stores.json
+├── stores_scraper.py                   # Stores (Americas + EU) -> data/stores.json
+├── stores_eu.py                        # European OTS locator (merged into stores_scraper)
 └── events_scraper.py                   # Events -> data/events.json
 requirements.txt
 ```
@@ -28,13 +29,25 @@ scrapers target the underlying structured data rather than fragile page markup:
 
 | Dataset | Public page | Underlying source used |
 | --- | --- | --- |
-| Stores | `https://www.yugioh-card.com/en/events/ots-locations/` | `https://ots-portal.konami.com/api2/public/stores/result` (the JSON API the locator page itself calls) |
+| Stores (Americas) | `https://www.yugioh-card.com/en/events/ots-locations/` | `https://ots-portal.konami.com/api2/public/stores/result` (the JSON API the locator page itself calls) |
+| Stores (Europe) | `https://www.yugioh-card.com/eu/play/store-locator/` | `https://www.yugioh-card.com/eu/_store-locator/store-locator-get-info.php` (the endpoint that page calls) |
 | Events | `https://www.yugioh-card.com/en/events/` | The `#upcoming` list on that page + JSON-LD on each `/events-item/` detail page |
 
-The store API takes `lat`, `lng`, and `radius` (miles). To capture every store, the
-scraper queries several globe-spanning anchor points with a wide radius and unions
-the results by store `id`. The `/en/` portal covers the Americas (North America +
-Latin America); Europe runs a separate portal, so EU stores are not expected here.
+Konami runs region-specific portals, so `stores_scraper` merges two sources into one
+`data/stores.json`:
+
+- **Americas** (`ots-portal.konami.com`): takes `lat`, `lng`, `radius` (miles). A
+  handful of globe-spanning anchor points with a wide radius, unioned by store `id`,
+  return every active store. This portal covers only North America + Latin America.
+- **Europe** (`stores_eu.py`): the EU endpoint returns at most **99** stores per call
+  (nearest first) and misbehaves for very large radii. To enumerate everything, it
+  tiles Europe into small cells and **recursively subdivides any cell that comes back
+  capped at 99**, so dense metros (London, Paris, Milan) are fully covered while sparse
+  areas cost a single call. Records are keyed by the EU store code (e.g. `120069EU`),
+  which cannot collide with the numeric Americas ids.
+
+Asia / Oceania stores live on yet another portal (`cardgame-network.konami.net`) and
+are not yet scraped.
 
 ## Output format
 
@@ -95,7 +108,8 @@ Local, OTS Tournament, or Special.
 ## Reliability behavior
 
 - **Retries:** every network request retries up to 3 times, 5s apart.
-- **Politeness:** a ~2.5s delay precedes each request; a descriptive User-Agent is sent.
+- **Politeness:** a ~2.5s delay precedes each request (~1.0s for the EU locator's many
+  small calls); a descriptive User-Agent is sent.
 - **Fail-safe writes:** if a scraper collects 0 records (or the events page layout
   changes so the list can't be found), it exits with code 1 and does **not** write —
   so the workflow fails and existing data is preserved.

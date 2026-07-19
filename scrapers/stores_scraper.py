@@ -16,6 +16,7 @@ Run directly:  python -m scrapers.stores_scraper
 from __future__ import annotations
 
 from . import common
+from .stores_eu import scrape_eu_stores
 
 log = common.log
 
@@ -70,11 +71,11 @@ def _normalize_store(raw: dict) -> dict:
     }
 
 
-def scrape_stores() -> list[dict]:
-    """Fetch and de-duplicate every active OTS store from the portal API.
+def scrape_americas_stores() -> list[dict]:
+    """Fetch and de-duplicate every active OTS store from the Americas portal API.
 
     Queries each anchor point, keeps only active stores, and unions the results by
-    store id (first occurrence wins). Returns a list sorted by country/state/name.
+    store id (first occurrence wins).
     """
     session = common.build_session()
     by_id: dict[str, dict] = {}
@@ -97,15 +98,27 @@ def scrape_stores() -> list[dict]:
                 continue
             by_id[store_id] = _normalize_store(raw)
 
-    stores = sorted(
-        by_id.values(),
+    log.info("Collected %d unique active Americas stores across %d anchors", len(by_id), len(ANCHORS))
+    return list(by_id.values())
+
+
+def scrape_stores() -> list[dict]:
+    """Collect every OTS store worldwide: Americas portal + European locator.
+
+    The two sources use disjoint id spaces (numeric Americas ids vs. "...EU" store
+    codes), so their records concatenate without collision. Returns one list
+    sorted by country/state/name.
+    """
+    stores = scrape_americas_stores() + scrape_eu_stores()
+
+    stores.sort(
         key=lambda s: (
             s["address"]["country"] or "",
             s["address"]["state"] or "",
             s["name"],
-        ),
+        )
     )
-    log.info("Collected %d unique active stores across %d anchors", len(stores), len(ANCHORS))
+    log.info("Collected %d unique stores worldwide", len(stores))
     return stores
 
 

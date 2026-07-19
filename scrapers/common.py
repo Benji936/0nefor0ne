@@ -78,21 +78,33 @@ def build_session() -> requests.Session:
 
 
 def _request_with_retry(
-    session: requests.Session, url: str, params: dict | None, polite: bool
+    session: requests.Session,
+    url: str,
+    params: dict | None,
+    polite: bool,
+    headers: dict | None = None,
+    polite_delay: float | None = None,
 ) -> requests.Response:
     """Perform a GET with retry logic and (optionally) a polite delay first.
 
     Retries up to MAX_RETRIES times with RETRY_DELAY_SECONDS between attempts,
     on any network error or non-2xx status. Raises the last error if all fail.
+
+    `headers` are merged onto the session headers for this request only (used, for
+    example, to send a Referer some endpoints require). `polite_delay` overrides
+    the default POLITE_DELAY_SECONDS when a scraper makes many small calls.
     """
     if polite:
         # Sleep before the request so we never hammer the host, even on the first call.
-        time.sleep(POLITE_DELAY_SECONDS)
+        delay = POLITE_DELAY_SECONDS if polite_delay is None else polite_delay
+        time.sleep(delay)
 
     last_error: Exception | None = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            response = session.get(url, params=params, timeout=REQUEST_TIMEOUT)
+            response = session.get(
+                url, params=params, headers=headers, timeout=REQUEST_TIMEOUT
+            )
             response.raise_for_status()
             return response
         except requests.RequestException as error:  # network error or bad status
@@ -117,10 +129,15 @@ def fetch_html(session: requests.Session, url: str, polite: bool = True) -> str:
 
 
 def fetch_json(
-    session: requests.Session, url: str, params: dict | None = None, polite: bool = True
+    session: requests.Session,
+    url: str,
+    params: dict | None = None,
+    polite: bool = True,
+    headers: dict | None = None,
+    polite_delay: float | None = None,
 ) -> Any:
     """Fetch a URL and return its parsed JSON body (with retries)."""
-    return _request_with_retry(session, url, params, polite).json()
+    return _request_with_retry(session, url, params, polite, headers, polite_delay).json()
 
 
 # --- Region derivation -------------------------------------------------------
