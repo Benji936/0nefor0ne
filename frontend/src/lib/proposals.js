@@ -15,7 +15,7 @@ import { getClient } from "@/lib/supabaseClient";
  * @param {string} counterpartyId
  * @param {Array<{card_id: number, quantity: number}>} give
  * @param {Array<{card_id: number, quantity: number}>} receive
- * @param {{ trade_method?, cash_amount?, cash_payer?, notes? }} settlement
+ * @param {{ trade_method?, cash_amount?, cash_payer?, notes?, meetup_location? }} settlement
  * @returns {Promise<number>} the new Trade.id
  */
 export async function createTradeProposal(counterpartyId, give, receive, settlement = {}) {
@@ -27,6 +27,7 @@ export async function createTradeProposal(counterpartyId, give, receive, settlem
     p_cash_amount:  settlement.cash_amount  ?? null,
     p_cash_payer:   settlement.cash_payer   ?? null,
     p_notes:        settlement.notes        ?? null,
+    p_meetup_location: settlement.meetup_location ?? null,
   });
   if (error) {
     console.error("create_trade_proposal failed", error);
@@ -54,7 +55,7 @@ export async function fetchMyProposals() {
  * @param {number} tradeId
  * @param {Array<{card_id: number, quantity: number}>} give
  * @param {Array<{card_id: number, quantity: number}>} receive
- * @param {{ trade_method?, cash_amount?, cash_payer?, notes? }} settlement
+ * @param {{ trade_method?, cash_amount?, cash_payer?, notes?, meetup_location? }} settlement
  */
 export async function updateTradeProposal(tradeId, give, receive, settlement = {}) {
   const { error } = await getClient().rpc("update_trade_proposal", {
@@ -65,6 +66,7 @@ export async function updateTradeProposal(tradeId, give, receive, settlement = {
     p_cash_amount:  settlement.cash_amount  ?? null,
     p_cash_payer:   settlement.cash_payer   ?? null,
     p_notes:        settlement.notes        ?? null,
+    p_meetup_location: settlement.meetup_location ?? null,
   });
   if (error) {
     console.error("update_trade_proposal failed", error);
@@ -121,7 +123,7 @@ export async function declineTradeProposal(tradeId, reason = null) {
  * @param {number} originalTradeId
  * @param {Array<{card_id: number, quantity: number}>} give
  * @param {Array<{card_id: number, quantity: number}>} receive
- * @param {{ trade_method?, cash_amount?, cash_payer? }} settlement
+ * @param {{ trade_method?, cash_amount?, cash_payer?, meetup_location? }} settlement
  * @returns {Promise<number>} the new Trade.id
  */
 export async function counterTradeProposal(originalTradeId, give, receive, settlement = {}) {
@@ -132,6 +134,7 @@ export async function counterTradeProposal(originalTradeId, give, receive, settl
     p_trade_method: settlement.trade_method ?? null,
     p_cash_amount:  settlement.cash_amount  ?? null,
     p_cash_payer:   settlement.cash_payer   ?? null,
+    p_meetup_location: settlement.meetup_location ?? null,
   });
   if (error) {
     console.error("counter_trade_proposal failed", error);
