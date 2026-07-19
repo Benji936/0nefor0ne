@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { distanceKm, searchPlaces } from "./otsLocations";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { distanceKm, searchPlaces, getMyPosition } from "./otsLocations";
 
 const places = [
   { source: "store", ref_id: "a", name: "Alpha Cards", city: "Paris",  state: "IDF", country: "France", lat: 48.85, lng: 2.35 },
@@ -28,9 +28,33 @@ describe("searchPlaces", () => {
   });
   it("sorts by distance from origin, coord-less places last", () => {
     const origin = { lat: 45.75, lng: 4.85 }; // near Lyon
-    const ordered = searchPlaces(places, "", origin).map(p => p.ref_id);
+    const results = searchPlaces(places, "", origin);
+    const ordered = results.map(p => p.ref_id);
     expect(ordered[0]).toBe("b");   // Lyon closest
     expect(ordered[1]).toBe("a");   // Paris next
     expect(ordered[2]).toBe("e");   // no coords -> last
+  });
+  it("does not leak an internal _dist field on the returned Place objects", () => {
+    const origin = { lat: 45.75, lng: 4.85 }; // near Lyon
+    const results = searchPlaces(places, "", origin);
+    for (const place of results) {
+      expect(Object.prototype.hasOwnProperty.call(place, "_dist")).toBe(false);
+    }
+  });
+});
+
+describe("getMyPosition", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("rejects when navigator is undefined", async () => {
+    vi.stubGlobal("navigator", undefined);
+    expect(typeof navigator).toBe("undefined"); // sanity: guard's condition is actually met
+
+    // Pins the guard's own error, not some incidental TypeError from
+    // accessing a property on undefined — that would also happen to
+    // reject, but for the wrong reason if the guard were removed.
+    await expect(getMyPosition()).rejects.toThrow("Geolocation unavailable");
   });
 });

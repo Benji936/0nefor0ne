@@ -122,14 +122,17 @@ export function searchPlaces(places, query, origin = null) {
       )
     : places.slice();
   if (origin) {
+    // Schwartzian transform: pair each place with its distance for sorting,
+    // then unwrap so the returned objects keep the exact Place shape (no _dist leak).
     list = list
-      .map((p) => ({ ...p, _dist: distanceKm(origin, p) }))
-      .sort((a, b) => {
-        if (a._dist == null && b._dist == null) return 0;
-        if (a._dist == null) return 1;
-        if (b._dist == null) return -1;
-        return a._dist - b._dist;
-      });
+      .map((p) => [p, distanceKm(origin, p)])
+      .sort(([, da], [, db]) => {
+        if (da == null && db == null) return 0;
+        if (da == null) return 1;
+        if (db == null) return -1;
+        return da - db;
+      })
+      .map(([p]) => p);
   }
   return list;
 }
