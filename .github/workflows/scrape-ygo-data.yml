@@ -1,0 +1,67 @@
+name: Scrape YGO Store & Event Data
+
+# Weekly scrape of Yu-Gi-Oh! OTS store locations and upcoming events.
+# Writes data/stores.json and data/events.json, then commits any changes.
+
+on:
+  # Every Monday at 06:00 UTC.
+  schedule:
+    - cron: "0 6 * * 1"
+  # Allow manual runs from the Actions tab.
+  workflow_dispatch:
+
+# Grant the built-in GITHUB_TOKEN write access so the job can push commits.
+permissions:
+  contents: write
+
+# Never let a scheduled run and a manual run push at the same time.
+concurrency:
+  group: scrape-ygo-data
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Sets up Python 3.11 and caches the pip download directory, keyed on
+      # requirements.txt, so dependency installs are fast on subsequent runs.
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      # Install dependencies into a dedicated virtual environment.
+      - name: Create virtualenv and install dependencies
+        run: |
+          python -m venv .venv
+          ./.venv/bin/python -m pip install --upgrade pip
+          ./.venv/bin/pip install -r requirements.txt
+
+      # Each scraper exits with code 1 if it collects zero records, which fails
+      # the job here and prevents the commit step below from running. The existing
+      # data files are therefore never overwritten with empty data.
+      - name: Scrape OTS store locations
+        run: ./.venv/bin/python -m scrapers.stores_scraper
+
+      - name: Scrape upcoming events
+        run: ./.venv/bin/python -m scrapers.events_scraper
+
+      # Commit and push only if the data actually changed.
+      - name: Commit and push updated data
+        run: |
+          git config user.name "ygo-data-bot"
+          git config user.email "ygo-data-bot@users.noreply.github.com"
+
+          # If nothing under data/ changed, exit cleanly without a commit.
+          if git diff --quiet -- data/; then
+            echo "No data changes to commit."
+            exit 0
+          fi
+
+          git add data/stores.json data/events.json
+          git commit -m "chore: update YGO store and event data - $(date -u +%Y-%m-%d)"
+          git push

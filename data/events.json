@@ -1,0 +1,187 @@
+{
+  "last_updated": "2026-07-19T08:19:44.135702+00:00",
+  "source": "https://www.yugioh-card.com/en/events/",
+  "count": 10,
+  "data": [
+    {
+      "name": "Yu-Gi-Oh! x eFootball™ Collaboration",
+      "type": "Special",
+      "date_start": null,
+      "date_end": null,
+      "date_display": "starts on 09/27/2025",
+      "venue": null,
+      "address": {
+        "street": null,
+        "city": null,
+        "state": null,
+        "zip": null,
+        "country": null
+      },
+      "location_text": "North America & Latin America",
+      "registration_link": null,
+      "url": "https://www.yugioh-card.com/en/events/ygo_x_efootball/"
+    },
+    {
+      "name": "North America World Championship Qualifier 2026",
+      "type": "WCQ",
+      "date_start": "2026-07-10T00:00:00-07:00",
+      "date_end": "2026-07-12T23:59:59-07:00",
+      "date_display": "07/10/2026\t\t\t\t- 07/12/2026",
+      "venue": "Minneapolis Convention Center",
+      "address": {
+        "street": "1301 2nd Ave S",
+        "city": "Minneapolis",
+        "state": "MN",
+        "zip": "55404",
+        "country": "United States"
+      },
+      "location_text": "Minneapolis, MN",
+      "registration_link": null,
+      "url": "https://www.yugioh-card.com/en/events-item/2026-wcq-na/"
+    },
+    {
+      "name": "Comic-Con",
+      "type": "Special",
+      "date_start": "2026-07-22T00:00:00-07:00",
+      "date_end": "2026-07-26T23:59:59-07:00",
+      "date_display": "07/22/2026 - 07/26/2026",
+      "venue": "San Diego Convention Center",
+      "address": {
+        "street": "111 W. Harbor Dr.",
+        "city": "San Diego",
+        "state": "CA",
+        "zip": "92101",
+        "country": "United States"
+      },
+      "location_text": "San Diego, CA",
+      "registration_link": null,
+      "url": "https://www.yugioh-card.com/en/events-item/2026_sdcc/"
+    },
+    {
+      "name": "Yu-Gi-Oh! Championship Series Montreal, Quebec 2026",
+      "type": "YCS",
+      "date_start": "2026-08-14T00:00:00-07:00",
+      "date_end": "2026-08-16T23:59:59-07:00",
+      "date_display": "08/14/2026 - 08/16/2026",
+      "venue": "Montréal Convention Centre",
+      "address": {
+        "street": "1001 Pl. Jean-Paul-Riopelle",
+        "city": "Montréal",
+        "state": "QC",
+        "zip": "H2Y 0A3",
+        "country": "Canada"
+      },
+      "location_text": "Montréal, Quebec",
+      "registration_link": null,
+      "url": "https://www.yugioh-card.com/en/events-item/2026-ycs-montreal/"
+    },
+    {
+      "name": "Latin America Remote Duel Yu-Gi-Oh! Championship Series",
+      "type": "Remote Duel YCS",
+      "date_start": "2026-09-18T00:00:00-07:00",
+      "date_end": "2026-09-20T23:59:59-07:00",
+      "date_display": "09/18/2026 - 09/20/2026",
+      "venue": "Hosted on Discord (check schedule)",
+      "address": {
+        "street": null,
+        "city": null,
+        "state": null,
+        "zip": null,
+        "country": null
+      },
+      "location_text": "Latin America (hosted on Discord)",
+      "registration_link": null,
+      "url": "https://www.yugioh-card.com/en/events-item/2026-09-latam-rdycs/"
+    },
+    {
+      "name": "Yu-Gi-Oh! Championship Series Guayaquil, Ecuador 2026",
+      "type": "YCS",
+      "date_start": "2026-10-02T00:00:00-07:00",
+      "date_end": "2026-10-04T23:59:59-07:00",
+      "date_display": "10/02/2026 - 10/04/2026",
+      "venue": "Hotel Hilton Colón &#8211; Salón Gran Isabela I, II, III",
+      "address": {
+        "street": "Av. Francisco de Orellana",
+        "city": "Guayaquil",
+        "state": null,
+        "zip": null,
+        "country": "Ecuador"
+      },
+      "location_text": "Guayaquil, Ecuador",
+      "registration_link": null,
+      "url": "https://www.yugioh-card.com/en/events-item/2026-ycs-ecuador/"
+    },
+    {
+      "name": "Yu-Gi-Oh! Championship Series Houston, Texas 2026",
+      "type": "YCS",
+      "date_start": "2026-10-16T00:00:00-07:00",
+      "date_end": "2026-10-18T23:59:59-07:00",
+      "date_display": "10/16/2026 - 10/18/2026",
+      "venue": "NRG Park",
+      "address": {
+        "street": "1 Fannin St",
+        "city": "Houston",
+        "state": "TX",
+        "zip": "77054",
+        "country": null
+      },
+      "location_text": "Houston, TX",
+      "registration_link": null,
+      "url": "https://www.yugioh-card.com/en/events-item/2026-ycs-houston/"
+    },
+    {
+      "name": "Yu-Gi-Oh! Championship Series Orlando, Florida 2026",
+      "type": "YCS",
+      "date_start": "2026-11-06T00:00:00-08:00",
+      "date_end": "2026-11-08T23:59:59-08:00",
+      "date_display": "11/06/2026 - 11/08/2026",
+      "venue": "Orange County Convention Center",
+      "address": {
+        "street": "9800 International Dr.",
+        "city": "Orlando",
+        "state": "FL",
+        "zip": "32819",
+        "country": "United States"
+      },
+      "location_text": "Orlando, FL",
+      "registration_link": null,
+      "url": "https://www.yugioh-card.com/en/events-item/2026-ycs-orlando/"
+    },
+    {
+      "name": "Yu-Gi-Oh! Championship Series Santiago, Chile 2026",
+      "type": "YCS",
+      "date_start": "2026-11-27T00:00:00-08:00",
+      "date_end": "2026-11-29T23:59:59-08:00",
+      "date_display": "11/27/2026 - 11/29/2026",
+      "venue": "Centro Cultural Estación Mapocho",
+      "address": {
+        "street": "Plaza de la Cultura s/n, Ex Estación de Trenes, Metro Puente Cal y Canto",
+        "city": "Santiago",
+        "state": null,
+        "zip": null,
+        "country": "Chile"
+      },
+      "location_text": "Santiago, Chile",
+      "registration_link": null,
+      "url": "https://www.yugioh-card.com/en/events-item/2026-ycs-santiago/"
+    },
+    {
+      "name": "North America Remote Duel Yu-Gi-Oh! Championship Series",
+      "type": "Remote Duel YCS",
+      "date_start": "2026-12-04T00:00:00-08:00",
+      "date_end": "2026-12-06T23:59:59-08:00",
+      "date_display": "12/04/2026 - 12/06/2026",
+      "venue": "Hosted on Discord (check schedule)",
+      "address": {
+        "street": null,
+        "city": "Hosted on Discord (check schedule)",
+        "state": null,
+        "zip": null,
+        "country": null
+      },
+      "location_text": "North America (hosted on Discord)",
+      "registration_link": null,
+      "url": "https://www.yugioh-card.com/en/events-item/2026-na-rdycs/"
+    }
+  ]
+}

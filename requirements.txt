@@ -1,0 +1,4 @@
+# Python dependencies for the Yu-Gi-Oh! OTS store & event scrapers.
+# Pinned to compatible ranges; used by .github/workflows/scrape-ygo-data.yml.
+requests>=2.31,<3.0
+beautifulsoup4>=4.12,<5.0
