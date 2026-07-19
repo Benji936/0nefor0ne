@@ -1,7 +1,23 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://sxteuctysfiwripnaozi.supabase.co'
-const supabasePublishableKey =  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4dGV1Y3R5c2Zpd3JpcG5hb3ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTczNTA1OTAsImV4cCI6MjA3MjkyNjU5MH0.nrRXz20dGkNH3wDIkHTxlrVMC-uvEiukWsq9-Pu4Lcw'
+// The anon key is a public, RLS-gated credential. Vite inlines any VITE_* value
+// into the browser bundle, so this key is readable by every visitor no matter
+// where it is stored — keeping it in .env buys no secrecy, only a deploy-time
+// dependency. The literals below are therefore the fallback, so a fresh deploy
+// works with zero environment configuration. Set the env vars only to point the
+// app at a different Supabase project (staging, a fork).
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://sxteuctysfiwripnaozi.supabase.co'
+const supabasePublishableKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4dGV1Y3R5c2Zpd3JpcG5hb3ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTczNTA1OTAsImV4cCI6MjA3MjkyNjU5MH0.nrRXz20dGkNH3wDIkHTxlrVMC-uvEiukWsq9-Pu4Lcw'
+
+// Guard against the failure mode that took production down once: a refactor that
+// drops the literals leaves an empty string, which supabase-js rejects deep in
+// its constructor with an opaque "supabaseKey is required".
+if (!supabaseUrl || !supabasePublishableKey) {
+    throw new Error(
+        'Supabase config is empty. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, ' +
+        'or restore the fallback literals in src/lib/supabaseClient.js.'
+    )
+}
 
 export const supabase = createClient(supabaseUrl, supabasePublishableKey)
 

@@ -20,8 +20,11 @@ import { TOP_SET_SLUGS } from "../src/data/set-slugs.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(__dirname, "../public/sitemap.xml");
 
-const SUPABASE_URL = "https://sxteuctysfiwripnaozi.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4dGV1Y3R5c2Zpd3JpcG5hb3ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTczNTA1OTAsImV4cCI6MjA3MjkyNjU5MH0.nrRXz20dGkNH3wDIkHTxlrVMC-uvEiukWsq9-Pu4Lcw";
+// Env vars win when set (staging, a fork); the literals keep the build working
+// with zero configuration. The anon key is public by design — see the note in
+// src/lib/supabaseClient.js.
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || "https://sxteuctysfiwripnaozi.supabase.co";
+const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4dGV1Y3R5c2Zpd3JpcG5hb3ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTczNTA1OTAsImV4cCI6MjA3MjkyNjU5MH0.nrRXz20dGkNH3wDIkHTxlrVMC-uvEiukWsq9-Pu4Lcw";
 
 const LOCALES   = ["en", "fr", "de", "it"];
 const BASE      = "https://0nefor.one";
@@ -90,48 +93,66 @@ const STATIC_PAGES = [
 
 // ── Fetch trending cards from Supabase ────────────────────────────────────────
 
+// A stale sitemap is a minor SEO problem; a failed build is an outage. Every
+// Supabase failure below therefore degrades to the checked-in card ID list
+// rather than propagating. This function does not throw.
+function staticCardFallback(reason) {
+  console.warn(`  ${reason}`);
+  console.log(`  Using TOP_CARD_IDS fallback from src/data/card-ids.js (${TOP_CARD_IDS.length} IDs)`);
+  return TOP_CARD_IDS.map(id => ({ image_id: id, name: null }));
+}
+
 async function fetchTopCards(limit) {
-  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    return staticCardFallback(
+      "Supabase config is empty (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY) — skipping the live query."
+    );
+  }
 
   console.log(`Fetching top ${limit} traded cards from Supabase...`);
 
-  // Try the trending RPC first (returns image_id + trade_count)
-  const { data: rpcData, error: rpcErr } = await supabase
-    .rpc("get_trending_cards", { p_limit: limit });
+  try {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  if (!rpcErr && rpcData?.length) {
-    console.log(`  Got ${rpcData.length} cards from get_trending_cards RPC`);
-    return rpcData.map(r => ({ image_id: r.image_id, name: r.name }));
-  }
+    // Try the trending RPC first (returns image_id + trade_count)
+    const { data: rpcData, error: rpcErr } = await supabase
+      .rpc("get_trending_cards", { p_limit: limit });
 
-  // Fallback: count distinct image_ids from the Card table directly
-  console.log("  RPC unavailable, falling back to Card table query (then src/data/card-ids.js if that also fails)...");
-  const { data, error } = await supabase
-    .from("Card")
-    .select("image_id, name")
-    .not("status", "in", '("traded","locked")')
-    .eq("wish", false)
-    .not("image_id", "is", null)
-    .limit(limit * 3); // fetch more to deduplicate
-
-  if (error) {
-    console.error("  Supabase query failed:", error.message);
-    console.log(`  Using TOP_CARD_IDS fallback from src/data/card-ids.js (${TOP_CARD_IDS.length} IDs)`);
-    return TOP_CARD_IDS.map(id => ({ image_id: id, name: null }));
-  }
-
-  // Deduplicate by image_id, keep first occurrence
-  const seen = new Set();
-  const deduped = [];
-  for (const row of data) {
-    if (!seen.has(row.image_id)) {
-      seen.add(row.image_id);
-      deduped.push(row);
-      if (deduped.length >= limit) break;
+    if (!rpcErr && rpcData?.length) {
+      console.log(`  Got ${rpcData.length} cards from get_trending_cards RPC`);
+      return rpcData.map(r => ({ image_id: r.image_id, name: r.name }));
     }
+
+    // Fallback: count distinct image_ids from the Card table directly
+    console.log("  RPC unavailable, falling back to Card table query (then src/data/card-ids.js if that also fails)...");
+    const { data, error } = await supabase
+      .from("Card")
+      .select("image_id, name")
+      .not("status", "in", '("traded","locked")')
+      .eq("wish", false)
+      .not("image_id", "is", null)
+      .limit(limit * 3); // fetch more to deduplicate
+
+    if (error) return staticCardFallback(`Supabase query failed: ${error.message}`);
+
+    // Deduplicate by image_id, keep first occurrence
+    const seen = new Set();
+    const deduped = [];
+    for (const row of data) {
+      if (!seen.has(row.image_id)) {
+        seen.add(row.image_id);
+        deduped.push(row);
+        if (deduped.length >= limit) break;
+      }
+    }
+    if (!deduped.length) return staticCardFallback("Card table returned no usable rows.");
+
+    console.log(`  Got ${deduped.length} unique cards from Card table`);
+    return deduped;
+  } catch (err) {
+    // Covers client construction (bad/empty key) and network-level failures.
+    return staticCardFallback(`Supabase unreachable: ${err.message}`);
   }
-  console.log(`  Got ${deduped.length} unique cards from Card table`);
-  return deduped;
 }
 
 // ── Build sitemap ─────────────────────────────────────────────────────────────
