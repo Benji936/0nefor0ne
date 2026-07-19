@@ -7,6 +7,7 @@ import { createTradeProposal, updateTradeProposal, counterTradeProposal, uploadT
 import { searchById } from "@/api";
 import { getClient, getCurrentSession } from "@/lib/supabaseClient";
 import AddCard from "@/components/library/AddCard.vue";
+import LocationPicker from "@/components/trade/LocationPicker.vue";
 
 const props = defineProps({
   modelValue:      { type: Boolean, default: false },
@@ -49,13 +50,8 @@ const submitting = ref(false);
 const errorMessage = ref("");
 
 // Settlement details
-const settlement = ref({ trade_method: null, hasCash: false, cash_amount: null, cash_payer: 'proposer' });
-
-const METHODS = [
-  { value: 'in_person', label: 'Meet in person', icon: 'mdi-handshake-outline' },
-  { value: 'mail',      label: 'By mail',         icon: 'mdi-package-variant-closed' },
-  { value: 'other',     label: 'Other',            icon: 'mdi-dots-horizontal' },
-];
+// deliveryMode: 'location' (meet at a picked store/event) | 'mail' (ship, no location)
+const settlement = ref({ deliveryMode: 'location', meetup_location: null, hasCash: false, cash_amount: null, cash_payer: 'proposer' });
 
 // Selection: maps card_id -> quantity. 0 means unselected.
 const giveSelection = ref({});     // from myOffers
@@ -98,11 +94,12 @@ watch(
     // Settlement pre-population
     const src = props.editProposal ?? props.counterProposal;
     settlement.value = src ? {
-      trade_method: src.trade_method ?? null,
-      hasCash:      src.cash_amount != null,
-      cash_amount:  src.cash_amount ?? null,
-      cash_payer:   src.cash_payer  ?? 'proposer',
-    } : { trade_method: null, hasCash: false, cash_amount: null, cash_payer: 'proposer' };
+      deliveryMode:    src.trade_method === 'mail' ? 'mail' : 'location',
+      meetup_location: src.meetup_location ?? null,
+      hasCash:         src.cash_amount != null,
+      cash_amount:     src.cash_amount ?? null,
+      cash_payer:      src.cash_payer  ?? 'proposer',
+    } : { deliveryMode: 'location', meetup_location: null, hasCash: false, cash_amount: null, cash_payer: 'proposer' };
 
     // Fetch counterparty wishlist + their trade pile in parallel.
     // For the "On your wishlist" tag on counterparty cards we need the
@@ -228,10 +225,12 @@ async function submit() {
   if (!canSubmit.value) return;
   submitting.value = true;
   errorMessage.value = "";
+  const isMail = settlement.value.deliveryMode === 'mail';
   const settlementPayload = {
-    trade_method: settlement.value.trade_method || null,
-    cash_amount:  settlement.value.hasCash && settlement.value.cash_amount > 0 ? settlement.value.cash_amount : null,
-    cash_payer:   settlement.value.hasCash && settlement.value.cash_amount > 0 ? settlement.value.cash_payer : null,
+    trade_method:    isMail ? 'mail' : (settlement.value.meetup_location ? 'in_person' : null),
+    meetup_location: isMail ? null : (settlement.value.meetup_location ?? null),
+    cash_amount:     settlement.value.hasCash && settlement.value.cash_amount > 0 ? settlement.value.cash_amount : null,
+    cash_payer:      settlement.value.hasCash && settlement.value.cash_amount > 0 ? settlement.value.cash_payer : null,
   };
   try {
     const me = (await getCurrentSession())?.user?.id;
@@ -742,23 +741,11 @@ function marketLinks(name, setCode) {
         <!-- ── Settlement details ── -->
         <div class="flex flex-col sm:flex-row sm:justify-between gap-4 mt-4 rounded-xl border py-4 px-4" style="border-color: var(--c-border); background-color: var(--c-surface-2)">
           <div class="flex flex-col gap-3">
-            <p class="text-[11px] font-bold uppercase tracking-widest" style="color: var(--c-muted)">{{ t('proposeDialog.settlementDetails') }}</p>
-
-            <!-- Trade method -->
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-xs shrink-0" style="color: var(--c-muted)">How:</span>
-              <button
-                v-for="m in METHODS" :key="m.value"
-                class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer"
-                :style="settlement.trade_method === m.value
-                  ? { backgroundColor: 'var(--c-trade)', borderColor: 'var(--c-trade)', color: 'white' }
-                  : { backgroundColor: 'transparent', borderColor: 'var(--c-border)', color: 'var(--c-muted)' }"
-                @click="settlement.trade_method = settlement.trade_method === m.value ? null : m.value"
-              >
-                <v-icon :icon="m.icon" size="14" />
-                {{ m.label }}
-              </button>
-            </div>
+            <LocationPicker
+              v-model="settlement.meetup_location"
+              v-model:deliveryMode="settlement.deliveryMode"
+              :counterparty-name="effectiveUser?.name"
+            />
 
             <!-- Cash offset -->
             <div class="flex gap-3 items-center flex-wrap">
