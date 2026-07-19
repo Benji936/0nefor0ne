@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/generate-sitemap.mjs && vite-ssg build",
+    "predev": "node scripts/sync-ots-data.mjs",
+    "data:ots": "node scripts/sync-ots-data.mjs",
+    "build": "node scripts/generate-sitemap.mjs && node scripts/sync-ots-data.mjs && vite-ssg build",
     "preview": "vite preview",
     "sitemap": "node scripts/generate-sitemap.mjs",
     "sitemap:large": "node scripts/generate-sitemap.mjs --limit=500",

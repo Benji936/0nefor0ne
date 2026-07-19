@@ -39,3 +39,7 @@ coverage
 public/engine/scripts/
 public/engine/card-db.json
 public/engine/ocgcore.sync.wasm
+
+# Generated at build time from repo-root /data (see scripts/sync-ots-data.mjs)
+public/data/stores.json
+public/data/events.json
