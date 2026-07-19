@@ -271,12 +271,21 @@ function cancelRating() {
 
     <!-- Settlement chips -->
     <div
-      v-if="proposal.trade_method || proposal.cash_amount || proposal.notes"
+      v-if="proposal.trade_method || proposal.cash_amount || proposal.notes || proposal.meetup_location"
       class="flex flex-wrap gap-2 px-4 py-2"
       style="border-top: 1px solid var(--c-border)"
     >
       <span
-        v-if="proposal.trade_method"
+        v-if="proposal.meetup_location"
+        class="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border truncate max-w-xs"
+        style="color: var(--c-mutual); border-color: var(--c-mutual); background-color: color-mix(in srgb, var(--c-mutual) 12%, transparent)"
+        :title="proposal.meetup_location.address || proposal.meetup_location.name"
+      >
+        <v-icon icon="mdi-map-marker" size="12" />
+        {{ t('proposal.meetupAt') }} {{ proposal.meetup_location.name }}{{ proposal.meetup_location.city ? ', ' + proposal.meetup_location.city : '' }}
+      </span>
+      <span
+        v-if="proposal.trade_method && !proposal.meetup_location"
         class="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border"
         style="color: var(--c-muted); border-color: var(--c-border); background-color: var(--c-surface-2)"
       >

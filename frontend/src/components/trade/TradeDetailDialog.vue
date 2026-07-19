@@ -240,6 +240,33 @@ function confirmDecline() {
           </section>
         </div>
 
+        <!-- Meetup location -->
+        <div
+          v-if="proposal.meetup_location"
+          class="mt-3 flex items-start gap-2 rounded-xl border px-4 py-3"
+          style="border-color: var(--c-border); background-color: var(--c-surface-2)"
+        >
+          <v-icon icon="mdi-map-marker" size="18" color="var(--c-mutual)" class="mt-0.5" />
+          <div class="flex flex-col min-w-0">
+            <span class="text-sm font-semibold truncate" style="color: var(--c-text)">
+              {{ t('proposal.meetupAt') }} {{ proposal.meetup_location.name }}
+            </span>
+            <span v-if="proposal.meetup_location.address" class="text-xs" style="color: var(--c-muted)">
+              {{ proposal.meetup_location.address }}
+            </span>
+            <span v-if="proposal.meetup_location.event_date" class="text-xs" style="color: var(--c-muted)">
+              {{ proposal.meetup_location.event_date }}
+            </span>
+            <a
+              v-if="proposal.meetup_location.url"
+              :href="proposal.meetup_location.url" target="_blank" rel="noopener noreferrer"
+              class="text-xs no-underline flex items-center gap-1 mt-1" style="color: var(--c-trade)"
+            >
+              <v-icon icon="mdi-open-in-new" size="11" />{{ proposal.meetup_location.name }}
+            </a>
+          </div>
+        </div>
+
         <!-- Decline reason -->
         <div
           v-if="proposal.status === 'declined' && proposal.decline_reason"
