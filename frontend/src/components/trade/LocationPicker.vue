@@ -76,7 +76,7 @@ function distLabel(place) {
     <div class="flex gap-2">
       <button
         type="button"
-        class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer"
+        class="flex items-center gap-2 px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold border transition-all cursor-pointer"
         :style="deliveryMode === 'location'
           ? { backgroundColor: 'var(--c-trade)', borderColor: 'var(--c-trade)', color: 'white' }
           : { backgroundColor: 'transparent', borderColor: 'var(--c-border)', color: 'var(--c-muted)' }"
@@ -86,7 +86,7 @@ function distLabel(place) {
       </button>
       <button
         type="button"
-        class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer"
+        class="flex items-center gap-2 px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold border transition-all cursor-pointer"
         :style="deliveryMode === 'mail'
           ? { backgroundColor: 'var(--c-trade)', borderColor: 'var(--c-trade)', color: 'white' }
           : { backgroundColor: 'transparent', borderColor: 'var(--c-border)', color: 'var(--c-muted)' }"
@@ -155,13 +155,24 @@ function distLabel(place) {
               />
             </div>
             <v-btn
-              size="small" variant="flat" prepend-icon="mdi-crosshairs-gps"
+              size="small" variant="flat"
+              :prepend-icon="origin ? 'mdi-crosshairs-gps' : 'mdi-crosshairs-gps-off'"
               :loading="loadingGeo"
-              style="background-color: var(--c-surface-2); color: var(--c-text)"
+              :style="origin
+                ? { backgroundColor: 'color-mix(in srgb, var(--c-trade) 18%, transparent)', color: 'var(--c-trade)' }
+                : { backgroundColor: 'var(--c-surface-2)', color: 'var(--c-text)' }"
               @click="useNearMe"
             >{{ t('proposeDialog.nearMe') }}</v-btn>
           </div>
           <p v-if="geoError" class="text-[11px]" style="color: var(--c-accent)">{{ geoError }}</p>
+
+          <!-- Contextual hint: prompt before any input, confirm once sorting by distance -->
+          <p v-if="origin" class="flex items-center gap-1 text-[11px] font-semibold" style="color: var(--c-trade)">
+            <v-icon icon="mdi-sort-ascending" size="12" />{{ t('proposeDialog.sortedByDistance') }}
+          </p>
+          <p v-else-if="!query" class="text-[11px]" style="color: var(--c-muted)">
+            {{ t('proposeDialog.searchHint') }}
+          </p>
 
           <!-- Results -->
           <div class="max-h-[55vh] overflow-y-auto flex flex-col gap-1 pr-1">
@@ -184,7 +195,7 @@ function distLabel(place) {
                   <span class="text-xs font-semibold truncate" style="color: var(--c-text)">{{ p.name }}</span>
                   <span class="text-[11px] truncate" style="color: var(--c-muted)">{{ [p.city, p.state].filter(Boolean).join(', ') }}</span>
                 </span>
-                <span v-if="distLabel(p)" class="text-[10px] shrink-0" style="color: var(--c-mutual)">{{ distLabel(p) }}</span>
+                <span v-if="distLabel(p)" class="text-[10px] font-semibold shrink-0" style="color: var(--c-trade)">{{ distLabel(p) }}</span>
               </button>
             </template>
 
@@ -205,6 +216,7 @@ function distLabel(place) {
                     {{ [p.city, p.state].filter(Boolean).join(', ') || p.address }}{{ p.event_date ? ' · ' + p.event_date : '' }}
                   </span>
                 </span>
+                <span v-if="distLabel(p)" class="text-[10px] font-semibold shrink-0" style="color: var(--c-trade)">{{ distLabel(p) }}</span>
               </button>
             </template>
           </div>
@@ -213,3 +225,13 @@ function distLabel(place) {
     </v-dialog>
   </div>
 </template>
+
+<style scoped>
+/* Visible keyboard focus on every custom interactive element (DESIGN.md: focus states). */
+button:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--c-trade);
+  outline-offset: 2px;
+}
+</style>

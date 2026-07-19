@@ -252,7 +252,7 @@ async function submit() {
     }
     close();
   } catch (err) {
-    errorMessage.value = err?.message ?? "Failed to save proposal.";
+    errorMessage.value = err?.message ?? t('proposeDialog.saveFailed');
   } finally {
     submitting.value = false;
   }
@@ -443,7 +443,7 @@ function marketLinks(name, setCode) {
                   <v-icon icon="mdi-magnify" size="14" class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" color="var(--c-muted)" />
                   <input
                     v-model="wantedFilter"
-                    placeholder="Filter…"
+                    :placeholder="t('proposeDialog.filter')"
                     class="w-full rounded-lg pl-7 pr-2 py-2 text-xs outline-none border"
                     :style="{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
                     autofocus
@@ -483,7 +483,7 @@ function marketLinks(name, setCode) {
                     v-if="myOffers.some(c => c.name === item.name && c.status !== 'locked')"
                     class="absolute -top-1 -right-1 size-4 rounded-full border-2 flex items-center justify-center"
                     style="background-color: var(--c-mutual); border-color: var(--c-surface-2)"
-                    title="Already in your library"
+                    :title="t('proposeDialog.alreadyInLibrary')"
                   />
                   <v-progress-circular v-if="fetchingCardId === item.id" indeterminate size="14" width="2" class="absolute inset-0 m-auto" />
                   <!-- Name tooltip on hover -->
@@ -595,7 +595,7 @@ function marketLinks(name, setCode) {
                 {{ receivePayload.length }}
               </span>
               <span v-if="theirPileHasExtras" class="text-[11px] ml-auto" style="color: var(--c-muted)">
-                {{ theirTradePile.length }} card{{ theirTradePile.length !== 1 ? 's' : '' }} available
+                {{ t('proposeDialog.cardsToChooseFrom', { count: theirTradePile.length }) }}
               </span>
             </div>
 
@@ -750,7 +750,7 @@ function marketLinks(name, setCode) {
             <!-- Cash offset -->
             <div class="flex gap-3 items-center flex-wrap">
 
-              <v-checkbox label="Add cash offset" v-model="settlement.hasCash" style="accent-color: var(--c-trade); height: 55px;" />
+              <v-checkbox :label="t('proposeDialog.addCashOffset')" v-model="settlement.hasCash" style="accent-color: var(--c-trade); height: 55px;" />
 
               <template v-if="settlement.hasCash">
                 <select
@@ -758,8 +758,8 @@ function marketLinks(name, setCode) {
                   class="rounded-lg px-2 py-1 text-xs border outline-none"
                   :style="{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
                 >
-                  <option value="proposer">You pay</option>
-                  <option value="counterparty">They pay</option>
+                  <option value="proposer">{{ t('proposeDialog.youPay') }}</option>
+                  <option value="counterparty">{{ t('proposeDialog.theyPay') }}</option>
                 </select>
                 <div class="relative flex items-center">
                   <span class="absolute left-3 text-xs pointer-events-none" style="color: var(--c-muted)">€</span>
@@ -770,9 +770,10 @@ function marketLinks(name, setCode) {
                     :style="{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
                   />
                 </div>
-                <span v-if="settlement.cash_amount > 0" class="text-xs font-semibold" style="color: var(--c-mutual)">
-                  {{ settlement.cash_payer === 'proposer' ? 'You' : effectiveUser?.name ?? 'They' }}
-                  pay €{{ Number(settlement.cash_amount).toFixed(2) }}
+                <span v-if="settlement.cash_amount > 0" class="text-xs font-semibold" style="color: var(--c-trade)">
+                  {{ settlement.cash_payer === 'proposer'
+                    ? t('proposeDialog.youPayAmount', { amount: Number(settlement.cash_amount).toFixed(2) })
+                    : t('proposeDialog.paysAmount', { who: effectiveUser?.name ?? t('proposeDialog.anonymous'), amount: Number(settlement.cash_amount).toFixed(2) }) }}
                 </span>
               </template>
             </div>
@@ -788,7 +789,7 @@ function marketLinks(name, setCode) {
               <div v-if="photoPreview" class="relative shrink-0">
                 <img
                   :src="photoPreview"
-                  alt="Preview"
+                  :alt="t('proposeDialog.photoPreviewAlt')"
                   class="h-20 w-20 object-cover rounded-lg ring-1"
                   style="ring-color: var(--c-border)"
                 />
@@ -796,7 +797,7 @@ function marketLinks(name, setCode) {
                   class="absolute -top-2 -right-2 size-5 rounded-full flex items-center justify-center cursor-pointer"
                   style="background-color: var(--c-accent)"
                   @click="removePhoto"
-                  title="Remove photo"
+                  :title="t('proposeDialog.removePhoto')"
                 >
                   <v-icon icon="mdi-close" size="12" color="white" />
                 </button>
@@ -895,6 +896,17 @@ function marketLinks(name, setCode) {
   transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
               border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
               box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* Visible keyboard focus across the dialog's custom interactive elements (DESIGN.md: focus states). */
+.trade-row:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: -2px;
+}
+.trade-dialog input:focus-visible,
+.trade-dialog select:focus-visible,
+.trade-dialog button:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
 }
 .suggestions-scroll {
   scrollbar-width: thin;
