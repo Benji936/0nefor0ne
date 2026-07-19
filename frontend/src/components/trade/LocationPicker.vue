@@ -20,16 +20,18 @@ const loadingGeo = ref(false);
 
 async function ensureLoaded() {
   if (loaded.value) return;
-  allPlaces.value = await loadMeetupPlaces();
-  loaded.value = true;
+  const places = await loadMeetupPlaces();
+  allPlaces.value = places;
+  if (places.length > 0) loaded.value = true;
 }
 
 // Preload the list when the picker is in location mode.
 watch(() => props.deliveryMode, (m) => { if (m === "location") ensureLoaded(); }, { immediate: true });
 
-const results = computed(() => searchPlaces(allPlaces.value, query.value, origin.value).slice(0, 40));
-const stores = computed(() => results.value.filter((p) => p.source === "store"));
-const events = computed(() => results.value.filter((p) => p.source === "event"));
+const ranked = computed(() => searchPlaces(allPlaces.value, query.value, origin.value));
+const stores = computed(() => ranked.value.filter((p) => p.source === "store").slice(0, 30));
+const events = computed(() => ranked.value.filter((p) => p.source === "event").slice(0, 15));
+const hasResults = computed(() => stores.value.length > 0 || events.value.length > 0);
 
 async function useNearMe() {
   geoError.value = "";
@@ -65,6 +67,7 @@ function distLabel(place) {
     <!-- Mode toggle -->
     <div class="flex gap-2">
       <button
+        type="button"
         class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer"
         :style="deliveryMode === 'location'
           ? { backgroundColor: 'var(--c-trade)', borderColor: 'var(--c-trade)', color: 'white' }
@@ -74,6 +77,7 @@ function distLabel(place) {
         <v-icon icon="mdi-map-marker-outline" size="14" />{{ t('proposeDialog.meetAtLocation') }}
       </button>
       <button
+        type="button"
         class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer"
         :style="deliveryMode === 'mail'
           ? { backgroundColor: 'var(--c-trade)', borderColor: 'var(--c-trade)', color: 'white' }
@@ -123,7 +127,7 @@ function distLabel(place) {
 
         <!-- Results -->
         <div class="max-h-56 overflow-y-auto flex flex-col gap-1 pr-1">
-          <p v-if="loaded && results.length === 0" class="text-xs text-center py-4" style="color: var(--c-muted)">
+          <p v-if="loaded && !hasResults" class="text-xs text-center py-4" style="color: var(--c-muted)">
             {{ t('proposeDialog.noPlaces') }}
           </p>
 

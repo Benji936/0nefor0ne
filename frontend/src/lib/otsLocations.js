@@ -41,7 +41,7 @@ function _normalizeEvent(e) {
   const parts = [addr.street, addr.city, addr.state, addr.zip].filter(Boolean);
   return {
     source: "event",
-    ref_id: e.url,
+    ref_id: e.url || `${e.name}|${e.date_start ?? e.date_display ?? ""}`,
     name: e.name,
     city: addr.city ?? null,
     state: addr.state ?? null,

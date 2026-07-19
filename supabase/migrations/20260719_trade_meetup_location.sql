@@ -196,6 +196,7 @@ CREATE OR REPLACE FUNCTION public.counter_trade_proposal(
  RETURNS bigint
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
   v_trade  "Trade"%ROWTYPE;
