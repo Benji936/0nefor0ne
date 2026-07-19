@@ -40,7 +40,6 @@ onMounted(async () => {
     );
     trendingCards.value = enriched;
   } catch (err) {
-    console.error('fetchTrendingCards failed', err);
   } finally {
     loading.value = false;
   }

@@ -16,7 +16,6 @@ export async function fetchAnnounces() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("fetchAnnounces failed", error);
     throw error;
   }
 
@@ -31,7 +30,6 @@ export async function fetchAnnounces() {
     .in("id", sellerIds);
 
   if (traderError) {
-    console.error("fetchAnnounces (traders) failed", traderError);
   }
   
   const tradersById = Object.fromEntries((traderData ?? []).map(t => [t.id, t]));
@@ -64,7 +62,6 @@ export async function fetchMyAnnounces() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("fetchMyAnnounces failed", error);
     throw error;
   }
 
@@ -173,7 +170,6 @@ export async function deleteAnnounceImage(imageId, url) {
       await getClient().storage.from("announce-images").remove([path]);
     }
   } catch (err) {
-    console.warn("announce image storage cleanup failed", err);
   }
 }
 
@@ -190,7 +186,6 @@ async function uploadAnnounceImage(announceId, uploaderId, file, sortOrder) {
     .upload(path, file, { contentType: file.type, upsert: false });
   
   if (storageError) {
-    console.error("Storage upload failed for image", storageError);
     throw storageError;
   }
 

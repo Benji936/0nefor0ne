@@ -240,28 +240,24 @@ export default {
           this.myCity       = data.City        ?? '';
         }
       } catch (err) {
-        console.error('loadMyProfile failed', err);
       }
     },
     async loadMatches() {
       if (!this.login?.user?.id || this.loadingMatches) return;
       this.loadingMatches = true;
       try   { this.allMatches = await fetchMatches(); }
-      catch (err) { console.error(err); }
       finally { this.loadingMatches = false; }
     },
     async loadProposals() {
       if (!this.login?.user?.id || this.loadingProposals) return;
       this.loadingProposals = true;
       try   { this.proposals = await fetchMyProposals(); }
-      catch (err) { console.error(err); }
       finally { this.loadingProposals = false; }
     },
     async loadAnnounces() {
       if (!this.login?.user?.id || this.loadingAnnounces) return;
       this.loadingAnnounces = true;
       try   { this.announces = await fetchAnnounces(); }
-      catch (err) { console.error(err); }
       finally { this.loadingAnnounces = false; }
     },
     onOpenTrade(user) {
@@ -347,7 +343,6 @@ export default {
       if (!cardName) { this.cardTraders = []; return; }
       this.loadingCardTraders = true;
       try   { this.cardTraders = await fetchTradersWithCard(cardName); }
-      catch (err) { console.error(err); this.cardTraders = []; }
       finally { this.loadingCardTraders = false; }
     },
     onOpenAnnounceDetail(announce) {

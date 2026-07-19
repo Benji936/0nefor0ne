@@ -30,7 +30,6 @@ export async function createTradeProposal(counterpartyId, give, receive, settlem
     p_meetup_location: settlement.meetup_location ?? null,
   });
   if (error) {
-    console.error("create_trade_proposal failed", error);
     throw error;
   }
   return data;
@@ -43,7 +42,6 @@ export async function createTradeProposal(counterpartyId, give, receive, settlem
 export async function fetchMyProposals() {
   const { data, error } = await getClient().rpc("fetch_my_proposals");
   if (error) {
-    console.error("fetch_my_proposals failed", error);
     throw error;
   }
   return data ?? [];
@@ -69,7 +67,6 @@ export async function updateTradeProposal(tradeId, give, receive, settlement = {
     p_meetup_location: settlement.meetup_location ?? null,
   });
   if (error) {
-    console.error("update_trade_proposal failed", error);
     throw error;
   }
 }
@@ -84,7 +81,6 @@ export async function updateTradeProposal(tradeId, give, receive, settlement = {
 export async function acceptTradeProposal(tradeId) {
   const { error } = await getClient().rpc("accept_trade", { p_trade_id: tradeId });
   if (error) {
-    console.error("accept_trade failed", error);
     throw error;
   }
 }
@@ -95,7 +91,6 @@ export async function acceptTradeProposal(tradeId) {
 export async function cancelTradeProposal(tradeId) {
   const { error } = await getClient().rpc("cancel_trade", { p_trade_id: tradeId });
   if (error) {
-    console.error("cancel_trade failed", error);
     throw error;
   }
 }
@@ -112,7 +107,6 @@ export async function declineTradeProposal(tradeId, reason = null) {
     p_reason:   reason || null,
   });
   if (error) {
-    console.error("decline_trade failed", error);
     throw error;
   }
 }
@@ -137,7 +131,6 @@ export async function counterTradeProposal(originalTradeId, give, receive, settl
     p_meetup_location: settlement.meetup_location ?? null,
   });
   if (error) {
-    console.error("counter_trade_proposal failed", error);
     throw error;
   }
   return data;
@@ -154,7 +147,6 @@ export async function counterTradeProposal(originalTradeId, give, receive, settl
 export async function completeTradeProposal(tradeId) {
   const { data, error } = await getClient().rpc("complete_trade", { p_trade_id: tradeId });
   if (error) {
-    console.error("complete_trade failed", error);
     throw error;
   }
   return data ?? { status: "confirmed" };
@@ -174,7 +166,6 @@ export async function fetchTradePhotos(tradeId) {
     .eq("trade", tradeId)
     .order("created_at", { ascending: true });
   if (error) {
-    console.error("fetchTradePhotos failed", error);
     throw error;
   }
   return data ?? [];
@@ -217,7 +208,6 @@ export async function deleteTradePhoto(photoId) {
     .delete()
     .eq("id", photoId);
   if (error) {
-    console.error("deleteTradePhoto failed", error);
     throw error;
   }
 }
@@ -236,7 +226,6 @@ export async function fetchTradeMessages(tradeId) {
     .eq("trade", tradeId)
     .order("created_at", { ascending: true });
   if (error) {
-    console.error("fetchTradeMessages failed", error);
     throw error;
   }
   return data ?? [];
@@ -256,7 +245,6 @@ export async function fetchTradeEvents(tradeId) {
     p_trade_id: tradeId,
   });
   if (error) {
-    console.error("fetch_trade_events failed", error);
     return [];
   }
   return data ?? [];
@@ -278,7 +266,6 @@ export async function sendTradeMessage(tradeId, content) {
     .from("trade_message")
     .insert({ trade: tradeId, sender: me, content: content.trim() });
   if (error) {
-    console.error("sendTradeMessage failed", error);
     throw error;
   }
 }

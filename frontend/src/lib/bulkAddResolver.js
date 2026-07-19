@@ -134,7 +134,6 @@ export async function resolveLine({ qty, query }, { onRetry } = {}) {
   } catch (err) {
     // Non-transient failure (or retry still failed): treat as unmatched rather
     // than aborting the whole batch.
-    console.error('bulkAddResolver: failed to resolve line', query, err)
     return { ...base, status: 'unmatched' }
   }
 }

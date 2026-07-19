@@ -505,7 +505,6 @@ export function useCardSearch({ routeName = 'cards', pageSize = 40 } = {}) {
       // Reflect the full state in the URL (shareable / bookmarkable).
       syncUrl();
     } catch (err) {
-      console.error('Search failed', err);
     } finally {
       // FIX 2: only the CURRENT request owns pagesLoaded (preserves seq-guard
       // semantics). A stale/superseded request writes nothing — the winning

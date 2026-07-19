@@ -333,7 +333,6 @@ export default {
         this.rows = resolved;
         this.step = 'review';
       } catch (err) {
-        console.error('BulkAddCards: resolution failed', err);
         this.errorMessage = String(err?.message ?? err);
         this.step = 'paste';
       }
@@ -385,7 +384,6 @@ export default {
         this.$emit('added', insertedCount);
         this.step = 'summary';
       } catch (err) {
-        console.error('BulkAddCards: insert failed', err);
         this.errorMessage = String(err?.message ?? err);
       } finally {
         this.inserting = false;

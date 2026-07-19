@@ -133,6 +133,5 @@ export async function saveIgnoredIdsToDb(supabase, deckId, ignoredIds) {
     .update({ ignored_card_ids: arr })
     .eq('id', deckId);
   if (error) {
-    console.error('deckIgnore: saveIgnoredIdsToDb failed', error);
   }
 }

@@ -34,7 +34,6 @@ export async function fetchAnnounceThread(announceId, otherUserId) {
     .order("created_at", { ascending: true });
 
   if (error) {
-    console.error("fetchAnnounceThread failed", error);
     throw error;
   }
   return data ?? [];
@@ -55,7 +54,6 @@ export async function sendAnnounceMessage(announceId, recipientId, content) {
     .insert({ announce: announceId, sender: me, recipient: recipientId, content: content.trim() });
 
   if (error) {
-    console.error("sendAnnounceMessage failed", error);
     throw error;
   }
 }
@@ -77,7 +75,6 @@ export async function fetchAnnounceThreads(announceId) {
     .order("created_at", { ascending: true });
 
   if (error) {
-    console.error("fetchAnnounceThreads failed", error);
     throw error;
   }
 

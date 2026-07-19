@@ -71,7 +71,6 @@ async function currentUserId() {
 export async function fetchMatches() {
   const { data, error } = await getClient().rpc("find_matches");
   if (error) {
-    console.error("find_matches RPC failed", error);
     throw error;
   }
 
@@ -97,7 +96,6 @@ export async function fetchMatches() {
 export async function fetchTradersWithCard(cardName) {
   const { data, error } = await getClient().rpc("find_traders_with_card", { p_card_name: cardName });
   if (error) {
-    console.error("find_traders_with_card RPC failed", error);
     throw error;
   }
 
@@ -167,7 +165,6 @@ export async function fetchMyLibrary(theyWant = []) {
     .order("name", { ascending: true });
 
   if (error) {
-    console.error("fetchMyLibrary failed", error);
     return [];
   }
 
@@ -221,7 +218,6 @@ export async function fetchUserTradePile(userId, myWishNames = []) {
     .order("name", { ascending: true });
 
   if (error) {
-    console.error("fetchUserTradePile failed", error);
     return [];
   }
 
@@ -248,7 +244,6 @@ export async function fetchUserTradePile(userId, myWishNames = []) {
 export async function fetchTrendingCards(limit = 8) {
   const { data, error } = await getClient().rpc("get_trending_cards", { p_limit: limit });
   if (error) {
-    console.error("get_trending_cards RPC failed", error);
     return [];
   }
   return data ?? [];
@@ -264,7 +259,6 @@ export async function fetchUserWishlist(userId) {
     .order("name", { ascending: true });
 
   if (error) {
-    console.error("fetchUserWishlist failed", error);
     return [];
   }
   return data ?? [];

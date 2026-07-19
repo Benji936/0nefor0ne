@@ -74,7 +74,6 @@ async function load(id) {
         .limit(20),
     ]);
     if (token !== _loadToken) return; // stale — a newer load() was started
-    if (profileRes.error) console.error('get_trader_public_profile failed', profileRes.error);
     profile.value   = profileRes.data?.[0] ?? null;
     tradePile.value = pile;
     wishlist.value  = wish;

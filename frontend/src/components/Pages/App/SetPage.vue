@@ -104,7 +104,6 @@ export default {
 
         ssrSetData.value = { setName, cards }
       } catch (e) {
-        console.warn(`[vite-ssg] Skipping set "${route.params.setSlug}" — ${e.message}`)
         throw e  // MUST throw to skip route in vite-ssg
       }
     })

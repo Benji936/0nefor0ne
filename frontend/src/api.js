@@ -18,7 +18,6 @@ export const getUrl = () => API_URL;
  *  by ID (searchById) when the card detail view opens. */
 export const searchCardByName = async (fname = "") => {
     return axios.get(`${API_URL}cardinfo.php?fname=${fname}`).catch((error) => {
-        console.error("Error fetching card with " + fname, error);
         return { data: [] };
     });
 };
@@ -27,7 +26,6 @@ export const searchCardBySetCode = (code = "") => {
     const split_code = code.split("-");
     const final_code = split_code[0] + "-EN" + split_code[1].replace(/[a-zA-Z]/g, "");
     return axios.get(`${API_URL}cardsetsinfo.php?setcode=${final_code}`).catch((error) => {
-        console.error("Error fetching card with " + code, error);
         return null;
     });
 };
@@ -46,7 +44,6 @@ export const searchById = async (id = "", locale = "en") => {
             // Retry without language param (card may lack a translation)
             return axios.get(`${API_URL}cardinfo.php?id=${id}`).catch(() => ({ data: [] }));
         }
-        console.error("Error fetching card with " + id);
         return { data: [] };
     }
 };
@@ -70,7 +67,6 @@ export const getCardArtworks = async (name = "") => {
 
 export const getCardSets = () => {
     return axios.get(`${API_URL}cardsets.php`).catch((error) => {
-        console.error("Error fetching card sets", error);
         return { data: [] };
     });
 };
@@ -122,14 +118,12 @@ export const getCardsBySet = async (setName = "", locale = "en") => {
     try {
         return await getWithRetry(url);
     } catch (error) {
-        console.error("Error fetching cards for set " + setName, error);
         return { data: { data: [] } };
     }
 };
 
 export const get = (url = "") => {
     return axios.get(url).catch((error) => {
-        console.error("Error fetching card with " + error);
         return { data: [] };
     });
 };
@@ -242,7 +236,6 @@ export async function getCardsByIds(ids = []) {
         const res = await axios
             .get(`${API_URL}cardinfo.php?id=${idList}`)
             .catch((error) => {
-                console.error("Error fetching cards by ids", error);
                 return { data: { data: [] } };
             });
 

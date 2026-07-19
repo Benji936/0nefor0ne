@@ -14,14 +14,16 @@ import { createClient } from "@supabase/supabase-js";
 import { writeFile } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { config } from 'dotenv';
+config({ path: resolve(dirname(fileURLToPath(import.meta.url)), '../.env') });
 import { TOP_CARD_IDS } from "../src/data/card-ids.js";
 import { TOP_SET_SLUGS } from "../src/data/set-slugs.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(__dirname, "../public/sitemap.xml");
 
-const SUPABASE_URL = "https://sxteuctysfiwripnaozi.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4dGV1Y3R5c2Zpd3JpcG5hb3ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTczNTA1OTAsImV4cCI6MjA3MjkyNjU5MH0.nrRXz20dGkNH3wDIkHTxlrVMC-uvEiukWsq9-Pu4Lcw";
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://sxteuctysfiwripnaozi.supabase.co';
+const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
 
 const LOCALES   = ["en", "fr", "de", "it"];
 const BASE      = "https://0nefor.one";

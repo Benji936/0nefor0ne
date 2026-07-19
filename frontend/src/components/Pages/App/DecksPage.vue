@@ -433,7 +433,6 @@ export default {
           .eq('user_id', userId)
           .order('created_at', { ascending: false });
         if (error) {
-          console.error('DecksPage: loadDecks failed', error);
           this.decks = [];
           this.snackbar = {
             open: true,
@@ -528,7 +527,6 @@ export default {
       try {
         window.localStorage.setItem(GUEST_KEY, JSON.stringify(list));
       } catch (err) {
-        console.error('DecksPage: writeGuestDecks failed', err);
       }
     },
 
@@ -568,7 +566,6 @@ export default {
         const defaultName = name.replace(/\.ydk$/i, '').slice(0, 60);
         this.pendingDeck = { name: defaultName, ydkContent: text };
       } catch (err) {
-        console.error('DecksPage: failed to read file', err);
         this.importError = this.$t('deckImport.error');
       }
     },
@@ -598,7 +595,6 @@ export default {
         }
         this.pendingDeck = null;
       } catch (err) {
-        console.error('DecksPage: confirmImport failed', err);
         this.importError = this.$t('deckImport.error');
       } finally {
         this.savingDeck = false;
@@ -734,7 +730,6 @@ export default {
           },
         };
       } catch (err) {
-        console.error('DecksPage: computeStats failed', err);
       } finally {
         this.loadingStats = { ...this.loadingStats, [deck.id]: false };
       }
@@ -789,7 +784,6 @@ export default {
           icon: 'mdi-heart-plus',
         };
       } catch (err) {
-        console.error('DecksPage: addMissingToWishlist failed', err);
         this.snackbar = {
           open: true,
           message: this.$t('common.error'),
@@ -821,7 +815,6 @@ export default {
         const idx = this.decks.findIndex(d => d.id === deck.id);
         if (idx !== -1) this.decks[idx].name = newName;
       } catch (err) {
-        console.error('DecksPage: rename failed', err);
         this.snackbar = {
           open: true,
           message: this.$t('common.error'),
@@ -866,7 +859,6 @@ export default {
         const { [id]: _, ...restStats } = this.deckStats;
         this.deckStats = restStats;
       } catch (err) {
-        console.error('DecksPage: delete failed', err);
         this.snackbar = {
           open: true,
           message: this.$t('common.error'),
@@ -919,7 +911,6 @@ export default {
             await this.saveDeck(deck.name, deck.ydkContent);
           } catch (e) {
             errors++;
-            console.error('Failed to migrate deck:', deck.name, e);
           }
         }
         await this.loadDecks();

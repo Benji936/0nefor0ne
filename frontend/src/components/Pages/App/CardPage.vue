@@ -409,11 +409,9 @@ export default {
           card.value    = data;
           loading.value = false;
         } else {
-          console.warn(`[vite-ssg] Skipping card ${cardId} — API returned null`);
           throw new Error(`No data for card ${cardId}`);
         }
       } catch (err) {
-        console.error(`[vite-ssg] Skipping card ${cardId} — API error:`, err?.message ?? err);
         throw err; // causes vite-ssg to skip this route silently
       }
     });

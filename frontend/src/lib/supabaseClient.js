@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://sxteuctysfiwripnaozi.supabase.co'
-const supabasePublishableKey =  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4dGV1Y3R5c2Zpd3JpcG5hb3ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTczNTA1OTAsImV4cCI6MjA3MjkyNjU5MH0.nrRXz20dGkNH3wDIkHTxlrVMC-uvEiukWsq9-Pu4Lcw'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://sxteuctysfiwripnaozi.supabase.co';
+const supabasePublishableKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 export const supabase = createClient(supabaseUrl, supabasePublishableKey)
 
@@ -109,7 +109,6 @@ export async function syncDiscordIdToTrader() {
 export async function signOut() {
     const { error } = await supabase.auth.signOut()
     if (error) {
-        console.error("Sign out failed:", error)
         return false
     }
     return true
@@ -123,7 +122,6 @@ export async function signOut() {
 export async function getCurrentSession() {
     const { data, error } = await supabase.auth.getSession()
     if (error) {
-        console.error("getSession failed:", error)
         return null
     }
     if (!data?.session) return null

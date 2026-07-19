@@ -359,7 +359,6 @@ export default {
         this.sideCards  = parsed.side;
         this.state      = 'loaded';
       } catch (err) {
-        console.error('DeckImport: failed to process file', err);
         this.state = 'error';
       }
     },
@@ -414,7 +413,6 @@ export default {
         // Refresh owned state so newly-wished cards reflect in UI
         // (they stay "missing" on the trade side — no need to re-query wishes)
       } catch (err) {
-        console.error('DeckImport: failed to add to wishlist', err);
       } finally {
         this.adding = false;
       }

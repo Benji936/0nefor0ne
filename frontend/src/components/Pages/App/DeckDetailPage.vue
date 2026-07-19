@@ -287,7 +287,6 @@ export default {
         // Resolve cards and ownership in background
         await this.resolveStats();
       } catch (err) {
-        console.error('DeckDetailPage: loadDeck failed', err);
         this.snackbar = {
           open: true,
           message: this.$t('common.error'),
@@ -365,7 +364,6 @@ export default {
           missingEntries,
         };
       } catch (err) {
-        console.error('DeckDetailPage: resolveStats failed', err);
         this.snackbar = {
           open: true,
           message: this.$t('common.error'),
@@ -424,7 +422,6 @@ export default {
           icon: 'mdi-heart-plus',
         };
       } catch (err) {
-        console.error('DeckDetailPage: addMissingToWishlist failed', err);
         this.snackbar = {
           open: true,
           message: this.$t('common.error'),
