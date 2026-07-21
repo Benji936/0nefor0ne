@@ -8,23 +8,40 @@ const props = defineProps({
   login:     { type: Object,  default: null },
   loading:   { type: Boolean, default: false },
   announces: { type: Array,   default: () => [] },
-  kind:      { type: String,  default: ANNOUNCE_KIND.SELL },
 });
 
 const emit = defineEmits(["openCreate", "openDetail"]);
 const { t } = useI18n();
 
-const searchQuery   = ref("");
+// In-tab kind filter. "all" shows both kinds; the other two options narrow
+// to a single `announce.kind`. Replaces the old separate Looking For tab.
+const FILTER_ALL = "all";
+
+const searchQuery = ref("");
+const kindFilter  = ref(FILTER_ALL);
+
 const currentUserId = computed(() => props.login?.user?.id ?? null);
 
-// Only the announces of the kind this tab renders. Rows written before the
-// kind column existed default to 'sell' in the database, so `?? SELL` here is
-// just belt-and-braces for optimistic local inserts.
-const kindAnnounces = computed(() =>
-  props.announces.filter(a => (a.kind ?? ANNOUNCE_KIND.SELL) === props.kind)
-);
+const filterOptions = computed(() => [
+  { value: FILTER_ALL,                label: t("announces.filterAll") },
+  { value: ANNOUNCE_KIND.SELL,        label: t("announces.filterSelling") },
+  { value: ANNOUNCE_KIND.LOOKING_FOR, label: t("announces.filterLookingFor") },
+]);
 
-const isLf = computed(() => props.kind === ANNOUNCE_KIND.LOOKING_FOR);
+// The announces matching the active filter. Applies to the WHOLE tab: both
+// the "My Announces" row and the all/others grid below draw from this.
+// Rows written before the kind column existed default to 'sell' in the
+// database, so `?? SELL` here is just belt-and-braces for optimistic local
+// inserts.
+const kindAnnounces = computed(() => {
+  if (kindFilter.value === FILTER_ALL) return props.announces;
+  return props.announces.filter(a => (a.kind ?? ANNOUNCE_KIND.SELL) === kindFilter.value);
+});
+
+// Drives the per-kind empty-state copy and the create button's default
+// kind. Only true when the Looking For filter is explicitly selected, not
+// for All, so "All" and "Selling" both fall back to the generic empty state.
+const isLf = computed(() => kindFilter.value === ANNOUNCE_KIND.LOOKING_FOR);
 
 // Split by ownership
 const myAnnounces    = computed(() => kindAnnounces.value.filter(a => a.seller === currentUserId.value));
@@ -40,6 +57,13 @@ const filteredOthers = computed(() => {
     (a.want_detail  || "").toLowerCase().includes(q)
   );
 });
+
+// The create button defaults to the active filter's kind (Looking For when
+// that filter is active, Selling otherwise, including for "All"). The
+// dialog's own kind toggle still lets the user switch afterwards.
+function openCreate() {
+  emit("openCreate", isLf.value ? ANNOUNCE_KIND.LOOKING_FOR : ANNOUNCE_KIND.SELL);
+}
 </script>
 
 <template>
@@ -74,7 +98,23 @@ const filteredOthers = computed(() => {
             class="search-input"
           />
         </div>
-        <button class="btn-new" @click="emit('openCreate', props.kind)">
+
+        <div class="filter-group" role="group">
+          <button
+            v-for="opt in filterOptions"
+            :key="opt.value"
+            type="button"
+            class="filter-btn"
+            :class="{
+              'filter-btn--active': kindFilter === opt.value,
+              'filter-btn--lf': opt.value === ANNOUNCE_KIND.LOOKING_FOR,
+            }"
+            :aria-pressed="kindFilter === opt.value"
+            @click="kindFilter = opt.value"
+          >{{ opt.label }}</button>
+        </div>
+
+        <button class="btn-new" @click="openCreate">
           <v-icon icon="mdi-plus" size="18" />
           {{ isLf ? t("announces.newLookingFor") : t("announces.newAnnounce") }}
         </button>
@@ -125,7 +165,7 @@ const filteredOthers = computed(() => {
             </div>
             <p class="state-title">{{ isLf ? t("announces.noLookingForTitle") : t("announces.noAnnouncesTitle") }}</p>
             <p class="state-sub">{{ isLf ? t("announces.noLookingForDesc") : t("announces.noAnnouncesDesc") }}</p>
-            <button class="btn-new" @click="emit('openCreate', props.kind)">
+            <button class="btn-new" @click="openCreate">
               <v-icon icon="mdi-plus" size="18" />
               {{ isLf ? t("announces.newLookingFor") : t("announces.newAnnounce") }}
             </button>
@@ -211,6 +251,37 @@ const filteredOthers = computed(() => {
 }
 .search-input:focus { border-color: var(--c-trade); }
 .search-input::placeholder { color: var(--c-muted); opacity: 0.6; }
+
+/* Kind filter — segmented control (All / Selling / Looking For) */
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--c-surface-2);
+  flex-shrink: 0;
+}
+.filter-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.filter-btn:hover { color: var(--c-text); }
+.filter-btn--active { background: var(--c-trade); color: #fff; }
+.filter-btn--active.filter-btn--lf { background: var(--c-mutual); color: #13031A; }
+.filter-btn--active:hover { color: #fff; }
+.filter-btn--active.filter-btn--lf:hover { color: #13031A; }
 
 /* New button */
 .btn-new {
