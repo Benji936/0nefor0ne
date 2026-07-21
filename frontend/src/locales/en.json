@@ -349,7 +349,22 @@
     "cardSearchPlaceholder": "Search by name or set code (LOB-EN001)",
     "cardNotFound": "No card found.",
     "cardSearchFailed": "Search failed. Try again.",
-    "cardLinkFailed": "Failed to link card."
+    "cardLinkFailed": "Failed to link card.",
+    "kindSell": "Selling",
+    "kindLookingFor": "Looking for",
+    "kindHint": "Selling a card, or looking for one?",
+    "archetype": "Archetype",
+    "archetypePlaceholder": "Search an archetype, e.g. Darklord",
+    "archetypeNoMatch": "No archetype matches that.",
+    "archetypeLoadFailed": "Could not load the archetype list. You can still describe what you want.",
+    "wantDetail": "What exactly?",
+    "wantDetailPlaceholder": "e.g. deck base, playset, just the boss monster",
+    "budget": "Budget",
+    "budgetOptional": "Budget (optional)",
+    "budgetHint": "Leave empty if you would rather discuss it.",
+    "photosOptionalLf": "Photos (optional)",
+    "createLookingFor": "Post Looking For",
+    "lfBadge": "LF"
   },
   "announceChat": {
     "withSeller": "Chat with seller",

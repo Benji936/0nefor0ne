@@ -349,7 +349,22 @@
     "cardSearchPlaceholder": "Cerca per nome o codice (LOB-EN001)",
     "cardNotFound": "Nessuna carta trovata.",
     "cardSearchFailed": "Ricerca fallita. Riprova.",
-    "cardLinkFailed": "Impossibile collegare la carta."
+    "cardLinkFailed": "Impossibile collegare la carta.",
+    "kindSell": "Vendo",
+    "kindLookingFor": "Cerco",
+    "kindHint": "Stai vendendo una carta o ne stai cercando una?",
+    "archetype": "Archetipo",
+    "archetypePlaceholder": "Cerca un archetipo, es. Darklord",
+    "archetypeNoMatch": "Nessun archetipo corrisponde.",
+    "archetypeLoadFailed": "Impossibile caricare la lista degli archetipi. Puoi comunque descrivere cosa cerchi.",
+    "wantDetail": "Cosa esattamente?",
+    "wantDetailPlaceholder": "es. base del deck, playset, solo il boss",
+    "budget": "Budget",
+    "budgetOptional": "Budget (facoltativo)",
+    "budgetHint": "Lascia vuoto se preferisci parlarne.",
+    "photosOptionalLf": "Foto (facoltativo)",
+    "createLookingFor": "Pubblica la ricerca",
+    "lfBadge": "LF"
   },
   "announceChat": {
     "withSeller": "Chatta con il venditore",
