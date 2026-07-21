@@ -188,7 +188,10 @@ const location = computed(() => {
   font-size: 10px;
   font-weight: 800;
   letter-spacing: .08em;
-  color: #fff;
+  /* Dark ink, not white: --c-mutual is a bright teal in dark theme, where white
+     lands at 1.86:1. This ink clears AA in both themes (4.52 light, 10.69 dark)
+     and matches the on-mutual text colour DESIGN.md already specifies. */
+  color: #13031A;
   background: var(--c-mutual);
 }
 .ac-img__price-label {
