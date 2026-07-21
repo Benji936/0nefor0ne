@@ -388,7 +388,10 @@ async function submit() {
             <!-- Price + Currency -->
             <div class="field-row">
               <div class="field-block" style="flex:1">
-                <label class="field-label">{{ isLf ? t('announce.budgetOptional') : t('announce.price') }}</label>
+                <label class="field-label">
+                  {{ isLf ? t('announce.budgetOptional') : t('announce.price') }}
+                  <span v-if="!isLf" style="color:var(--c-accent)">*</span>
+                </label>
                 <div class="price-wrap">
                   <span class="price-symbol">{{ currency === 'EUR' ? '€' : currency === 'USD' ? '$' : '£' }}</span>
                   <input
