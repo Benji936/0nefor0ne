@@ -24,6 +24,11 @@ const wantDetail     = ref("");
 const archetypeList  = ref([]);      // canonical names from YGOPRODeck
 const archetypeQuery = ref("");      // what the user is typing
 const archetypeErr   = ref("");      // shown when the list cannot be fetched
+// The archetype the dialog was hydrated with when it last opened in EDIT
+// mode ("" in CREATE mode). Lets resolvedArchetype preserve a previously
+// saved archetype that the user hasn't retyped, even while archetypeList
+// is still loading or no longer contains that name.
+const hydratedArchetype = ref("");
 
 const isLf = computed(() => kind.value === ANNOUNCE_KIND.LOOKING_FOR);
 
@@ -42,11 +47,23 @@ const archetypeMatches = computed(() => {
 // name) AND typing the exact name and tabbing away without clicking it.
 // A partial/unrecognised string, or a picked name that's since been edited
 // away, resolves to "" rather than sticking to a stale value.
+//
+// Exception: if the lookup misses but the query still equals, untouched,
+// the archetype the dialog was hydrated with (EDIT mode), fall back to that
+// hydrated value. Otherwise a previously-saved archetype would get silently
+// nulled out just because archetypeList hasn't loaded yet, or no longer
+// contains that name (renamed/removed upstream) — even though the user
+// never changed the text. CREATE mode has no hydrated value, so this never
+// fires there.
 const resolvedArchetype = computed(() => {
   const q = archetypeQuery.value.trim().toLowerCase();
   if (!q) return "";
   const hit = archetypeList.value.find(name => name.trim().toLowerCase() === q);
-  return hit ?? "";
+  if (hit) return hit;
+  if (hydratedArchetype.value && q === hydratedArchetype.value.trim().toLowerCase()) {
+    return hydratedArchetype.value;
+  }
+  return "";
 });
 
 // The composed LF title/headline, shared by canSubmit and submit() so the
@@ -180,12 +197,14 @@ watch(() => props.modelValue, open => {
     kind.value           = props.announce.kind        ?? ANNOUNCE_KIND.SELL;
     wantDetail.value     = props.announce.want_detail ?? "";
     archetypeQuery.value = props.announce.archetype   ?? "";
+    hydratedArchetype.value = props.announce.archetype ?? "";
     if (kind.value === ANNOUNCE_KIND.LOOKING_FOR) ensureArchetypes();
     existingImages.value = [...(props.announce.images ?? [])].sort((a, b) => a.sort_order - b.sort_order);
   } else {
     title.value = ""; description.value = ""; price.value = ""; currency.value = "EUR";
     kind.value = ANNOUNCE_KIND.SELL;
     wantDetail.value = ""; archetypeQuery.value = "";
+    hydratedArchetype.value = "";
     existingImages.value = [];
   }
 });
