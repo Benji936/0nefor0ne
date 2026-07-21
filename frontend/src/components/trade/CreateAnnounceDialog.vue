@@ -180,10 +180,12 @@ const canSubmit = computed(() => {
     const priceOk = price.value === "" || Number(price.value) >= 0;
     return headline.length > 0 && headline.length <= 120 && priceOk;
   }
+  // A sell post's price is optional too: a Discord-created row may have no
+  // price stated (price NULL), and the owner must still be able to edit it.
+  // A negative price is rejected either way.
   return title.value.trim().length > 0 &&
          title.value.trim().length <= 120 &&
-         price.value !== "" &&
-         Number(price.value) >= 0;
+         (price.value === "" || Number(price.value) >= 0);
 });
 
 watch(() => props.modelValue, open => {
@@ -383,6 +385,7 @@ async function submit() {
                   class="field-input"
                   :placeholder="t('announce.archetypePlaceholder')"
                   autocomplete="off"
+                  :disabled="!!archetypeErr"
                   @focus="ensureArchetypes"
                 />
                 <ul v-if="archetypeMatches.length" class="archetype-list">
@@ -434,7 +437,6 @@ async function submit() {
               <div class="field-block" style="flex:1">
                 <label class="field-label">
                   {{ isLf ? t('announce.budgetOptional') : t('announce.price') }}
-                  <span v-if="!isLf" style="color:var(--c-accent)">*</span>
                 </label>
                 <div class="price-wrap">
                   <span class="price-symbol">{{ currency === 'EUR' ? '€' : currency === 'USD' ? '$' : '£' }}</span>
@@ -690,6 +692,7 @@ async function submit() {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-trade) 15%, transparent);
 }
 .field-input::placeholder { color: var(--c-muted); opacity: 0.5; font-size: 13px; }
+.field-input:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .field-textarea { resize: none; line-height: 1.5; }
 .field-select   { cursor: pointer; appearance: none; padding-right: 10px; }

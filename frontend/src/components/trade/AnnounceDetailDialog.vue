@@ -396,7 +396,10 @@ function onCardAdded() {
             <v-icon v-else icon="mdi-delete-outline" size="16" />
             {{ t('announce.delete') }}
           </button>
-          <!-- Add to trade list — only when a card is linked -->
+          <!-- Add to trade/wish list, only when a card is linked. LF posts
+               offer the wish list instead of the trade list: the linked card
+               is what the poster is hunting for, not something they're
+               offering, so it must never be listed as tradeable. -->
           <button
             v-if="announce.ygo_card_id"
             class="btn-tradelist"
@@ -406,8 +409,8 @@ function onCardAdded() {
           >
             <v-progress-circular v-if="addingToList" indeterminate size="14" width="2" />
             <v-icon v-else-if="addedToList" icon="mdi-check" size="16" />
-            <v-icon v-else icon="mdi-cards-playing-outline" size="16" />
-            {{ addedToList ? t('announce.addedToList') : t('announce.addToTradeList') }}
+            <v-icon v-else :icon="isLf ? 'mdi-heart-plus' : 'mdi-cards-playing-outline'" size="16" />
+            {{ addedToList ? t('announce.addedToList') : (isLf ? t('announce.addToWishList') : t('announce.addToTradeList')) }}
           </button>
           <button class="btn-edit" @click="handleEdit">
             <v-icon icon="mdi-pencil-outline" size="16" />
@@ -432,8 +435,10 @@ function onCardAdded() {
     </div><!-- /.shell -->
   </v-dialog>
 
-  <!-- Headless AddCard — opens when user clicks "Add to trade list" -->
-  <AddCard ref="addCardRef" mode="trade" :headless="true" @added="onCardAdded" />
+  <!-- Headless AddCard, opens when user clicks "Add to trade/wish list".
+       LF posts add to the wish list (see button above); sell posts add to
+       the trade list. -->
+  <AddCard ref="addCardRef" :mode="isLf ? 'wish' : 'trade'" :headless="true" @added="onCardAdded" />
 </template>
 
 <style scoped>

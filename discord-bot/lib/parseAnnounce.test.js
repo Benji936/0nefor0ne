@@ -45,6 +45,18 @@ test('price is null when the message states none', () => {
   assert.equal(parseAnnounce('LF: Darklord deck base', ARCHETYPES).price, null);
 });
 
+test('a sell post with no stated price yields price null, not 0', () => {
+  const r = parseAnnounce('WTS: some card', ARCHETYPES);
+  assert.equal(r.kind, ANNOUNCE_KIND.SELL);
+  assert.equal(r.price, null);
+});
+
+test('a sell post that states 0€ still yields 0, not null', () => {
+  const r = parseAnnounce('WTS: some card\n0€', ARCHETYPES);
+  assert.equal(r.kind, ANNOUNCE_KIND.SELL);
+  assert.equal(r.price, 0);
+});
+
 test('reads a budget out of an LF post', () => {
   const r = parseAnnounce('LF: Darklord deck base\nBudget 120€', ARCHETYPES);
   assert.equal(r.price, 120);
