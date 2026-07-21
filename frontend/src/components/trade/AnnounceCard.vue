@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { timeAgo } from "@/lib/notifications";
+import { isLookingFor } from "@/lib/announceKind";
 
 const { t } = useI18n();
 
@@ -18,13 +19,18 @@ const isOwner = computed(() => props.announce.seller === props.currentUserId);
 const coverImage  = computed(() => props.announce.images?.[0]?.url ?? null);
 const imageCount  = computed(() => props.announce.images?.length ?? 0);
 
-const formattedPrice = computed(() =>
-  new Intl.NumberFormat(undefined, {
+const isLf = computed(() => isLookingFor(props.announce));
+
+// LF posts may carry no budget at all, in which case there is nothing to show.
+const formattedPrice = computed(() => {
+  const p = props.announce.price;
+  if (p === null || p === undefined || p === "") return null;
+  return new Intl.NumberFormat(undefined, {
     style: "currency",
     currency: props.announce.currency || "EUR",
     maximumFractionDigits: 0,
-  }).format(props.announce.price)
-);
+  }).format(p);
+});
 
 const sellerName    = computed(() => props.announce.Trader?.Name || props.announce.Trader?.name || t("announces.unknownSeller"));
 const sellerAvatar  = computed(() => props.announce.Trader?.avatar_url ?? null);
@@ -42,6 +48,7 @@ const location = computed(() => {
 
     <!-- Image -->
     <div class="ac-img">
+      <div v-if="isLf" class="ac-lf">{{ t('announce.lfBadge') }}</div>
       <img v-if="coverImage" :src="coverImage" :alt="announce.title" class="ac-img__photo" loading="lazy" />
       <div v-else class="ac-img__empty">
         <v-icon icon="mdi-image-off-outline" size="32" style="color: var(--c-border)" />
@@ -54,12 +61,19 @@ const location = computed(() => {
       </div>
 
       <!-- Price pill floating on image -->
-      <div class="ac-img__price">{{ formattedPrice }}</div>
+      <div v-if="formattedPrice" class="ac-img__price">
+        <span v-if="isLf" class="ac-img__price-label">{{ t('announce.budget') }}</span>
+        {{ formattedPrice }}
+      </div>
     </div>
 
     <!-- Body -->
     <div class="ac-body">
       <p class="ac-title">{{ announce.title }}</p>
+      <p v-if="isLf && announce.archetype" class="ac-archetype">
+        <v-icon icon="mdi-cards-outline" size="12" />
+        {{ announce.archetype }}
+      </p>
       <p v-if="announce.description" class="ac-desc">{{ announce.description }}</p>
 
       <div class="ac-footer">
@@ -163,6 +177,34 @@ const location = computed(() => {
   letter-spacing: -0.02em;
   line-height: 1;
   text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+.ac-lf {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  color: #fff;
+  background: var(--c-mutual);
+}
+.ac-img__price-label {
+  font-size: 9px;
+  font-weight: 700;
+  opacity: .8;
+  margin-right: 3px;
+  text-transform: uppercase;
+}
+.ac-archetype {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-mutual);
 }
 
 /* ── Body ──────────────────────────────────────────── */

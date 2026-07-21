@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import { timeAgo } from "@/lib/notifications";
 import { deleteAnnounce, updateAnnounce } from "@/lib/announces";
+import { isLookingFor } from "@/lib/announceKind";
 import { getClient } from "@/lib/supabaseClient";
 import { searchById, searchCardByName, searchCardBySetCode } from "@/api";
 import AddCard from "@/components/library/AddCard.vue";
@@ -102,10 +103,13 @@ async function pickAndLinkCard(card) {
 }
 
 const isOwner = computed(() => props.announce?.seller === props.currentUserId);
+const isLf = computed(() => isLookingFor(props.announce));
 
+// LF posts may carry no budget at all, in which case there is nothing to show.
 const formattedPrice = computed(() => {
-  if (!props.announce) return "";
-  return new Intl.NumberFormat(undefined, { style: "currency", currency: props.announce.currency || "EUR" }).format(props.announce.price);
+  const p = props.announce?.price;
+  if (p === null || p === undefined || p === "") return "";
+  return new Intl.NumberFormat(undefined, { style: "currency", currency: props.announce.currency || "EUR" }).format(p);
 });
 
 const sellerName    = computed(() => props.announce?.Trader?.Name || props.announce?.Trader?.name || t("announces.unknownSeller"));
@@ -240,7 +244,9 @@ function onCardAdded() {
         </div>
 
         <!-- Price overlay -->
-        <div class="gallery__price">{{ formattedPrice }}</div>
+        <div v-if="formattedPrice" class="gallery__price">
+          <span v-if="isLf">{{ t('announce.budget') }}: </span>{{ formattedPrice }}
+        </div>
 
         <!-- Close button -->
         <button class="gallery__close" @click="close">
@@ -265,12 +271,21 @@ function onCardAdded() {
 
         <!-- Title + time -->
         <div class="info-row">
-          <h2 class="info-title">{{ announce.title }}</h2>
+          <h2 class="info-title">
+            <span v-if="isLf" class="lf-badge">{{ t('announce.lfBadge') }}</span>
+            {{ announce.title }}
+          </h2>
           <span class="info-time">{{ timeAgo(announce.created_at, t) }}</span>
         </div>
 
         <!-- Description -->
         <p v-if="announce.description" class="info-desc">{{ announce.description }}</p>
+
+        <!-- Archetype (Looking For posts only) -->
+        <p v-if="isLf && announce.archetype" class="detail-archetype">
+          <v-icon icon="mdi-cards-outline" size="14" />
+          {{ announce.archetype }}<template v-if="announce.want_detail"> · {{ announce.want_detail }}</template>
+        </p>
 
         <!-- Discord source link (only for announces posted from Discord) -->
         <a
@@ -592,6 +607,23 @@ function onCardAdded() {
 .info-desc {
   font-size: 13.5px; color: var(--c-muted);
   line-height: 1.6; margin: 0; white-space: pre-wrap;
+}
+.lf-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  color: #fff;
+  background: var(--c-mutual);
+}
+.detail-archetype {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-mutual);
 }
 .divider { height: 1px; background: var(--c-border); }
 
