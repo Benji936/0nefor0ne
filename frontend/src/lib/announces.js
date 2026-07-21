@@ -76,15 +76,34 @@ export async function fetchMyAnnounces() {
 
 /**
  * Create a new announce and upload its images.
- * @param {string} title 
- * @param {string} description 
- * @param {number} price 
- * @param {string} currency 
- * @param {File[]} imageFiles 
- * @param {{ ygo_card_id: number, card_name: string, extension: string, rarity: string } | null} [card]
+ *
+ * Takes an options object rather than positional args: with kind/archetype/
+ * wantDetail added there would be nine positional parameters, most of them
+ * optional, which is impossible to call safely.
+ *
+ * @param {object}   opts
+ * @param {string}   opts.title
+ * @param {string}   [opts.description='']
+ * @param {number|null} [opts.price=null]     null on a Looking For post with no budget
+ * @param {string}   [opts.currency='EUR']
+ * @param {File[]}   [opts.imageFiles=[]]
+ * @param {{ ygo_card_id: number, card_name: string, extension: string, rarity: string }|null} [opts.card=null]
+ * @param {'sell'|'looking_for'} [opts.kind='sell']
+ * @param {string|null} [opts.archetype=null]
+ * @param {string|null} [opts.wantDetail=null]
  * @returns {Promise<number>} the new announce id
  */
-export async function createAnnounce(title, description, price, currency, imageFiles, card = null) {
+export async function createAnnounce({
+  title,
+  description = '',
+  price = null,
+  currency = 'EUR',
+  imageFiles = [],
+  card = null,
+  kind = 'sell',
+  archetype = null,
+  wantDetail = null,
+} = {}) {
   const me = (await getClient().auth.getSession()).data?.session?.user?.id;
   if (!me) throw new Error("Not authenticated");
 
@@ -98,6 +117,9 @@ export async function createAnnounce(title, description, price, currency, imageF
       price,
       currency,
       status: 'active',
+      kind,
+      archetype:   archetype  || null,
+      want_detail: wantDetail || null,
       ygo_card_id: card?.ygo_card_id ?? null,
       card_name:   card?.card_name   ?? null,
     })
@@ -107,8 +129,10 @@ export async function createAnnounce(title, description, price, currency, imageF
   if (announceError) throw announceError;
   const announceId = announceData.id;
 
-  // 1b. If a card was specified, add it to the seller's trade list
-  if (card?.ygo_card_id) {
+  // 1b. If a card was specified, add it to the seller's trade list.
+  //     Only for sell posts: a Looking For card belongs on the wish list, and
+  //     announcing a want should never silently list it as tradeable.
+  if (card?.ygo_card_id && kind === 'sell') {
     await getClient()
       .from('Card')
       .insert({
@@ -128,7 +152,7 @@ export async function createAnnounce(title, description, price, currency, imageF
 
   // 2. Upload images and create records
   if (imageFiles && imageFiles.length > 0) {
-    await Promise.all(imageFiles.map((file, index) => 
+    await Promise.all(imageFiles.map((file, index) =>
       uploadAnnounceImage(announceId, me, file, index)
     ));
   }

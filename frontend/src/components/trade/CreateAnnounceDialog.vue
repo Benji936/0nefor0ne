@@ -162,12 +162,14 @@ async function submit() {
       await addAnnounceImages(id, newImages.value.map(i => i.file), startSort);
       emit("updated", id);
     } else {
-      const id = await createAnnounce(
-        title.value.trim(), description.value.trim(),
-        Number(price.value), currency.value,
-        newImages.value.map(i => i.file),
-        selectedCard.value  // null if no card picked
-      );
+      const id = await createAnnounce({
+        title:       title.value.trim(),
+        description: description.value.trim(),
+        price:       price.value === '' ? null : Number(price.value),
+        currency:    currency.value,
+        imageFiles:  newImages.value.map(i => i.file),
+        card:        selectedCard.value,  // null if no card picked
+      });
       emit("created", id);
     }
     close();
