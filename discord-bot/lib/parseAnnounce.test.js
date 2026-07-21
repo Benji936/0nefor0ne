@@ -79,6 +79,16 @@ test('a message that strips to nothing yields an empty title, not Untitled', () 
   assert.equal(parseAnnounce('LF:', ARCHETYPES).title, '');
 });
 
+test('truncates an over-long want_detail to satisfy the 120-char DB constraint', () => {
+  const r = parseAnnounce('LF: ' + 'a'.repeat(200), ARCHETYPES);
+  assert.equal(r.kind, ANNOUNCE_KIND.LOOKING_FOR);
+  assert.equal(r.archetype, null);
+  assert.ok(r.wantDetail.length <= 120);
+  assert.equal(r.wantDetail.length, 118);
+  assert.equal(r.wantDetail.slice(0, 117), 'a'.repeat(117));
+  assert.equal(r.wantDetail.slice(117), '…');
+});
+
 test('survives an empty archetype list', () => {
   const r = parseAnnounce('LF: Darklord deck base', []);
   assert.equal(r.kind, ANNOUNCE_KIND.LOOKING_FOR);

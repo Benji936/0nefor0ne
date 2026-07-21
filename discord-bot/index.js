@@ -163,22 +163,39 @@ async function lookupCardBySetCode(rawCode) {
 // every error path resolves to [] and the post is simply saved untagged.
 let _archetypesCache = null;
 
+const ARCHETYPES_TIMEOUT_MS = 5000;
+
 async function getArchetypes() {
   if (_archetypesCache) return _archetypesCache;
   try {
-    const list = await new Promise((resolve, reject) => {
+    const list = await new Promise((resolve) => {
       const https = require('https');
-      https.get('https://db.ygoprodeck.com/api/v7/archetypes.php', (res) => {
+      // Guard against a connection that opens but then just hangs — no
+      // 'error', no 'end'. Without this the message handler that awaits
+      // getArchetypes() never completes and the user never gets a reply.
+      let settled = false;
+      const finish = (value) => {
+        if (settled) return;
+        settled = true;
+        resolve(value);
+      };
+
+      const req = https.get('https://db.ygoprodeck.com/api/v7/archetypes.php', (res) => {
         let body = '';
         res.on('data', chunk => body += chunk);
         res.on('end', () => {
           try {
             const parsed = JSON.parse(body);
-            resolve((parsed ?? []).map(a => a?.archetype_name).filter(Boolean));
-          } catch { resolve([]); }
+            finish((parsed ?? []).map(a => a?.archetype_name).filter(Boolean));
+          } catch { finish([]); }
         });
-        res.on('error', reject);
-      }).on('error', reject);
+        res.on('error', () => finish([]));
+      });
+      req.on('error', () => finish([]));
+      req.setTimeout(ARCHETYPES_TIMEOUT_MS, () => {
+        req.destroy();
+        finish([]);
+      });
     });
     if (list.length > 0) _archetypesCache = list;
     return list;
@@ -420,16 +437,26 @@ client.on('messageCreate', async (message) => {
     return;
   }
 
-  // 2. Parse the message
-  const archetypes = await getArchetypes();
-  const { kind, title, description, price, currency, archetype, wantDetail } =
-    parseAnnounce(message.content, archetypes);
-  const isLf = kind === ANNOUNCE_KIND.LOOKING_FOR;
+  // 2. Parse the message. kind/title/price never depend on the archetype
+  //    list, so parse cheaply first and run the guard before paying for an
+  //    outbound HTTP request that SELL posts and malformed posts never need.
+  let parsed = parseAnnounce(message.content);
+  const isLf = parsed.kind === ANNOUNCE_KIND.LOOKING_FOR;
 
-  if (!title) {
+  if (!parsed.title) {
     await message.reply('❓ Could not read a title from your message. Start with the card name, `WTS: [name]`, or `LF: [what you want]`.');
     return;
   }
+
+  // Only LF posts are tagged with an archetype, so only they need the list.
+  // Re-parsing with the same content is cheap and keeps a single, consistent
+  // parse result instead of hand-merging fields from two divergent calls.
+  if (isLf) {
+    const archetypes = await getArchetypes();
+    parsed = parseAnnounce(message.content, archetypes);
+  }
+
+  const { kind, title, description, price, currency, archetype, wantDetail } = parsed;
 
   // ── 2b. Optional set code → card link ──────────────────────────────────────
   let cardLink = null; // { ygo_card_id, card_name } or null
@@ -506,7 +533,7 @@ client.on('messageCreate', async (message) => {
   const confirmationLines = [renderTemplate(cfg.threadMessage, {
     link:     `${APP_URL}/en/announces/${announceId}`,
     title,
-    price:    price ?? '—',
+    price:    price ?? 'no price set',
     currency: price === null ? '' : currency,
     photos:   imageAttachments.length,
   })];

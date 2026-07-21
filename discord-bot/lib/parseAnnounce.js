@@ -18,6 +18,12 @@ function escapeRe(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// Shared with `title` and `want_detail`, both of which are backed by a
+// `char_length(...) <= 120` CHECK constraint in the database.
+function truncate120(s) {
+  return s.length > 120 ? s.slice(0, 117) + '…' : s;
+}
+
 /** First archetype appearing in `text`, longest name first. */
 function matchArchetype(text, archetypes) {
   const haystack = String(text ?? '').trim();
@@ -86,10 +92,13 @@ function parseAnnounce(content, archetypes = []) {
       ? headline.replace(new RegExp(`\\b${escapeRe(archetype)}\\w*`, 'i'), '').replace(/\s+/g, ' ').trim()
       : headline;
     if (!wantDetail) wantDetail = null;
+    // wantDetail is derived from the untruncated headline, so it must be
+    // capped independently of `title` — otherwise a long, archetype-less LF
+    // headline produces a want_detail that violates the DB CHECK constraint.
+    if (wantDetail) wantDetail = truncate120(wantDetail);
   }
 
-  let title = headline;
-  if (title.length > 120) title = title.slice(0, 117) + '…';
+  let title = truncate120(headline);
 
   const description = lines.slice(1).join('\n').trim().slice(0, 1000);
 
