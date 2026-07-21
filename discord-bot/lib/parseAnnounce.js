@@ -52,8 +52,13 @@ function parseAnnounce(content, archetypes = []) {
 
   const kind = LF_PREFIX_RE.test(first) ? ANNOUNCE_KIND.LOOKING_FOR : ANNOUNCE_KIND.SELL;
 
+  // 'Untitled' is only a fallback for a message with no content lines at
+  // all (e.g. an image-only post). A message whose text strips down to the
+  // empty string (e.g. "WTS:") must yield an empty title so the caller's
+  // "could not read a title" guard can fire, matching the original inline
+  // parseAnnounce's `lines[0] ?? 'Untitled'` semantics.
   let headline = first.replace(ANY_PREFIX_RE, '').trim();
-  if (!headline) headline = 'Untitled';
+  if (lines.length === 0) headline = 'Untitled';
 
   // Price is optional everywhere now: an LF post may name no budget, and a
   // missing price is stored as NULL rather than a misleading 0.

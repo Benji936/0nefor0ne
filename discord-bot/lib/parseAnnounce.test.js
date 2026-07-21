@@ -57,9 +57,26 @@ test('recognises the three currencies', () => {
   assert.equal(parseAnnounce('WTS card\n30 EUR', ARCHETYPES).currency, 'EUR');
 });
 
-test('truncates an over-long title to 120 characters', () => {
+test('truncates an over-long title to the first 117 characters plus an ellipsis', () => {
   const r = parseAnnounce('WTS: ' + 'a'.repeat(200) + '\n10€', ARCHETYPES);
-  assert.ok(r.title.length <= 120);
+  assert.equal(r.title.length, 118);
+  assert.equal(r.title.slice(0, 117), 'a'.repeat(117));
+  assert.equal(r.title.slice(117), '…');
+});
+
+test('strips the WTS prefix regardless of separator style', () => {
+  assert.equal(parseAnnounce('WTS Blue-Eyes White Dragon', ARCHETYPES).title, 'Blue-Eyes White Dragon');
+  assert.equal(parseAnnounce('WTS - Blue-Eyes White Dragon', ARCHETYPES).title, 'Blue-Eyes White Dragon');
+  assert.equal(parseAnnounce('WTS: Blue-Eyes White Dragon', ARCHETYPES).title, 'Blue-Eyes White Dragon');
+});
+
+test('an empty message falls back to Untitled', () => {
+  assert.equal(parseAnnounce('', ARCHETYPES).title, 'Untitled');
+});
+
+test('a message that strips to nothing yields an empty title, not Untitled', () => {
+  assert.equal(parseAnnounce('WTS:', ARCHETYPES).title, '');
+  assert.equal(parseAnnounce('LF:', ARCHETYPES).title, '');
 });
 
 test('survives an empty archetype list', () => {
