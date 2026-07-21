@@ -17,6 +17,7 @@ const query = ref("");
 const origin = ref(null);      // {lat,lng} once "near me" used
 const geoError = ref("");
 const loadingGeo = ref(false);
+const geoAsked = ref(false);   // we only ever auto-request position once
 const pickerOpen = ref(false); // controls the search modal
 
 async function ensureLoaded() {
@@ -35,6 +36,7 @@ const events = computed(() => ranked.value.filter((p) => p.source === "event").s
 const hasResults = computed(() => stores.value.length > 0 || events.value.length > 0);
 
 async function useNearMe() {
+  geoAsked.value = true;
   geoError.value = "";
   loadingGeo.value = true;
   try {
@@ -50,6 +52,10 @@ async function useNearMe() {
 function openPicker() {
   ensureLoaded();
   pickerOpen.value = true;
+  // Nearest-first is the default way to pick a place, so ask for position as
+  // soon as the picker opens. Only once per session: if the user denies it,
+  // reopening shouldn't re-prompt them. The near-me button stays as the retry.
+  if (!geoAsked.value) useNearMe();
 }
 function pick(place) {
   emit("update:modelValue", place);
@@ -59,6 +65,15 @@ function clearPick() { emit("update:modelValue", null); }
 function setMode(mode) {
   emit("update:deliveryMode", mode);
   if (mode === "mail") emit("update:modelValue", null);
+}
+// Locality line under a place name. Asian store addresses have no consistent
+// city/state format, so the scraper leaves those fields null rather than guess;
+// falling back to country keeps the row from rendering a blank second line.
+function placeSubtitle(place) {
+  return [place.city, place.state].filter(Boolean).join(", ")
+    || place.country
+    || place.address
+    || "";
 }
 function distLabel(place) {
   const d = origin.value ? distanceKm(origin.value, place) : null;
@@ -76,7 +91,7 @@ function distLabel(place) {
     <div class="flex gap-2">
       <button
         type="button"
-        class="flex items-center gap-2 px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold border transition-all cursor-pointer"
+        class="flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-xs font-semibold border transition-all cursor-pointer"
         :style="deliveryMode === 'location'
           ? { backgroundColor: 'var(--c-trade)', borderColor: 'var(--c-trade)', color: 'white' }
           : { backgroundColor: 'transparent', borderColor: 'var(--c-border)', color: 'var(--c-muted)' }"
@@ -86,7 +101,7 @@ function distLabel(place) {
       </button>
       <button
         type="button"
-        class="flex items-center gap-2 px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold border transition-all cursor-pointer"
+        class="flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-xs font-semibold border transition-all cursor-pointer"
         :style="deliveryMode === 'mail'
           ? { backgroundColor: 'var(--c-trade)', borderColor: 'var(--c-trade)', color: 'white' }
           : { backgroundColor: 'transparent', borderColor: 'var(--c-border)', color: 'var(--c-muted)' }"
@@ -141,15 +156,18 @@ function distLabel(place) {
           <v-btn icon="mdi-close" size="small" variant="text" color="white" @click="pickerOpen = false" />
         </div>
 
-        <div class="p-4 flex flex-col gap-3">
+        <!-- px-/py- rather than p-: Vuetify's global reset is unlayered, so it
+             beats Tailwind's @layer utilities. Only the Tailwind classes Vuetify
+             also ships (px-*, py-*, pt-* … integers) survive; p-* and .5 steps
+             silently collapse to 0. -->
+        <div class="px-4 py-4 flex flex-col gap-3">
           <!-- Search + near me -->
           <div class="flex gap-2 items-center">
-            <div class="relative grow">
-              <v-icon icon="mdi-magnify" size="16" class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" color="var(--c-muted)" />
+            <div class="grow">
               <input
                 v-model="query"
                 :placeholder="t('proposeDialog.searchPlaces')"
-                class="w-full rounded-lg pl-8 pr-3 py-2 text-sm outline-none border"
+                class="w-full rounded-lg px-3 py-2 text-sm outline-none border"
                 :style="{ backgroundColor: 'var(--c-surface-2)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }"
                 @focus="ensureLoaded"
               />
@@ -193,7 +211,7 @@ function distLabel(place) {
                 <v-icon icon="mdi-store-outline" size="14" color="var(--c-muted)" />
                 <span class="flex flex-col grow min-w-0">
                   <span class="text-xs font-semibold truncate" style="color: var(--c-text)">{{ p.name }}</span>
-                  <span class="text-[11px] truncate" style="color: var(--c-muted)">{{ [p.city, p.state].filter(Boolean).join(', ') }}</span>
+                  <span class="text-[11px] truncate" style="color: var(--c-muted)">{{ placeSubtitle(p) }}</span>
                 </span>
                 <span v-if="distLabel(p)" class="text-[10px] font-semibold shrink-0" style="color: var(--c-trade)">{{ distLabel(p) }}</span>
               </button>
@@ -213,7 +231,7 @@ function distLabel(place) {
                 <span class="flex flex-col grow min-w-0">
                   <span class="text-xs font-semibold truncate" style="color: var(--c-text)">{{ p.name }}</span>
                   <span class="text-[11px] truncate" style="color: var(--c-muted)">
-                    {{ [p.city, p.state].filter(Boolean).join(', ') || p.address }}{{ p.event_date ? ' · ' + p.event_date : '' }}
+                    {{ placeSubtitle(p) }}{{ p.event_date ? ' · ' + p.event_date : '' }}
                   </span>
                 </span>
                 <span v-if="distLabel(p)" class="text-[10px] font-semibold shrink-0" style="color: var(--c-trade)">{{ distLabel(p) }}</span>
