@@ -17,7 +17,7 @@ const props = defineProps({
   authenticated: { type: Object, default: null },
   // Active route name, so the matching item lights up.
   page: { type: String, default: "search" },
-  // Active trade sub-tab (matches | proposals | announces)
+  // Active trade sub-tab (matches | proposals | announces | lookingfor)
   activeTradeTab: { type: String, default: "matches" },
 });
 
@@ -37,6 +37,7 @@ const items = computed(() => {
     { key: "trade-matches",   label: t("tradeCenter.matches"),   icon: "mdi-account-group-outline", event: "tradeTab", arg: "matches", match: ["TradeCenter"], guest: false, tab: "matches" },
     { key: "trade-proposals", label: t("tradeCenter.proposals"), icon: "mdi-swap-horizontal-bold",  event: "tradeTab", arg: "proposals", match: ["TradeCenter"], guest: false, tab: "proposals" },
     { key: "trade-announces", label: t("tradeCenter.announces"), icon: "mdi-bullhorn-outline",       event: "tradeTab", arg: "announces", match: ["TradeCenter"], guest: false, tab: "announces" },
+    { key: "trade-lookingfor", label: t("tradeCenter.lookingFor"), icon: "mdi-magnify",               event: "tradeTab", arg: "lookingfor", match: ["TradeCenter"], guest: false, tab: "lookingfor" },
   ];
   return props.authenticated ? all : all.filter((i) => i.guest);
 });
