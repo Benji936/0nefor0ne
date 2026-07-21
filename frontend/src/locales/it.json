@@ -279,6 +279,7 @@
     "matches": "Corrispondenze",
     "proposals": "Proposte",
     "announces": "Annunci",
+    "lookingFor": "Ricerche",
     "proposalUpdated": "Proposta aggiornata.",
     "exchangeComplete": "Scambio completato  le carte sono state aggiornate.",
     "yourSideConfirmed": "Il tuo lato confermato. In attesa dell'altro trader.",
@@ -319,7 +320,10 @@
     "yourAnnounceHint": "Solo tu puoi eliminare o segnare come venduto",
     "allAnnounces": "Tutti gli annunci",
     "noSearchResults": "Nessun annuncio corrisponde alla tua ricerca.",
-    "onlyYours": "Nessun altro annuncio ancora, il tuo è il primo!"
+    "onlyYours": "Nessun altro annuncio ancora, il tuo è il primo!",
+    "noLookingForTitle": "Nessuna ricerca al momento",
+    "noLookingForDesc": "Pubblica cosa stai cercando e lascia che siano i venditori a contattarti.",
+    "newLookingFor": "Nuova ricerca"
   },
   "announce": {
     "title": "Titolo",

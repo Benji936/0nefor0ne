@@ -75,6 +75,18 @@ import AnnounceDetailDialog from "@/components/trade/AnnounceDetailDialog.vue";
     <!-- Announces tab -->
     <AnnouncesTab
       v-if="activeTab === 'announces'"
+      kind="sell"
+      :login="login"
+      :loading="loadingAnnounces"
+      :announces="announces"
+      @openCreate="onOpenCreateAnnounce"
+      @openDetail="onOpenAnnounceDetail"
+    />
+
+    <!-- Looking For tab — same component, filtered to the other kind -->
+    <AnnouncesTab
+      v-if="activeTab === 'lookingfor'"
+      kind="looking_for"
       :login="login"
       :loading="loadingAnnounces"
       :announces="announces"
@@ -180,6 +192,7 @@ export default {
         { key: "matches",   label: this.$t("tradeCenter.matches"),   icon: "mdi-account-group-outline", badge: 0 },
         { key: "proposals", label: this.$t("tradeCenter.proposals"), icon: "mdi-swap-horizontal-bold",  badge: pendingCount },
         { key: "announces", label: this.$t("tradeCenter.announces"), icon: "mdi-bullhorn-outline",  badge: 0 },
+        { key: "lookingfor", label: this.$t("tradeCenter.lookingFor"), icon: "mdi-magnify", badge: 0 },
       ];
     },
     visibleMatches() {

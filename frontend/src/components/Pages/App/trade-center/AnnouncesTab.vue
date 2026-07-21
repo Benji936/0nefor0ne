@@ -2,11 +2,13 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import AnnounceCard from "@/components/trade/AnnounceCard.vue";
+import { ANNOUNCE_KIND } from "@/lib/announceKind";
 
 const props = defineProps({
   login:     { type: Object,  default: null },
   loading:   { type: Boolean, default: false },
   announces: { type: Array,   default: () => [] },
+  kind:      { type: String,  default: ANNOUNCE_KIND.SELL },
 });
 
 const emit = defineEmits(["openCreate", "openDetail"]);
@@ -15,15 +17,27 @@ const { t } = useI18n();
 const searchQuery   = ref("");
 const currentUserId = computed(() => props.login?.user?.id ?? null);
 
-// Split announces into mine vs others
-const myAnnounces    = computed(() => props.announces.filter(a => a.seller === currentUserId.value));
-const otherAnnounces = computed(() => props.announces.filter(a => a.seller !== currentUserId.value));
+// Only the announces of the kind this tab renders. Rows written before the
+// kind column existed default to 'sell' in the database, so `?? SELL` here is
+// just belt-and-braces for optimistic local inserts.
+const kindAnnounces = computed(() =>
+  props.announces.filter(a => (a.kind ?? ANNOUNCE_KIND.SELL) === props.kind)
+);
+
+const isLf = computed(() => props.kind === ANNOUNCE_KIND.LOOKING_FOR);
+
+// Split by ownership
+const myAnnounces    = computed(() => kindAnnounces.value.filter(a => a.seller === currentUserId.value));
+const otherAnnounces = computed(() => kindAnnounces.value.filter(a => a.seller !== currentUserId.value));
 
 const filteredOthers = computed(() => {
   if (!searchQuery.value.trim()) return otherAnnounces.value;
   const q = searchQuery.value.trim().toLowerCase();
   return otherAnnounces.value.filter(a =>
-    a.title.toLowerCase().includes(q) || (a.description || "").toLowerCase().includes(q)
+    a.title.toLowerCase().includes(q) ||
+    (a.description  || "").toLowerCase().includes(q) ||
+    (a.archetype    || "").toLowerCase().includes(q) ||
+    (a.want_detail  || "").toLowerCase().includes(q)
   );
 });
 </script>
@@ -62,7 +76,7 @@ const filteredOthers = computed(() => {
         </div>
         <button class="btn-new" @click="emit('openCreate')">
           <v-icon icon="mdi-plus" size="18" />
-          {{ t("announces.newAnnounce") }}
+          {{ isLf ? t("announces.newLookingFor") : t("announces.newAnnounce") }}
         </button>
       </div>
 
@@ -104,16 +118,16 @@ const filteredOthers = computed(() => {
             </div>
           </div>
 
-          <!-- Empty state: no announces at all -->
-          <div v-if="announces.length === 0" class="state-center">
+          <!-- Empty state: no announces of this kind at all -->
+          <div v-if="kindAnnounces.length === 0" class="state-center">
             <div class="state-icon">
               <v-icon icon="mdi-storefront-outline" size="44" style="color: var(--c-muted)" />
             </div>
-            <p class="state-title">{{ t("announces.noAnnouncesTitle") }}</p>
-            <p class="state-sub">{{ t("announces.noAnnouncesDesc") }}</p>
+            <p class="state-title">{{ isLf ? t("announces.noLookingForTitle") : t("announces.noAnnouncesTitle") }}</p>
+            <p class="state-sub">{{ isLf ? t("announces.noLookingForDesc") : t("announces.noAnnouncesDesc") }}</p>
             <button class="btn-new" @click="emit('openCreate')">
               <v-icon icon="mdi-plus" size="18" />
-              {{ t("announces.newAnnounce") }}
+              {{ isLf ? t("announces.newLookingFor") : t("announces.newAnnounce") }}
             </button>
           </div>
 

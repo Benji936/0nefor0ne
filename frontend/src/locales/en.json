@@ -279,6 +279,7 @@
     "matches": "Matches",
     "proposals": "Proposals",
     "announces": "Announces",
+    "lookingFor": "Looking For",
     "proposalUpdated": "Proposal updated.",
     "exchangeComplete": "Exchange complete  cards have been updated.",
     "yourSideConfirmed": "Your side confirmed. Waiting for the other trader.",
@@ -319,7 +320,10 @@
     "yourAnnounceHint": "Only you can see the delete & mark as sold options",
     "allAnnounces": "All announces",
     "noSearchResults": "No announces match your search.",
-    "onlyYours": "No other announces yet, yours is the first!"
+    "onlyYours": "No other announces yet, yours is the first!",
+    "noLookingForTitle": "No Looking For posts yet",
+    "noLookingForDesc": "Post what you are hunting for and let sellers come to you.",
+    "newLookingFor": "New Looking For"
   },
   "announce": {
     "title": "Title",

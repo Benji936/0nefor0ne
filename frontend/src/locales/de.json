@@ -279,6 +279,7 @@
     "matches": "Matches",
     "proposals": "Vorschläge",
     "announces": "Anzeigen",
+    "lookingFor": "Gesuche",
     "proposalUpdated": "Vorschlag aktualisiert.",
     "exchangeComplete": "Tausch abgeschlossen  Karten wurden aktualisiert.",
     "yourSideConfirmed": "Deine Seite bestätigt. Warte auf den anderen Trader.",
@@ -319,7 +320,10 @@
     "yourAnnounceHint": "Nur Sie können löschen oder als verkauft markieren",
     "allAnnounces": "Alle Anzeigen",
     "noSearchResults": "Keine Anzeigen entsprechen Ihrer Suche.",
-    "onlyYours": "Noch keine anderen Anzeigen, Ihre ist die erste!"
+    "onlyYours": "Noch keine anderen Anzeigen, Ihre ist die erste!",
+    "noLookingForTitle": "Noch keine Gesuche",
+    "noLookingForDesc": "Sag, was du suchst, und lass die Verkäufer zu dir kommen.",
+    "newLookingFor": "Neues Gesuch"
   },
   "announce": {
     "title": "Titel",

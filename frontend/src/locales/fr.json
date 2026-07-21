@@ -279,6 +279,7 @@
     "matches": "Correspondances",
     "proposals": "Propositions",
     "announces": "Annonces",
+    "lookingFor": "Recherches",
     "proposalUpdated": "Proposition mise à jour.",
     "exchangeComplete": "Échange terminé  les cartes ont été mises à jour.",
     "yourSideConfirmed": "Votre côté confirmé. En attente de l'autre joueur.",
@@ -319,7 +320,10 @@
     "yourAnnounceHint": "Vous seul pouvez supprimer ou marquer comme vendu",
     "allAnnounces": "Toutes les annonces",
     "noSearchResults": "Aucune annonce ne correspond à votre recherche.",
-    "onlyYours": "Pas encore d’autres annonces, la vôtre est la première !"
+    "onlyYours": "Pas encore d’autres annonces, la vôtre est la première !",
+    "noLookingForTitle": "Aucune recherche pour l'instant",
+    "noLookingForDesc": "Publiez ce que vous cherchez et laissez les vendeurs venir à vous.",
+    "newLookingFor": "Nouvelle recherche"
   },
   "announce": {
     "title": "Titre",
