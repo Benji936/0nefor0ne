@@ -74,7 +74,7 @@ const filteredOthers = computed(() => {
             class="search-input"
           />
         </div>
-        <button class="btn-new" @click="emit('openCreate')">
+        <button class="btn-new" @click="emit('openCreate', props.kind)">
           <v-icon icon="mdi-plus" size="18" />
           {{ isLf ? t("announces.newLookingFor") : t("announces.newAnnounce") }}
         </button>
@@ -125,7 +125,7 @@ const filteredOthers = computed(() => {
             </div>
             <p class="state-title">{{ isLf ? t("announces.noLookingForTitle") : t("announces.noAnnouncesTitle") }}</p>
             <p class="state-sub">{{ isLf ? t("announces.noLookingForDesc") : t("announces.noAnnouncesDesc") }}</p>
-            <button class="btn-new" @click="emit('openCreate')">
+            <button class="btn-new" @click="emit('openCreate', props.kind)">
               <v-icon icon="mdi-plus" size="18" />
               {{ isLf ? t("announces.newLookingFor") : t("announces.newAnnounce") }}
             </button>

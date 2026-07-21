@@ -9,6 +9,9 @@ const props = defineProps({
   modelValue: { type: Boolean, default: false },
   // When set, the dialog opens in EDIT mode for this announce; otherwise CREATE mode.
   announce:   { type: Object,  default: null },
+  // Which kind to open CREATE mode with (the tab the create button was clicked
+  // from). Ignored in EDIT mode, where the kind always comes from `announce`.
+  kind:       { type: String,  default: 'sell' },
 });
 const emit  = defineEmits(["update:modelValue", "created", "updated"]);
 const { t } = useI18n();
@@ -202,10 +205,11 @@ watch(() => props.modelValue, open => {
     existingImages.value = [...(props.announce.images ?? [])].sort((a, b) => a.sort_order - b.sort_order);
   } else {
     title.value = ""; description.value = ""; price.value = ""; currency.value = "EUR";
-    kind.value = ANNOUNCE_KIND.SELL;
+    kind.value = props.kind ?? ANNOUNCE_KIND.SELL;
     wantDetail.value = ""; archetypeQuery.value = "";
     hydratedArchetype.value = "";
     existingImages.value = [];
+    if (kind.value === ANNOUNCE_KIND.LOOKING_FOR) ensureArchetypes();
   }
 });
 
