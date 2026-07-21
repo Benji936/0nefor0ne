@@ -364,7 +364,9 @@
     "budgetHint": "Lascia vuoto se preferisci parlarne.",
     "photosOptionalLf": "Foto (facoltativo)",
     "createLookingFor": "Pubblica la ricerca",
-    "lfBadge": "LF"
+    "lfBadge": "LF",
+    "wantTooLong": "Troppo lungo insieme al nome dell'archetipo. Resta entro 120 caratteri totali.",
+    "budgetNegative": "Il budget non può essere negativo."
   },
   "announceChat": {
     "withSeller": "Chatta con il venditore",

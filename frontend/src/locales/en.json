@@ -364,7 +364,9 @@
     "budgetHint": "Leave empty if you would rather discuss it.",
     "photosOptionalLf": "Photos (optional)",
     "createLookingFor": "Post Looking For",
-    "lfBadge": "LF"
+    "lfBadge": "LF",
+    "wantTooLong": "Too long together with the archetype name. Keep the total to 120 characters or fewer.",
+    "budgetNegative": "Budget cannot be negative."
   },
   "announceChat": {
     "withSeller": "Chat with seller",

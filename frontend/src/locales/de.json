@@ -364,7 +364,9 @@
     "budgetHint": "Leer lassen, wenn du lieber darüber sprechen möchtest.",
     "photosOptionalLf": "Fotos (optional)",
     "createLookingFor": "Gesuch aufgeben",
-    "lfBadge": "LF"
+    "lfBadge": "LF",
+    "wantTooLong": "Zu lang zusammen mit dem Archetyp-Namen. Bleib insgesamt bei 120 Zeichen oder weniger.",
+    "budgetNegative": "Das Budget darf nicht negativ sein."
   },
   "announceChat": {
     "withSeller": "Mit Verkäufer chatten",

@@ -20,7 +20,6 @@ const description = ref("");
 const price       = ref("");
 const currency    = ref("EUR");
 const kind           = ref(ANNOUNCE_KIND.SELL);
-const archetype      = ref("");
 const wantDetail     = ref("");
 const archetypeList  = ref([]);      // canonical names from YGOPRODeck
 const archetypeQuery = ref("");      // what the user is typing
@@ -36,6 +35,23 @@ const archetypeMatches = computed(() => {
     .filter(a => a.toLowerCase().includes(q))
     .slice(0, 8);
 });
+
+// The single source of truth for "which archetype is selected": an exact
+// (case-insensitive, trimmed) match between what's typed and a known name.
+// Covers picking from the dropdown (which fills the query with a canonical
+// name) AND typing the exact name and tabbing away without clicking it.
+// A partial/unrecognised string, or a picked name that's since been edited
+// away, resolves to "" rather than sticking to a stale value.
+const resolvedArchetype = computed(() => {
+  const q = archetypeQuery.value.trim().toLowerCase();
+  if (!q) return "";
+  const hit = archetypeList.value.find(name => name.trim().toLowerCase() === q);
+  return hit ?? "";
+});
+
+// The composed LF title/headline, shared by canSubmit and submit() so the
+// validation check and the saved value can never disagree.
+const lfHeadline = computed(() => composeWantHeadline(resolvedArchetype.value, wantDetail.value));
 
 /** Fetch the archetype list once, the first time the user switches to LF. */
 async function ensureArchetypes() {
@@ -55,7 +71,6 @@ function setKind(next) {
 }
 
 function pickArchetype(name) {
-  archetype.value = name;
   archetypeQuery.value = name;
 }
 
@@ -138,8 +153,12 @@ const totalCount = computed(() => existingImages.value.length + newImages.value.
 const canSubmit = computed(() => {
   if (submitting.value) return false;
   if (isLf.value) {
-    // An LF post needs something to look for; price and photos are optional.
-    return composeWantHeadline(archetype.value, wantDetail.value).length > 0;
+    // An LF post needs something to look for; price and photos are optional,
+    // but the composed title must still fit the DB's 120-char limit, and an
+    // entered budget must not be negative.
+    const headline = lfHeadline.value;
+    const priceOk = price.value === "" || Number(price.value) >= 0;
+    return headline.length > 0 && headline.length <= 120 && priceOk;
   }
   return title.value.trim().length > 0 &&
          title.value.trim().length <= 120 &&
@@ -159,15 +178,14 @@ watch(() => props.modelValue, open => {
     price.value        = props.announce.price ?? "";
     currency.value     = props.announce.currency ?? "EUR";
     kind.value           = props.announce.kind        ?? ANNOUNCE_KIND.SELL;
-    archetype.value      = props.announce.archetype   ?? "";
     wantDetail.value     = props.announce.want_detail ?? "";
-    archetypeQuery.value = archetype.value;
+    archetypeQuery.value = props.announce.archetype   ?? "";
     if (kind.value === ANNOUNCE_KIND.LOOKING_FOR) ensureArchetypes();
     existingImages.value = [...(props.announce.images ?? [])].sort((a, b) => a.sort_order - b.sort_order);
   } else {
     title.value = ""; description.value = ""; price.value = ""; currency.value = "EUR";
     kind.value = ANNOUNCE_KIND.SELL;
-    archetype.value = ""; wantDetail.value = ""; archetypeQuery.value = "";
+    wantDetail.value = ""; archetypeQuery.value = "";
     existingImages.value = [];
   }
 });
@@ -202,13 +220,13 @@ async function submit() {
       const id = props.announce.id;
       await updateAnnounce(id, {
         title:       isLf.value
-                       ? composeWantHeadline(archetype.value, wantDetail.value)
+                       ? lfHeadline.value
                        : title.value.trim(),
         description: description.value.trim(),
         price:       price.value === "" ? null : Number(price.value),
         currency:    currency.value,
         kind:        kind.value,
-        archetype:   isLf.value ? (archetype.value.trim()  || null) : null,
+        archetype:   isLf.value ? (resolvedArchetype.value || null) : null,
         want_detail: isLf.value ? (wantDetail.value.trim() || null) : null,
       });
       // Remove images the user deleted.
@@ -222,7 +240,7 @@ async function submit() {
     } else {
       const id = await createAnnounce({
         title:       isLf.value
-                       ? composeWantHeadline(archetype.value, wantDetail.value)
+                       ? lfHeadline.value
                        : title.value.trim(),
         description: description.value.trim(),
         price:       price.value === "" ? null : Number(price.value),
@@ -230,7 +248,7 @@ async function submit() {
         imageFiles:  newImages.value.map(i => i.file),
         card:        selectedCard.value,  // null if no card picked
         kind:        kind.value,
-        archetype:   isLf.value ? (archetype.value.trim()  || null) : null,
+        archetype:   isLf.value ? (resolvedArchetype.value || null) : null,
         wantDetail:  isLf.value ? (wantDetail.value.trim() || null) : null,
       });
       emit("created", id);
@@ -366,6 +384,9 @@ async function submit() {
                   maxlength="120"
                   :placeholder="t('announce.wantDetailPlaceholder')"
                 />
+                <p v-if="lfHeadline.length > 120" class="field-hint" style="color: var(--c-accent)">
+                  {{ t('announce.wantTooLong') }}
+                </p>
               </div>
             </template>
 
@@ -403,7 +424,8 @@ async function submit() {
                     class="field-input price-input"
                   />
                 </div>
-                <p v-if="isLf" class="field-hint">{{ t('announce.budgetHint') }}</p>
+                <p v-if="isLf && (price === '' || Number(price) >= 0)" class="field-hint">{{ t('announce.budgetHint') }}</p>
+                <p v-else-if="isLf" class="field-hint" style="color: var(--c-accent)">{{ t('announce.budgetNegative') }}</p>
               </div>
               <div class="field-block" style="width:105px; flex-shrink:0">
                 <label class="field-label">{{ t('announce.currency') }}</label>
