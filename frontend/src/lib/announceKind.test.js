@@ -8,7 +8,7 @@ import {
   composeWantHeadline,
 } from './announceKind'
 
-const ARCHETYPES = ['Darklord', 'Blue-Eyes', 'HERO', 'Sky Striker', 'Dark Magician']
+const ARCHETYPES = ['Darklord', 'Blue-Eyes', 'D.D.', 'HERO', 'Sky Striker', 'Dark Magician']
 
 describe('detectKindFromText', () => {
   it('treats an LF prefix as looking_for, in any case and with any separator', () => {
@@ -41,6 +41,11 @@ describe('stripKindPrefix', () => {
   it('leaves unprefixed text alone', () => {
     expect(stripKindPrefix('Darklord deck base')).toBe('Darklord deck base')
   })
+
+  it('does not match LF inside a word (same-family regex as detectKindFromText)', () => {
+    expect(stripKindPrefix('LFP playmat for sale')).toBe('LFP playmat for sale')
+    expect(stripKindPrefix('Golfer deck')).toBe('Golfer deck')
+  })
 })
 
 describe('matchArchetype', () => {
@@ -57,6 +62,20 @@ describe('matchArchetype', () => {
   it('respects word boundaries', () => {
     expect(matchArchetype('Darklords', ARCHETYPES)).toBe('Darklord')
     expect(matchArchetype('superhero cape', ARCHETYPES)).toBe(null)
+  })
+
+  it('escapes regex metacharacters in archetype names', () => {
+    // Hyphen in archetype name must be treated literally, not as regex range
+    expect(matchArchetype('Blue-Eyes deck', ARCHETYPES)).toBe('Blue-Eyes')
+    expect(matchArchetype('blue-eyes playset', ARCHETYPES)).toBe('Blue-Eyes')
+  })
+
+  it('escapes periods so they do not match any character', () => {
+    // D.D. contains periods; they should be literal, not regex wildcards
+    expect(matchArchetype('D.D. playset', ARCHETYPES)).toBe('D.D.')
+    expect(matchArchetype('d.d. combo', ARCHETYPES)).toBe('D.D.')
+    // Without escaping, D.D. pattern would match DXDX (since . matches any char)
+    expect(matchArchetype('DXDX crossover', ARCHETYPES)).toBe(null)
   })
 
   it('returns null for no match or bad input', () => {
