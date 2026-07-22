@@ -373,7 +373,12 @@
     "createLookingFor": "Gesuch aufgeben",
     "lfBadge": "LF",
     "wantTooLong": "Zu lang zusammen mit dem Archetyp-Namen. Bleib insgesamt bei 120 Zeichen oder weniger.",
-    "budgetNegative": "Das Budget darf nicht negativ sein."
+    "budgetNegative": "Das Budget darf nicht negativ sein.",
+    "expired": "Abgelaufen",
+    "expiresInShort": "noch {days}T",
+    "expiresInDays": "Läuft in {days} Tag ab. | Läuft in {days} Tagen ab.",
+    "expiredNotice": "Diese Anzeige ist abgelaufen und für andere Trader nicht mehr sichtbar.",
+    "renew": "Verlängern"
   },
   "announceChat": {
     "withSeller": "Mit Verkäufer chatten",

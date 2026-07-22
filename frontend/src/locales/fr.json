@@ -373,7 +373,12 @@
     "createLookingFor": "Publier ma recherche",
     "lfBadge": "LF",
     "wantTooLong": "Trop long une fois combiné au nom de l'archétype. Restez sous 120 caractères au total.",
-    "budgetNegative": "Le budget ne peut pas être négatif."
+    "budgetNegative": "Le budget ne peut pas être négatif.",
+    "expired": "Expirée",
+    "expiresInShort": "{days}j restants",
+    "expiresInDays": "Expire dans {days} jour. | Expire dans {days} jours.",
+    "expiredNotice": "Cette annonce a expiré et n'est plus visible par les autres traders.",
+    "renew": "Renouveler"
   },
   "announceChat": {
     "withSeller": "Discuter avec le vendeur",
