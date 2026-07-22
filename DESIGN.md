@@ -2,25 +2,29 @@
 name: TradeMarket
 description: Peer-to-peer Yu-Gi-Oh card trading platform connecting collectors and players.
 colors:
-  bg: "#0C0820"
-  surface: "#180F3A"
-  surface-2: "#221550"
-  border: "#3D1F80"
-  text: "#E8E0FF"
-  muted: "#A78BFA"
-  accent: "#F0487A"
-  trade: "#C084FC"
-  mutual: "#84cc16"
-  bg-light: "#FEFEFF"
-  surface-light: "#F8F5FF"
-  surface-2-light: "#EDE8FF"
-  border-light: "#DDD5FF"
-  text-light: "#1A0D45"
-  muted-light: "#6D28D9"
-  accent-light: "#BE185D"
-  trade-light: "#7C3AED"
-  nav: "#0C0820"
-  skeleton: "#2A1660"
+  # Values below are the source of truth: they mirror the CSS custom properties
+  # in frontend/src/assets/main.css exactly. If a token changes there, change it
+  # here too. Dark is the canonical theme; light mirrors the same roles.
+  bg: "#0B0617"
+  surface: "#13092A"
+  surface-2: "#1C1040"
+  border: "#3A206E"
+  text: "#EDE8FF"
+  muted: "#A890D0"
+  accent: "#F42D87"
+  trade: "#9A52F5"
+  mutual: "#2DD4BF"
+  bg-light: "#FFFFFF"
+  surface-light: "#F7F2FF"
+  surface-2-light: "#EDE0FF"
+  border-light: "#C5ABED"
+  text-light: "#1C0852"
+  muted-light: "#6830A8"
+  accent-light: "#C9185A"
+  trade-light: "#6B20D9"
+  mutual-light: "#0882A8"
+  nav: "#0B0617"
+  skeleton: "#1E1248"
 typography:
   title:
     fontFamily: "system-ui, -apple-system, sans-serif"
@@ -80,7 +84,7 @@ components:
     padding: "8px 20px"
   button-mutual:
     backgroundColor: "{colors.mutual}"
-    textColor: "#0C0820"
+    textColor: "#13031A"
     rounded: "{rounded.md}"
     padding: "8px 20px"
   card-surface:
@@ -89,12 +93,12 @@ components:
     rounded: "{rounded.xl}"
     padding: "20px"
   chip-mutual:
-    backgroundColor: "rgba(132,204,22,0.15)"
+    backgroundColor: "rgba(45,212,191,0.15)"
     textColor: "{colors.mutual}"
     rounded: "{rounded.full}"
     padding: "4px 10px"
   chip-trade:
-    backgroundColor: "rgba(192,132,252,0.15)"
+    backgroundColor: "rgba(154,82,245,0.15)"
     textColor: "{colors.trade}"
     rounded: "{rounded.full}"
     padding: "4px 10px"
@@ -108,7 +112,7 @@ components:
 
 TradeMarket is built around a specific moment: the back table at a local game store, where two collectors spread their binders and negotiate a trade face to face. That exchange is direct, personal, and driven entirely by mutual need — no platform taking a cut, no anonymous transaction. The UI should feel like that table: honest, focused, slightly dim, with card sleeves glinting under fluorescent light. Information is dense because the people using this *want* the information. They're not intimidated by set codes and rarity abbreviations.
 
-The visual register is dark by default — not because dark mode is fashionable, but because this is a tool used at night, at kitchen tables, at tournament venues with overhead lighting already straining. The deep indigo-black backgrounds (`#0C0820`) protect against glare fatigue during long collection-building sessions. Color is used with purpose: amethyst for trading actions, hot pink for desire and wishlists, lime green reserved exclusively for the mutual match — the moment of connection that the whole platform exists to create.
+The visual register is dark by default — not because dark mode is fashionable, but because this is a tool used at night, at kitchen tables, at tournament venues with overhead lighting already straining. The deep indigo-black backgrounds (`#0B0617`) protect against glare fatigue during long collection-building sessions. Color is used with purpose: amethyst for trading actions, hot pink for desire and wishlists, teal reserved exclusively for the mutual match — the moment of connection that the whole platform exists to create.
 
 What this system explicitly rejects: the neon maximalism of NFT/crypto marketplaces; the sterile white grid of eBay and TCGPlayer; the sprawling spreadsheet UIs of legacy collection trackers. Cardcluster's functional clarity is the closest public reference — dense but never cluttered, collector-native without being geeky-looking.
 
@@ -124,29 +128,29 @@ What this system explicitly rejects: the neon maximalism of NFT/crypto marketpla
 
 Three semantic roles, one neutral system, two modes. The dark mode is canonical; light mode mirrors the same roles in reversed lightness.
 
-**The Three-Role Rule.** Trade (amethyst), Accent (hot pink), and Mutual (lime) are the only saturated colors in the system. Each maps to exactly one meaning and is never borrowed for decoration. Mutual is the rarest — it appears only when both sides of a trade align. Its rarity is the point.
+**The Three-Role Rule.** Trade (amethyst), Accent (hot pink), and Mutual (teal) are the only saturated colors in the system. Each maps to exactly one meaning and is never borrowed for decoration. Mutual is the rarest — it appears only when both sides of a trade align. Its rarity is the point.
 
 ### Primary — Trade (Amethyst)
 
-- **Amethyst Trade** (`#C084FC` dark / `#7C3AED` light): Trade pile actions, "Add to trade," "Propose trade" buttons, the "You give" column in the negotiation UI. The color of offering something.
-- **Deep Amethyst Surface** (`#180F3A`): Card and panel backgrounds in dark mode. The base layer on which card art rests.
-- **Amethyst Border** (`#3D1F80`): Dividers, input strokes, card outlines. Visible but not demanding.
+- **Amethyst Trade** (`#9A52F5` dark / `#6B20D9` light): Trade pile actions, "Add to trade," "Propose trade" buttons, the "You give" column in the negotiation UI. The color of offering something.
+- **Deep Amethyst Surface** (`#13092A`): Card and panel backgrounds in dark mode. The base layer on which card art rests.
+- **Amethyst Border** (`#3A206E`): Dividers, input strokes, card outlines. Visible but not demanding.
 
 ### Secondary — Accent (Hot Pink)
 
-- **Collector's Pink** (`#F0487A` dark / `#BE185D` light): Wishlist actions, heart icons, "Add to wishlist" buttons, the "You receive" emotional framing. The color of want.
-- **Pink Berry** (`#BE185D` light mode): Deeper pink for light-mode contrast without losing warmth.
+- **Collector's Pink** (`#F42D87` dark / `#C9185A` light): Wishlist actions, heart icons, "Add to wishlist" buttons, the "You receive" emotional framing. The color of want.
+- **Pink Berry** (`#C9185A` light mode): Deeper pink for light-mode contrast without losing warmth.
 
-### Tertiary — Mutual (Lime Green)
+### Tertiary — Mutual (Teal)
 
-- **Trade Match Green** (`#84cc16`): Mutual match badges, "They want this" indicators in the propose-trade UI, match count chips. Used nowhere else. When it appears, it means something.
+- **Trade Match Teal** (`#2DD4BF`): Mutual match badges, "They want this" indicators in the propose-trade UI, match count chips. Used nowhere else. When it appears, it means something.
 
 ### Neutral
 
-- **Void Indigo** (`#0C0820`): Page background, nav background. Near-black with a deliberate purple tint — never pure black.
+- **Void Indigo** (`#0B0617`): Page background, nav background. Near-black with a deliberate purple tint — never pure black.
 - **Lavender White** (`#E8E0FF`): Primary text in dark mode. Warm toward the brand hue, never clinical white.
-- **Soft Violet** (`#A78BFA`): Secondary text, muted labels, icon fills at rest. The neutral voice of the system.
-- **Skeleton Plum** (`#2A1660`): Loading skeleton backgrounds. Darker than the surface, lighter than the border.
+- **Soft Violet** (`#A890D0`): Secondary text, muted labels, icon fills at rest. The neutral voice of the system.
+- **Skeleton Plum** (`#1E1248`): Loading skeleton backgrounds. Darker than the surface, lighter than the border.
 - **Near-White Tint** (`#FEFEFF`): Page background in light mode. Tinted to 0.005 chroma toward purple — imperceptible but not sterile.
 - **Deep Indigo Text** (`#1A0D45`): Primary text in light mode. High contrast without the harshness of pure black.
 
@@ -154,7 +158,7 @@ Three semantic roles, one neutral system, two modes. The dark mode is canonical;
 
 **The No-Gray Rule.** Pure grays (`#555`, `#ccc`, `text-gray-*`) are prohibited. Every neutral in the system is tinted toward the brand hue. Icon fills, placeholder text, and muted labels use `var(--c-muted)` (Soft Violet), not a gray.
 
-**The Mutual Scarcity Rule.** Lime green appears only for confirmed mutual matches and "they want this" signals in the trade negotiation UI. Never use it for generic success states, positive alerts, or decoration.
+**The Mutual Scarcity Rule.** Teal appears only for confirmed mutual matches and "they want this" signals in the trade negotiation UI. Never use it for generic success states, positive alerts, or decoration.
 
 ## 3. Typography
 
@@ -195,9 +199,9 @@ TradeMarket uses tonal layering as its primary depth model — surfaces are stac
 
 Vuetify `v-btn` with `variant="flat"` and inline style overrides for semantic color. Shape is gently rounded (8px radius) — not pill, not square.
 
-- **Trade button** (amethyst `#C084FC`, white text, 8px radius, `mdi-plus-box` prefix icon): Primary action for adding to trade pile or proposing a trade.
-- **Accent button** (hot pink `#F0487A`, white text, 8px radius, `mdi-heart-plus` prefix icon): Wishlist actions.
-- **Mutual button** (lime `#84cc16`, dark text `#0C0820`, 8px radius): "See traders" / confirm match actions.
+- **Trade button** (amethyst `#9A52F5`, white text, 8px radius, `mdi-plus-box` prefix icon): Primary action for adding to trade pile or proposing a trade.
+- **Accent button** (hot pink `#F42D87`, white text, 8px radius, `mdi-heart-plus` prefix icon): Wishlist actions.
+- **Mutual button** (teal `#2DD4BF`, dark text `#13031A`, 8px radius): "See traders" / confirm match actions.
 - **Ghost / Cancel** (`variant="text"`, `color="gray"`): Destructive-adjacent actions, dialog cancel. No background.
 - **Hover:** Vuetify handles opacity shift; add no extra transforms on buttons.
 - **Loading:** Vuetify `:loading` prop shows spinner inline — always used on async submit actions.
@@ -255,7 +259,7 @@ Icon-only nav items with tooltip and active indicator.
 
 ### Skeleton Loading
 
-Animated pulse skeletons using `var(--c-skeleton)` (`#2A1660` dark, `#E4D8FF` light). The `animate-pulse` Tailwind utility handles the opacity oscillation. Card-shaped skeletons use the 59:86 aspect ratio so layout doesn't shift when real images arrive.
+Animated pulse skeletons using `var(--c-skeleton)` (`#1E1248` dark, `#E2D2F8` light). The `animate-pulse` Tailwind utility handles the opacity oscillation. Card-shaped skeletons use the 59:86 aspect ratio so layout doesn't shift when real images arrive.
 
 ## 6. Do's and Don'ts
 
@@ -278,6 +282,6 @@ Animated pulse skeletons using `var(--c-skeleton)` (`#2A1660` dark, `#E4D8FF` li
 - **Don't** create sterile white product grids. The light mode uses lavender-tinted whites (`#FEFEFF`, `#F8F5FF`), never clinical white.
 - **Don't** use side-stripe borders (`border-left > 1px` as a colored accent). Use full borders, background tints, or leading icons instead.
 - **Don't** use `background-clip: text` with a gradient background for decorative purposes. Emphasis is achieved through weight and size contrast, never gradient text.
-- **Don't** render the mutual color (`#84cc16`) for anything other than confirmed mutual matches. Using it for generic success or positivity dilutes its meaning.
+- **Don't** render the mutual color (`#2DD4BF`, teal) for anything other than confirmed mutual matches. Using it for generic success or positivity dilutes its meaning.
 - **Don't** place headless `<AddCard>` components inside Vuetify `v-overlay` default slots — they teleport out of DOM scope and break `$refs`. Always place them as siblings outside the overlay.
 - **Don't** mix `<script setup>` with Options API methods that need to be called via `$refs` without `defineExpose()`. The methods become inaccessible. Consolidate to one API style per component.

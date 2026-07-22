@@ -2,6 +2,8 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { timeAgo } from "@/lib/notifications";
+import { isLookingFor } from "@/lib/announceKind";
+import { isExpired, isExpiringSoon, daysUntilExpiry } from "@/lib/announceExpiry";
 
 const { t } = useI18n();
 
@@ -18,13 +20,24 @@ const isOwner = computed(() => props.announce.seller === props.currentUserId);
 const coverImage  = computed(() => props.announce.images?.[0]?.url ?? null);
 const imageCount  = computed(() => props.announce.images?.length ?? 0);
 
-const formattedPrice = computed(() =>
-  new Intl.NumberFormat(undefined, {
+const isLf = computed(() => isLookingFor(props.announce));
+
+// Expiry state. Only ever surfaces on the owner's own cards, because
+// fetchAnnounces() does not return other people's expired listings at all.
+const expired   = computed(() => isOwner.value && isExpired(props.announce));
+const expiring  = computed(() => isOwner.value && isExpiringSoon(props.announce));
+const daysLeft  = computed(() => daysUntilExpiry(props.announce));
+
+// LF posts may carry no budget at all, in which case there is nothing to show.
+const formattedPrice = computed(() => {
+  const p = props.announce.price;
+  if (p === null || p === undefined || p === "") return null;
+  return new Intl.NumberFormat(undefined, {
     style: "currency",
     currency: props.announce.currency || "EUR",
     maximumFractionDigits: 0,
-  }).format(props.announce.price)
-);
+  }).format(p);
+});
 
 const sellerName    = computed(() => props.announce.Trader?.Name || props.announce.Trader?.name || t("announces.unknownSeller"));
 const sellerAvatar  = computed(() => props.announce.Trader?.avatar_url ?? null);
@@ -38,10 +51,24 @@ const location = computed(() => {
 </script>
 
 <template>
-  <article class="ac" :class="{ 'ac--own': isOwner, 'ac--compact': compact }" @click="emit('click', announce)">
+  <article
+    class="ac"
+    :class="{ 'ac--own': isOwner, 'ac--compact': compact, 'ac--expired': expired }"
+    @click="emit('click', announce)"
+  >
 
     <!-- Image -->
     <div class="ac-img">
+      <!-- Badge stack: a listing can be both a Looking For and expired. -->
+      <div v-if="isLf || expired || expiring" class="ac-badges">
+        <span v-if="isLf" class="ac-badge ac-badge--lf">{{ t('announce.lfBadge') }}</span>
+        <span v-if="expired" class="ac-badge ac-badge--expired">{{ t('announce.expired') }}</span>
+        <!-- Short form: the pill is 10px tall, the full sentence lives in the
+             detail dialog. -->
+        <span v-else-if="expiring" class="ac-badge ac-badge--soon">
+          {{ t('announce.expiresInShort', { days: daysLeft }) }}
+        </span>
+      </div>
       <img v-if="coverImage" :src="coverImage" :alt="announce.title" class="ac-img__photo" loading="lazy" />
       <div v-else class="ac-img__empty">
         <v-icon icon="mdi-image-off-outline" size="32" style="color: var(--c-border)" />
@@ -54,12 +81,19 @@ const location = computed(() => {
       </div>
 
       <!-- Price pill floating on image -->
-      <div class="ac-img__price">{{ formattedPrice }}</div>
+      <div v-if="formattedPrice" class="ac-img__price">
+        <span v-if="isLf" class="ac-img__price-label">{{ t('announce.budget') }}</span>
+        {{ formattedPrice }}
+      </div>
     </div>
 
     <!-- Body -->
     <div class="ac-body">
       <p class="ac-title">{{ announce.title }}</p>
+      <p v-if="isLf && announce.archetype" class="ac-archetype">
+        <v-icon icon="mdi-cards-outline" size="12" />
+        {{ announce.archetype }}
+      </p>
       <p v-if="announce.description" class="ac-desc">{{ announce.description }}</p>
 
       <div class="ac-footer">
@@ -163,6 +197,73 @@ const location = computed(() => {
   letter-spacing: -0.02em;
   line-height: 1;
   text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+/* Badge stack, top-left of the image. A card can carry both an LF badge and
+   an expiry badge, so they sit in a row rather than overlapping. */
+.ac-badges {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  /* Leave room for the photo-count pill in the opposite corner. */
+  max-width: calc(100% - 60px);
+}
+.ac-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  white-space: nowrap;
+}
+.ac-badge--lf {
+  /* Dark ink, not white: --c-mutual is a bright teal in dark theme, where white
+     lands at 1.86:1. This ink clears AA in both themes (4.52 light, 10.69 dark)
+     and matches the on-mutual text colour DESIGN.md already specifies. */
+  color: #13031A;
+  background: var(--c-mutual);
+}
+/* Neutral rather than red: an expired listing is dormant, not an error, and
+   the owner can bring it back with one click. White on #3f3f46 is 10.4:1. */
+.ac-badge--expired {
+  color: #fff;
+  background: #3f3f46;
+}
+/* Dark ink on amber, 8.6:1. Amber already means "attention, not failure"
+   elsewhere in the app (the seller rating star). */
+.ac-badge--soon {
+  color: #1a1205;
+  background: #f59e0b;
+  letter-spacing: .04em;
+}
+
+/* Expired cards read as dormant: drained of colour, but still legible and
+   still clickable, because clicking is how the owner renews them. The badge
+   itself is deliberately left out so it stays crisp against the dimming. */
+.ac--expired .ac-img__photo,
+.ac--expired .ac-img__empty,
+.ac--expired .ac-img__price { filter: grayscale(0.85); opacity: 0.5; }
+.ac--expired .ac-body { opacity: 0.65; }
+/* The hover lift stays: an expired card is still clickable, and clicking it is
+   how the owner gets to the Renew button. */
+.ac-img__price-label {
+  font-size: 9px;
+  font-weight: 700;
+  opacity: .8;
+  margin-right: 3px;
+  text-transform: uppercase;
+}
+.ac-archetype {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-mutual);
 }
 
 /* ── Body ──────────────────────────────────────────── */

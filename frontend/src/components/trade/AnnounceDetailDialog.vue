@@ -3,7 +3,9 @@ import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import { timeAgo } from "@/lib/notifications";
-import { deleteAnnounce, updateAnnounce } from "@/lib/announces";
+import { deleteAnnounce, updateAnnounce, renewAnnounce } from "@/lib/announces";
+import { isLookingFor } from "@/lib/announceKind";
+import { isExpired, isExpiringSoon, daysUntilExpiry } from "@/lib/announceExpiry";
 import { getClient } from "@/lib/supabaseClient";
 import { searchById, searchCardByName, searchCardBySetCode } from "@/api";
 import AddCard from "@/components/library/AddCard.vue";
@@ -20,6 +22,7 @@ const route = useRoute();
 
 const deleting      = ref(false);
 const updating      = ref(false);
+const renewing      = ref(false);
 const addingToList  = ref(false);
 const addedToList   = ref(false);
 const addCardRef    = ref(null);
@@ -102,10 +105,23 @@ async function pickAndLinkCard(card) {
 }
 
 const isOwner = computed(() => props.announce?.seller === props.currentUserId);
+const isLf = computed(() => isLookingFor(props.announce));
 
+// ── Expiry (owner-facing only) ────────────────────────────────────────────
+// Other people's expired listings never reach the client, so the owner is the
+// only one who can be looking at one of these.
+const expired   = computed(() => isExpired(props.announce));
+const expiring  = computed(() => isExpiringSoon(props.announce));
+const daysLeft  = computed(() => daysUntilExpiry(props.announce));
+// Renewing at day 25 of 30 would just be noise, so the button only appears
+// once the listing is actually near the end of its window or past it.
+const canRenew  = computed(() => isOwner.value && (expired.value || expiring.value));
+
+// LF posts may carry no budget at all, in which case there is nothing to show.
 const formattedPrice = computed(() => {
-  if (!props.announce) return "";
-  return new Intl.NumberFormat(undefined, { style: "currency", currency: props.announce.currency || "EUR" }).format(props.announce.price);
+  const p = props.announce?.price;
+  if (p === null || p === undefined || p === "") return "";
+  return new Intl.NumberFormat(undefined, { style: "currency", currency: props.announce.currency || "EUR" }).format(p);
 });
 
 const sellerName    = computed(() => props.announce?.Trader?.Name || props.announce?.Trader?.name || t("announces.unknownSeller"));
@@ -138,6 +154,18 @@ async function handleMarkSold() {
   try { await updateAnnounce(props.announce.id, { status: "sold" }); emit("updated", props.announce.id); close(); }
   catch (err) { alert(err.message ?? "Failed to update"); }
   finally { updating.value = false; }
+}
+
+async function handleRenew() {
+  renewing.value = true;
+  try {
+    // The server decides the real date (see renewAnnounce); patch the local
+    // copy with what it returned so this dialog updates without a round trip.
+    props.announce.expires_at = await renewAnnounce(props.announce.id);
+    emit("updated", props.announce.id);
+  }
+  catch (err) { alert(err.message ?? "Failed to renew"); }
+  finally { renewing.value = false; }
 }
 
 function handleEdit() { emit("edit", props.announce); close(); }
@@ -240,7 +268,9 @@ function onCardAdded() {
         </div>
 
         <!-- Price overlay -->
-        <div class="gallery__price">{{ formattedPrice }}</div>
+        <div v-if="formattedPrice" class="gallery__price">
+          <span v-if="isLf">{{ t('announce.budget') }}: </span>{{ formattedPrice }}
+        </div>
 
         <!-- Close button -->
         <button class="gallery__close" @click="close">
@@ -265,12 +295,39 @@ function onCardAdded() {
 
         <!-- Title + time -->
         <div class="info-row">
-          <h2 class="info-title">{{ announce.title }}</h2>
+          <h2 class="info-title">
+            <span v-if="isLf" class="lf-badge">{{ t('announce.lfBadge') }}</span>
+            {{ announce.title }}
+          </h2>
           <span class="info-time">{{ timeAgo(announce.created_at, t) }}</span>
+        </div>
+
+        <!-- Expiry state, owner only. Always shown so the countdown is never a
+             surprise; escalates to a full banner once the listing is dormant. -->
+        <div
+          v-if="isOwner && daysLeft !== null"
+          class="expiry"
+          :class="{ 'expiry--expired': expired, 'expiry--soon': expiring }"
+        >
+          <v-icon :icon="expired ? 'mdi-clock-alert-outline' : 'mdi-clock-outline'" size="15" />
+          <span class="expiry__text">
+            {{ expired ? t('announce.expiredNotice') : t('announce.expiresInDays', { days: daysLeft }, daysLeft) }}
+          </span>
+          <button v-if="canRenew" class="btn-renew" :disabled="renewing" @click="handleRenew">
+            <v-progress-circular v-if="renewing" indeterminate size="13" width="2" />
+            <v-icon v-else icon="mdi-refresh" size="14" />
+            {{ t('announce.renew') }}
+          </button>
         </div>
 
         <!-- Description -->
         <p v-if="announce.description" class="info-desc">{{ announce.description }}</p>
+
+        <!-- Archetype (Looking For posts only) -->
+        <p v-if="isLf && announce.archetype" class="detail-archetype">
+          <v-icon icon="mdi-cards-outline" size="14" />
+          {{ announce.archetype }}<template v-if="announce.want_detail"> · {{ announce.want_detail }}</template>
+        </p>
 
         <!-- Discord source link (only for announces posted from Discord) -->
         <a
@@ -381,7 +438,10 @@ function onCardAdded() {
             <v-icon v-else icon="mdi-delete-outline" size="16" />
             {{ t('announce.delete') }}
           </button>
-          <!-- Add to trade list — only when a card is linked -->
+          <!-- Add to trade/wish list, only when a card is linked. LF posts
+               offer the wish list instead of the trade list: the linked card
+               is what the poster is hunting for, not something they're
+               offering, so it must never be listed as tradeable. -->
           <button
             v-if="announce.ygo_card_id"
             class="btn-tradelist"
@@ -391,8 +451,8 @@ function onCardAdded() {
           >
             <v-progress-circular v-if="addingToList" indeterminate size="14" width="2" />
             <v-icon v-else-if="addedToList" icon="mdi-check" size="16" />
-            <v-icon v-else icon="mdi-cards-playing-outline" size="16" />
-            {{ addedToList ? t('announce.addedToList') : t('announce.addToTradeList') }}
+            <v-icon v-else :icon="isLf ? 'mdi-heart-plus' : 'mdi-cards-playing-outline'" size="16" />
+            {{ addedToList ? t('announce.addedToList') : (isLf ? t('announce.addToWishList') : t('announce.addToTradeList')) }}
           </button>
           <button class="btn-edit" @click="handleEdit">
             <v-icon icon="mdi-pencil-outline" size="16" />
@@ -417,8 +477,10 @@ function onCardAdded() {
     </div><!-- /.shell -->
   </v-dialog>
 
-  <!-- Headless AddCard — opens when user clicks "Add to trade list" -->
-  <AddCard ref="addCardRef" mode="trade" :headless="true" @added="onCardAdded" />
+  <!-- Headless AddCard, opens when user clicks "Add to trade/wish list".
+       LF posts add to the wish list (see button above); sell posts add to
+       the trade list. -->
+  <AddCard ref="addCardRef" :mode="isLf ? 'wish' : 'trade'" :headless="true" @added="onCardAdded" />
 </template>
 
 <style scoped>
@@ -593,6 +655,66 @@ function onCardAdded() {
   font-size: 13.5px; color: var(--c-muted);
   line-height: 1.6; margin: 0; white-space: pre-wrap;
 }
+.lf-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  /* Dark ink, not white: --c-mutual is a bright teal in dark theme, where white
+     lands at 1.86:1. This ink clears AA in both themes (4.52 light, 10.69 dark)
+     and matches the on-mutual text colour DESIGN.md already specifies. */
+  color: #13031A;
+  background: var(--c-mutual);
+}
+.detail-archetype {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-mutual);
+}
+/* ── Expiry notice (owner only) ───────────────────── */
+.expiry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 11px;
+  background: var(--c-surface-2);
+  color: var(--c-muted);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.expiry__text { flex: 1; min-width: 0; line-height: 1.4; }
+/* Amber on an amber tint, matching the seller-rating chip in this same file. */
+.expiry--soon {
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
+  color: #f59e0b;
+}
+/* Expired is dormant, not broken, so it stays neutral instead of going red. */
+.expiry--expired {
+  background: color-mix(in srgb, var(--c-text) 8%, transparent);
+  color: var(--c-text);
+}
+.btn-renew {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-radius: 9px;
+  background: var(--c-trade);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.btn-renew:hover { opacity: 0.88; }
+.btn-renew:disabled { opacity: 0.5; pointer-events: none; }
+
 .divider { height: 1px; background: var(--c-border); }
 
 /* Discord source link */

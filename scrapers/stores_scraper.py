@@ -16,6 +16,7 @@ Run directly:  python -m scrapers.stores_scraper
 from __future__ import annotations
 
 from . import common
+from .stores_asia import scrape_asia_stores
 from .stores_eu import scrape_eu_stores
 
 log = common.log
@@ -103,13 +104,15 @@ def scrape_americas_stores() -> list[dict]:
 
 
 def scrape_stores() -> list[dict]:
-    """Collect every OTS store worldwide: Americas portal + European locator.
+    """Collect every OTS store worldwide, from all three of Konami's portals.
 
-    The two sources use disjoint id spaces (numeric Americas ids vs. "...EU" store
-    codes), so their records concatenate without collision. Returns one list
-    sorted by country/state/name.
+    Konami splits its store data across regional portals with no shared index:
+    the Americas OTS portal, the European locator, and the Asia-Pacific KONAMI
+    Card Game Network. All three use disjoint id spaces (numeric Americas ids,
+    "...EU" codes, and "...AS"/"...JP" codes), so their records concatenate
+    without collision. Returns one list sorted by country/state/name.
     """
-    stores = scrape_americas_stores() + scrape_eu_stores()
+    stores = scrape_americas_stores() + scrape_eu_stores() + scrape_asia_stores()
 
     stores.sort(
         key=lambda s: (

@@ -84,8 +84,9 @@ def _request_with_retry(
     polite: bool,
     headers: dict | None = None,
     polite_delay: float | None = None,
+    json_body: Any | None = None,
 ) -> requests.Response:
-    """Perform a GET with retry logic and (optionally) a polite delay first.
+    """Perform a GET (or POST, when `json_body` is given) with retry logic.
 
     Retries up to MAX_RETRIES times with RETRY_DELAY_SECONDS between attempts,
     on any network error or non-2xx status. Raises the last error if all fail.
@@ -102,9 +103,15 @@ def _request_with_retry(
     last_error: Exception | None = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            response = session.get(
-                url, params=params, headers=headers, timeout=REQUEST_TIMEOUT
-            )
+            if json_body is None:
+                response = session.get(
+                    url, params=params, headers=headers, timeout=REQUEST_TIMEOUT
+                )
+            else:
+                response = session.post(
+                    url, params=params, json=json_body, headers=headers,
+                    timeout=REQUEST_TIMEOUT,
+                )
             response.raise_for_status()
             return response
         except requests.RequestException as error:  # network error or bad status
@@ -138,6 +145,25 @@ def fetch_json(
 ) -> Any:
     """Fetch a URL and return its parsed JSON body (with retries)."""
     return _request_with_retry(session, url, params, polite, headers, polite_delay).json()
+
+
+def post_json(
+    session: requests.Session,
+    url: str,
+    json_body: Any,
+    params: dict | None = None,
+    polite: bool = True,
+    headers: dict | None = None,
+    polite_delay: float | None = None,
+) -> Any:
+    """POST a JSON body and return the parsed JSON response (with retries).
+
+    Used by search endpoints that take their query as a JSON document rather
+    than as query-string parameters.
+    """
+    return _request_with_retry(
+        session, url, params, polite, headers, polite_delay, json_body=json_body
+    ).json()
 
 
 # --- Region derivation -------------------------------------------------------

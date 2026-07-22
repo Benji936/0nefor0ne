@@ -103,6 +103,7 @@ import AnnounceDetailDialog from "@/components/trade/AnnounceDetailDialog.vue";
     <CreateAnnounceDialog
       v-model="createAnnounceOpen"
       :announce="editAnnounce"
+      :kind="createAnnounceKind"
       @created="onAnnounceCreated"
       @updated="onAnnounceUpdated"
     />
@@ -168,6 +169,7 @@ export default {
       loadingAnnounces:   false,
       announces:          [],
       createAnnounceOpen: false,
+      createAnnounceKind: "sell",
       announceDetailOpen: false,
       selectedAnnounce:   null,
       editAnnounce:       null,
@@ -354,8 +356,9 @@ export default {
       this.selectedAnnounce = announce;
       this.announceDetailOpen = true;
     },
-    onOpenCreateAnnounce() {
+    onOpenCreateAnnounce(kind) {
       this.editAnnounce = null;          // create mode
+      this.createAnnounceKind = kind ?? "sell";
       this.createAnnounceOpen = true;
     },
     onEditAnnounce(announce) {

@@ -2,12 +2,16 @@
 import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { createAnnounce, updateAnnounce, addAnnounceImages, deleteAnnounceImage } from "@/lib/announces";
-import { searchCardByName, searchCardBySetCode } from "@/api";
+import { searchCardByName, searchCardBySetCode, getArchetypes } from "@/api";
+import { ANNOUNCE_KIND, composeWantHeadline } from "@/lib/announceKind";
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   // When set, the dialog opens in EDIT mode for this announce; otherwise CREATE mode.
   announce:   { type: Object,  default: null },
+  // Which kind to open CREATE mode with (the tab the create button was clicked
+  // from). Ignored in EDIT mode, where the kind always comes from `announce`.
+  kind:       { type: String,  default: 'sell' },
 });
 const emit  = defineEmits(["update:modelValue", "created", "updated"]);
 const { t } = useI18n();
@@ -18,6 +22,78 @@ const title       = ref("");
 const description = ref("");
 const price       = ref("");
 const currency    = ref("EUR");
+const kind           = ref(ANNOUNCE_KIND.SELL);
+const wantDetail     = ref("");
+const archetypeList  = ref([]);      // canonical names from YGOPRODeck
+const archetypeQuery = ref("");      // what the user is typing
+const archetypeErr   = ref("");      // shown when the list cannot be fetched
+// The archetype the dialog was hydrated with when it last opened in EDIT
+// mode ("" in CREATE mode). Lets resolvedArchetype preserve a previously
+// saved archetype that the user hasn't retyped, even while archetypeList
+// is still loading or no longer contains that name.
+const hydratedArchetype = ref("");
+
+const isLf = computed(() => kind.value === ANNOUNCE_KIND.LOOKING_FOR);
+
+// Top 8 case-insensitive substring matches, so the dropdown stays short.
+const archetypeMatches = computed(() => {
+  const q = archetypeQuery.value.trim().toLowerCase();
+  if (!q) return [];
+  return archetypeList.value
+    .filter(a => a.toLowerCase().includes(q))
+    .slice(0, 8);
+});
+
+// The single source of truth for "which archetype is selected": an exact
+// (case-insensitive, trimmed) match between what's typed and a known name.
+// Covers picking from the dropdown (which fills the query with a canonical
+// name) AND typing the exact name and tabbing away without clicking it.
+// A partial/unrecognised string, or a picked name that's since been edited
+// away, resolves to "" rather than sticking to a stale value.
+//
+// Exception: if the lookup misses but the query still equals, untouched,
+// the archetype the dialog was hydrated with (EDIT mode), fall back to that
+// hydrated value. Otherwise a previously-saved archetype would get silently
+// nulled out just because archetypeList hasn't loaded yet, or no longer
+// contains that name (renamed/removed upstream) — even though the user
+// never changed the text. CREATE mode has no hydrated value, so this never
+// fires there.
+const resolvedArchetype = computed(() => {
+  const q = archetypeQuery.value.trim().toLowerCase();
+  if (!q) return "";
+  const hit = archetypeList.value.find(name => name.trim().toLowerCase() === q);
+  if (hit) return hit;
+  if (hydratedArchetype.value && q === hydratedArchetype.value.trim().toLowerCase()) {
+    return hydratedArchetype.value;
+  }
+  return "";
+});
+
+// The composed LF title/headline, shared by canSubmit and submit() so the
+// validation check and the saved value can never disagree.
+const lfHeadline = computed(() => composeWantHeadline(resolvedArchetype.value, wantDetail.value));
+
+/** Fetch the archetype list once, the first time the user switches to LF. */
+async function ensureArchetypes() {
+  if (archetypeList.value.length > 0) return;
+  archetypeErr.value = "";
+  const list = await getArchetypes();   // never throws; [] on failure
+  if (list.length === 0) {
+    archetypeErr.value = t("announce.archetypeLoadFailed");
+    return;
+  }
+  archetypeList.value = list;
+}
+
+function setKind(next) {
+  kind.value = next;
+  if (next === ANNOUNCE_KIND.LOOKING_FOR) ensureArchetypes();
+}
+
+function pickArchetype(name) {
+  archetypeQuery.value = name;
+}
+
 const newImages      = ref([]);   // freshly picked: { file, preview }
 const existingImages = ref([]);   // already uploaded: { id, url, sort_order }
 const removedImages  = ref([]);   // existing images the user removed: { id, url }
@@ -94,12 +170,23 @@ function clearCard() {
 
 const totalCount = computed(() => existingImages.value.length + newImages.value.length);
 
-const canSubmit = computed(() =>
-  title.value.trim().length > 0 &&
-  title.value.trim().length <= 120 &&
-  Number(price.value) >= 0 &&
-  !submitting.value
-);
+const canSubmit = computed(() => {
+  if (submitting.value) return false;
+  if (isLf.value) {
+    // An LF post needs something to look for; price and photos are optional,
+    // but the composed title must still fit the DB's 120-char limit, and an
+    // entered budget must not be negative.
+    const headline = lfHeadline.value;
+    const priceOk = price.value === "" || Number(price.value) >= 0;
+    return headline.length > 0 && headline.length <= 120 && priceOk;
+  }
+  // A sell post's price is optional too: a Discord-created row may have no
+  // price stated (price NULL), and the owner must still be able to edit it.
+  // A negative price is rejected either way.
+  return title.value.trim().length > 0 &&
+         title.value.trim().length <= 120 &&
+         (price.value === "" || Number(price.value) >= 0);
+});
 
 watch(() => props.modelValue, open => {
   if (!open) return;
@@ -112,10 +199,19 @@ watch(() => props.modelValue, open => {
     description.value  = props.announce.description ?? "";
     price.value        = props.announce.price ?? "";
     currency.value     = props.announce.currency ?? "EUR";
+    kind.value           = props.announce.kind        ?? ANNOUNCE_KIND.SELL;
+    wantDetail.value     = props.announce.want_detail ?? "";
+    archetypeQuery.value = props.announce.archetype   ?? "";
+    hydratedArchetype.value = props.announce.archetype ?? "";
+    if (kind.value === ANNOUNCE_KIND.LOOKING_FOR) ensureArchetypes();
     existingImages.value = [...(props.announce.images ?? [])].sort((a, b) => a.sort_order - b.sort_order);
   } else {
     title.value = ""; description.value = ""; price.value = ""; currency.value = "EUR";
+    kind.value = props.kind ?? ANNOUNCE_KIND.SELL;
+    wantDetail.value = ""; archetypeQuery.value = "";
+    hydratedArchetype.value = "";
     existingImages.value = [];
+    if (kind.value === ANNOUNCE_KIND.LOOKING_FOR) ensureArchetypes();
   }
 });
 
@@ -148,10 +244,15 @@ async function submit() {
     if (isEdit.value) {
       const id = props.announce.id;
       await updateAnnounce(id, {
-        title:       title.value.trim(),
+        title:       isLf.value
+                       ? lfHeadline.value
+                       : title.value.trim(),
         description: description.value.trim(),
-        price:       Number(price.value),
+        price:       price.value === "" ? null : Number(price.value),
         currency:    currency.value,
+        kind:        kind.value,
+        archetype:   isLf.value ? (resolvedArchetype.value || null) : null,
+        want_detail: isLf.value ? (wantDetail.value.trim() || null) : null,
       });
       // Remove images the user deleted.
       for (const img of removedImages.value) {
@@ -162,12 +263,19 @@ async function submit() {
       await addAnnounceImages(id, newImages.value.map(i => i.file), startSort);
       emit("updated", id);
     } else {
-      const id = await createAnnounce(
-        title.value.trim(), description.value.trim(),
-        Number(price.value), currency.value,
-        newImages.value.map(i => i.file),
-        selectedCard.value  // null if no card picked
-      );
+      const id = await createAnnounce({
+        title:       isLf.value
+                       ? lfHeadline.value
+                       : title.value.trim(),
+        description: description.value.trim(),
+        price:       price.value === "" ? null : Number(price.value),
+        currency:    currency.value,
+        imageFiles:  newImages.value.map(i => i.file),
+        card:        selectedCard.value,  // null if no card picked
+        kind:        kind.value,
+        archetype:   isLf.value ? (resolvedArchetype.value || null) : null,
+        wantDetail:  isLf.value ? (wantDetail.value.trim() || null) : null,
+      });
       emit("created", id);
     }
     close();
@@ -207,7 +315,7 @@ async function submit() {
           <!-- LEFT: Photo panel -->
           <div class="photo-col">
             <div class="field-label-row" style="margin-bottom:8px">
-              <span class="field-label">{{ t('announce.images') }}</span>
+              <span class="field-label">{{ isLf ? t('announce.photosOptionalLf') : t('announce.images') }}</span>
               <span class="field-hint">{{ totalCount }} / {{ MAX }}</span>
             </div>
             <div class="photo-grid">
@@ -238,24 +346,98 @@ async function submit() {
           <!-- RIGHT: Text fields -->
           <div class="fields-col">
 
-            <!-- Title -->
+            <!-- Kind toggle -->
             <div class="field-block">
-              <label class="field-label">{{ t('announce.title') }} <span style="color:var(--c-accent)">*</span></label>
-              <input
-                v-model="title"
-                type="text"
-                maxlength="120"
-                :placeholder="t('announce.titlePlaceholder')"
-                class="field-input"
-                autofocus
-              />
-              <span v-if="title.length > 100" class="field-hint" style="text-align:right">{{ title.length }} / 120</span>
+              <label class="field-label">{{ t('announce.kindHint') }}</label>
+              <div class="flex gap-2">
+                <button
+                  type="button"
+                  class="flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-xs font-semibold border cursor-pointer transition-all"
+                  :style="!isLf
+                    ? { backgroundColor: 'var(--c-trade)', borderColor: 'var(--c-trade)', color: 'white' }
+                    : { backgroundColor: 'transparent', borderColor: 'var(--c-border)', color: 'var(--c-muted)' }"
+                  :aria-pressed="!isLf"
+                  @click="setKind('sell')"
+                >
+                  <v-icon icon="mdi-tag-outline" size="14" />{{ t('announce.kindSell') }}
+                </button>
+                <button
+                  type="button"
+                  class="flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-xs font-semibold border cursor-pointer transition-all"
+                  :style="isLf
+                    ? { backgroundColor: 'var(--c-mutual)', borderColor: 'var(--c-mutual)', color: 'white' }
+                    : { backgroundColor: 'transparent', borderColor: 'var(--c-border)', color: 'var(--c-muted)' }"
+                  :aria-pressed="isLf"
+                  @click="setKind('looking_for')"
+                >
+                  <v-icon icon="mdi-magnify" size="14" />{{ t('announce.kindLookingFor') }}
+                </button>
+              </div>
             </div>
+
+            <!-- Looking For: archetype + detail replace the Title field -->
+            <template v-if="isLf">
+              <div class="field-block">
+                <label class="field-label" for="lf-archetype">{{ t('announce.archetype') }}</label>
+                <input
+                  id="lf-archetype"
+                  v-model="archetypeQuery"
+                  class="field-input"
+                  :placeholder="t('announce.archetypePlaceholder')"
+                  autocomplete="off"
+                  :disabled="!!archetypeErr"
+                  @focus="ensureArchetypes"
+                />
+                <ul v-if="archetypeMatches.length" class="archetype-list">
+                  <li v-for="name in archetypeMatches" :key="name">
+                    <button type="button" class="archetype-option" @click="pickArchetype(name)">
+                      {{ name }}
+                    </button>
+                  </li>
+                </ul>
+                <p v-else-if="archetypeQuery.trim() && archetypeList.length" class="field-hint">
+                  {{ t('announce.archetypeNoMatch') }}
+                </p>
+                <p v-if="archetypeErr" class="field-hint" style="color: var(--c-accent)">{{ archetypeErr }}</p>
+              </div>
+
+              <div class="field-block">
+                <label class="field-label" for="lf-detail">{{ t('announce.wantDetail') }}</label>
+                <input
+                  id="lf-detail"
+                  v-model="wantDetail"
+                  class="field-input"
+                  maxlength="120"
+                  :placeholder="t('announce.wantDetailPlaceholder')"
+                />
+                <p v-if="lfHeadline.length > 120" class="field-hint" style="color: var(--c-accent)">
+                  {{ t('announce.wantTooLong') }}
+                </p>
+              </div>
+            </template>
+
+            <!-- Title -->
+            <template v-if="!isLf">
+              <div class="field-block">
+                <label class="field-label">{{ t('announce.title') }} <span style="color:var(--c-accent)">*</span></label>
+                <input
+                  v-model="title"
+                  type="text"
+                  maxlength="120"
+                  :placeholder="t('announce.titlePlaceholder')"
+                  class="field-input"
+                  autofocus
+                />
+                <span v-if="title.length > 100" class="field-hint" style="text-align:right">{{ title.length }} / 120</span>
+              </div>
+            </template>
 
             <!-- Price + Currency -->
             <div class="field-row">
               <div class="field-block" style="flex:1">
-                <label class="field-label">{{ t('announce.price') }} <span style="color:var(--c-accent)">*</span></label>
+                <label class="field-label">
+                  {{ isLf ? t('announce.budgetOptional') : t('announce.price') }}
+                </label>
                 <div class="price-wrap">
                   <span class="price-symbol">{{ currency === 'EUR' ? '€' : currency === 'USD' ? '$' : '£' }}</span>
                   <input
@@ -267,6 +449,8 @@ async function submit() {
                     class="field-input price-input"
                   />
                 </div>
+                <p v-if="isLf && (price === '' || Number(price) >= 0)" class="field-hint">{{ t('announce.budgetHint') }}</p>
+                <p v-else-if="isLf" class="field-hint" style="color: var(--c-accent)">{{ t('announce.budgetNegative') }}</p>
               </div>
               <div class="field-block" style="width:105px; flex-shrink:0">
                 <label class="field-label">{{ t('announce.currency') }}</label>
@@ -366,7 +550,7 @@ async function submit() {
           </template>
           <template v-else>
             <v-icon :icon="isEdit ? 'mdi-content-save-outline' : 'mdi-send-outline'" size="16" />
-            {{ isEdit ? t('announce.saveChanges') : t('announce.create') }}
+            {{ isEdit ? t('announce.saveChanges') : (isLf ? t('announce.createLookingFor') : t('announce.create')) }}
           </template>
         </button>
       </div>
@@ -468,6 +652,29 @@ async function submit() {
   color: var(--c-muted);
   opacity: 0.7;
 }
+.archetype-list {
+  list-style: none;
+  margin-top: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  background: var(--c-surface-2);
+}
+.archetype-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--c-text);
+  background: transparent;
+  cursor: pointer;
+}
+.archetype-option:hover,
+.archetype-option:focus-visible {
+  background: color-mix(in srgb, var(--c-mutual) 18%, transparent);
+}
 
 .field-input {
   width: 100%;
@@ -485,6 +692,7 @@ async function submit() {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-trade) 15%, transparent);
 }
 .field-input::placeholder { color: var(--c-muted); opacity: 0.5; font-size: 13px; }
+.field-input:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .field-textarea { resize: none; line-height: 1.5; }
 .field-select   { cursor: pointer; appearance: none; padding-right: 10px; }

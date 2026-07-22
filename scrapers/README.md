@@ -15,8 +15,9 @@ data/events.json                        # Generated: upcoming events
 scrapers/
 ├── __init__.py
 ├── common.py                           # Shared HTTP/retry/region/IO helpers
-├── stores_scraper.py                   # Stores (Americas + EU) -> data/stores.json
+├── stores_scraper.py                   # Stores (Americas + EU + Asia) -> data/stores.json
 ├── stores_eu.py                        # European OTS locator (merged into stores_scraper)
+├── stores_asia.py                      # Asia-Pacific KCGN portal (merged into stores_scraper)
 └── events_scraper.py                   # Events -> data/events.json
 requirements.txt
 ```
@@ -31,10 +32,11 @@ scrapers target the underlying structured data rather than fragile page markup:
 | --- | --- | --- |
 | Stores (Americas) | `https://www.yugioh-card.com/en/events/ots-locations/` | `https://ots-portal.konami.com/api2/public/stores/result` (the JSON API the locator page itself calls) |
 | Stores (Europe) | `https://www.yugioh-card.com/eu/play/store-locator/` | `https://www.yugioh-card.com/eu/_store-locator/store-locator-get-info.php` (the endpoint that page calls) |
+| Stores (Asia-Pacific) | `https://cardgame-network.konami.net/` | `.../mt/user/rest/tournament/<group>/tournament_gsearch` (the tournament search that page calls; stores are read off the results) |
 | Events | `https://www.yugioh-card.com/en/events/` | The `#upcoming` list on that page + JSON-LD on each `/events-item/` detail page |
 
-Konami runs region-specific portals, so `stores_scraper` merges two sources into one
-`data/stores.json`:
+Konami runs region-specific portals with no shared index, so `stores_scraper` merges
+three sources into one `data/stores.json`:
 
 - **Americas** (`ots-portal.konami.com`): takes `lat`, `lng`, `radius` (miles). A
   handful of globe-spanning anchor points with a wide radius, unioned by store `id`,
@@ -45,9 +47,19 @@ Konami runs region-specific portals, so `stores_scraper` merges two sources into
   capped at 99**, so dense metros (London, Paris, Milan) are fully covered while sparse
   areas cost a single call. Records are keyed by the EU store code (e.g. `120069EU`),
   which cannot collide with the numeric Americas ids.
+- **Asia-Pacific** (`stores_asia.py`): the KONAMI Card Game Network (KCGN) answers in
+  XML unless the request sends `Accept: application/json`, and **none of its store
+  endpoints can be enumerated** (geo search returns empty for every nation code,
+  `searchStores` ignores pagination and repeats the same 20 rows, and the count
+  endpoint returns nothing). Its *tournament* search does paginate correctly, via
+  `indexStart` / `indexCount`, and each tournament carries the store it is held at,
+  so the store list is derived from upcoming tournaments. That yields the stores
+  which actually run events, which is the useful set for arranging a meetup. Covers
+  Japan plus Taiwan, Indonesia, Hong Kong, Malaysia, Singapore, the Philippines and
+  Thailand, keyed by `...AS` / `...JP` store codes.
 
-Asia / Oceania stores live on yet another portal (`cardgame-network.konami.net`) and
-are not yet scraped.
+Oceania has no KCGN nation group of its own; Konami serves it from the European
+site, so Oceanian events appear under the EU portal rather than the Asian one.
 
 ## Output format
 
@@ -57,7 +69,7 @@ Both files share the same envelope:
 {
   "last_updated": "2026-07-19T08:19:10+00:00",
   "source": "https://www.yugioh-card.com/en/events/ots-locations/",
-  "count": 2034,
+  "count": 4450,
   "data": [ /* records */ ]
 }
 ```
@@ -79,8 +91,10 @@ Both files share the same envelope:
 }
 ```
 
-`region` (NA / LATAM / EU / EMEA / APAC / OTHER) and `country` are derived from
-coordinates, since the source API has no country field. Field values are passed
+`region` (NA / LATAM / EU / EMEA / APAC / OTHER) is derived from coordinates. `country`
+is derived the same way for Americas stores, whose API has no country field; the
+European and Asia-Pacific sources supply it directly and it is used as given. Field
+values are passed
 through faithfully from the source, which occasionally contains messy data (e.g. a
 `zip` holding non-postal text); the scraper mirrors the source rather than guessing.
 
@@ -108,8 +122,9 @@ Local, OTS Tournament, or Special.
 ## Reliability behavior
 
 - **Retries:** every network request retries up to 3 times, 5s apart.
-- **Politeness:** a ~2.5s delay precedes each request (~1.0s for the EU locator's many
-  small calls); a descriptive User-Agent is sent.
+- **Politeness:** a ~2.5s delay precedes each request, shortened to ~1.0s for the EU
+  locator's many small calls and ~0.4s for the KCGN tournament pages (Japan alone
+  needs ~280 of them); a descriptive User-Agent is sent.
 - **Fail-safe writes:** if a scraper collects 0 records (or the events page layout
   changes so the list can't be found), it exits with code 1 and does **not** write —
   so the workflow fails and existing data is preserved.

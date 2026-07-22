@@ -13,6 +13,7 @@
 require('dotenv').config();
 const { Client, Intents, Permissions } = require('discord.js');
 const { createClient } = require('@supabase/supabase-js');
+const { parseAnnounce, ANNOUNCE_KIND } = require('./lib/parseAnnounce');
 
 // ── Validate env ──────────────────────────────────────────────────────────────
 const {
@@ -157,6 +158,53 @@ async function lookupCardBySetCode(rawCode) {
   }
 }
 
+// ── YGOPRODeck archetype list (cached for the process lifetime) ───────────────
+// Only used to tag LF posts. A failure here must never block an announce, so
+// every error path resolves to [] and the post is simply saved untagged.
+let _archetypesCache = null;
+
+const ARCHETYPES_TIMEOUT_MS = 5000;
+
+async function getArchetypes() {
+  if (_archetypesCache) return _archetypesCache;
+  try {
+    const list = await new Promise((resolve) => {
+      const https = require('https');
+      // Guard against a connection that opens but then just hangs — no
+      // 'error', no 'end'. Without this the message handler that awaits
+      // getArchetypes() never completes and the user never gets a reply.
+      let settled = false;
+      const finish = (value) => {
+        if (settled) return;
+        settled = true;
+        resolve(value);
+      };
+
+      const req = https.get('https://db.ygoprodeck.com/api/v7/archetypes.php', (res) => {
+        let body = '';
+        res.on('data', chunk => body += chunk);
+        res.on('end', () => {
+          try {
+            const parsed = JSON.parse(body);
+            finish((parsed ?? []).map(a => a?.archetype_name).filter(Boolean));
+          } catch { finish([]); }
+        });
+        res.on('error', () => finish([]));
+      });
+      req.on('error', () => finish([]));
+      req.setTimeout(ARCHETYPES_TIMEOUT_MS, () => {
+        req.destroy();
+        finish([]);
+      });
+    });
+    if (list.length > 0) _archetypesCache = list;
+    return list;
+  } catch (err) {
+    console.error('getArchetypes failed:', err);
+    return [];
+  }
+}
+
 // ── Discord client ────────────────────────────────────────────────────────────
 const client = new Client({
   intents: [
@@ -176,40 +224,6 @@ async function findUserByDiscordId(discordUserId) {
     .maybeSingle();
   if (error) { console.error('Supabase lookup error:', error); return null; }
   return data?.id ?? null;
-}
-
-/**
- * Parse a Discord message into announce fields.
- * Format (flexible):
- *   WTS: Blue-Eyes White Dragon PSA 9
- *   Mint condition, bought from TCGplayer.
- *   Price: 45€
- */
-function parseAnnounce(content) {
-  const lines = content.trim().split('\n').map(l => l.trim()).filter(Boolean);
-
-  let title = lines[0] ?? 'Untitled';
-  title = title.replace(/^(WTS|WTT|WTB)\s*:\s*/i, '').trim();
-  if (title.length > 120) title = title.slice(0, 117) + '…';
-
-  const priceRe = /(\d+(?:[.,]\d{1,2})?)\s*(€|EUR|USD|GBP|\$|£)/i;
-  let price = 0;
-  let currency = 'EUR';
-
-  for (const line of lines) {
-    const m = line.match(priceRe);
-    if (m) {
-      price = parseFloat(m[1].replace(',', '.'));
-      const sym = m[2].toUpperCase();
-      if (sym === '€' || sym === 'EUR') currency = 'EUR';
-      else if (sym === '$' || sym === 'USD') currency = 'USD';
-      else if (sym === '£' || sym === 'GBP') currency = 'GBP';
-      break;
-    }
-  }
-
-  const description = lines.slice(1).join('\n').trim().slice(0, 1000);
-  return { title, description, price, currency };
 }
 
 /**
@@ -423,13 +437,26 @@ client.on('messageCreate', async (message) => {
     return;
   }
 
-  // 2. Parse the message
-  const { title, description, price, currency } = parseAnnounce(message.content);
+  // 2. Parse the message. kind/title/price never depend on the archetype
+  //    list, so parse cheaply first and run the guard before paying for an
+  //    outbound HTTP request that SELL posts and malformed posts never need.
+  let parsed = parseAnnounce(message.content);
+  const isLf = parsed.kind === ANNOUNCE_KIND.LOOKING_FOR;
 
-  if (!title) {
-    await message.reply('❓ Could not read a title from your message. Start with the card name or `WTS: [name]`.');
+  if (!parsed.title) {
+    await message.reply('❓ Could not read a title from your message. Start with the card name, `WTS: [name]`, or `LF: [what you want]`.');
     return;
   }
+
+  // Only LF posts are tagged with an archetype, so only they need the list.
+  // Re-parsing with the same content is cheap and keeps a single, consistent
+  // parse result instead of hand-merging fields from two divergent calls.
+  if (isLf) {
+    const archetypes = await getArchetypes();
+    parsed = parseAnnounce(message.content, archetypes);
+  }
+
+  const { kind, title, description, price, currency, archetype, wantDetail } = parsed;
 
   // ── 2b. Optional set code → card link ──────────────────────────────────────
   let cardLink = null; // { ygo_card_id, card_name } or null
@@ -443,12 +470,13 @@ client.on('messageCreate', async (message) => {
     }
   }
 
-  // 3. Require at least one image
+  // 3. Images: required when selling, optional when looking for something.
+  //    A buyer after a "Darklord deck base" has nothing to photograph.
   const imageAttachments = [...message.attachments.values()].filter(
     (a) => a.contentType?.startsWith('image/')
   );
 
-  if (imageAttachments.length === 0) {
+  if (imageAttachments.length === 0 && !isLf) {
     await message.reply('📷 Your announce needs at least one photo. Please repost your listing with an image attached.');
     return;
   }
@@ -467,6 +495,9 @@ client.on('messageCreate', async (message) => {
       price,
       currency,
       status: 'active',
+      kind,
+      archetype:   archetype  ?? null,
+      want_detail: wantDetail ?? null,
       discord_url:        discordUrl,
       discord_guild_name: guildName,
       discord_guild_icon: guildIcon,
@@ -502,10 +533,15 @@ client.on('messageCreate', async (message) => {
   const confirmationLines = [renderTemplate(cfg.threadMessage, {
     link:     `${APP_URL}/en/announces/${announceId}`,
     title,
-    price,
-    currency,
+    price:    price ?? 'no price set',
+    currency: price === null ? '' : currency,
     photos:   imageAttachments.length,
   })];
+  if (isLf) {
+    confirmationLines.unshift(
+      `🔎 **Looking For** post` + (archetype ? ` — archetype: **${archetype}**` : '')
+    );
+  }
   if (cardLink) {
     confirmationLines.push(`🃏 Linked to **${cardLink.card_name}** (\`${detectedSetCode}\`)`);
   }
@@ -546,7 +582,8 @@ client.on('messageCreate', async (message) => {
   }
 
   console.log(
-    `[${guildName}] announce #${announceId} "${title}" ${price}${currency}` +
+    `[${guildName}] ${kind} #${announceId} "${title}" ${price ?? 'no price'}${price === null ? '' : currency}` +
+    (archetype ? ` | archetype=${archetype}` : '') +
     (cardLink ? ` | card=${cardLink.ygo_card_id} (${cardLink.card_name})` : '') +
     ` | user=${discordUserId}`
   );
