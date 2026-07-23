@@ -3,6 +3,7 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import { TOP_CARD_IDS } from './src/data/card-ids.js'
 import { TOP_SET_SLUGS } from './src/data/set-slugs.js'
+import { TOP_COMMUNITY_SLUGS } from './src/data/community-slugs.js'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import tailwindcss from '@tailwindcss/vite'
@@ -75,7 +76,16 @@ export default defineConfig(({ command }) => ({
         included.push(`/${locale}/cards`)
       }
 
-      return included  // 4 + 4 + 16 + 30 + 4 = 58 paths
+      // Community directory — all locales; curated profile pages — English canonical.
+      // TOP_COMMUNITY_SLUGS is currently empty (DB seed deferred, see src/data/community-slugs.js).
+      for (const locale of locales) {
+        included.push(`/${locale}/community`)
+      }
+      for (const slug of TOP_COMMUNITY_SLUGS) {
+        included.push('/en/community/' + slug)
+      }
+
+      return included  // 4 + 4 + 16 + 30 + 4 + 4 + TOP_COMMUNITY_SLUGS.length = 62 + N paths
     },
   },
 }))
