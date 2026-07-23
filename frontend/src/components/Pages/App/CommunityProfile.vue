@@ -148,7 +148,9 @@ useHead(computed(() => {
       { rel: "canonical", href: canonicalUrl.value },
     ],
     script: jsonLd.value ? [
-      { type: "application/ld+json", innerHTML: JSON.stringify(jsonLd.value) },
+      // Escape "<" so an owner-typed name/city can never break out of the
+      // <script> block (defense-in-depth; the JSON-LD carries free user text).
+      { type: "application/ld+json", innerHTML: JSON.stringify(jsonLd.value).replace(/</g, "\\u003c") },
     ] : [],
   };
 }));
