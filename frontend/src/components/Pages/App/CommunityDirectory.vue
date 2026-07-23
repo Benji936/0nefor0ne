@@ -27,7 +27,7 @@ const filters = reactive({
   remoteDuel: initial.remoteDuel,
   q: initial.q,
 });
-const page = ref(initial.page);
+const page = ref(Math.max(0, initial.page));
 
 // Local draft for the search box so typing doesn't fire a request per
 // keystroke; committed into `filters.q` after a short pause.
@@ -58,6 +58,18 @@ async function load() {
     if (myRequest !== requestId) return;
     rows.value = r;
     count.value = c;
+
+    // If the requested page is past the last valid page (e.g. a filter
+    // change shrank the result set, or a stale/tampered URL), snap back to
+    // the last valid page and refetch once. After snapping, page.value ===
+    // lastPage, so this condition is false on the next run and the
+    // recursion terminates.
+    const lastPage = c > 0 ? Math.ceil(c / PAGE_SIZE) - 1 : 0;
+    if (page.value > lastPage) {
+      page.value = lastPage;
+      syncUrl();
+      return load();
+    }
   } catch (e) {
     if (myRequest !== requestId) return;
     console.error("CommunityDirectory: fetchDirectory failed", e);

@@ -898,6 +898,10 @@
     "built-with": {
       "title": "Realizzato con & partner | One for One",
       "desc": "I servizi che alimentano One for One e i marketplace dove i collezionisti comprano e vendono carte Yu-Gi-Oh!."
+    },
+    "community": {
+      "title": "Negozi & community",
+      "desc": "Trova negozi Yu-Gi-Oh, server Discord e gruppi vicino a te."
     }
   },
   "deckIgnore": {
