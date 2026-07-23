@@ -173,6 +173,15 @@ function onClaimed(row) {
   if (community.value) Object.assign(community.value, row);
   editOpen.value = true;
 }
+
+// A claim can fail because someone else claimed it first (race). Refetch and
+// patch in place so the CTA resyncs (Claim disappears once owner is set)
+// instead of leaving a stale "Claim" button the user retries forever.
+async function onStale() {
+  if (!community.value?.slug) return;
+  const fresh = await fetchBySlug(community.value.slug);
+  if (fresh) Object.assign(community.value, fresh);
+}
 </script>
 
 <template>
@@ -294,7 +303,7 @@ function onClaimed(row) {
       </div>
 
       <CommunityEditDialog v-model="editOpen" :community="community" @saved="onEdited" />
-      <ClaimCommunityDialog v-model="claimOpen" :community="community" @claimed="onClaimed" />
+      <ClaimCommunityDialog v-model="claimOpen" :community="community" @claimed="onClaimed" @stale="onStale" />
 
     </div>
   </div>

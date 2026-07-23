@@ -8,7 +8,7 @@ const props = defineProps({
   modelValue: { type: Boolean, default: false },
   community:  { type: Object,  default: null },
 });
-const emit = defineEmits(["update:modelValue", "claimed"]);
+const emit = defineEmits(["update:modelValue", "claimed", "stale"]);
 const { t } = useI18n();
 
 const signedIn   = ref(false);
@@ -22,6 +22,7 @@ watch(() => props.modelValue, async (open) => {
   if (!open) return;
   errorMsg.value = "";
   submitting.value = false;
+  signedIn.value = false;
   const session = await getCurrentSession();
   signedIn.value = !!session?.user;
 });
@@ -52,6 +53,7 @@ async function confirm() {
     close();
   } catch (err) {
     errorMsg.value = err.message ?? "Failed to claim this listing.";
+    emit("stale");
   } finally {
     submitting.value = false;
   }
