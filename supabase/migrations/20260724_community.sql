@@ -105,4 +105,34 @@ $$;
 REVOKE ALL ON FUNCTION claim_community(bigint) FROM public;
 GRANT EXECUTE ON FUNCTION claim_community(bigint) TO authenticated;
 
+-- ── Admin-only fields guard ────────────────────────────────────────────────
+-- community_update_own lets an owner UPDATE any column on their own row, so
+-- without this guard a hand-written PostgREST call could set verified = true and
+-- forge the admin-only trust badge. Any client-role write to `verified` (insert
+-- or update) is reverted here; a privileged role (service_role via PostgREST, or
+-- a direct Studio/psql session with no JWT) passes through, which is how an admin
+-- sets it. Mirrors announce_enforce_expiry.
+CREATE OR REPLACE FUNCTION community_enforce_admin_fields()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_role text := coalesce(nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role', 'service_role');
+BEGIN
+  IF v_role IN ('authenticated', 'anon') THEN
+    IF TG_OP = 'INSERT' THEN
+      NEW.verified := false;
+    ELSIF NEW.verified IS DISTINCT FROM OLD.verified THEN
+      NEW.verified := OLD.verified;
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS community_admin_fields_guard ON community;
+CREATE TRIGGER community_admin_fields_guard
+  BEFORE INSERT OR UPDATE ON community
+  FOR EACH ROW EXECUTE FUNCTION community_enforce_admin_fields();
+
 NOTIFY pgrst, 'reload schema';
