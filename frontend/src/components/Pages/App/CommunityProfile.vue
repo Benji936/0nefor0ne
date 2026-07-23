@@ -9,6 +9,7 @@ import { useHead } from "@unhead/vue";
 import { fetchBySlug } from "@/lib/community";
 import { getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
 import CommunityEditDialog from "@/components/community/CommunityEditDialog.vue";
+import ClaimCommunityDialog from "@/components/community/ClaimCommunityDialog.vue";
 
 const route = useRoute();
 const { t } = useI18n();
@@ -151,9 +152,10 @@ useHead(computed(() => {
   };
 }));
 
-// ── CTA row — no-op placeholders, wired in Task 9/10/12 ───────────────────
-function openClaim()  {} // wired in Task 9/10/12 (ClaimCommunityDialog)
-function openReport() {} // wired in Task 9/10/12 (ReportCommunityDialog)
+// ── CTA row ────────────────────────────────────────────────────────────────
+const claimOpen = ref(false);
+function openClaim()  { claimOpen.value = true; }
+function openReport() {} // wired in Task 12 (ReportCommunityDialog)
 
 const editOpen = ref(false);
 function openEdit() { editOpen.value = true; }
@@ -162,6 +164,14 @@ function openEdit() { editOpen.value = true; }
 // page reflects the edit immediately.
 function onEdited(row) {
   if (community.value) Object.assign(community.value, row);
+}
+
+// After a successful claim, patch owner/status locally so the CTA flips from
+// "Claim" to the owner view without a reload, then open the edit dialog so
+// the new owner can fill in the profile details right away.
+function onClaimed(row) {
+  if (community.value) Object.assign(community.value, row);
+  editOpen.value = true;
 }
 </script>
 
@@ -284,6 +294,7 @@ function onEdited(row) {
       </div>
 
       <CommunityEditDialog v-model="editOpen" :community="community" @saved="onEdited" />
+      <ClaimCommunityDialog v-model="claimOpen" :community="community" @claimed="onClaimed" />
 
     </div>
   </div>
