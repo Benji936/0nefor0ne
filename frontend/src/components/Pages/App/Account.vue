@@ -156,14 +156,7 @@ async function resyncDiscord() {
   }
 }
 
-watch(() => props.login?.user?.id, (id) => {
-  if (id) { loadProfile(); loadTrades(); loadCommunities(); }
-}, { immediate: true });
-
 // ── My communities ───────────────────────────────────────────────────────
-const route = useRoute();
-const locale = computed(() => route.params.locale || "en");
-
 const communities        = ref([]);
 const loadingCommunities = ref(false);
 const editOpen           = ref(false);
@@ -184,6 +177,13 @@ async function loadCommunities() {
     loadingCommunities.value = false;
   }
 }
+
+watch(() => props.login?.user?.id, (id) => {
+  if (id) { loadProfile(); loadTrades(); loadCommunities(); }
+}, { immediate: true });
+
+const route = useRoute();
+const locale = computed(() => route.params.locale || "en");
 
 function statusStyle(status) {
   const color = status === "published" ? "var(--c-mutual)" : status === "hidden" ? "var(--c-accent)" : "var(--c-muted)";
