@@ -12,6 +12,7 @@ import { fetchDirectory } from "@/lib/community";
 import { toQueryParams, fromQueryParams } from "@/lib/communityFilters";
 import { COUNTRIES } from "@/lib/countries";
 import CommunityCard from "@/components/community/CommunityCard.vue";
+import CommunityEditDialog from "@/components/community/CommunityEditDialog.vue";
 
 const PAGE_SIZE = 24;
 
@@ -113,9 +114,15 @@ function goToPage(p) {
   page.value = p;
 }
 
-// Task 9 wires the real create dialog (CommunityEditDialog, create mode).
-// Placeholder no-op for now so the button has something to call.
-function openCreate() {}
+const createOpen = ref(false);
+
+function openCreate() { createOpen.value = true; }
+
+// Newly created community: send the owner straight to its (freshly minted)
+// profile page rather than refreshing the directory list.
+function onCreated(row) {
+  router.push({ name: "communityProfile", params: { locale: route.params.locale || "en", slug: row.slug } });
+}
 
 useHead(computed(() => {
   const loc = route.params?.locale || "en";
@@ -218,6 +225,8 @@ onMounted(load);
         <v-icon icon="mdi-chevron-right" size="20" />
       </button>
     </div>
+
+    <CommunityEditDialog v-model="createOpen" :community="null" @saved="onCreated" />
 
   </div>
 </template>

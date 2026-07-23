@@ -8,6 +8,7 @@ import { useI18n } from "vue-i18n";
 import { useHead } from "@unhead/vue";
 import { fetchBySlug } from "@/lib/community";
 import { getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
+import CommunityEditDialog from "@/components/community/CommunityEditDialog.vue";
 
 const route = useRoute();
 const { t } = useI18n();
@@ -153,7 +154,15 @@ useHead(computed(() => {
 // ── CTA row — no-op placeholders, wired in Task 9/10/12 ───────────────────
 function openClaim()  {} // wired in Task 9/10/12 (ClaimCommunityDialog)
 function openReport() {} // wired in Task 9/10/12 (ReportCommunityDialog)
-function openEdit()   {} // wired in Task 9/10/12 (CommunityEditDialog)
+
+const editOpen = ref(false);
+function openEdit() { editOpen.value = true; }
+
+// Patch the local object with the updated row rather than refetching, so the
+// page reflects the edit immediately.
+function onEdited(row) {
+  if (community.value) Object.assign(community.value, row);
+}
 </script>
 
 <template>
@@ -273,6 +282,8 @@ function openEdit()   {} // wired in Task 9/10/12 (CommunityEditDialog)
           {{ t('community.editTitle') }}
         </button>
       </div>
+
+      <CommunityEditDialog v-model="editOpen" :community="community" @saved="onEdited" />
 
     </div>
   </div>
