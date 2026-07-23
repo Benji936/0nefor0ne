@@ -902,6 +902,10 @@
     "community": {
       "title": "Boutiques & communautés",
       "desc": "Trouvez des boutiques Yu-Gi-Oh, des serveurs Discord et des groupes près de chez vous."
+    },
+    "communityProfile": {
+      "title": "Profil de la communauté",
+      "desc": "Une boutique ou communauté Yu-Gi-Oh sur 0nefor.one."
     }
   },
   "deckIgnore": {
@@ -1174,6 +1178,7 @@
     "myCommunities": "Mes communautés",
     "manage": "Gérer",
     "metaProfileTitle": "{name}: {kind} Yu-Gi-Oh à {city}",
+    "metaProfileTitleNoCity": "{name}: {kind} Yu-Gi-Oh",
     "metaProfileDesc": "{name}: adresse, Discord et annonces sur 0nefor.one."
   }
 }

@@ -2,12 +2,12 @@
 // Public Community PROFILE page (SEO). Fetches by route.params.slug and
 // renders a loading / not-found / profile state. The CTA row (claim / report
 // / edit) are stub handlers here — Tasks 9/10/12 wire the real dialogs.
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useHead } from "@unhead/vue";
 import { fetchBySlug } from "@/lib/community";
-import { getCurrentSession } from "@/lib/supabaseClient";
+import { getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
 
 const route = useRoute();
 const { t } = useI18n();
@@ -19,27 +19,44 @@ const currentUserId  = ref(null);
 
 const KIND_KEYS = { store: "kindStore", discord: "kindDiscord", group: "kindGroup" };
 
+// Stale-response guard: only the most recently issued load() may commit its
+// result, so a slower earlier fetch (e.g. after a rapid slug change) can't
+// clobber a newer one.
+let reqId = 0;
+
 async function load() {
+  const myId = ++reqId;
   loading.value   = true;
   notFound.value  = false;
   community.value = null;
   try {
     const data = await fetchBySlug(route.params.slug);
+    if (myId !== reqId) return;
     community.value = data;
     notFound.value  = !data;
   } catch (e) {
+    if (myId !== reqId) return;
     console.error("CommunityProfile: fetchBySlug failed", e);
     community.value = null;
     notFound.value  = true;
   } finally {
-    loading.value = false;
+    if (myId === reqId) loading.value = false;
   }
 }
+
+let unsub = null;
 
 onMounted(async () => {
   const session = await getCurrentSession();
   currentUserId.value = session?.user?.id ?? null;
+  unsub = onAuthChange((auth) => {
+    currentUserId.value = auth?.user?.id ?? null;
+  });
   load();
+});
+
+onBeforeUnmount(() => {
+  unsub?.();
 });
 
 // The page is reused across slugs (e.g. a related-profile link), so local UI
@@ -79,7 +96,9 @@ const canonicalUrl = computed(() => `${BASE}${route.path}`);
 const metaTitle = computed(() => {
   const c = community.value;
   if (!c) return "";
-  return t("community.metaProfileTitle", { name: c.name, kind: kindLabel.value, city: c.city || "" });
+  const city = (c.city || "").trim();
+  if (!city) return t("community.metaProfileTitleNoCity", { name: c.name, kind: kindLabel.value });
+  return t("community.metaProfileTitle", { name: c.name, kind: kindLabel.value, city });
 });
 const metaDesc = computed(() => {
   const c = community.value;
