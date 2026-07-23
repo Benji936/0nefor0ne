@@ -1,7 +1,7 @@
 <script setup>
 // Public Community PROFILE page (SEO). Fetches by route.params.slug and
-// renders a loading / not-found / profile state. The CTA row (claim / report
-// / edit) are stub handlers here — Tasks 9/10/12 wire the real dialogs.
+// renders a loading / not-found / profile state. The CTA row (claim, report,
+// edit) each opens its own dialog below.
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
@@ -10,6 +10,7 @@ import { fetchBySlug } from "@/lib/community";
 import { getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
 import CommunityEditDialog from "@/components/community/CommunityEditDialog.vue";
 import ClaimCommunityDialog from "@/components/community/ClaimCommunityDialog.vue";
+import ReportCommunityDialog from "@/components/community/ReportCommunityDialog.vue";
 
 const route = useRoute();
 const { t } = useI18n();
@@ -155,7 +156,12 @@ useHead(computed(() => {
 // ── CTA row ────────────────────────────────────────────────────────────────
 const claimOpen = ref(false);
 function openClaim()  { claimOpen.value = true; }
-function openReport() {} // wired in Task 12 (ReportCommunityDialog)
+
+const reportOpen = ref(false);
+function openReport() { reportOpen.value = true; }
+// The dialog already shows its own "report sent" confirmation before
+// closing itself; nothing else needs to happen on this page.
+function onReported() {}
 
 const editOpen = ref(false);
 function openEdit() { editOpen.value = true; }
@@ -304,6 +310,7 @@ async function onStale() {
 
       <CommunityEditDialog v-model="editOpen" :community="community" @saved="onEdited" />
       <ClaimCommunityDialog v-model="claimOpen" :community="community" @claimed="onClaimed" @stale="onStale" />
+      <ReportCommunityDialog v-model="reportOpen" :community="community" @sent="onReported" />
 
     </div>
   </div>
