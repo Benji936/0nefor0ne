@@ -31,7 +31,12 @@ export async function fetchDirectory({ kind, country, region, remoteDuel, q, pag
   if (country)            query = query.eq("country", country);
   if (region)             query = query.eq("region", region);
   if (remoteDuel === true) query = query.eq("remote_duel", true);
-  if (q && q.trim())      query = query.ilike("name", `%${q.trim()}%`);
+  if (q && q.trim()) {
+    // Escape LIKE metacharacters so a literal % or _ in the search text is
+    // matched literally rather than treated as a wildcard.
+    const esc = q.trim().replace(/[\\%_]/g, (m) => "\\" + m);
+    query = query.ilike("name", `%${esc}%`);
+  }
 
   const from = page * pageSize;
   const { data, count, error } = await query
@@ -80,9 +85,18 @@ export async function createCommunity(input) {
     tags: input.tags ?? [],
     status: input.status ?? "published",
   };
-  const { data, error } = await getClient().from("community").insert(row).select().single();
-  if (error) { console.error("createCommunity failed", error); throw error; }
-  return data;
+  // Insert, retrying with a numbered slug if it collides. uniqueSlug pre-checks
+  // through the RLS-filtered client, which cannot see other users' draft/hidden
+  // rows, so a slug clash can surface only at insert time (unique violation,
+  // 23505). Retrying keeps slugs readable without a privileged lookup.
+  const baseSlug = row.slug;
+  for (let attempt = 1; attempt <= 6; attempt++) {
+    const { data, error } = await getClient().from("community").insert(row).select().single();
+    if (!error) return data;
+    if (error.code !== "23505") { console.error("createCommunity failed", error); throw error; }
+    row.slug = withSuffix(baseSlug, attempt + 1);
+  }
+  throw new Error("Could not generate a unique profile link. Please try a different name.");
 }
 
 export async function updateCommunity(id, patch) {
