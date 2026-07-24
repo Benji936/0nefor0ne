@@ -177,7 +177,7 @@ function filteredCards(row) {
           <span class="text-sm" style="color: var(--c-muted)">{{ filterSummary(row.filter) }}</span>
           <span
             v-if="row.confidence === 'medium'"
-            class="text-[11px] px-2 py-0.5 rounded-full"
+            class="text-[11px] px-2 !py-0.5 rounded-full"
             style="background: rgba(245,158,11,0.15); color: #f59e0b"
             :title="t('combo.approximateHint')"
           >{{ t('combo.approximate') }}</span>

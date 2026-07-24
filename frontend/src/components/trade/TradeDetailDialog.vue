@@ -246,7 +246,7 @@ function confirmDecline() {
           class="mt-3 flex items-start gap-2 rounded-xl border px-4 py-3"
           style="border-color: var(--c-border); background-color: var(--c-surface-2)"
         >
-          <v-icon icon="mdi-map-marker" size="18" color="var(--c-mutual)" class="mt-0.5" />
+          <v-icon icon="mdi-map-marker" size="18" color="var(--c-mutual)" class="!mt-0.5" />
           <div class="flex flex-col min-w-0">
             <span class="text-sm font-semibold truncate" style="color: var(--c-text)">
               {{ t('proposal.meetupAt') }} {{ proposal.meetup_location.name }}
@@ -338,7 +338,7 @@ function confirmDecline() {
 
                   <!-- Actor badge -->
                   <span
-                    class="text-[11px] px-2 py-0.5 rounded-full font-semibold"
+                    class="text-[11px] px-2 !py-0.5 rounded-full font-semibold"
                     :style="{
                       color: eventMeta(evt.event_type).color,
                       background: `color-mix(in srgb, ${eventMeta(evt.event_type).color} 12%, transparent)`,
@@ -359,7 +359,7 @@ function confirmDecline() {
                 <!-- Notes (e.g. decline reason) -->
                 <p
                   v-if="evt.notes"
-                  class="text-xs leading-snug italic mt-0.5 px-2 py-1.5 rounded-lg"
+                  class="text-xs leading-snug italic !mt-0.5 px-2 !py-1.5 rounded-lg"
                   style="background: color-mix(in srgb, var(--c-muted) 8%, transparent); color: var(--c-text)"
                 >"{{ evt.notes }}"</p>
               </div>

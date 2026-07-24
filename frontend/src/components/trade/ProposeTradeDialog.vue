@@ -393,7 +393,7 @@ function marketLinks(name, setCode) {
             <div
               v-for="i in 3"
               :key="i"
-              class="flex gap-3 p-4 rounded-xl border skeleton-pulse"
+              class="flex gap-3 !p-4 rounded-xl border skeleton-pulse"
               :style="{ animationDelay: `${i * 150}ms`, borderColor: 'var(--c-border)' }"
             >
               <div class="h-[72px] w-[50px] rounded-lg shrink-0" style="background-color: var(--c-skeleton)" />
@@ -488,7 +488,7 @@ function marketLinks(name, setCode) {
                   <v-progress-circular v-if="fetchingCardId === item.id" indeterminate size="14" width="2" class="absolute inset-0 m-auto" />
                   <!-- Name tooltip on hover -->
                   <div
-                    class="absolute -bottom-1 left-0 right-0 rounded-b-lg px-0.5 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                    class="absolute -bottom-1 left-0 right-0 rounded-b-lg !px-0.5 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
                     style="background: linear-gradient(to top, rgba(0,0,0,0.85), transparent)"
                   >
                     <p class="text-[8px] text-white leading-tight line-clamp-2">{{ item.name }}</p>
@@ -620,7 +620,7 @@ function marketLinks(name, setCode) {
               <template v-if="loadingTheirs">
                 <div
                   v-for="i in 4" :key="i"
-                  class="flex gap-3 p-4 rounded-xl border skeleton-pulse"
+                  class="flex gap-3 !p-4 rounded-xl border skeleton-pulse"
                   :style="{ animationDelay: `${i * 120}ms`, borderColor: 'var(--c-border)' }"
                 >
                   <div class="h-[72px] w-[50px] rounded-lg shrink-0" style="background-color: var(--c-skeleton)" />

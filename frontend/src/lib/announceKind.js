@@ -45,9 +45,22 @@ function escapeRe(s) {
 }
 
 /**
+ * Whole-word pattern for an archetype name, tolerating a plural suffix.
+ *
+ * Bounded at both ends, or a short name like the real "P" archetype matches
+ * the start of "playset". The optional plural keeps "Darklords" matching
+ * "Darklord". The trailing guard is `(?!\w)` rather than `\b` because names
+ * such as "D.D." end in a non-word character, where `\b` would demand a
+ * following word character and never match.
+ */
+function archetypeRe(name) {
+  return new RegExp(`\\b${escapeRe(name)}(?:s|es)?(?!\\w)`, 'i');
+}
+
+/**
  * Find the first archetype from `archetypes` that appears in `text`.
  * Longest-first so "Dark Magician" beats a bare "Dark" style entry, and
- * word-bounded at the start so "superhero" does not match "HERO".
+ * word-bounded so "superhero" does not match "HERO".
  * @param {string} text
  * @param {string[]} archetypes  canonical names, e.g. from api.js getArchetypes()
  * @returns {string|null}
@@ -58,10 +71,7 @@ export function matchArchetype(text, archetypes) {
 
   const sorted = [...archetypes].filter(Boolean).sort((a, b) => b.length - a.length);
   for (const name of sorted) {
-    // Leading \b keeps "superhero" from matching "HERO"; we deliberately do
-    // not anchor the end, so a plural like "Darklords" still matches.
-    const re = new RegExp(`\\b${escapeRe(name)}`, 'i');
-    if (re.test(haystack)) return name;
+    if (archetypeRe(name).test(haystack)) return name;
   }
   return null;
 }

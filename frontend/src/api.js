@@ -17,7 +17,10 @@ export const getUrl = () => API_URL;
  *  regardless of the active UI locale. Localized names/desc are fetched separately
  *  by ID (searchById) when the card detail view opens. */
 export const searchCardByName = async (fname = "") => {
-    return axios.get(`${API_URL}cardinfo.php?fname=${fname}`).catch((error) => {
+    // encodeURIComponent, not raw interpolation: an unencoded `&` in a card
+    // name ends the query parameter, so "Ash Blossom & Joyous Spring" searched
+    // for "Ash Blossom " and returned nothing.
+    return axios.get(`${API_URL}cardinfo.php?fname=${encodeURIComponent(fname)}`).catch((error) => {
         console.error("Error fetching card with " + fname, error);
         return { data: [] };
     });
@@ -26,7 +29,7 @@ export const searchCardByName = async (fname = "") => {
 export const searchCardBySetCode = (code = "") => {
     const split_code = code.split("-");
     const final_code = split_code[0] + "-EN" + split_code[1].replace(/[a-zA-Z]/g, "");
-    return axios.get(`${API_URL}cardsetsinfo.php?setcode=${final_code}`).catch((error) => {
+    return axios.get(`${API_URL}cardsetsinfo.php?setcode=${encodeURIComponent(final_code)}`).catch((error) => {
         console.error("Error fetching card with " + code, error);
         return null;
     });

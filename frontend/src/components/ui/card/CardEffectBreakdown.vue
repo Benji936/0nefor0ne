@@ -50,7 +50,7 @@ function tagText(k, v) {
       <span class="text-xs font-semibold uppercase tracking-wide" style="color: var(--c-text)">
         {{ t('breakdown.title') }}
       </span>
-      <span class="text-[10px] px-2 py-0.5 rounded-full" style="background: rgba(148,163,184,0.18); color: var(--c-muted)">
+      <span class="text-[10px] px-2 !py-0.5 rounded-full" style="background: rgba(148,163,184,0.18); color: var(--c-muted)">
         {{ t('breakdown.auto') }}
       </span>
     </div>
@@ -76,7 +76,7 @@ function tagText(k, v) {
             class="flex gap-3 items-start"
           >
             <span
-              class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded shrink-0 mt-0.5"
+              class="text-[10px] font-bold uppercase tracking-wide px-2 !py-0.5 rounded shrink-0 !mt-0.5"
               :style="{ background: (LABEL_COLORS[seg.label] || '#64748b') + '22', color: LABEL_COLORS[seg.label] || '#64748b', minWidth: '78px', textAlign: 'center' }"
             >{{ t(`breakdown.labels.${seg.label}`, seg.label) }}</span>
             <span class="text-sm leading-snug" style="color: var(--c-text)">{{ seg.text }}</span>

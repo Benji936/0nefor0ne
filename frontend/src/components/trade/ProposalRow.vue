@@ -196,7 +196,7 @@ function cancelRating() {
 
         <!-- You give (accent/pink tint) -->
         <div
-          class="flex flex-col items-center justify-center p-4 md:flex-1 min-w-0"
+          class="flex flex-col items-center justify-center !p-4 md:flex-1 min-w-0"
           style="background: color-mix(in srgb, var(--c-accent) 4%, transparent)"
         >
           <div v-if="proposal.i_give?.length" class="card-fan">
@@ -233,7 +233,7 @@ function cancelRating() {
 
         <!-- You receive (amethyst tint) -->
         <div
-          class="flex flex-col items-center justify-center p-4 md:flex-1 min-w-0"
+          class="flex flex-col items-center justify-center !p-4 md:flex-1 min-w-0"
           style="background: color-mix(in srgb, var(--c-trade) 4%, transparent)"
         >
           <div v-if="proposal.i_receive?.length" class="card-fan">

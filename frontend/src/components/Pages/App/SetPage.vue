@@ -59,7 +59,7 @@
             loading="lazy"
             class="w-full aspect-[59/86] object-cover"
           />
-          <div class="p-2 flex flex-col gap-0.5">
+          <div class="!p-2 flex flex-col gap-0.5">
             <p class="text-xs font-semibold leading-tight line-clamp-2" style="color: var(--c-text)">{{ card.name }}</p>
             <p v-if="card.setCode" class="text-xs font-mono" style="color: var(--c-muted)">{{ card.setCode }}</p>
             <p v-if="card.rarity" class="text-xs" style="color: var(--c-muted)">{{ card.rarity }}</p>

@@ -64,6 +64,17 @@ describe('matchArchetype', () => {
     expect(matchArchetype('superhero cape', ARCHETYPES)).toBe(null)
   })
 
+  it('does not match an archetype that only prefixes a longer word', () => {
+    expect(matchArchetype('heroic challenger reprint', ARCHETYPES)).toBe(null)
+    // "P" is a real YGOPRODeck archetype; it must not swallow "playset".
+    expect(matchArchetype('playset of Ash Blossom', [...ARCHETYPES, 'P'])).toBe(null)
+  })
+
+  it('still matches plural forms', () => {
+    expect(matchArchetype('Darklords deck base', ARCHETYPES)).toBe('Darklord')
+    expect(matchArchetype('heroes for my deck', ARCHETYPES)).toBe('HERO')
+  })
+
   it('escapes regex metacharacters in archetype names', () => {
     // Hyphen in archetype name must be treated literally, not as regex range
     expect(matchArchetype('Blue-Eyes deck', ARCHETYPES)).toBe('Blue-Eyes')

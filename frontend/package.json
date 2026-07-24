@@ -15,6 +15,7 @@
     "cards:sync": "node scripts/r2/sync-from-api.mjs",
     "cards:tips": "node scripts/yugipedia-tips.mjs",
     "cards:banlist": "node scripts/yugipedia-banlist.mjs",
+    "cards:archetype-art": "node scripts/archetype-art.mjs",
     "edopro:index": "node scripts/edopro/build-effect-index.mjs --out public/data/effect-index.json",
     "edopro:spike": "node scripts/edopro/spike.mjs",
     "edopro:card-db": "node scripts/edopro/build-card-db.mjs",

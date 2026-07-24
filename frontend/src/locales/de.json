@@ -341,6 +341,7 @@
     "edit": "Bearbeiten",
     "delete": "Löschen",
     "markSold": "Als verkauft markieren",
+    "markFound": "Als gefunden markieren",
     "sold": "Verkauft",
     "archived": "Archiviert",
     "contactSeller": "Verkäufer kontaktieren",
@@ -361,6 +362,8 @@
     "kindLookingFor": "Gesucht",
     "kindHint": "Verkaufst du eine Karte oder suchst du eine?",
     "archetype": "Archetyp",
+    "archetypeOptional": "Archetyp (optional)",
+    "lfNeedsOne": "Gib einen Archetyp an, was du suchst, oder beides.",
     "archetypePlaceholder": "Archetyp suchen, z. B. Darklord",
     "archetypeNoMatch": "Kein passender Archetyp.",
     "archetypeLoadFailed": "Die Archetypliste konnte nicht geladen werden. Du kannst deine Suche trotzdem beschreiben.",
@@ -378,7 +381,9 @@
     "expiresInShort": "noch {days}T",
     "expiresInDays": "Läuft in {days} Tag ab. | Läuft in {days} Tagen ab.",
     "expiredNotice": "Diese Anzeige ist abgelaufen und für andere Trader nicht mehr sichtbar.",
-    "renew": "Verlängern"
+    "renew": "Verlängern",
+    "wantCount": "{count} Karte | {count} Karten",
+    "wantTitleMore": "{name} +{count} weitere"
   },
   "announceChat": {
     "withSeller": "Mit Verkäufer chatten",
@@ -1134,6 +1139,16 @@
       "body": "One for One ist kostenlos und erhebt keine Tauschgebühren. Wenn du helfen möchtest, die Hosting-Kosten zu decken und das Projekt am Laufen zu halten, kannst du mir einen Kaffee spendieren.",
       "cta": "Unterstütze uns auf Ko-fi"
     }
+  },
+  "wantList": {
+    "label": "Suchliste (optional)",
+    "placeholder": "Eine Karte pro Zeile\n3x Ash Blossom & Joyous Spring\nSDCB-EN001",
+    "resolve": "{count} Zeilen suchen",
+    "resolving": "Suche {current} von {total}…",
+    "clear": "Leeren",
+    "summary": "{resolved} von {total} einer Karte zugeordnet. Nicht zugeordnete Zeilen bleiben als Text erhalten.",
+    "pickOne": "Auswählen",
+    "remove": "Entfernen"
   },
   "community": {
     "home": "Community",

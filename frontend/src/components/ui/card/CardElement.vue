@@ -42,7 +42,7 @@ defineEmits(['deleted']);
         <LanguageTooltip v-if="wish.language" :language="wish.language" />
         <v-tooltip v-if="wish.rarity" :text="wish.rarity" location="top">
           <template #activator="{ props: tip }">
-            <span v-bind="tip" class="py-0.5 px-1 rounded text-[11px] h-fit bg-amber-900/50 text-amber-300 cursor-default">{{ shortenRarity(wish.rarity) }}</span>
+            <span v-bind="tip" class="!py-0.5 px-1 rounded text-[11px] h-fit bg-amber-900/50 text-amber-300 cursor-default">{{ shortenRarity(wish.rarity) }}</span>
           </template>
         </v-tooltip>
         <a
@@ -59,7 +59,7 @@ defineEmits(['deleted']);
     <div class="shrink-0">
       <div
         v-if="wish.status === 'locked'"
-        class="flex items-center gap-1.5 rounded-md px-2 py-1.5"
+        class="flex items-center gap-1.5 rounded-md px-2 !py-1.5"
         style="background: color-mix(in srgb, var(--c-mutual) 10%, transparent); border: 1px solid color-mix(in srgb, var(--c-mutual) 30%, transparent)"
       >
         <v-icon icon="mdi-lock-outline" size="13" color="var(--c-mutual)" />

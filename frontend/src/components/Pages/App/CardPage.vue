@@ -96,7 +96,7 @@
 
       <div class="flex flex-col xl:flex-row gap-6 xl:items-start">
         <div class="flex-1 min-w-0 flex flex-col gap-4">
-          <div class="rounded-lg border p-4" style="border-color: var(--c-border); background: var(--c-surface-2)">
+          <div class="rounded-lg border !p-4" style="border-color: var(--c-border); background: var(--c-surface-2)">
             <!-- Effect: the normalized breakdown stands in for the plain text when the
                  PSCT parser can segment it (the breakdown keeps a "show original"
                  toggle); otherwise fall back to the raw effect paragraph so vanilla /
@@ -174,7 +174,7 @@
             v-for="img in altImages"
             :key="img.id"
             type="button"
-            class="shrink-0 rounded overflow-hidden p-0 cursor-pointer transition-opacity hover:opacity-80"
+            class="shrink-0 rounded overflow-hidden !p-0 cursor-pointer transition-opacity hover:opacity-80"
             :style="{ border: '2px solid ' + ((selectedImageId ?? card.id) === img.id ? 'var(--c-accent)' : 'transparent') }"
             :aria-label="card.name"
             @click="selectedImageId = img.id"

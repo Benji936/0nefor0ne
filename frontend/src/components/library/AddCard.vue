@@ -88,7 +88,7 @@
       <!-- ── Step 2: Form ── -->
       <template v-else-if="step === 'form'">
         <v-card-text class="pa-5 flex flex-col gap-4">
-          <div class="flex gap-4 p-4 rounded-xl border" style="background-color: var(--c-surface-2); border-color: var(--c-border)">
+          <div class="flex gap-4 !p-4 rounded-xl border" style="background-color: var(--c-surface-2); border-color: var(--c-border)">
             <img :src="cardImage(selectedCard.id)" :alt="selectedCard.name" class="h-24 w-[68px] object-contain rounded shrink-0">
             <div class="flex flex-col justify-center gap-1 min-w-0">
               <p class="font-bold text-base leading-tight truncate" style="color: var(--c-text)">{{ selectedCard.name }}</p>

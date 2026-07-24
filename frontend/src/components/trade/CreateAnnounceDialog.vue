@@ -1,9 +1,13 @@
 <script setup>
 import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { createAnnounce, updateAnnounce, addAnnounceImages, deleteAnnounceImage } from "@/lib/announces";
+import { createAnnounce, updateAnnounce, addAnnounceImages, deleteAnnounceImage, replaceWantCards } from "@/lib/announces";
 import { searchCardByName, searchCardBySetCode, getArchetypes } from "@/api";
 import { ANNOUNCE_KIND, composeWantHeadline } from "@/lib/announceKind";
+import { archetypeArtUrl, ensureArchetypeArtManifest } from "@/lib/archetypeArt";
+import WantListInput from "@/components/trade/WantListInput.vue";
+
+ensureArchetypeArtManifest();
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -32,6 +36,8 @@ const archetypeErr   = ref("");      // shown when the list cannot be fetched
 // saved archetype that the user hasn't retyped, even while archetypeList
 // is still loading or no longer contains that name.
 const hydratedArchetype = ref("");
+// announce_want_card rows, owned by WantListInput via v-model.
+const wantCards = ref([]);
 
 const isLf = computed(() => kind.value === ANNOUNCE_KIND.LOOKING_FOR);
 
@@ -69,9 +75,37 @@ const resolvedArchetype = computed(() => {
   return "";
 });
 
+// Preview of the picture this archetype will carry on the announce — the same
+// art the card and the detail dialog will show. Only appears once the typed
+// text resolves to a real archetype, so it doubles as confirmation that the
+// selection took.
+const artFailed = ref(false);
+watch(resolvedArchetype, () => { artFailed.value = false; });
+const archetypeArt = computed(() =>
+  artFailed.value ? null : archetypeArtUrl(resolvedArchetype.value)
+);
+
 // The composed LF title/headline, shared by canSubmit and submit() so the
 // validation check and the saved value can never disagree.
 const lfHeadline = computed(() => composeWantHeadline(resolvedArchetype.value, wantDetail.value));
+
+/**
+ * The title actually saved for an LF post.
+ *
+ * A want list is by itself a complete statement of what someone is after, so a
+ * post carrying only a list must be publishable. `title` is NOT NULL with a
+ * 1..120 CHECK, so in that case the list names itself.
+ */
+const lfTitle = computed(() => {
+  if (lfHeadline.value) return lfHeadline.value;
+  const rows = wantCards.value;
+  if (rows.length === 0) return "";
+  const first = rows[0].card_name;
+  const composed = rows.length === 1
+    ? first
+    : t("announce.wantTitleMore", { name: first, count: rows.length - 1 });
+  return composed.length > 120 ? composed.slice(0, 119) + "…" : composed;
+});
 
 /** Fetch the archetype list once, the first time the user switches to LF. */
 async function ensureArchetypes() {
@@ -176,7 +210,7 @@ const canSubmit = computed(() => {
     // An LF post needs something to look for; price and photos are optional,
     // but the composed title must still fit the DB's 120-char limit, and an
     // entered budget must not be negative.
-    const headline = lfHeadline.value;
+    const headline = lfTitle.value;
     const priceOk = price.value === "" || Number(price.value) >= 0;
     return headline.length > 0 && headline.length <= 120 && priceOk;
   }
@@ -205,12 +239,14 @@ watch(() => props.modelValue, open => {
     hydratedArchetype.value = props.announce.archetype ?? "";
     if (kind.value === ANNOUNCE_KIND.LOOKING_FOR) ensureArchetypes();
     existingImages.value = [...(props.announce.images ?? [])].sort((a, b) => a.sort_order - b.sort_order);
+    wantCards.value = [...(props.announce.wantCards ?? [])].sort((a, b) => a.sort_order - b.sort_order);
   } else {
     title.value = ""; description.value = ""; price.value = ""; currency.value = "EUR";
     kind.value = props.kind ?? ANNOUNCE_KIND.SELL;
     wantDetail.value = ""; archetypeQuery.value = "";
     hydratedArchetype.value = "";
     existingImages.value = [];
+    wantCards.value = [];
     if (kind.value === ANNOUNCE_KIND.LOOKING_FOR) ensureArchetypes();
   }
 });
@@ -245,7 +281,7 @@ async function submit() {
       const id = props.announce.id;
       await updateAnnounce(id, {
         title:       isLf.value
-                       ? lfHeadline.value
+                       ? lfTitle.value
                        : title.value.trim(),
         description: description.value.trim(),
         price:       price.value === "" ? null : Number(price.value),
@@ -254,6 +290,10 @@ async function submit() {
         archetype:   isLf.value ? (resolvedArchetype.value || null) : null,
         want_detail: isLf.value ? (wantDetail.value.trim() || null) : null,
       });
+      // Want list is replaced wholesale rather than diffed. Only for LF posts:
+      // switching a post to Selling should not silently wipe a list the user
+      // could get back by switching the kind again.
+      if (isLf.value) await replaceWantCards(id, wantCards.value);
       // Remove images the user deleted.
       for (const img of removedImages.value) {
         await deleteAnnounceImage(img.id, img.url);
@@ -265,7 +305,7 @@ async function submit() {
     } else {
       const id = await createAnnounce({
         title:       isLf.value
-                       ? lfHeadline.value
+                       ? lfTitle.value
                        : title.value.trim(),
         description: description.value.trim(),
         price:       price.value === "" ? null : Number(price.value),
@@ -275,6 +315,7 @@ async function submit() {
         kind:        kind.value,
         archetype:   isLf.value ? (resolvedArchetype.value || null) : null,
         wantDetail:  isLf.value ? (wantDetail.value.trim() || null) : null,
+        wantCards:   isLf.value ? wantCards.value : [],
       });
       emit("created", id);
     }
@@ -291,7 +332,7 @@ async function submit() {
   <v-dialog
     :model-value="modelValue"
     @update:model-value="emit('update:modelValue', $event)"
-    max-width="680"
+    max-width="880"
     content-class="!m-0 sm:!m-6 items-end sm:items-center"
     transition="dialog-bottom-transition"
     scrollable
@@ -310,10 +351,12 @@ async function submit() {
 
       <!-- Scrollable body: 2-col on desktop, stack on mobile -->
       <div class="dlg-body">
-        <div class="form-layout">
+        <div class="form-layout" :class="{ 'form-layout--single': isLf }">
 
-          <!-- LEFT: Photo panel -->
-          <div class="photo-col">
+          <!-- LEFT: Photo panel (selling only). A Looking For post is a request
+               to acquire cards, not an item to show off, so it carries no photo
+               upload; the want list states what it's after instead. -->
+          <div v-if="!isLf" class="photo-col">
             <div class="field-label-row" style="margin-bottom:8px">
               <span class="field-label">{{ isLf ? t('announce.photosOptionalLf') : t('announce.images') }}</span>
               <span class="field-hint">{{ totalCount }} / {{ MAX }}</span>
@@ -378,7 +421,7 @@ async function submit() {
             <!-- Looking For: archetype + detail replace the Title field -->
             <template v-if="isLf">
               <div class="field-block">
-                <label class="field-label" for="lf-archetype">{{ t('announce.archetype') }}</label>
+                <label class="field-label" for="lf-archetype">{{ t('announce.archetypeOptional') }}</label>
                 <input
                   id="lf-archetype"
                   v-model="archetypeQuery"
@@ -398,6 +441,15 @@ async function submit() {
                 <p v-else-if="archetypeQuery.trim() && archetypeList.length" class="field-hint">
                   {{ t('announce.archetypeNoMatch') }}
                 </p>
+                <div v-if="archetypeArt" class="archetype-preview">
+                  <img
+                    :src="archetypeArt"
+                    class="archetype-preview__art"
+                    alt=""
+                    @error="artFailed = true"
+                  />
+                  <span class="archetype-preview__name">{{ resolvedArchetype }}</span>
+                </div>
                 <p v-if="archetypeErr" class="field-hint" style="color: var(--c-accent)">{{ archetypeErr }}</p>
               </div>
 
@@ -413,6 +465,17 @@ async function submit() {
                 <p v-if="lfHeadline.length > 120" class="field-hint" style="color: var(--c-accent)">
                   {{ t('announce.wantTooLong') }}
                 </p>
+                <!-- Either field alone is enough; only both empty blocks submit,
+                     so say that rather than marking one of them required. -->
+                <!-- Satisfied by a want list too, so this clears as soon as one
+                     is added rather than nagging for a field you don't need. -->
+                <p v-else-if="!lfTitle.length" class="field-hint">
+                  {{ t('announce.lfNeedsOne') }}
+                </p>
+              </div>
+
+              <div class="field-block">
+                <WantListInput v-model="wantCards" />
               </div>
             </template>
 
@@ -462,8 +525,11 @@ async function submit() {
               </div>
             </div>
 
-            <!-- Card picker (create mode only) -->
-            <div v-if="!isEdit" class="field-block" style="position:relative">
+            <!-- Card picker (selling, create mode only). A Looking For post
+                 states its cards through the want list instead, and linking one
+                 there would also add it to the poster's trade list, which is
+                 backwards for something they are trying to acquire. -->
+            <div v-if="!isEdit && !isLf" class="field-block" style="position:relative">
               <label class="field-label">Card <span style="color:var(--c-muted);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
 
               <!-- Selected card chip -->
@@ -518,8 +584,11 @@ async function submit() {
               </span>
             </div>
 
-            <!-- Description -->
-            <div class="field-block" style="flex:1; display:flex; flex-direction:column">
+            <!-- Description (selling only). A Looking For post says what it
+                 wants through the archetype, the detail line and the want list.
+                 An existing description (a Discord post keeps everything after
+                 the first line) is preserved on save, just not editable here. -->
+            <div v-if="!isLf" class="field-block" style="flex:1; display:flex; flex-direction:column">
               <label class="field-label">{{ t('announce.description') }}</label>
               <textarea
                 v-model="description"
@@ -563,6 +632,10 @@ async function submit() {
 .dlg {
   display: flex;
   flex-direction: column;
+  /* The overlay honours max-width, but this panel is shrink-to-fit inside it,
+     so without an explicit width it stops at its content and the dialog never
+     actually gets wider. */
+  width: 100%;
   background: var(--c-bg);
   border-radius: 20px 20px 0 0;
   overflow: hidden;
@@ -623,6 +696,19 @@ async function submit() {
     align-items: start;
   }
 }
+/* The dialog caps at 880px; past that there is room to give the photo column a
+   little more without squeezing the fields, which carry the want list. */
+@media (min-width: 800px) {
+  .form-layout {
+    grid-template-columns: 230px 1fr;
+    gap: 28px;
+  }
+}
+/* Looking For has no photo panel, so its single fields column must span the
+   full width rather than drop into the narrow first grid column. Declared
+   after the media queries so it wins at every breakpoint (equal specificity,
+   later in source order). */
+.form-layout--single { grid-template-columns: 1fr; }
 
 .photo-col {
   display: flex;
@@ -660,6 +746,31 @@ async function submit() {
   border: 1px solid var(--c-border);
   border-radius: 8px;
   background: var(--c-surface-2);
+}
+/* Preview of the art the chosen archetype will carry. Absent entirely when the
+   typed text matches no archetype, or when the art fails to load. */
+.archetype-preview {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 8px;
+  padding: 7px 9px;
+  border-radius: 10px;
+  border: 1px solid var(--c-border);
+  background: var(--c-surface-2);
+}
+.archetype-preview__art {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--c-mutual) 45%, transparent);
+}
+.archetype-preview__name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--c-mutual);
 }
 .archetype-option {
   display: block;
