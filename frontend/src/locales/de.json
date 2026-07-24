@@ -903,6 +903,14 @@
     "built-with": {
       "title": "Erstellt mit & Partner | One for One",
       "desc": "Die Dienste hinter One for One und die Marktplätze, auf denen Sammler Yu-Gi-Oh!-Karten kaufen und verkaufen."
+    },
+    "community": {
+      "title": "Läden & Communitys",
+      "desc": "Finde Yu-Gi-Oh-Läden, Discord-Server und Gruppen in deiner Nähe."
+    },
+    "communityProfile": {
+      "title": "Community-Profil",
+      "desc": "Ein Yu-Gi-Oh-Laden oder eine Community auf 0nefor.one."
     }
   },
   "deckIgnore": {
@@ -1141,5 +1149,51 @@
     "summary": "{resolved} von {total} einer Karte zugeordnet. Nicht zugeordnete Zeilen bleiben als Text erhalten.",
     "pickOne": "Auswählen",
     "remove": "Entfernen"
+  },
+  "community": {
+    "home": "Community",
+    "directoryTitle": "Läden & Communitys",
+    "directorySubtitle": "Finde Yu-Gi-Oh-Läden, Discord-Server und Gruppen in deiner Nähe.",
+    "searchPlaceholder": "Nach Namen suchen",
+    "kindAll": "Alle",
+    "kindStore": "Läden",
+    "kindDiscord": "Discord",
+    "kindGroup": "Gruppen",
+    "filterCountry": "Land",
+    "filterRegion": "Region",
+    "remoteDuel": "Fernduell",
+    "empty": "Für diese Filter gibt es noch nichts Passendes.",
+    "addYours": "Deinen Laden oder deine Community hinzufügen",
+    "claimThis": "Diesen Laden beanspruchen",
+    "claimTitle": "Diesen Eintrag beanspruchen",
+    "claimBody": "Bestätige, dass du diesen Laden oder diese Community verwaltest. Dein Konto wird zum Inhaber und du kannst das Profil bearbeiten.",
+    "claimConfirm": "Ja, ich verwalte das",
+    "claimed": "Beansprucht",
+    "verified": "Verifiziert",
+    "unclaimedNotice": "Dieses Profil ist noch nicht beansprucht. Bist du der Inhaber?",
+    "report": "Melden",
+    "reportTitle": "Diesen Eintrag melden",
+    "reportPlaceholder": "Was stimmt an diesem Eintrag nicht?",
+    "reportSent": "Meldung gesendet. Danke.",
+    "editTitle": "Profil bearbeiten",
+    "createTitle": "Laden oder Community hinzufügen",
+    "fieldName": "Name",
+    "fieldKind": "Typ",
+    "fieldBio": "Über uns",
+    "fieldWebsite": "Website",
+    "fieldDiscord": "Discord-Einladung",
+    "fieldCity": "Stadt",
+    "fieldCountry": "Land",
+    "save": "Speichern",
+    "create": "Veröffentlichen",
+    "cancel": "Abbrechen",
+    "viewAnnounces": "Anzeigen ansehen",
+    "openDiscord": "Discord öffnen",
+    "openWebsite": "Website",
+    "myCommunities": "Meine Communitys",
+    "manage": "Verwalten",
+    "metaProfileTitle": "{name}: Yu-Gi-Oh {kind} in {city}",
+    "metaProfileTitleNoCity": "{name}: Yu-Gi-Oh {kind}",
+    "metaProfileDesc": "{name}: Adresse, Discord und Anzeigen auf 0nefor.one."
   }
 }

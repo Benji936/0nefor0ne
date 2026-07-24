@@ -489,6 +489,7 @@ function onImgError(e) {
           <router-link :to="`/${locale}/decks`" class="lp-footer-link">{{ $t("landing.footer.decks") }}</router-link>
           <router-link :to="`/${locale}/library`" class="lp-footer-link">{{ $t("landing.footer.collection") }}</router-link>
           <router-link :to="`/${locale}/trade`" class="lp-footer-link">{{ $t("landing.footer.trade") }}</router-link>
+          <router-link :to="{ name: 'community', params: { locale } }" class="lp-footer-link">{{ $t("community.home") }}</router-link>
         </nav>
 
         <nav class="lp-footer-col" :aria-label="$t('landing.footer.colMore')">

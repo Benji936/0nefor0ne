@@ -1,9 +1,12 @@
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRoute } from "vue-router";
 import { getClient, updateTraderProfile, linkDiscordAccount, syncDiscordIdToTrader } from "@/lib/supabaseClient";
 import { COUNTRIES } from "@/lib/countries";
 import { countryByCode } from "@/lib/countries";
+import { fetchMyCommunities } from "@/lib/community";
+import CommunityEditDialog from "@/components/community/CommunityEditDialog.vue";
 
 const { t } = useI18n();
 
@@ -153,9 +156,49 @@ async function resyncDiscord() {
   }
 }
 
+// ── My communities ───────────────────────────────────────────────────────
+const communities        = ref([]);
+const loadingCommunities = ref(false);
+const editOpen           = ref(false);
+const editing            = ref(null);
+
+const KIND_LABELS = computed(() => ({
+  store:   t('community.kindStore'),
+  discord: t('community.kindDiscord'),
+  group:   t('community.kindGroup'),
+}));
+
+async function loadCommunities() {
+  if (!props.login?.user?.id) return;
+  loadingCommunities.value = true;
+  try {
+    communities.value = await fetchMyCommunities();
+  } finally {
+    loadingCommunities.value = false;
+  }
+}
+
 watch(() => props.login?.user?.id, (id) => {
-  if (id) { loadProfile(); loadTrades(); }
+  if (id) { loadProfile(); loadTrades(); loadCommunities(); }
 }, { immediate: true });
+
+const route = useRoute();
+const locale = computed(() => route.params.locale || "en");
+
+function statusStyle(status) {
+  const color = status === "published" ? "var(--c-mutual)" : status === "hidden" ? "var(--c-accent)" : "var(--c-muted)";
+  return { color, background: `color-mix(in srgb, ${color} 12%, transparent)` };
+}
+
+function openEditCommunity(row) {
+  editing.value = row;
+  editOpen.value = true;
+}
+
+function onCommunitySaved(row) {
+  const idx = communities.value.findIndex(c => c.id === row.id);
+  if (idx !== -1) communities.value[idx] = row;
+}
 </script>
 
 <template>
@@ -258,6 +301,67 @@ watch(() => props.login?.user?.id, (id) => {
         </div>
       </div>
     </div>
+
+    <!-- My communities -->
+    <div class="rounded-2xl border overflow-hidden" style="background: var(--c-surface); border-color: var(--c-border)">
+      <div class="px-5 py-4 flex items-center gap-2" style="border-bottom: 1px solid var(--c-border)">
+        <v-icon icon="mdi-storefront-outline" size="16" color="var(--c-muted)" />
+        <span class="text-sm font-semibold" style="color: var(--c-text)">{{ t('community.myCommunities') }}</span>
+      </div>
+
+      <div v-if="loadingCommunities" class="flex flex-col divide-y" style="border-color: var(--c-border)">
+        <div v-for="i in 2" :key="i" class="flex items-center gap-3 px-5 py-3 animate-pulse">
+          <div class="h-4 rounded w-32" style="background: var(--c-skeleton)" />
+          <div class="h-5 rounded w-16 ml-auto" style="background: var(--c-skeleton)" />
+        </div>
+      </div>
+
+      <div v-else-if="communities.length === 0" class="px-5 py-8 text-center text-sm" style="color: var(--c-muted)">
+        <router-link :to="{ name: 'community', params: { locale } }" class="font-semibold" style="color: var(--c-accent)">
+          {{ t('community.addYours') }}
+        </router-link>
+      </div>
+
+      <div v-else class="flex flex-col divide-y" style="border-color: var(--c-border)">
+        <div
+          v-for="row in communities"
+          :key="row.id"
+          class="flex items-center gap-3 px-5 py-3 text-sm"
+        >
+          <div class="flex flex-col min-w-0" style="gap: 2px">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span class="font-semibold truncate" style="color: var(--c-text)">{{ row.name }}</span>
+              <v-icon v-if="row.verified" icon="mdi-check-decagram" size="14" style="color: var(--c-mutual)" :title="t('community.verified')" />
+            </div>
+            <span class="text-xs truncate" style="color: var(--c-muted)">{{ KIND_LABELS[row.kind] ?? row.kind }}</span>
+          </div>
+
+          <span
+            class="ml-auto shrink-0 text-xs font-semibold px-2 py-1 rounded-md"
+            :style="{ textTransform: 'capitalize', ...statusStyle(row.status) }"
+          >{{ row.status }}</span>
+
+          <router-link
+            :to="{ name: 'communityProfile', params: { locale, slug: row.slug } }"
+            class="shrink-0 text-xs font-semibold"
+            style="color: var(--c-trade)"
+          >{{ t('community.manage') }}</router-link>
+
+          <button
+            type="button"
+            class="shrink-0 flex items-center justify-center size-7 rounded-md cursor-pointer transition-colors"
+            style="border: 1px solid var(--c-border); color: var(--c-muted)"
+            :aria-label="t('community.editTitle')"
+            :title="t('community.editTitle')"
+            @click="openEditCommunity(row)"
+          >
+            <v-icon icon="mdi-pencil-outline" size="14" />
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <CommunityEditDialog v-model="editOpen" :community="editing" @saved="onCommunitySaved" />
 
     <!-- Trade history -->
     <div class="rounded-2xl border overflow-hidden" style="background: var(--c-surface); border-color: var(--c-border)">

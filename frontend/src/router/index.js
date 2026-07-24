@@ -8,6 +8,8 @@ import LandingPage from "@/components/Pages/Public/LandingPage.vue";
 const localeChildren = [
   { path: "",          name: "home",        component: LandingPage },
   { path: "library",   name: "library",     component: () => import(/* webpackChunkName: "library" */     "@/components/Pages/App/Library.vue") },
+  { path: 'community', name: 'community',   component: () => import(/* webpackChunkName: "community" */   '@/components/Pages/App/CommunityDirectory.vue') },
+  { path: 'community/:slug', name: 'communityProfile', component: () => import(/* webpackChunkName: "community-profile" */ '@/components/Pages/App/CommunityProfile.vue') },
   { path: "trade",     name: "TradeCenter", component: () => import(/* webpackChunkName: "trade" */       "@/components/Pages/App/TradeCenter.vue") },
   { path: "account",   name: "account",     component: () => import(/* webpackChunkName: "account" */     "@/components/Pages/App/Account.vue") },
   { path: "card/:id",  name: "card",        component: () => import(/* webpackChunkName: "card" */        "@/components/Pages/App/CardPage.vue") },
@@ -33,6 +35,8 @@ export const routes = [
 
   // Legacy paths without locale prefix → redirect to locale-prefixed equivalent
   { path: "/library",   redirect: ()   => `/${detectLocale()}/library` },
+  { path: '/community', redirect: () => `/${detectLocale()}/community` },
+  { path: '/community/:slug', redirect: (to) => `/${detectLocale()}/community/${to.params.slug}` },
   { path: "/trade",     redirect: ()   => `/${detectLocale()}/trade`   },
   { path: "/account",   redirect: ()   => `/${detectLocale()}/account` },
   { path: "/privacy",   redirect: ()   => `/${detectLocale()}/privacy` },

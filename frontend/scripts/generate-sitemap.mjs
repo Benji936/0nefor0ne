@@ -89,6 +89,9 @@ const STATIC_PAGES = [
   { path: "/privacy", changefreq: "yearly", priority: 0.3 },
   { path: "/terms",   changefreq: "yearly", priority: 0.3 },
   { path: "/built-with", changefreq: "monthly", priority: 0.3 },
+  // Community directory. Individual profile slugs are not enumerated here yet —
+  // the `community` table seed is deferred (see src/data/community-slugs.js).
+  { path: "/community", changefreq: "weekly", priority: 0.7 },
 ];
 
 // ── Fetch trending cards from Supabase ────────────────────────────────────────

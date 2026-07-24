@@ -903,6 +903,14 @@
     "built-with": {
       "title": "Built with & partners | One for One",
       "desc": "The services that power One for One, and the marketplaces where collectors buy and sell Yu-Gi-Oh! cards."
+    },
+    "community": {
+      "title": "Stores & Communities",
+      "desc": "Find Yu-Gi-Oh stores, Discord servers and groups near you."
+    },
+    "communityProfile": {
+      "title": "Community profile",
+      "desc": "A Yu-Gi-Oh store or community on 0nefor.one."
     }
   },
   "deckIgnore": {
@@ -1141,5 +1149,51 @@
     "summary": "{resolved} of {total} matched to a card. Unmatched lines are kept as text.",
     "pickOne": "Pick one",
     "remove": "Remove"
+  },
+  "community": {
+    "home": "Community",
+    "directoryTitle": "Stores & Communities",
+    "directorySubtitle": "Find Yu-Gi-Oh stores, Discord servers and groups near you.",
+    "searchPlaceholder": "Search by name",
+    "kindAll": "All",
+    "kindStore": "Stores",
+    "kindDiscord": "Discord",
+    "kindGroup": "Groups",
+    "filterCountry": "Country",
+    "filterRegion": "Region",
+    "remoteDuel": "Remote duel",
+    "empty": "Nothing matches those filters yet.",
+    "addYours": "Add your store or community",
+    "claimThis": "Claim this store",
+    "claimTitle": "Claim this listing",
+    "claimBody": "Confirm you manage this store or community. Your account becomes its owner and you can edit the profile.",
+    "claimConfirm": "Yes, I manage this",
+    "claimed": "Claimed",
+    "verified": "Verified",
+    "unclaimedNotice": "This profile is unclaimed. Are you the owner?",
+    "report": "Report",
+    "reportTitle": "Report this listing",
+    "reportPlaceholder": "What is wrong with this listing?",
+    "reportSent": "Report sent. Thank you.",
+    "editTitle": "Edit profile",
+    "createTitle": "Add a store or community",
+    "fieldName": "Name",
+    "fieldKind": "Type",
+    "fieldBio": "About",
+    "fieldWebsite": "Website",
+    "fieldDiscord": "Discord invite",
+    "fieldCity": "City",
+    "fieldCountry": "Country",
+    "save": "Save",
+    "create": "Publish",
+    "cancel": "Cancel",
+    "viewAnnounces": "View listings",
+    "openDiscord": "Open Discord",
+    "openWebsite": "Website",
+    "myCommunities": "My communities",
+    "manage": "Manage",
+    "metaProfileTitle": "{name}: Yu-Gi-Oh {kind} in {city}",
+    "metaProfileTitleNoCity": "{name}: Yu-Gi-Oh {kind}",
+    "metaProfileDesc": "{name}: address, Discord and listings on 0nefor.one."
   }
 }

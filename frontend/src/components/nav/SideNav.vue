@@ -85,6 +85,28 @@ function activate(item) {
           </template>
         </v-tooltip>
       </template>
+
+      <!-- Community directory: a plain named-route link rather than the
+           `navigate` event above, since that event is routed through
+           App.vue's changePage() arg map, which this task doesn't touch. -->
+      <v-tooltip
+        location="right"
+        :text="t('community.home')"
+        :disabled="!collapsed"
+      >
+        <template #activator="{ props: tip }">
+          <router-link
+            v-bind="tip"
+            class="sn-item"
+            :class="{ 'sn-item--active': page === 'community' }"
+            :aria-current="page === 'community' ? 'page' : undefined"
+            :to="{ name: 'community', params: { locale } }"
+          >
+            <v-icon icon="mdi-storefront-outline" size="24" class="sn-ico" />
+            <span v-show="!collapsed" class="sn-label">{{ t('community.home') }}</span>
+          </router-link>
+        </template>
+      </v-tooltip>
     </nav>
 
     <div class="sn-footer mt-auto">

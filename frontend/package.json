@@ -20,6 +20,7 @@
     "edopro:spike": "node scripts/edopro/spike.mjs",
     "edopro:card-db": "node scripts/edopro/build-card-db.mjs",
     "copy:engine": "node scripts/copy-engine.mjs",
+    "community:seed": "node scripts/seed-communities.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },
