@@ -37,7 +37,7 @@ const route = useRoute();
       :card="componentCard"
       :size="18"
       :icons-only="true"
-      class="absolute top-1 right-1 rounded-md px-1 py-0.5"
+      class="absolute top-1 right-1 rounded-md px-1 !py-0.5"
       style="background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px)"
     />
     <CardBanlistBadge :card="componentCard" class="absolute top-1 left-1" />

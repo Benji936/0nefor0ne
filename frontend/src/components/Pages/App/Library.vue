@@ -30,7 +30,7 @@ const { t } = useI18n();
 
         <!-- View switch (rows vs tiles) -->
         <div
-          class="inline-flex items-center rounded-lg p-0.5 gap-0.5"
+          class="inline-flex items-center rounded-lg !p-0.5 gap-0.5"
           style="background: var(--c-surface-2); border: 1px solid var(--c-border)"
           role="group"
           :aria-label="$t('library.viewLabel')"

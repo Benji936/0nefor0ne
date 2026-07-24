@@ -24,7 +24,8 @@ export async function fetchAnnounces() {
     .from("announce")
     .select(`
       *,
-      images:announce_image(id, url, sort_order)
+      images:announce_image(id, url, sort_order),
+      wantCards:announce_want_card(id, ygo_card_id, card_name, qty, sort_order)
     `)
     .eq("status", "active");
 
@@ -60,6 +61,7 @@ export async function fetchAnnounces() {
   return announces.map(a => {
     a.Trader = tradersById[a.seller] || {};
     a.images = (a.images ?? []).sort((img1, img2) => img1.sort_order - img2.sort_order);
+    a.wantCards = (a.wantCards ?? []).sort((w1, w2) => w1.sort_order - w2.sort_order);
     return a;
   });
 
@@ -78,7 +80,8 @@ export async function fetchMyAnnounces() {
     .from("announce")
     .select(`
       *,
-      images:announce_image(id, url, sort_order)
+      images:announce_image(id, url, sort_order),
+      wantCards:announce_want_card(id, ygo_card_id, card_name, qty, sort_order)
     `)
     .eq("seller", me)
     .order("created_at", { ascending: false });
@@ -123,6 +126,7 @@ export async function createAnnounce({
   kind = 'sell',
   archetype = null,
   wantDetail = null,
+  wantCards = [],
 } = {}) {
   const me = (await getClient().auth.getSession()).data?.session?.user?.id;
   if (!me) throw new Error("Not authenticated");
@@ -170,6 +174,12 @@ export async function createAnnounce({
     // should never block the announce from being created.
   }
 
+  // 1c. Want list (Looking For posts). Inserted after the announce so the rows
+  //      have a parent to hang off; RLS derives ownership from that parent.
+  if (kind === 'looking_for' && wantCards.length > 0) {
+    await replaceWantCards(announceId, wantCards);
+  }
+
   // 2. Upload images and create records
   if (imageFiles && imageFiles.length > 0) {
     await Promise.all(imageFiles.map((file, index) =>
@@ -178,6 +188,40 @@ export async function createAnnounce({
   }
 
   return announceId;
+}
+
+/**
+ * Replace an announce's want list wholesale.
+ *
+ * Delete-then-insert rather than a diff: the list is small, order matters, and
+ * the rows carry no identity a user would notice being recycled. Unlike images,
+ * there is nothing in storage to clean up, so this is cheap and total.
+ *
+ * @param {number} announceId
+ * @param {Array<{ygo_card_id:number|null, card_name:string, qty:number, sort_order:number}>} rows
+ *        as produced by lib/announceWantCards.js buildWantRows()
+ */
+export async function replaceWantCards(announceId, rows = []) {
+  const { error: delError } = await getClient()
+    .from("announce_want_card")
+    .delete()
+    .eq("announce", announceId);
+  if (delError) throw delError;
+
+  if (rows.length === 0) return;
+
+  const { error: insError } = await getClient()
+    .from("announce_want_card")
+    .insert(rows.map((r, i) => ({
+      announce:    announceId,
+      ygo_card_id: r.ygo_card_id ?? null,
+      card_name:   r.card_name,
+      qty:         r.qty,
+      // Re-derive rather than trusting the caller, so a hand-built list still
+      // renders in the order it was given.
+      sort_order:  r.sort_order ?? i,
+    })));
+  if (insError) throw insError;
 }
 
 /**

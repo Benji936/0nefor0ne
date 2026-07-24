@@ -204,14 +204,14 @@ const CardSlot = defineComponent({
         <!-- Missing badge -->
         <div
           v-if="isMissing"
-          class="absolute bottom-0 left-0 right-0 flex items-center justify-center rounded-b text-[9px] font-bold py-0.5"
+          class="absolute bottom-0 left-0 right-0 flex items-center justify-center rounded-b text-[9px] font-bold !py-0.5"
           style="background: rgba(220,38,38,0.85); color: white; letter-spacing: 0.03em"
         >{{ missingBadge }}</div>
 
         <!-- Unrecognized badge -->
         <div
           v-if="isUnrecognized"
-          class="absolute bottom-0 left-0 right-0 flex items-center justify-center rounded-b text-[9px] font-bold py-0.5"
+          class="absolute bottom-0 left-0 right-0 flex items-center justify-center rounded-b text-[9px] font-bold !py-0.5"
           style="background: rgba(100,100,100,0.85); color: white; letter-spacing: 0.03em"
         >{{ unknownBadge }}</div>
 

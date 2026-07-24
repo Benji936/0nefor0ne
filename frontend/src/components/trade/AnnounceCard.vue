@@ -1,9 +1,12 @@
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { timeAgo } from "@/lib/notifications";
 import { isLookingFor } from "@/lib/announceKind";
 import { isExpired, isExpiringSoon, daysUntilExpiry } from "@/lib/announceExpiry";
+import { archetypeArtUrl, ensureArchetypeArtManifest } from "@/lib/archetypeArt";
+
+ensureArchetypeArtManifest();
 
 const { t } = useI18n();
 
@@ -21,6 +24,24 @@ const coverImage  = computed(() => props.announce.images?.[0]?.url ?? null);
 const imageCount  = computed(() => props.announce.images?.length ?? 0);
 
 const isLf = computed(() => isLookingFor(props.announce));
+
+// Archetype art. Null whenever the announce matched no archetype, and null
+// again once the image has failed to load — a few of the newest cards have no
+// cropped artwork rendered yet, and a Looking For post with no recognisable
+// archetype must show no picture rather than a placeholder.
+const artFailed = ref(false);
+const archetypeArt = computed(() =>
+  isLf.value && !artFailed.value ? archetypeArtUrl(props.announce.archetype) : null
+);
+
+// Looking For posts are usually text-only, and for those the 4:3 image block is
+// just a grey rectangle, so the card goes compact and leans on the archetype
+// thumbnail instead. A poster who did attach photos keeps the normal block.
+const hasImageSlot = computed(() => !isLf.value || !!coverImage.value);
+
+// Distinct cards on the want list, not total copies: "8 cards" reads better
+// than "23 cards" for a list of eight lines asking for three copies each.
+const wantCount = computed(() => (isLf.value ? props.announce.wantCards?.length ?? 0 : 0));
 
 // Expiry state. Only ever surfaces on the owner's own cards, because
 // fetchAnnounces() does not return other people's expired listings at all.
@@ -53,22 +74,25 @@ const location = computed(() => {
 <template>
   <article
     class="ac"
-    :class="{ 'ac--own': isOwner, 'ac--compact': compact, 'ac--expired': expired }"
+    :class="{ 'ac--own': isOwner, 'ac--compact': compact, 'ac--expired': expired, 'ac--noimg': !hasImageSlot }"
     @click="emit('click', announce)"
   >
 
+    <!-- Badge stack: a listing can be both a Looking For and expired. Sits
+         outside .ac-img so one block serves both layouts — CSS floats it over
+         the image when there is one, and lets it sit in flow when there isn't. -->
+    <div v-if="isLf || expired || expiring" class="ac-badges">
+      <span v-if="isLf" class="ac-badge ac-badge--lf">{{ t('announce.lfBadge') }}</span>
+      <span v-if="expired" class="ac-badge ac-badge--expired">{{ t('announce.expired') }}</span>
+      <!-- Short form: the pill is 10px tall, the full sentence lives in the
+           detail dialog. -->
+      <span v-else-if="expiring" class="ac-badge ac-badge--soon">
+        {{ t('announce.expiresInShort', { days: daysLeft }) }}
+      </span>
+    </div>
+
     <!-- Image -->
-    <div class="ac-img">
-      <!-- Badge stack: a listing can be both a Looking For and expired. -->
-      <div v-if="isLf || expired || expiring" class="ac-badges">
-        <span v-if="isLf" class="ac-badge ac-badge--lf">{{ t('announce.lfBadge') }}</span>
-        <span v-if="expired" class="ac-badge ac-badge--expired">{{ t('announce.expired') }}</span>
-        <!-- Short form: the pill is 10px tall, the full sentence lives in the
-             detail dialog. -->
-        <span v-else-if="expiring" class="ac-badge ac-badge--soon">
-          {{ t('announce.expiresInShort', { days: daysLeft }) }}
-        </span>
-      </div>
+    <div v-if="hasImageSlot" class="ac-img">
       <img v-if="coverImage" :src="coverImage" :alt="announce.title" class="ac-img__photo" loading="lazy" />
       <div v-else class="ac-img__empty">
         <v-icon icon="mdi-image-off-outline" size="32" style="color: var(--c-border)" />
@@ -91,10 +115,29 @@ const location = computed(() => {
     <div class="ac-body">
       <p class="ac-title">{{ announce.title }}</p>
       <p v-if="isLf && announce.archetype" class="ac-archetype">
-        <v-icon icon="mdi-cards-outline" size="12" />
+        <img
+          v-if="archetypeArt"
+          :src="archetypeArt"
+          class="ac-archetype__art"
+          alt=""
+          loading="lazy"
+          @error="artFailed = true"
+        />
+        <v-icon v-else icon="mdi-cards-outline" size="12" />
         {{ announce.archetype }}
       </p>
+      <p v-if="wantCount" class="ac-wants">
+        <v-icon icon="mdi-format-list-bulleted" size="12" />
+        {{ t('announce.wantCount', { count: wantCount }, wantCount) }}
+      </p>
       <p v-if="announce.description" class="ac-desc">{{ announce.description }}</p>
+
+      <!-- Budget: normally a pill floating on the image, which compact Looking
+           For cards no longer have. -->
+      <p v-if="!hasImageSlot && formattedPrice" class="ac-budget">
+        <span v-if="isLf" class="ac-budget__label">{{ t('announce.budget') }}</span>
+        {{ formattedPrice }}
+      </p>
 
       <div class="ac-footer">
         <!-- Seller -->
@@ -115,6 +158,7 @@ const location = computed(() => {
 <style scoped>
 /* ── Base card ─────────────────────────────────────── */
 .ac {
+  position: relative; /* anchors .ac-badges when the image block is absent */
   display: flex;
   flex-direction: column;
   border-radius: 16px;
@@ -241,6 +285,14 @@ const location = computed(() => {
   letter-spacing: .04em;
 }
 
+/* Compact Looking For card: no image to float over, so the badges drop into
+   normal flow above the title and the row can use the full width. */
+.ac--noimg .ac-badges {
+  position: static;
+  max-width: none;
+  padding: 12px 13px 0;
+}
+
 /* Expired cards read as dormant: drained of colour, but still legible and
    still clickable, because clicking is how the owner renews them. The badge
    itself is deliberately left out so it stays crisp against the dimming. */
@@ -257,13 +309,50 @@ const location = computed(() => {
   margin-right: 3px;
   text-transform: uppercase;
 }
-.ac-archetype {
+.ac-wants {
   display: flex;
   align-items: center;
   gap: 4px;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-muted);
+}
+.ac-archetype {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 11px;
   font-weight: 600;
   color: var(--c-mutual);
+  margin: 0;
+}
+/* Elected card artwork for the archetype. Hidden entirely (not swapped for a
+   placeholder) if it fails to load — see artFailed in the script. */
+.ac-archetype__art {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--c-mutual) 45%, transparent);
+}
+.ac--expired .ac-archetype__art { filter: grayscale(0.85); }
+
+/* Body-level budget, replacing the on-image price pill on compact cards. */
+.ac-budget {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--c-text);
+}
+.ac-budget__label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--c-muted);
+  margin-right: 3px;
+  text-transform: uppercase;
 }
 
 /* ── Body ──────────────────────────────────────────── */

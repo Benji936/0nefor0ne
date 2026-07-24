@@ -24,6 +24,21 @@ function truncate120(s) {
   return s.length > 120 ? s.slice(0, 117) + '…' : s;
 }
 
+/**
+ * Whole-word pattern for an archetype name, tolerating a plural suffix.
+ *
+ * Bounded at both ends, or a short name like the real "P" archetype matches
+ * the start of "playset". The trailing guard is `(?!\w)` rather than `\b`
+ * because names such as "D.D." end in a non-word character, where `\b` would
+ * demand a following word character and never match.
+ *
+ * Used for both the match and the strip that derives want_detail, so the two
+ * cannot disagree about how much text an archetype accounts for.
+ */
+function archetypeRe(name) {
+  return new RegExp(`\\b${escapeRe(name)}(?:s|es)?(?!\\w)`, 'i');
+}
+
 /** First archetype appearing in `text`, longest name first. */
 function matchArchetype(text, archetypes) {
   const haystack = String(text ?? '').trim();
@@ -31,8 +46,7 @@ function matchArchetype(text, archetypes) {
 
   const sorted = [...archetypes].filter(Boolean).sort((a, b) => b.length - a.length);
   for (const name of sorted) {
-    const re = new RegExp(`\\b${escapeRe(name)}`, 'i');
-    if (re.test(haystack)) return name;
+    if (archetypeRe(name).test(haystack)) return name;
   }
   return null;
 }
@@ -89,7 +103,7 @@ function parseAnnounce(content, archetypes = []) {
     // Whatever is left after removing the archetype is the qualifier
     // ("deck base"). With no archetype match the whole headline is the detail.
     wantDetail = archetype
-      ? headline.replace(new RegExp(`\\b${escapeRe(archetype)}\\w*`, 'i'), '').replace(/\s+/g, ' ').trim()
+      ? headline.replace(archetypeRe(archetype), '').replace(/\s+/g, ' ').trim()
       : headline;
     if (!wantDetail) wantDetail = null;
     // wantDetail is derived from the untruncated headline, so it must be

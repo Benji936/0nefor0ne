@@ -6,6 +6,8 @@ import { timeAgo } from "@/lib/notifications";
 import { deleteAnnounce, updateAnnounce, renewAnnounce } from "@/lib/announces";
 import { isLookingFor } from "@/lib/announceKind";
 import { isExpired, isExpiringSoon, daysUntilExpiry } from "@/lib/announceExpiry";
+import { archetypeArtUrl, ensureArchetypeArtManifest } from "@/lib/archetypeArt";
+import { cardImage } from "@/lib/cardImage";
 import { getClient } from "@/lib/supabaseClient";
 import { searchById, searchCardByName, searchCardBySetCode } from "@/api";
 import AddCard from "@/components/library/AddCard.vue";
@@ -34,6 +36,7 @@ watch(() => props.modelValue, open => {
     imgIdx.value = 0;
     mobileTab.value = "details";
     addedToList.value = false;
+    artFailed.value = false; // the dialog is reused across announces
     // reset card link state
     cardLinkOpen.value    = false;
     cardQuery.value       = "";
@@ -135,6 +138,25 @@ const location = computed(() => {
 });
 const rating = computed(() => props.announce?.Trader?.avg_rating ?? null);
 const images = computed(() => props.announce?.images ?? []);
+const wantCards = computed(() =>
+  [...(props.announce?.wantCards ?? [])].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+);
+
+// A Looking For post with no photo has nothing to put in the gallery, and an
+// empty image frame just reads as broken. Drop it in that case — a slim header
+// (.bare-head) takes over the close button, budget and owner badge. Sell posts,
+// and LF posts that do carry photos, keep the gallery.
+const showGallery = computed(() => !isLf.value || images.value.length > 0);
+
+// Archetype art, shown in place of the empty-gallery icon and beside the
+// archetype name. Null for an announce that matched no archetype, and null
+// again once the image has failed to load, so nothing is ever drawn in its place.
+ensureArchetypeArtManifest();
+const artFailed = ref(false);
+const archetypeArt = computed(() =>
+  isLf.value && !artFailed.value ? archetypeArtUrl(props.announce?.archetype) : null
+);
+
 const discordUrl  = computed(() => props.announce?.discord_url ?? null);
 const guildName   = computed(() => props.announce?.discord_guild_name ?? null);
 const guildIcon   = computed(() => props.announce?.discord_guild_icon ?? null);
@@ -149,6 +171,10 @@ async function handleDelete() {
   finally { deleting.value = false; }
 }
 
+// Closes the listing. Looking For posts label this "Mark as Found", but the
+// stored status stays "sold" either way — it is the table's only closed state
+// (CHECK status IN ('active','sold','archived')), and the distinction is
+// already carried by `kind`.
 async function handleMarkSold() {
   updating.value = true;
   try { await updateAnnounce(props.announce.id, { status: "sold" }); emit("updated", props.announce.id); close(); }
@@ -237,8 +263,9 @@ function onCardAdded() {
       >
         <div class="dlg">
 
-      <!-- Image gallery (full bleed at top) -->
-      <div class="gallery">
+      <!-- Image gallery (full bleed at top). Hidden for a Looking For post with
+           no photos, which has nothing to show; .bare-head below stands in. -->
+      <div v-if="showGallery" class="gallery">
         <img
           v-if="images.length"
           :src="images[imgIdx].url"
@@ -246,7 +273,14 @@ function onCardAdded() {
           class="gallery__img"
         />
         <div v-else class="gallery__empty">
-          <v-icon icon="mdi-image-off-outline" size="48" style="color: var(--c-border)" />
+          <img
+            v-if="archetypeArt"
+            :src="archetypeArt"
+            :alt="announce.archetype"
+            class="gallery__art"
+            @error="artFailed = true"
+          />
+          <v-icon v-else icon="mdi-image-off-outline" size="48" style="color: var(--c-border)" />
         </div>
 
         <!-- Prev / Next -->
@@ -290,6 +324,22 @@ function onCardAdded() {
         </div>
       </div>
 
+      <!-- Slim header for a gallery-less Looking For post: keeps the close
+           button reachable and re-homes the owner badge and budget the gallery
+           overlay would otherwise carry. -->
+      <div v-else class="bare-head">
+        <span v-if="isOwner" class="bare-head__own">
+          <v-icon icon="mdi-account-check" size="12" />
+          {{ t("announces.yourAnnounce") }}
+        </span>
+        <span v-if="formattedPrice" class="bare-head__price">
+          {{ t('announce.budget') }}: {{ formattedPrice }}
+        </span>
+        <button class="bare-head__close" @click="close">
+          <v-icon icon="mdi-close" size="18" />
+        </button>
+      </div>
+
       <!-- Scrollable content -->
       <div class="dlg-body">
 
@@ -325,9 +375,27 @@ function onCardAdded() {
 
         <!-- Archetype (Looking For posts only) -->
         <p v-if="isLf && announce.archetype" class="detail-archetype">
-          <v-icon icon="mdi-cards-outline" size="14" />
+          <img
+            v-if="archetypeArt"
+            :src="archetypeArt"
+            class="detail-archetype__art"
+            alt=""
+            @error="artFailed = true"
+          />
+          <v-icon v-else icon="mdi-cards-outline" size="14" />
           {{ announce.archetype }}<template v-if="announce.want_detail"> · {{ announce.want_detail }}</template>
         </p>
+
+        <!-- Want list. Unresolved entries are shown too: they carry no card id
+             but are still what the poster asked for. -->
+        <ul v-if="isLf && wantCards.length" class="want-list">
+          <li v-for="w in wantCards" :key="w.id ?? w.card_name" class="want-row">
+            <img v-if="w.ygo_card_id" :src="cardImage(w.ygo_card_id)" class="want-thumb" alt="" loading="lazy" />
+            <span v-else class="want-thumb want-thumb--none"><v-icon icon="mdi-help" size="12" /></span>
+            <span class="want-qty">{{ w.qty }}&times;</span>
+            <span class="want-name">{{ w.card_name }}</span>
+          </li>
+        </ul>
 
         <!-- Discord source link (only for announces posted from Discord) -->
         <a
@@ -345,8 +413,11 @@ function onCardAdded() {
           <v-icon icon="mdi-open-in-new" size="13" class="discord-link__ext" />
         </a>
 
-        <!-- Card link section (owner only) -->
-        <div v-if="isOwner" class="card-link-section">
+        <!-- Card link section (owner only, sell posts only). Linking a single
+             card to a Looking For post is backwards — its wants are the want
+             list, and a linked card would land on the poster's trade list — so
+             it is hidden there. -->
+        <div v-if="isOwner && !isLf" class="card-link-section">
 
           <!-- Already linked: show chip -->
           <div v-if="announce.ygo_card_id" class="card-linked-chip">
@@ -461,7 +532,7 @@ function onCardAdded() {
           <button class="btn-sold" :disabled="updating" @click="handleMarkSold">
             <v-progress-circular v-if="updating" indeterminate size="14" width="2" />
             <v-icon v-else icon="mdi-check-circle-outline" size="16" />
-            {{ t('announce.markSold') }}
+            {{ isLf ? t('announce.markFound') : t('announce.markSold') }}
           </button>
         </template>
         <template v-else>
@@ -568,6 +639,13 @@ function onCardAdded() {
   display: flex; align-items: center; justify-content: center;
   background: var(--c-surface-2);
 }
+/* Archetype artwork standing in for a photo. `contain` because the elected
+   card's art box is roughly square and the gallery is wide — cropping it to
+   fill would cut the subject. */
+.gallery__art {
+  width: 100%; height: 100%;
+  object-fit: contain;
+}
 
 /* Nav arrows */
 .gallery__arrow {
@@ -629,6 +707,30 @@ function onCardAdded() {
   backdrop-filter: blur(6px);
 }
 
+/* ── Slim header (Looking For with no gallery) ─────── */
+.bare-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  background: var(--c-surface);
+  border-bottom: 1px solid var(--c-border);
+  flex-shrink: 0;
+}
+.bare-head__own {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 9px; border-radius: 99px;
+  background: var(--c-trade); color: #fff;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+}
+.bare-head__price { font-size: 14px; font-weight: 800; color: var(--c-text); }
+.bare-head__close {
+  margin-left: auto;
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--c-muted); cursor: pointer;
+  transition: background 0.15s ease;
+}
+.bare-head__close:hover { background: var(--c-surface-2); }
+
 /* ── Body ─────────────────────────────────────────── */
 .dlg-body {
   padding: 18px 18px 4px;
@@ -674,6 +776,54 @@ function onCardAdded() {
   font-size: 13px;
   font-weight: 600;
   color: var(--c-mutual);
+}
+/* ── Want list (Looking For posts) ─────────────────── */
+.want-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.want-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 7px;
+  border-radius: 8px;
+  background: var(--c-surface-2);
+}
+.want-thumb {
+  width: 22px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+/* An entry the resolver could not pin to a card is still a real want, so it
+   gets a neutral marker rather than being hidden. */
+.want-thumb--none {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-surface);
+  border: 1px dashed var(--c-border);
+  color: var(--c-muted);
+}
+.want-qty { font-size: 11px; font-weight: 800; color: var(--c-muted); flex-shrink: 0; }
+.want-name { font-size: 12.5px; color: var(--c-text); }
+
+/* Elected card artwork for the archetype. Hidden outright if it fails to load
+   (a few of the newest cards have no cropped art), never replaced by a
+   placeholder. */
+.detail-archetype__art {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--c-mutual) 45%, transparent);
 }
 /* ── Expiry notice (owner only) ───────────────────── */
 .expiry {

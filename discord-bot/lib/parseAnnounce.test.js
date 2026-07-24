@@ -101,6 +101,39 @@ test('truncates an over-long want_detail to satisfy the 120-char DB constraint',
   assert.equal(r.wantDetail.slice(117), '…');
 });
 
+test('does not match an archetype that only prefixes a longer word', () => {
+  // "HERO" used to match inside "heroic" because the pattern was word-bounded
+  // at the start only.
+  const r = parseAnnounce('LF: heroic challenger reprint', ARCHETYPES);
+  assert.equal(r.archetype, null);
+  assert.equal(r.wantDetail, 'heroic challenger reprint');
+});
+
+test('does not let a one-letter archetype match the start of a word', () => {
+  // "P" is a real YGOPRODeck archetype; it must not swallow "playset".
+  const r = parseAnnounce('LF: playset of Ash Blossom', [...ARCHETYPES, 'P']);
+  assert.equal(r.archetype, null);
+  assert.equal(r.wantDetail, 'playset of Ash Blossom');
+});
+
+test('still matches a pluralised archetype and strips the plural', () => {
+  const r = parseAnnounce('LF: Darklords deck base', ARCHETYPES);
+  assert.equal(r.archetype, 'Darklord');
+  assert.equal(r.wantDetail, 'deck base');
+});
+
+test('matches an -es plural', () => {
+  const r = parseAnnounce('LF: heroes for my deck', ARCHETYPES);
+  assert.equal(r.archetype, 'HERO');
+  assert.equal(r.wantDetail, 'for my deck');
+});
+
+test('matches an archetype whose name ends in a non-word character', () => {
+  const r = parseAnnounce('LF: D.D. playset', [...ARCHETYPES, 'D.D.']);
+  assert.equal(r.archetype, 'D.D.');
+  assert.equal(r.wantDetail, 'playset');
+});
+
 test('survives an empty archetype list', () => {
   const r = parseAnnounce('LF: Darklord deck base', []);
   assert.equal(r.kind, ANNOUNCE_KIND.LOOKING_FOR);

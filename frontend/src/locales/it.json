@@ -341,6 +341,7 @@
     "edit": "Modifica",
     "delete": "Elimina",
     "markSold": "Segna come venduto",
+    "markFound": "Segna come trovato",
     "sold": "Venduto",
     "archived": "Archiviato",
     "contactSeller": "Contatta il venditore",
@@ -361,6 +362,8 @@
     "kindLookingFor": "Cerco",
     "kindHint": "Stai vendendo una carta o ne stai cercando una?",
     "archetype": "Archetipo",
+    "archetypeOptional": "Archetipo (facoltativo)",
+    "lfNeedsOne": "Indica un archetipo, cosa cerchi, o entrambi.",
     "archetypePlaceholder": "Cerca un archetipo, es. Darklord",
     "archetypeNoMatch": "Nessun archetipo corrisponde.",
     "archetypeLoadFailed": "Impossibile caricare la lista degli archetipi. Puoi comunque descrivere cosa cerchi.",
@@ -378,7 +381,9 @@
     "expiresInShort": "{days}g rimasti",
     "expiresInDays": "Scade tra {days} giorno. | Scade tra {days} giorni.",
     "expiredNotice": "Questo annuncio è scaduto e non è più visibile agli altri trader.",
-    "renew": "Rinnova"
+    "renew": "Rinnova",
+    "wantCount": "{count} carta | {count} carte",
+    "wantTitleMore": "{name} +{count} altre"
   },
   "announceChat": {
     "withSeller": "Chatta con il venditore",
@@ -1126,5 +1131,15 @@
       "body": "One for One è gratuito e non applica commissioni di scambio. Se vuoi aiutare a coprire i costi di hosting e a mantenere attivo il progetto, puoi offrirmi un caffè.",
       "cta": "Sostienici su Ko-fi"
     }
+  },
+  "wantList": {
+    "label": "Lista di ricerca (facoltativo)",
+    "placeholder": "Una carta per riga\n3x Ash Blossom & Joyous Spring\nSDCB-EN001",
+    "resolve": "Cerca {count} righe",
+    "resolving": "Ricerca {current} di {total}…",
+    "clear": "Svuota",
+    "summary": "{resolved} su {total} associate a una carta. Le righe non associate restano come testo.",
+    "pickOne": "Scegli",
+    "remove": "Rimuovi"
   }
 }

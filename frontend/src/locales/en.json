@@ -341,6 +341,7 @@
     "edit": "Edit",
     "delete": "Delete",
     "markSold": "Mark as Sold",
+    "markFound": "Mark as Found",
     "sold": "Sold",
     "archived": "Archived",
     "contactSeller": "Contact Seller",
@@ -361,6 +362,8 @@
     "kindLookingFor": "Looking for",
     "kindHint": "Selling a card, or looking for one?",
     "archetype": "Archetype",
+    "archetypeOptional": "Archetype (optional)",
+    "lfNeedsOne": "Fill in an archetype, what you are after, or both.",
     "archetypePlaceholder": "Search an archetype, e.g. Darklord",
     "archetypeNoMatch": "No archetype matches that.",
     "archetypeLoadFailed": "Could not load the archetype list. You can still describe what you want.",
@@ -378,7 +381,9 @@
     "expiresInShort": "{days}d left",
     "expiresInDays": "Expires in {days} day. | Expires in {days} days.",
     "expiredNotice": "This announce has expired and is hidden from other traders.",
-    "renew": "Renew"
+    "renew": "Renew",
+    "wantCount": "{count} card | {count} cards",
+    "wantTitleMore": "{name} +{count} more"
   },
   "announceChat": {
     "withSeller": "Chat with seller",
@@ -1126,5 +1131,15 @@
       "body": "One for One is free and takes no trading fees. If you'd like to help cover hosting and keep it running, you can buy me a coffee.",
       "cta": "Support us on Ko-fi"
     }
+  },
+  "wantList": {
+    "label": "Want list (optional)",
+    "placeholder": "One card per line\n3x Ash Blossom & Joyous Spring\nSDCB-EN001",
+    "resolve": "Look up {count} lines",
+    "resolving": "Looking up {current} of {total}…",
+    "clear": "Clear",
+    "summary": "{resolved} of {total} matched to a card. Unmatched lines are kept as text.",
+    "pickOne": "Pick one",
+    "remove": "Remove"
   }
 }

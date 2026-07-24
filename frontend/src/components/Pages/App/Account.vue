@@ -336,7 +336,7 @@ watch(() => props.login?.user?.id, (id) => {
             v-if="discordId"
             id="discord-resync-btn"
             :disabled="discordSyncing"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all"
+            class="flex items-center gap-1.5 px-3 !py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all"
             style="border: 1px solid var(--c-border); background: transparent; color: var(--c-muted)"
             :style="discordSyncing ? { opacity: 0.6 } : {}"
             @click="resyncDiscord"
@@ -353,7 +353,7 @@ watch(() => props.login?.user?.id, (id) => {
           <!-- Linked badge (alongside re-sync) -->
           <div
             v-if="discordId"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+            class="flex items-center gap-1.5 px-3 !py-1.5 rounded-lg"
             style="background: color-mix(in srgb, #57f287 12%, transparent); border: 1px solid color-mix(in srgb, #57f287 30%, transparent)"
           >
             <v-icon icon="mdi-check-circle" size="13" style="color: #57f287" />
