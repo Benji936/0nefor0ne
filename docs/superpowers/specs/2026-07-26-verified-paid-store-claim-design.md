@@ -16,9 +16,10 @@ and (per product decision) put the claim behind a paid subscription.
 Make claiming a store require **both**:
 1. **Identity verification** — proof the claimer controls the store (MVP: email code to the
    store's official on-file address).
-2. **An annual subscription** — **$60/year, first year free**, implemented as a Stripe
+2. **An annual subscription** — **first year free, then ~$60/year charged in the currency
+   for the store's location** (e.g. USD / EUR / GBP, USD fallback), implemented as a Stripe
    subscription with a **12-month free trial** (card collected up front, $0 charged now,
-   auto-charges $60 at the 1-year mark and yearly after).
+   first real charge at the 1-year mark and yearly after).
 
 Ownership + the Verified badge exist **only while the subscription is active** (trialing or
 active). When it ends, the store reverts to an unclaimed — but content-rich — listing.
@@ -99,9 +100,10 @@ established. Email is sent via **Resend**, which the project already uses.)
 2. **`claim-verify-code`** — input: `community_id`, `code`. Checks hash + expiry + attempts;
    on success sets `identity_verified_at`.
 3. **`claim-create-checkout`** — requires `identity_verified_at`. Creates a **subscription-mode**
-   Stripe Checkout Session for the $60/yr Price with a **365-day trial**, stores
-   `stripe_customer_id`/`stripe_subscription_id`, returns the redirect URL. Success/cancel
-   URLs return to `/{locale}/community/{slug}?claim=success|cancel`.
+   Stripe Checkout Session with a **365-day trial**, on the annual Price in the **currency
+   mapped from the store's location** (`country_code`/`country`/`region` → currency; USD
+   fallback). Stores `stripe_customer_id`/`stripe_subscription_id`, returns the redirect URL.
+   Success/cancel URLs return to `/{locale}/community/{slug}?claim=success|cancel`.
 4. **`stripe-webhook`** — verifies the Stripe signature; idempotent on event id. Handles the
    subscription lifecycle:
    - `customer.subscription.created` / `.updated` → status `trialing`/`active`: set
@@ -135,6 +137,10 @@ established. Email is sent via **Resend**, which the project already uses.)
   Customer Portal), where the owner can update billing or cancel.
 - `src/lib/community.js` gains `requestClaimCode`, `verifyClaimCode`, `startClaimCheckout`,
   `openBillingPortal` (thin wrappers over the Edge Functions).
+- **`src/lib/communityPricing.js`** (pure, unit-tested) — maps a store's
+  `country_code`/`region` → `{ currency, displayAmount }` (fixed round figures per currency,
+  not live FX; USD fallback), used for the dialog's price copy and by
+  `claim-create-checkout`. Supported currencies finalized in the plan (min USD/EUR/GBP).
 
 ### Admin (MVP)
 
@@ -178,8 +184,10 @@ Two increments, shipped together (the feature only makes sense whole):
 
 ## Prerequisites (owner-provided, needed to go live — not to write the plan)
 
-1. **Stripe** — account + a **$60/year recurring Price** + `STRIPE_SECRET_KEY` and
-   `STRIPE_WEBHOOK_SECRET` in Supabase secrets. (Currency assumed USD — confirm.)
+1. **Stripe** — account + an annual recurring Price with **multi-currency amounts**
+   (`currency_options`) covering the supported currencies (fixed round figures, e.g. $60 USD
+   / €60 EUR / £50 GBP — not live FX) + `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` in
+   Supabase secrets.
 2. **Resend** — `RESEND_API_KEY` in Supabase secrets (provider already in use), and a
    verified sender domain.
 3. Confirm admin user id.
