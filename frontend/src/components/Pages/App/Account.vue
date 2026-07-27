@@ -5,7 +5,7 @@ import { useRoute } from "vue-router";
 import { getClient, updateTraderProfile, linkDiscordAccount, syncDiscordIdToTrader } from "@/lib/supabaseClient";
 import { COUNTRIES } from "@/lib/countries";
 import { countryByCode } from "@/lib/countries";
-import { fetchMyCommunities } from "@/lib/community";
+import { fetchMyCommunities, openBillingPortal } from "@/lib/community";
 import CommunityEditDialog from "@/components/community/CommunityEditDialog.vue";
 
 const { t } = useI18n();
@@ -199,6 +199,21 @@ function onCommunitySaved(row) {
   const idx = communities.value.findIndex(c => c.id === row.id);
   if (idx !== -1) communities.value[idx] = row;
 }
+
+const billingBusy = ref(false);
+async function manageSubscription(row) {
+  if (billingBusy.value) return;
+  billingBusy.value = true;
+  try {
+    const res = await openBillingPortal(row.id);
+    if (res?.url) { window.location.href = res.url; return; }
+    alert(t("community.manageSubBillingError"));
+  } catch {
+    alert(t("community.manageSubBillingError"));
+  } finally {
+    billingBusy.value = false;
+  }
+}
 </script>
 
 <template>
@@ -346,6 +361,15 @@ function onCommunitySaved(row) {
             class="shrink-0 text-xs font-semibold"
             style="color: var(--c-trade)"
           >{{ t('community.manage') }}</router-link>
+
+          <button
+            v-if="row.verified"
+            type="button"
+            class="shrink-0 text-xs font-semibold"
+            style="color: var(--c-muted)"
+            :disabled="billingBusy"
+            @click="manageSubscription(row)"
+          >{{ t('community.manageSubscription') }}</button>
 
           <button
             type="button"
