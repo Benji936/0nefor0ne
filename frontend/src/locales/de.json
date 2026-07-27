@@ -1174,6 +1174,7 @@
     "claimCodeLabel": "6-stelliger Code",
     "claimVerify": "Bestätigen",
     "claimResend": "Code erneut senden",
+    "claimTryManual": "Code nicht erhalten oder falsche E-Mail? Manuelle Prüfung anfordern",
     "claimInvalidCode": "Dieser Code ist nicht richtig. {count} Versuche übrig.",
     "claimExpiredCode": "Dieser Code ist abgelaufen. Sende einen neuen.",
     "claimRateLimited": "Es wurde gerade ein Code gesendet. Prüfe dein Postfach oder warte eine Minute zum erneuten Senden.",
