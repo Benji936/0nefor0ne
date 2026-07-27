@@ -45,35 +45,48 @@ Deno.serve(async (req) => {
     const sub = event.data.object as Stripe.Subscription;
     const communityId = Number(sub.metadata?.community_id);
     const claimer = sub.metadata?.claimer;
-    if (!communityId || !claimer) return new Response("no metadata", { status: 200 });
+    if (!communityId || !claimer || !/^[0-9a-f-]{36}$/i.test(claimer)) {
+      return new Response("no metadata", { status: 200 });
+    }
 
     const status = sub.status; // trialing | active | past_due | canceled | unpaid | incomplete...
     const periodEnd = sub.current_period_end
       ? new Date(sub.current_period_end * 1000).toISOString()
       : null;
 
-    // Mirror subscription state onto the claim row (service role bypasses guard).
-    await admin.from("community_claim").update({
-      stripe_customer_id: typeof sub.customer === "string" ? sub.customer : sub.customer?.id ?? null,
-      stripe_subscription_id: sub.id,
-      subscription_status: status,
-      current_period_end: periodEnd,
-    }).eq("community", communityId).eq("claimer", claimer);
+    try {
+      // Mirror subscription state onto the claim row (service role bypasses guard).
+      const { error: mirrorErr } = await admin.from("community_claim").update({
+        stripe_customer_id: typeof sub.customer === "string" ? sub.customer : sub.customer?.id ?? null,
+        stripe_subscription_id: sub.id,
+        subscription_status: status,
+        current_period_end: periodEnd,
+      }).eq("community", communityId).eq("claimer", claimer);
+      if (mirrorErr) throw new Error(`mirror: ${mirrorErr.message}`);
 
-    if (status === "trialing" || status === "active") {
-      // Grant ownership. WHERE guard: only if unclaimed, or already owned by this
-      // same claimer (re-subscribe). First active subscription wins a race.
-      await admin.from("community")
-        .update({ owner: claimer, verified: true, status: "published", updated_at: new Date().toISOString() })
-        .eq("id", communityId).or(`owner.is.null,owner.eq.${claimer}`);
-    } else if (status === "canceled" || status === "unpaid") {
-      // Lapse: revert to unclaimed but keep content. Only if THIS claimer still
-      // owns it (don't clobber a different current owner).
-      await admin.from("community")
-        .update({ owner: null, verified: false, status: "published", updated_at: new Date().toISOString() })
-        .eq("id", communityId).eq("owner", claimer);
+      if (status === "trialing" || status === "active") {
+        // Grant ownership. WHERE guard: only if unclaimed, or already owned by this
+        // same claimer (re-subscribe). First active subscription wins a race.
+        const { error: grantErr } = await admin.from("community")
+          .update({ owner: claimer, verified: true, status: "published", updated_at: new Date().toISOString() })
+          .eq("id", communityId).or(`owner.is.null,owner.eq.${claimer}`);
+        if (grantErr) throw new Error(`grant: ${grantErr.message}`);
+      } else if (status === "canceled" || status === "unpaid") {
+        // Lapse: revert to unclaimed but keep content. Only if THIS claimer still
+        // owns it (don't clobber a different current owner).
+        const { error: revertErr } = await admin.from("community")
+          .update({ owner: null, verified: false, status: "published", updated_at: new Date().toISOString() })
+          .eq("id", communityId).eq("owner", claimer);
+        if (revertErr) throw new Error(`revert: ${revertErr.message}`);
+      }
+      // past_due / incomplete: status recorded above; ownership untouched.
+    } catch (e) {
+      // Un-claim the ledger row so Stripe's retry is not deduped away, and
+      // surface the failure so Stripe actually retries.
+      await admin.from("stripe_webhook_event").delete().eq("event_id", event.id);
+      console.error("stripe-webhook processing failed", String(e));
+      return new Response(`processing error: ${String(e)}`, { status: 500 });
     }
-    // past_due / incomplete: status recorded above; ownership untouched.
   }
 
   return new Response("ok", { status: 200 });
