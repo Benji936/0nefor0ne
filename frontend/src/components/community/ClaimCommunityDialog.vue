@@ -35,6 +35,11 @@ watch(() => props.modelValue, async (open) => {
 
 function close() { emit("update:modelValue", false); }
 
+// Escape hatch from the code step: if the store's on-file email is wrong or
+// unreachable, the code never arrives, so let the claimer fall back to a manual
+// review request instead of being stuck.
+function goManual() { errorMsg.value = ""; step.value = "manual"; }
+
 async function sendCode() {
   if (submitting.value) return;
   errorMsg.value = "";
@@ -130,7 +135,10 @@ async function sendManual() {
               @keyup.enter="verify"
             />
           </div>
-          <button class="link-btn" :disabled="submitting" @click="sendCode">{{ t('community.claimResend') }}</button>
+          <div class="claim-links">
+            <button class="link-btn" :disabled="submitting" @click="sendCode">{{ t('community.claimResend') }}</button>
+            <button class="link-btn link-btn--muted" :disabled="submitting" @click="goManual">{{ t('community.claimTryManual') }}</button>
+          </div>
         </template>
 
         <!-- Manual review -->
@@ -214,8 +222,10 @@ async function sendManual() {
 .field-textarea { resize: vertical; line-height: 1.5; }
 .code-input { letter-spacing: 0.4em; font-weight: 800; font-size: 18px; text-align: center; }
 
-.link-btn { align-self: flex-start; background: none; border: none; padding: 0; font-size: 12px; font-weight: 700; color: var(--c-trade); cursor: pointer; }
+.claim-links { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.link-btn { align-self: flex-start; background: none; border: none; padding: 0; font-size: 12px; font-weight: 700; color: var(--c-trade); cursor: pointer; text-align: left; }
 .link-btn:disabled { opacity: 0.4; pointer-events: none; }
+.link-btn--muted { color: var(--c-muted); font-weight: 600; }
 
 .sent-body { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px 0; text-align: center; }
 .sent-text { font-size: 14px; font-weight: 600; color: var(--c-text); margin: 0; }
