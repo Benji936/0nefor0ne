@@ -108,10 +108,35 @@ export async function updateCommunity(id, patch) {
   return data;
 }
 
-export async function claimCommunity(id) {
-  const { data, error } = await getClient().rpc("claim_community", { p_community: id });
-  if (error) { console.error("claimCommunity failed", error); throw error; }
-  return Array.isArray(data) ? data[0] : data;
+// Claiming is now a verified flow (Plan 1): request a code emailed to the store's
+// on-file address, then verify it. Ownership is granted server-side by the
+// claim-verify-code Edge Function; there is no more instant free claim RPC.
+export async function requestClaimCode(communityId) {
+  const { data, error } = await getClient().functions.invoke("claim-request-code", {
+    body: { community_id: communityId },
+  });
+  if (error) { console.error("requestClaimCode failed", error); throw error; }
+  return data;
+}
+
+export async function verifyClaimCode(communityId, code) {
+  const { data, error } = await getClient().functions.invoke("claim-verify-code", {
+    body: { community_id: communityId, code },
+  });
+  if (error) { console.error("verifyClaimCode failed", error); throw error; }
+  return data;
+}
+
+// Fallback when the store has no email on file: record a review reason on the
+// caller's own claim row (the column guard blocks writes to any other field).
+export async function requestManualReview(communityId, reason) {
+  const me = (await getClient().auth.getSession()).data?.session?.user?.id;
+  if (!me) throw new Error("Sign in to request a review.");
+  const { error } = await getClient().from("community_claim").upsert(
+    { community: communityId, claimer: me, manual_review_reason: reason },
+    { onConflict: "community,claimer" },
+  );
+  if (error) { console.error("requestManualReview failed", error); throw error; }
 }
 
 export async function reportCommunity(id, reason) {
