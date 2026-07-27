@@ -66,12 +66,15 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  ++finalizeId;
   unsub?.();
 });
 
 // The page is reused across slugs (e.g. a related-profile link), so local UI
 // state must be reset here rather than relying on a fresh component mount.
 watch(() => route.params.slug, () => {
+  ++finalizeId;            // cancel any in-flight finalize poll for the old slug
+  finalizing.value = false;
   community.value = null;
   notFound.value  = false;
   load();
@@ -183,19 +186,31 @@ function onEdited(row) {
 
 // After returning from Stripe Checkout with ?claim=success, the subscription
 // webhook may not have granted ownership yet (it fires within seconds). Poll the
-// row a few times until owner flips, then show the owned state.
+// row a few times until owner flips, then show the owned state. A finalizeId
+// token (same pattern as reqId) cancels the poll on slug change or unmount, and a
+// transient fetch error is swallowed so one network blip cannot strand the banner.
 const finalizing = ref(false);
+let finalizeId = 0;
 async function finalizeClaim() {
+  const myId = ++finalizeId;
+  const slug = route.params.slug;
   finalizing.value = true;
-  for (let i = 0; i < 8; i++) {
-    const fresh = await fetchBySlug(route.params.slug);
-    if (fresh) {
-      Object.assign(community.value ?? (community.value = fresh), fresh);
-      if (fresh.owner) { finalizing.value = false; return; }
+  try {
+    for (let i = 0; i < 8; i++) {
+      let fresh = null;
+      try { fresh = await fetchBySlug(slug); }
+      catch (e) { console.error("finalizeClaim: fetch failed", e); } // transient; keep polling
+      if (myId !== finalizeId) return;                 // superseded (slug change / unmount)
+      if (fresh) {
+        Object.assign(community.value ?? (community.value = fresh), fresh);
+        if (fresh.owner) return;                        // owned; finally clears the banner
+      }
+      await new Promise((r) => setTimeout(r, 2000));
+      if (myId !== finalizeId) return;
     }
-    await new Promise((r) => setTimeout(r, 2000));
+  } finally {
+    if (myId === finalizeId) finalizing.value = false;  // only the current poll clears it
   }
-  finalizing.value = false; // gave up waiting; a manual refresh will catch up
 }
 
 // A claim can fail because someone else claimed it first (race). Refetch and
