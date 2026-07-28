@@ -7,6 +7,7 @@ import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useHead } from "@unhead/vue";
 import { fetchBySlug, updateCommunity } from "@/lib/community";
+import { validateImageFile, uploadCommunityMedia } from "@/lib/communityMedia";
 import { COUNTRIES } from "@/lib/countries";
 import { getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
 import ClaimCommunityDialog from "@/components/community/ClaimCommunityDialog.vue";
@@ -239,6 +240,33 @@ async function saveEdit() {
   }
 }
 
+const avatarInput = ref(null);
+const bannerInput = ref(null);
+
+async function onPickImage(kind, ev) {
+  const file = ev.target.files?.[0];
+  ev.target.value = ""; // allow re-picking the same file
+  if (!file) return;
+  const check = validateImageFile(file);
+  if (!check.ok) {
+    editErr.value = check.error === "too_large" ? t("community.imageTooLarge")
+      : check.error === "wrong_type" ? t("community.imageWrongType")
+      : t("community.uploadFailed");
+    return;
+  }
+  const busy = kind === "avatar" ? uploadingAvatar : uploadingBanner;
+  busy.value = true; editErr.value = "";
+  try {
+    const url = await uploadCommunityMedia(community.value.id, kind, file);
+    if (kind === "avatar") edit.value.avatar_url = url;
+    else edit.value.banner_url = url;
+  } catch (e) {
+    editErr.value = t("community.uploadFailed");
+  } finally {
+    busy.value = false;
+  }
+}
+
 // After returning from Stripe Checkout with ?claim=success, the subscription
 // webhook may not have granted ownership yet (it fires within seconds). Poll the
 // row a few times until owner flips, then show the owned state. A finalizeId
@@ -308,15 +336,29 @@ async function onStale() {
     <div v-else-if="community" class="cp-profile">
 
       <!-- Banner -->
-      <div class="cp-banner">
+      <div class="cp-banner" :class="{ 'cp-banner--editing': editing }">
         <img v-if="displayBanner" :src="displayBanner" :alt="displayName" class="cp-banner__img" />
+        <template v-if="editing">
+          <input ref="bannerInput" type="file" accept="image/*" class="cp-file-hidden" @change="onPickImage('banner', $event)" />
+          <button type="button" class="cp-img-btn cp-img-btn--banner" :disabled="uploadingBanner" @click="bannerInput?.click()">
+            <v-progress-circular v-if="uploadingBanner" indeterminate size="16" width="2" color="white" />
+            <template v-else><v-icon icon="mdi-image-edit-outline" size="16" />{{ t('community.changeBanner') }}</template>
+          </button>
+        </template>
       </div>
 
       <!-- Header -->
       <div class="cp-header">
-        <div class="cp-avatar">
+        <div class="cp-avatar" :class="{ 'cp-avatar--editing': editing }">
           <img v-if="displayAvatar" :src="displayAvatar" :alt="displayName" />
           <span v-else>{{ (displayName || '?')[0].toUpperCase() }}</span>
+          <template v-if="editing">
+            <input ref="avatarInput" type="file" accept="image/*" class="cp-file-hidden" @change="onPickImage('avatar', $event)" />
+            <button type="button" class="cp-img-btn cp-img-btn--avatar" :disabled="uploadingAvatar" @click="avatarInput?.click()" :aria-label="t('community.changeAvatar')">
+              <v-progress-circular v-if="uploadingAvatar" indeterminate size="14" width="2" color="white" />
+              <v-icon v-else icon="mdi-camera-outline" size="15" />
+            </button>
+          </template>
         </div>
         <div class="cp-header__text">
           <div class="cp-title-row">
@@ -701,4 +743,17 @@ async function onStale() {
 }
 .btn-save-edit:hover:not(:disabled) { opacity: 0.88; }
 .btn-save-edit:disabled { opacity: 0.4; pointer-events: none; }
+
+.cp-file-hidden { display: none; }
+.cp-banner--editing, .cp-avatar--editing { position: relative; }
+.cp-img-btn {
+  position: absolute; display: flex; align-items: center; justify-content: center; gap: 6px;
+  background: color-mix(in srgb, #000 55%, transparent); color: #fff;
+  font-size: 12px; font-weight: 700; cursor: pointer; border: none;
+  transition: opacity 0.15s ease;
+}
+.cp-img-btn:hover:not(:disabled) { opacity: 0.85; }
+.cp-img-btn:disabled { opacity: 0.6; pointer-events: none; }
+.cp-img-btn--banner { inset: auto 12px 12px auto; padding: 8px 14px; border-radius: 11px; }
+.cp-img-btn--avatar { inset: auto -4px -4px auto; width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--c-bg); }
 </style>
