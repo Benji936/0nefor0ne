@@ -1,24 +1,41 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// 0nefor.one Discord Bot
+// 0nefor.one Discord Bot — v2 (discord.js v14 + Discord-native monetization)
 //
-// Listens for new posts in the #announces text channel, looks up the poster's
-// Discord account in Supabase, inserts the announce, uploads images, opens a
-// thread on the post, and posts a link to the listing as the first message.
+// Same job as v1: listens for posts in the #announces channel, looks up the
+// poster in Supabase, inserts the announce, uploads images, opens a thread and
+// posts the listing link.
 //
-// Fully multi-server: each guild stores its own channel + message template.
-// Config is persisted in the bot_config table (keyed as "setting:guildId")
-// so choices survive restarts and work independently across servers.
+// NEW in v2: Discord-native premium. A server admin can buy a **Guild
+// Subscription** through Discord. Premium guilds get their community name, icon
+// and a link to their 0nefor.one community page stamped on every announce.
+// Free guilds get a plain announce. Entitlements are the source of truth.
+//
+// Because announces arrive as plain messages (no interaction payload), we can't
+// read the entitlement off the message. Instead we keep an in-memory Set of
+// premium guild ids, seeded on startup via the Entitlements API and kept live
+// via ENTITLEMENT_CREATE/UPDATE/DELETE gateway events, then re-synced on a timer.
 // ─────────────────────────────────────────────────────────────────────────────
 
 require('dotenv').config();
-const { Client, Intents, Permissions } = require('discord.js');
+const {
+  Client,
+  GatewayIntentBits,
+  PermissionFlagsBits,
+  Events,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} = require('discord.js');
+const https = require('https');
 const { createClient } = require('@supabase/supabase-js');
 const { parseAnnounce, ANNOUNCE_KIND } = require('./lib/parseAnnounce');
+const { parseWantList, buildWantRows, wantListTitle } = require('./lib/wantList');
 
 // ── Validate env ──────────────────────────────────────────────────────────────
 const {
   DISCORD_BOT_TOKEN,
-  DISCORD_ANNOUNCES_CHANNEL_ID, // fallback for servers that haven't run !setchannel yet
+  DISCORD_ANNOUNCES_CHANNEL_ID, // fallback before a guild runs !setchannel
+  DISCORD_PREMIUM_SKU_ID,        // the Guild Subscription SKU
   SUPABASE_URL,
   SUPABASE_SERVICE_ROLE_KEY,
   APP_URL = 'https://0nefor.one',
@@ -28,6 +45,9 @@ if (!DISCORD_BOT_TOKEN || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error('❌ Missing required env vars. Copy .env.example → .env and fill in all values.');
   process.exit(1);
 }
+if (!DISCORD_PREMIUM_SKU_ID) {
+  console.warn('⚠️  DISCORD_PREMIUM_SKU_ID is not set — every guild will be treated as FREE and the upgrade button is disabled.');
+}
 
 // ── Supabase admin client (service role — bypasses RLS) ───────────────────────
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -35,9 +55,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 });
 
 // ── Per-guild config ───────────────────────────────────────────────────────────
-// guildConfigs is the single source of truth in memory.
-// Shape: Map<guildId, { channelId: string|null, threadMessage: string }>
-
+// Shape: Map<guildId, { channelId, threadMessage, communityUrl }>
 const DEFAULT_THREAD_MESSAGE = [
   `✅ **Your announce is live!**`,
   `🔗 {link}`,
@@ -50,34 +68,72 @@ const DEFAULT_THREAD_MESSAGE = [
 
 const guildConfigs = new Map();
 
-/** Get or create a mutable config object for a guild. */
 function getConfig(guildId) {
   if (!guildConfigs.has(guildId)) {
     guildConfigs.set(guildId, {
       channelId:     DISCORD_ANNOUNCES_CHANNEL_ID ?? null,
       threadMessage: DEFAULT_THREAD_MESSAGE,
+      communityUrl:  null,
     });
   }
   return guildConfigs.get(guildId);
 }
 
-// ── Persistence helpers ───────────────────────────────────────────────────────
+// ── Premium state ───────────────────────────────────────────────────────────────
+// The single source of truth for "is this guild paid right now".
+// Seeded on ready, mutated by entitlement events, re-synced on a timer.
+const premiumGuilds = new Set();
 
+/** An entitlement grants access when it has no end, or the end is in the future. */
+function entitlementIsActive(ent) {
+  // discord.js exposes endsTimestamp (ms) — null/undefined means indefinite.
+  const ends = ent?.endsTimestamp ?? null;
+  return ends === null || ends > Date.now();
+}
+
+function isPremiumGuild(guildId) {
+  return premiumGuilds.has(guildId);
+}
+
+/**
+ * Full re-sync from the Entitlements API. Rebuilds the Set from scratch so it
+ * self-heals from any missed event. Filtered to our subscription SKU.
+ */
+async function syncEntitlements(client) {
+  if (!DISCORD_PREMIUM_SKU_ID) return;
+  try {
+    const ents = await client.application.entitlements.fetch({
+      skus: [DISCORD_PREMIUM_SKU_ID],
+      excludeEnded: true,
+    });
+
+    const next = new Set();
+    for (const ent of ents.values()) {
+      if (ent.guildId && entitlementIsActive(ent)) next.add(ent.guildId);
+    }
+
+    // Swap in the fresh set.
+    premiumGuilds.clear();
+    for (const id of next) premiumGuilds.add(id);
+    console.log(`[entitlements] synced — ${premiumGuilds.size} premium guild(s)`);
+  } catch (err) {
+    console.error('[entitlements] sync failed:', err);
+  }
+}
+
+// ── Persistence helpers ───────────────────────────────────────────────────────
 async function loadAllGuildConfigs() {
   try {
-    const { data, error } = await supabase
-      .from('bot_config')
-      .select('key, value');
+    const { data, error } = await supabase.from('bot_config').select('key, value');
     if (error) { console.error('loadAllGuildConfigs error:', error); return; }
 
     for (const row of data ?? []) {
-      // Keys are scoped as "setting:guildId"
       const [setting, guildId] = row.key.split(':');
-      if (!guildId) continue; // skip legacy un-scoped keys
-
+      if (!guildId) continue;
       const cfg = getConfig(guildId);
       if (setting === 'announces_channel_id')   cfg.channelId     = row.value;
       if (setting === 'announce_thread_message') cfg.threadMessage = row.value;
+      if (setting === 'community_url')           cfg.communityUrl  = row.value;
     }
     console.log(`   Loaded config for ${guildConfigs.size} guild(s)`);
   } catch (err) {
@@ -100,9 +156,110 @@ async function deleteGuildSetting(guildId, setting) {
   if (error) throw error;
 }
 
-// ── Fill {placeholders} in a template ────────────────────────────────────────
+// ── Template rendering ──────────────────────────────────────────────────────────
 function renderTemplate(tpl, vars) {
   return tpl.replace(/\{(\w+)\}/g, (m, key) => (key in vars ? String(vars[key]) : m));
+}
+
+// ── Help text ───────────────────────────────────────────────────────────────────
+// `!help` shows an overview and points at focused sub-topics; `!help <topic>`
+// prints a step-by-step for that flow. Topic words are matched loosely so the
+// obvious synonyms all land somewhere sensible; anything unknown falls back to
+// the overview. All copy is kept in step with what parseAnnounce actually reads
+// (e.g. price is number-THEN-currency — `$45` does not parse, `45$` does).
+const HELP_SELL_TOPICS  = new Set(['sell', 'sale', 'post', 'posting', 'announce', 'wts', 'trade', 'wtt']);
+const HELP_LF_TOPICS    = new Set(['lf', 'looking', 'lookingfor', 'looking for', 'wanted', 'want', 'wtb', 'search', 'searching']);
+const HELP_ADMIN_TOPICS = new Set(['admin', 'mod', 'mods', 'staff', 'commands']);
+
+function helpChannelMention(cfg) {
+  return cfg.channelId
+    ? `<#${cfg.channelId}>`
+    : '*(channel not set yet — an admin can run `!setchannel`)*';
+}
+
+function helpOverview(cfg, isAdmin) {
+  const lines = [
+    `**🃏 0nefor.one — help**`,
+    ``,
+    `I publish the cards you post in ${helpChannelMention(cfg)} to the marketplace automatically, and open a thread with a link to each listing.`,
+    ``,
+    `**What do you want to do?**`,
+    `• 💰 **Sell or trade a card** → type \`!help sell\``,
+    `• 🔎 **Look for a card (LF)** → type \`!help lf\``,
+    ``,
+    `⚠️ First time? You need a free account — click **Login with Discord** on ${APP_URL}`,
+  ];
+  if (isAdmin) lines.push(``, `🛠 Managing this server? Type \`!help admin\` for mod tools.`);
+  return lines.join('\n');
+}
+
+function helpSell(cfg) {
+  return [
+    `**💰 Selling or trading a card**`,
+    ``,
+    `Post this in ${helpChannelMention(cfg)}:`,
+    `1️⃣ **First line** — the card name (or \`WTS: <name>\`)`,
+    `2️⃣ **Price** anywhere — number **then** currency: \`45€\`, \`45$\`, \`30 GBP\`, \`19.99€\``,
+    `   • Trade only? Just leave the price out.`,
+    `3️⃣ **Attach at least one photo** 📷 *(required)*`,
+    `4️⃣ The following lines become the description`,
+    ``,
+    `**Optional:** put a set code on its own line — e.g. \`LOB-EN001\` — and I'll link the exact card.`,
+    ``,
+    `**Example**`,
+    '```',
+    `WTS: Blue-Eyes White Dragon`,
+    `Near mint, 1st edition`,
+    `45€`,
+    '```',
+  ].join('\n');
+}
+
+function helpLf(cfg) {
+  return [
+    `**🔎 Looking For (LF) — a whole want list at once**`,
+    ``,
+    `Post this in ${helpChannelMention(cfg)} — **one wanted card per line**:`,
+    `1️⃣ **First line** starts with \`LF:\` — the card after it counts as a want too`,
+    `2️⃣ **Quantities:** \`3x Maxx "C"\`, \`x3 Maxx "C"\`, or \`3 Maxx "C"\``,
+    `3️⃣ **Archetype** *(optional)*: a line \`archetype: Darklord\``,
+    `4️⃣ **Budget** *(optional)*: a line \`budget 120€\``,
+    `5️⃣ Start a line with \`#\` to leave yourself a note I'll ignore`,
+    `6️⃣ **No photo needed**`,
+    ``,
+    `I match each card to the marketplace; anything I can't match I keep on the post as-is.`,
+    ``,
+    `**Example**`,
+    '```',
+    `LF: Ash Blossom & Joyous Spring`,
+    `Kashtira Fenrir`,
+    `3x Maxx "C"`,
+    `archetype: Darklord`,
+    `budget 120€`,
+    '```',
+  ].join('\n');
+}
+
+function helpAdmin() {
+  return [
+    `**🛠 Mod / Admin commands** *(need Manage Server)*`,
+    `• \`!botcheck\` — show the watched channel + current plan`,
+    `• \`!setchannel [#channel]\` — set the announces channel`,
+    `• \`!setmessage <text|reset>\` — customize the thread message`,
+    `   placeholders: \`{link}\` \`{title}\` \`{price}\` \`{currency}\` \`{photos}\``,
+    `• \`!setcommunity <url|clear>\` — community link shown on announces *(Premium)*`,
+    `• \`!upgrade\` — upgrade this server to Premium`,
+  ].join('\n');
+}
+
+// ── Premium upgrade button ──────────────────────────────────────────────────────
+// A premium-style button carries a sku_id and no custom_id/label — Discord
+// renders the native purchase flow. Returns null if no SKU is configured.
+function upgradeRow() {
+  if (!DISCORD_PREMIUM_SKU_ID) return null;
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setStyle(ButtonStyle.Premium).setSKUId(DISCORD_PREMIUM_SKU_ID)
+  );
 }
 
 // ── YGO set code detection ─────────────────────────────────────────────────────
@@ -111,75 +268,42 @@ const SET_CODE_RE = /^[A-Z0-9]{2,6}-[A-Z]{0,2}\d{3,4}$/i;
 function extractSetCode(content) {
   const lines = content.trim().split('\n').map(l => l.trim());
   for (const line of lines) {
-    if (SET_CODE_RE.test(line)) {
-      console.log(`[setcode] detected: "${line.trim().toUpperCase()}"`);
-      return line.trim().toUpperCase();
-    }
+    if (SET_CODE_RE.test(line)) return line.trim().toUpperCase();
   }
-  console.log('[setcode] none detected in message');
   return null;
 }
 
-// ── YGOPRODeck API lookup ──────────────────────────────────────────────────────
 async function lookupCardBySetCode(rawCode) {
   try {
     const parts = rawCode.split('-');
     const normalizedCode = parts[0] + '-EN' + parts[1].replace(/[a-zA-Z]/g, '');
-    console.log(`[setcode] looking up: ${rawCode} → normalized: ${normalizedCode}`);
-
     const cardData = await new Promise((resolve, reject) => {
-      const https = require('https');
       const url = `https://db.ygoprodeck.com/api/v7/cardsetsinfo.php?setcode=${encodeURIComponent(normalizedCode)}`;
-      console.log(`[setcode] API URL: ${url}`);
       https.get(url, (res) => {
         let body = '';
         res.on('data', chunk => body += chunk);
-        res.on('end', () => {
-          console.log(`[setcode] raw API response: ${body.slice(0, 200)}`);
-          try { resolve(JSON.parse(body)); }
-          catch { resolve(null); }
-        });
+        res.on('end', () => { try { resolve(JSON.parse(body)); } catch { resolve(null); } });
         res.on('error', reject);
       }).on('error', reject);
     });
-
-    if (!cardData || cardData.error) {
-      console.log(`[setcode] API returned no match or error:`, cardData);
-      return null;
-    }
-    console.log(`[setcode] matched card: id=${cardData.id} name="${cardData.name}"`);
-    return {
-      ygo_card_id: cardData.id,
-      card_name:   cardData.name,
-    };
+    if (!cardData || cardData.error) return null;
+    return { ygo_card_id: cardData.id, card_name: cardData.name };
   } catch (err) {
     console.error('lookupCardBySetCode failed:', err);
     return null;
   }
 }
 
-// ── YGOPRODeck archetype list (cached for the process lifetime) ───────────────
-// Only used to tag LF posts. A failure here must never block an announce, so
-// every error path resolves to [] and the post is simply saved untagged.
+// ── YGOPRODeck archetype list (cached for process lifetime) ───────────────────
 let _archetypesCache = null;
-
 const ARCHETYPES_TIMEOUT_MS = 5000;
 
 async function getArchetypes() {
   if (_archetypesCache) return _archetypesCache;
   try {
     const list = await new Promise((resolve) => {
-      const https = require('https');
-      // Guard against a connection that opens but then just hangs — no
-      // 'error', no 'end'. Without this the message handler that awaits
-      // getArchetypes() never completes and the user never gets a reply.
       let settled = false;
-      const finish = (value) => {
-        if (settled) return;
-        settled = true;
-        resolve(value);
-      };
-
+      const finish = (v) => { if (!settled) { settled = true; resolve(v); } };
       const req = https.get('https://db.ygoprodeck.com/api/v7/archetypes.php', (res) => {
         let body = '';
         res.on('data', chunk => body += chunk);
@@ -192,10 +316,7 @@ async function getArchetypes() {
         res.on('error', () => finish([]));
       });
       req.on('error', () => finish([]));
-      req.setTimeout(ARCHETYPES_TIMEOUT_MS, () => {
-        req.destroy();
-        finish([]);
-      });
+      req.setTimeout(ARCHETYPES_TIMEOUT_MS, () => { req.destroy(); finish([]); });
     });
     if (list.length > 0) _archetypesCache = list;
     return list;
@@ -205,17 +326,72 @@ async function getArchetypes() {
   }
 }
 
+// ── Want-list resolution (Looking For bulk lists) ─────────────────────────────
+// Resolve each pasted want line to a passcode, mirroring the website's
+// bulkAddResolver: set codes go through lookupCardBySetCode; names use a fuzzy
+// search gated to an exact (case-insensitive) or single hit. Anything ambiguous
+// or unfound is kept unresolved (card: null) so the line still shows on the post.
+
+// Strict set-code shape (mirror bulkAddParser SET_CODE_RE): PREFIX-[letters]digits.
+const WANT_SET_CODE_RE = /^[A-Z0-9]+-[A-Z]*\d+$/i;
+
+function ygoGetJson(url) {
+  return new Promise((resolve) => {
+    https.get(url, (res) => {
+      let body = '';
+      res.on('data', (chunk) => (body += chunk));
+      res.on('end', () => { try { resolve(JSON.parse(body)); } catch { resolve(null); } });
+      res.on('error', () => resolve(null));
+    }).on('error', () => resolve(null));
+  });
+}
+
+async function resolveWantLine({ qty, query }) {
+  // Set-code route → reuse the sell path's lookup.
+  if (WANT_SET_CODE_RE.test(query)) {
+    const card = await lookupCardBySetCode(query);
+    return { qty, query, card: card ? { id: card.ygo_card_id, name: card.card_name } : null };
+  }
+  // Name route: fuzzy search, then accept only an exact or single match.
+  const data = await ygoGetJson(
+    `https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${encodeURIComponent(query)}`
+  );
+  const cards = Array.isArray(data?.data) ? data.data : [];
+  if (cards.length === 0) return { qty, query, card: null };
+  const needle = query.trim().toLowerCase();
+  const exact = cards.find((c) => String(c?.name ?? '').toLowerCase() === needle);
+  const chosen = exact ?? (cards.length === 1 ? cards[0] : null);
+  return { qty, query, card: chosen ? { id: chosen.id, name: chosen.name } : null };
+}
+
+// Sequential by design (mirror resolveLines) — YGOPRODeck rate-limits bursts.
+async function resolveWantLines(lines) {
+  const out = [];
+  for (const line of lines) out.push(await resolveWantLine(line));
+  return out;
+}
+
+// Explicit `archetype:` value → canonical YGOPRODeck spelling when we recognise
+// it (so the website's archetype art/filter match), else the trimmed input.
+async function normalizeArchetype(raw) {
+  if (!raw) return null;
+  const needle = String(raw).trim().toLowerCase();
+  if (!needle) return null;
+  const list = await getArchetypes();
+  const canon = list.find((a) => a.toLowerCase() === needle);
+  return canon ?? String(raw).trim();
+}
+
 // ── Discord client ────────────────────────────────────────────────────────────
 const client = new Client({
   intents: [
-    Intents.FLAGS.GUILDS,
-    Intents.FLAGS.GUILD_MESSAGES,
-    Intents.FLAGS.MESSAGE_CONTENT, // Requires enabling in Discord Dev Portal → Bot → Privileged Gateway Intents
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent, // enable in Dev Portal → Bot → Privileged Intents
   ],
 });
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
 async function findUserByDiscordId(discordUserId) {
   const { data, error } = await supabase
     .from('Trader')
@@ -226,13 +402,9 @@ async function findUserByDiscordId(discordUserId) {
   return data?.id ?? null;
 }
 
-/**
- * Download a Discord attachment and upload it to Supabase Storage.
- */
 async function uploadAttachment(announceId, uploaderId, url, index) {
   try {
     const buffer = await new Promise((resolve, reject) => {
-      const https = require('https');
       const chunks = [];
       https.get(url, (res) => {
         res.on('data', (chunk) => chunks.push(chunk));
@@ -240,16 +412,12 @@ async function uploadAttachment(announceId, uploaderId, url, index) {
         res.on('error', reject);
       }).on('error', reject);
     });
-
     const ext = url.split('.').pop()?.split('?')[0] ?? 'jpg';
     const safePath = `${announceId}/${uploaderId}/${Date.now()}_${index}.${ext}`;
-
     const { error: uploadError } = await supabase.storage
       .from('announce-images')
       .upload(safePath, buffer, { contentType: 'image/jpeg', upsert: false });
-
     if (uploadError) { console.error('Storage upload failed:', uploadError); return null; }
-
     const { data } = supabase.storage.from('announce-images').getPublicUrl(safePath);
     return data.publicUrl;
   } catch (err) {
@@ -258,20 +426,46 @@ async function uploadAttachment(announceId, uploaderId, url, index) {
   }
 }
 
-// ── Main event handler ─────────────────────────────────────────────────────────
-
-client.on('messageCreate', async (message) => {
+// ── Main message handler ─────────────────────────────────────────────────────────
+client.on(Events.MessageCreate, async (message) => {
   if (message.author.bot) return;
   if (!message.guild) return;
 
   const guildId = message.guild.id;
   const cfg = getConfig(guildId);
+  const member = message.member;
+  const canManage = member?.permissions.has(PermissionFlagsBits.ManageGuild);
+  const canManageChannels = member?.permissions.has(PermissionFlagsBits.ManageChannels);
+  const content = message.content.trim();
+  const lower = content.toLowerCase();
 
-  // ── !botcheck — mods/admins only ──────────────────────────────────────────
-  if (message.content.trim().toLowerCase() === '!botcheck') {
-    const canCheck = message.member?.permissions.has(Permissions.FLAGS.MANAGE_GUILD)
-      || message.member?.permissions.has(Permissions.FLAGS.MANAGE_CHANNELS);
-    if (!canCheck) {
+  // ── !upgrade — anyone, shows the native premium purchase button ─────────────
+  if (lower === '!upgrade' || lower === '!premium') {
+    if (isPremiumGuild(guildId)) {
+      await message.reply('⭐ This server is already **Premium** — your community is shown and linked on every announce. Thanks for the support!');
+      return;
+    }
+    const row = upgradeRow();
+    if (!row) {
+      await message.reply('Premium is not configured on this bot yet.');
+      return;
+    }
+    await message.reply({
+      content: [
+        `⭐ **Upgrade this server to Premium**`,
+        ``,
+        `Every announce posted here will show **your community name, icon and a link back to your 0nefor.one community page** — turning each listing into free promotion for your server.`,
+        ``,
+        `Set your link with \`!setcommunity <url>\` after upgrading.`,
+      ].join('\n'),
+      components: [row],
+    });
+    return;
+  }
+
+  // ── !botcheck — mods/admins only ─────────────────────────────────────────────
+  if (lower === '!botcheck') {
+    if (!canManage && !canManageChannels) {
       await message.reply('⛔ This command is for moderators and admins only.');
       return;
     }
@@ -283,6 +477,8 @@ client.on('messageCreate', async (message) => {
     await message.reply([
       `**OneforOne bot — diagnostics**`,
       `🏠 **Server:** ${message.guild.name}`,
+      `⭐ **Plan:** ${isPremiumGuild(guildId) ? 'Premium (community branding ON)' : 'Free'}`,
+      cfg.communityUrl ? `🔗 **Community link:** ${cfg.communityUrl}` : null,
       ``,
       `🔍 **This channel ID:** \`${currentId}\``,
       parentId ? `📁 **Parent channel ID:** \`${parentId}\`` : null,
@@ -299,49 +495,23 @@ client.on('messageCreate', async (message) => {
     return;
   }
 
-  // ── !help ────────────────────────────────────────────────────────────────────
-  if (message.content.trim().toLowerCase() === '!help') {
-    const isAdmin = message.member?.permissions.has(Permissions.FLAGS.MANAGE_GUILD);
-    const isMod   = message.member?.permissions.has(Permissions.FLAGS.MANAGE_CHANNELS);
-    const channelMention = cfg.channelId ? `<#${cfg.channelId}>` : '*(not set)*';
-
-    const lines = [
-      `**🃏 0nefor.one — how it works**`,
-      ``,
-      `Post a card you want to sell or trade in ${channelMention} and I'll publish it to the marketplace automatically.`,
-      ``,
-      `**How to post an announce**`,
-      `1️⃣ Write the card name on the first line`,
-      `2️⃣ Add a price somewhere — e.g. \`45€\`, \`$45\`, \`30 GBP\``,
-      `3️⃣ **Attach at least one photo** 📷`,
-      `4️⃣ Anything else becomes the description`,
-      ``,
-      `I'll open a thread on your post with a direct link to the listing.`,
-      ``,
-      `⚠️ You need a free account first — click **Login with Discord** on ${APP_URL}`,
-      `Once you're signed in, just post here and it goes live automatically.`,
-    ];
-
-    if (isAdmin || isMod) {
-      lines.push(
-        ``,
-        `**Mod / Admin commands**`,
-        `• \`!botcheck\` — check which channel I'm watching`,
-        `• \`!setchannel [#channel]\` — set the announces channel *(Manage Server)*`,
-        `• \`!setmessage <text>\` — customize the thread message *(Manage Server)*`,
-        `   placeholders: \`{link}\` \`{title}\` \`{price}\` \`{currency}\` \`{photos}\``,
-        `• \`!setmessage reset\` — restore the default message`,
-      );
-    }
-
-    lines.push(``, `• \`!help\` — show this message`);
-    await message.reply(lines.join('\n'));
+  // ── !help [topic] ────────────────────────────────────────────────────────────
+  // `!help` → overview; `!help sell` / `!help lf` / `!help admin` → focused guides.
+  if (lower === '!help' || lower.startsWith('!help ')) {
+    const topic = lower.slice('!help'.length).trim();
+    const isAdmin = canManage || canManageChannels;
+    let text;
+    if (HELP_SELL_TOPICS.has(topic))       text = helpSell(cfg);
+    else if (HELP_LF_TOPICS.has(topic))    text = helpLf(cfg);
+    else if (HELP_ADMIN_TOPICS.has(topic)) text = helpAdmin();
+    else                                   text = helpOverview(cfg, isAdmin); // also the unknown-topic fallback
+    await message.reply(text);
     return;
   }
 
-  // ── !setchannel [#channel] — admin only, per-guild ───────────────────────────
-  if (message.content.trim().toLowerCase().startsWith('!setchannel')) {
-    if (!message.member?.permissions.has(Permissions.FLAGS.MANAGE_GUILD)) {
+  // ── !setchannel [#channel] — admin only ──────────────────────────────────────
+  if (lower.startsWith('!setchannel')) {
+    if (!canManage) {
       await message.reply('⛔ You need the **Manage Server** permission to change the announces channel.');
       return;
     }
@@ -350,7 +520,6 @@ client.on('messageCreate', async (message) => {
       await saveGuildSetting(guildId, 'announces_channel_id', target.id);
       cfg.channelId = target.id;
       await message.reply(`✅ Bot now listens for announces in <#${target.id}> on **${message.guild.name}**.`);
-      console.log(`[${message.guild.name}] channel set to ${target.id} by ${message.author.tag}`);
     } catch (err) {
       console.error('setchannel failed:', err);
       await message.reply('⚠️ Could not save the channel. Please try again.');
@@ -358,14 +527,65 @@ client.on('messageCreate', async (message) => {
     return;
   }
 
-  // ── !setmessage [text|reset] — admin only, per-guild ────────────────────────
-  if (/^!setmessage\b/i.test(message.content.trim())) {
-    if (!message.member?.permissions.has(Permissions.FLAGS.MANAGE_GUILD)) {
+  // ── !setcommunity <url> — Premium + admin only ───────────────────────────────
+  if (lower.startsWith('!setcommunity')) {
+    if (!canManage) {
+      await message.reply('⛔ You need the **Manage Server** permission to set the community link.');
+      return;
+    }
+    if (!isPremiumGuild(guildId)) {
+      const row = upgradeRow();
+      await message.reply({
+        content: '⭐ **Community links are a Premium feature.** Upgrade to show your community name and link on every announce.',
+        components: row ? [row] : [],
+      });
+      return;
+    }
+    const arg = content.slice('!setcommunity'.length).trim();
+    if (!arg) {
+      await message.reply(
+        cfg.communityUrl
+          ? `Current community link: ${cfg.communityUrl}\nChange it with \`!setcommunity <url>\`, or clear it with \`!setcommunity clear\`.`
+          : 'Set your community link with `!setcommunity <url>` — e.g. your 0nefor.one community page.'
+      );
+      return;
+    }
+    if (arg.toLowerCase() === 'clear') {
+      try {
+        await deleteGuildSetting(guildId, 'community_url');
+        cfg.communityUrl = null;
+        await message.reply('✅ Community link cleared.');
+      } catch (err) {
+        console.error('setcommunity clear failed:', err);
+        await message.reply('⚠️ Could not clear the link. Please try again.');
+      }
+      return;
+    }
+    // Minimal URL sanity check — must be http(s).
+    let valid = false;
+    try { const u = new URL(arg); valid = u.protocol === 'http:' || u.protocol === 'https:'; } catch { valid = false; }
+    if (!valid) {
+      await message.reply('⚠️ That doesn\'t look like a valid URL. Include `https://`.');
+      return;
+    }
+    try {
+      await saveGuildSetting(guildId, 'community_url', arg);
+      cfg.communityUrl = arg;
+      await message.reply(`✅ Community link set. It will appear on every announce from this server:\n${arg}`);
+    } catch (err) {
+      console.error('setcommunity failed:', err);
+      await message.reply('⚠️ Could not save the link. Please try again.');
+    }
+    return;
+  }
+
+  // ── !setmessage [text|reset] — admin only ────────────────────────────────────
+  if (/^!setmessage\b/i.test(content)) {
+    if (!canManage) {
       await message.reply('⛔ You need the **Manage Server** permission to change the announce message.');
       return;
     }
-    const arg = message.content.trim().slice('!setmessage'.length).trim();
-
+    const arg = content.slice('!setmessage'.length).trim();
     if (!arg) {
       await message.reply(
         'Placeholders: `{link}` `{title}` `{price}` `{currency}` `{photos}`\n' +
@@ -374,7 +594,6 @@ client.on('messageCreate', async (message) => {
       );
       return;
     }
-
     if (arg.toLowerCase() === 'reset') {
       try {
         await deleteGuildSetting(guildId, 'announce_thread_message');
@@ -386,7 +605,6 @@ client.on('messageCreate', async (message) => {
       }
       return;
     }
-
     if (arg.length > 1500) {
       await message.reply('⚠️ That message is too long (max ~1500 characters).');
       return;
@@ -399,7 +617,6 @@ client.on('messageCreate', async (message) => {
         title: 'Blue-Eyes White Dragon', price: 45, currency: 'EUR', photos: 2,
       });
       await message.reply('✅ Announce message updated. Preview:\n```\n' + preview + '\n```');
-      console.log(`[${message.guild.name}] announce message updated by ${message.author.tag}`);
     } catch (err) {
       console.error('setmessage failed:', err);
       await message.reply('⚠️ Could not save the message. Please try again.');
@@ -408,17 +625,13 @@ client.on('messageCreate', async (message) => {
   }
 
   // ── Announce processing — only in this guild's configured channel ─────────────
-  if (!cfg.channelId) return; // guild hasn't set a channel yet
-
+  if (!cfg.channelId) return;
   const isInAnnouncesChannel =
     message.channelId === cfg.channelId ||
     message.channel?.parentId === cfg.channelId;
-
   if (!isInAnnouncesChannel) return;
 
   const discordUserId = message.author.id;
-
-  // 1. Look up the user in Supabase
   const supabaseUserId = await findUserByDiscordId(discordUserId);
 
   if (!supabaseUserId) {
@@ -430,61 +643,78 @@ client.on('messageCreate', async (message) => {
         `🔗 **${APP_URL}**`,
         ``,
         `Once you're signed in, post here again and your announce will go live automatically!`,
-        ``,
-        `Type \`!help\` to see how it works.`,
       ].join('\n'),
     });
     return;
   }
 
-  // 2. Parse the message. kind/title/price never depend on the archetype
-  //    list, so parse cheaply first and run the guard before paying for an
-  //    outbound HTTP request that SELL posts and malformed posts never need.
-  let parsed = parseAnnounce(message.content);
+  const parsed = parseAnnounce(message.content);
   const isLf = parsed.kind === ANNOUNCE_KIND.LOOKING_FOR;
+  const kind = parsed.kind;
 
-  if (!parsed.title) {
-    await message.reply('❓ Could not read a title from your message. Start with the card name, `WTS: [name]`, or `LF: [what you want]`.');
-    return;
-  }
-
-  // Only LF posts are tagged with an archetype, so only they need the list.
-  // Re-parsing with the same content is cheap and keeps a single, consistent
-  // parse result instead of hand-merging fields from two divergent calls.
-  if (isLf) {
-    const archetypes = await getArchetypes();
-    parsed = parseAnnounce(message.content, archetypes);
-  }
-
-  const { kind, title, description, price, currency, archetype, wantDetail } = parsed;
-
-  // ── 2b. Optional set code → card link ──────────────────────────────────────
-  let cardLink = null; // { ygo_card_id, card_name } or null
+  // Fields both paths fill; LF and Sell diverge on how they get there.
+  let title = '';
+  let description = '';
+  let price = parsed.price;
+  let currency = parsed.currency;
+  let archetype = null;
+  const wantDetail = null;   // superseded by the want list for LF; unused for Sell
+  let wantRows = [];         // announce_want_card rows (LF only)
+  let cardLink = null;       // single-card set-code link (Sell only)
   let setCodeWarning = null;
 
-  const detectedSetCode = extractSetCode(message.content);
-  if (detectedSetCode) {
-    cardLink = await lookupCardBySetCode(detectedSetCode);
-    if (!cardLink) {
-      setCodeWarning = `⚠️ Set code \`${detectedSetCode}\` not found — announce posted without card link.`;
+  if (isLf) {
+    // Looking For is a bulk want list: every line is a wanted card, except an
+    // `archetype:` line, a standalone budget line, and `#` comments. Mirrors the
+    // website's paste-a-list flow and writes the same announce_want_card rows.
+    if (typeof message.channel?.sendTyping === 'function') message.channel.sendTyping().catch(() => {});
+    const want = parseWantList(message.content);
+    const resolved = await resolveWantLines(want.wantLines);
+    wantRows = buildWantRows(resolved);
+    archetype = await normalizeArchetype(want.archetype);
+    if (want.price != null) { price = want.price; currency = want.currency; }
+    title = wantListTitle(wantRows);
+
+    if (wantRows.length === 0 && !archetype) {
+      await message.reply(
+        '🔎 I couldn\'t read any cards. Put one wanted card per line under your `LF:` — for example:\n' +
+        '```\nLF: Ash Blossom & Joyous Spring\nKashtira Fenrir\n3x Maxx "C"\narchetype: Darklord\n```'
+      );
+      return;
+    }
+    if (!title) title = archetype ? `LF: ${archetype}` : 'Looking For';
+  } else {
+    // Sell/trade: a single card, needs a title and (later) a photo.
+    title = parsed.title;
+    description = parsed.description;
+    if (!title) {
+      await message.reply('❓ Could not read a title from your message. Start with the card name or `WTS: [name]`.');
+      return;
+    }
+    const detectedSetCode = extractSetCode(message.content);
+    if (detectedSetCode) {
+      cardLink = await lookupCardBySetCode(detectedSetCode);
+      if (!cardLink) setCodeWarning = `⚠️ Set code \`${detectedSetCode}\` not found — announce posted without card link.`;
     }
   }
 
-  // 3. Images: required when selling, optional when looking for something.
-  //    A buyer after a "Darklord deck base" has nothing to photograph.
   const imageAttachments = [...message.attachments.values()].filter(
     (a) => a.contentType?.startsWith('image/')
   );
-
   if (imageAttachments.length === 0 && !isLf) {
     await message.reply('📷 Your announce needs at least one photo. Please repost your listing with an image attached.');
     return;
   }
 
-  // 4. Insert announce
-  const discordUrl  = `https://discord.com/channels/${message.guild.id}/${message.channelId}/${message.id}`;
-  const guildName   = message.guild.name;
-  const guildIcon   = message.guild.iconURL({ dynamic: true, size: 128 }) ?? null;
+  // ── PREMIUM GATE ────────────────────────────────────────────────────────────
+  // The whole business model is this branch: community branding is written ONLY
+  // for premium guilds. Free guilds post plain announces.
+  const premium = isPremiumGuild(guildId);
+  const guildName = premium ? message.guild.name : null;
+  const guildIcon = premium ? (message.guild.iconURL({ extension: 'png', size: 128 }) ?? null) : null;
+  const communityUrl = premium ? (cfg.communityUrl ?? null) : null;
+
+  const discordUrl = `https://discord.com/channels/${message.guild.id}/${message.channelId}/${message.id}`;
 
   const { data: announceData, error: announceError } = await supabase
     .from('announce')
@@ -499,8 +729,9 @@ client.on('messageCreate', async (message) => {
       archetype:   archetype  ?? null,
       want_detail: wantDetail ?? null,
       discord_url:        discordUrl,
-      discord_guild_name: guildName,
-      discord_guild_icon: guildIcon,
+      discord_guild_name: guildName,     // null for free guilds
+      discord_guild_icon: guildIcon,     // null for free guilds
+      community_url:      communityUrl,  // null for free guilds
       ygo_card_id: cardLink?.ygo_card_id ?? null,
       card_name:   cardLink?.card_name   ?? null,
     })
@@ -515,21 +746,24 @@ client.on('messageCreate', async (message) => {
 
   const announceId = announceData.id;
 
-  // 5. Upload attachments
+  // Looking For want list → child rows. Service-role client, so RLS is bypassed.
+  if (isLf && wantRows.length > 0) {
+    const toInsert = wantRows.map((r) => ({ announce: announceId, ...r }));
+    const { error: wantErr } = await supabase.from('announce_want_card').insert(toInsert);
+    if (wantErr) console.error('announce_want_card insert error:', wantErr);
+  }
+
   const uploads = await Promise.all(
     imageAttachments.map((att, i) => uploadAttachment(announceId, supabaseUserId, att.url, i))
   );
-
   const imageRecords = uploads
     .filter(Boolean)
     .map((url, sort_order) => ({ announce: announceId, uploader: supabaseUserId, url, sort_order }));
-
   if (imageRecords.length > 0) {
     const { error: imgError } = await supabase.from('announce_image').insert(imageRecords);
     if (imgError) console.error('announce_image insert error:', imgError);
   }
 
-  // 6. Build confirmation message using this guild's template
   const confirmationLines = [renderTemplate(cfg.threadMessage, {
     link:     `${APP_URL}/en/announces/${announceId}`,
     title,
@@ -538,22 +772,23 @@ client.on('messageCreate', async (message) => {
     photos:   imageAttachments.length,
   })];
   if (isLf) {
-    confirmationLines.unshift(
-      `🔎 **Looking For** post` + (archetype ? ` — archetype: **${archetype}**` : '')
-    );
+    const matched = wantRows.filter((r) => r.ygo_card_id != null).length;
+    const bits = [`🔎 **Looking For** — ${wantRows.length} card${wantRows.length === 1 ? '' : 's'}`];
+    if (wantRows.length && matched < wantRows.length) bits.push(`(${matched} matched to the marketplace)`);
+    if (archetype) bits.push(`· archetype **${archetype}**`);
+    confirmationLines.unshift(bits.join(' '));
   }
   if (cardLink) {
-    confirmationLines.push(`🃏 Linked to **${cardLink.card_name}** (\`${detectedSetCode}\`)`);
+    confirmationLines.push(`🃏 Linked to **${cardLink.card_name}**`);
+  }
+  if (premium && communityUrl) {
+    confirmationLines.push(`🏠 Posted from **${message.guild.name}** — ${communityUrl}`);
   }
   const confirmation = { content: confirmationLines.join('\n') };
 
-  // 7. Open a discussion thread
   let thread = null;
   try {
-    thread = await message.startThread({
-      name: title.slice(0, 100),
-      autoArchiveDuration: 10080, // 7 days
-    });
+    thread = await message.startThread({ name: title.slice(0, 100), autoArchiveDuration: 10080 });
   } catch (err) {
     console.error('Failed to create thread:', err);
   }
@@ -565,32 +800,24 @@ client.on('messageCreate', async (message) => {
       .update({ discord_url: threadUrl })
       .eq('id', announceId);
     if (urlError) console.error('discord_url update error:', urlError);
-  }
-
-  if (thread) {
     await thread.send(confirmation);
   } else {
     await message.reply(confirmation);
   }
 
   if (setCodeWarning) {
-    if (thread) {
-      await thread.send(setCodeWarning);
-    } else {
-      await message.reply(setCodeWarning);
-    }
+    if (thread) await thread.send(setCodeWarning);
+    else await message.reply(setCodeWarning);
   }
 
   console.log(
-    `[${guildName}] ${kind} #${announceId} "${title}" ${price ?? 'no price'}${price === null ? '' : currency}` +
-    (archetype ? ` | archetype=${archetype}` : '') +
-    (cardLink ? ` | card=${cardLink.ygo_card_id} (${cardLink.card_name})` : '') +
-    ` | user=${discordUserId}`
+    `[${message.guild.name}] ${premium ? 'PREMIUM' : 'free'} ${kind} #${announceId} "${title}" ` +
+    `${price ?? 'no price'}${price === null ? '' : currency} | user=${discordUserId}`
   );
 });
 
 // ── Thread deleted in Discord → delete the linked announce ────────────────────
-client.on('threadDelete', async (thread) => {
+client.on(Events.ThreadDelete, async (thread) => {
   try {
     const threadUrl = `https://discord.com/channels/${thread.guild.id}/${thread.id}`;
     const { data, error } = await supabase
@@ -599,9 +826,37 @@ client.on('threadDelete', async (thread) => {
       .eq('discord_url', threadUrl)
       .select('id');
     if (error) { console.error('threadDelete → announce delete error:', error); return; }
-    if (data?.length) console.log(`[threadDelete] deleted announce #${data[0].id} (thread ${thread.id})`);
+    if (data?.length) console.log(`[threadDelete] deleted announce #${data[0].id}`);
   } catch (err) {
     console.error('threadDelete handler failed:', err);
+  }
+});
+
+// ── Entitlement events → keep the premium set live ────────────────────────────
+client.on(Events.EntitlementCreate, (ent) => {
+  if (DISCORD_PREMIUM_SKU_ID && ent.skuId !== DISCORD_PREMIUM_SKU_ID) return;
+  if (ent.guildId && entitlementIsActive(ent)) {
+    premiumGuilds.add(ent.guildId);
+    console.log(`[entitlements] +premium guild ${ent.guildId}`);
+  }
+});
+
+client.on(Events.EntitlementUpdate, (_oldEnt, ent) => {
+  if (DISCORD_PREMIUM_SKU_ID && ent.skuId !== DISCORD_PREMIUM_SKU_ID) return;
+  if (!ent.guildId) return;
+  if (entitlementIsActive(ent)) {
+    premiumGuilds.add(ent.guildId);
+  } else {
+    premiumGuilds.delete(ent.guildId);
+    console.log(`[entitlements] -premium guild ${ent.guildId} (ended)`);
+  }
+});
+
+client.on(Events.EntitlementDelete, (ent) => {
+  if (DISCORD_PREMIUM_SKU_ID && ent.skuId !== DISCORD_PREMIUM_SKU_ID) return;
+  if (ent.guildId) {
+    premiumGuilds.delete(ent.guildId);
+    console.log(`[entitlements] -premium guild ${ent.guildId} (removed)`);
   }
 });
 
@@ -635,13 +890,19 @@ async function processThreadDeletionQueue() {
 }
 
 // ── Ready ──────────────────────────────────────────────────────────────────────
-client.once('ready', async (c) => {
+const ENTITLEMENT_RESYNC_MS = 10 * 60 * 1000; // re-sync every 10 min, self-heals
+
+client.once(Events.ClientReady, async (c) => {
   await loadAllGuildConfigs();
+  await syncEntitlements(c);
+  setInterval(() => syncEntitlements(c), ENTITLEMENT_RESYNC_MS);
+
   processThreadDeletionQueue();
   setInterval(processThreadDeletionQueue, DELETION_POLL_MS);
+
   console.log(`✅ Bot ready — logged in as ${c.user.tag}`);
   console.log(`   Active on ${c.guilds.cache.size} server(s)`);
-  console.log(`   Polling announce-deletion queue every ${DELETION_POLL_MS / 1000}s`);
+  console.log(`   Premium SKU: ${DISCORD_PREMIUM_SKU_ID || '(none configured)'}`);
 });
 
 client.login(DISCORD_BOT_TOKEN);

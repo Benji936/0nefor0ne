@@ -1,7 +1,7 @@
 {
-  "name": "0nefor0ne-discord-bot",
-  "version": "1.0.0",
-  "description": "Discord bot that syncs #announces posts to 0nefor.one",
+  "name": "0nefor0ne-discord-bot-premium",
+  "version": "2.0.0",
+  "description": "v14 Discord bot that syncs #announces to 0nefor.one, with Discord-native premium (guild subscription) community branding",
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
@@ -11,9 +11,8 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
-    "discord.js": "^13.17.1",
-    "dotenv": "^16.4.5",
-    "node-fetch": "^3.3.2"
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5"
   },
   "engines": {
     "node": ">=20"

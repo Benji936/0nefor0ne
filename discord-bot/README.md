@@ -1,129 +1,98 @@
-# 0nefor.one Discord Bot
+# 0nefor.one Discord Bot — v2 (Premium)
 
-Syncs posts from the Discord #announces text channel to the [0nefor.one](https://0nefor.one) marketplace.
+Same job as v1 — syncs posts from the Discord announces channel to the
+[0nefor.one](https://0nefor.one) marketplace — rebuilt on **discord.js v14** with
+**Discord-native monetization** (a Guild Subscription).
 
-## How it works
+## What "Premium" does
 
-1. User posts in **#announces** (a Discord text channel)
-2. Bot looks up their Discord account in the Supabase `Trader` table via `discord_id`
-3. If **linked** → inserts the announce, uploads images, **opens a thread on the post** and puts the confirmation + site link as its first message
-4. If **not linked** → replies with a prompt to create an account via "Login with Discord" on the site
+The business model is one branch in the code. When an announce is posted:
+
+- **Free guild** → plain announce. No community name, icon, or link is written.
+- **Premium guild** (active Guild Subscription entitlement) → the announce is
+  stamped with the server's **name**, **icon**, and a **community link** the
+  admin set with `!setcommunity`. Every listing becomes promotion for that server.
+
+Entitlements are the **source of truth**. Because announces arrive as plain
+messages (no interaction payload), the bot can't read the entitlement off the
+message. Instead it keeps an in-memory `Set` of premium guild ids:
+
+- seeded on startup via `client.application.entitlements.fetch({ skus, excludeEnded })`
+- kept live by `entitlementCreate` / `entitlementUpdate` / `entitlementDelete` events
+- re-synced every 10 minutes so it self-heals from any missed event
 
 ---
+
+## Prerequisites (do these first — code is inert without them)
+
+1. **Enable Monetization** on your app: Dev Portal → your app → Monetization.
+   Team must be verified with payout/tax set up.
+2. **Create a Guild Subscription SKU**. Copy its id into `DISCORD_PREMIUM_SKU_ID`.
+3. **DB column**: add `community_url` to the `announce` table (text, nullable):
+   ```sql
+   ALTER TABLE announce ADD COLUMN IF NOT EXISTS community_url text;
+   ```
+   (The bot writes it only for premium guilds; it's null otherwise.)
 
 ## Setup
 
-### 1. Create a Discord Application & Bot
-
-1. Go to [discord.com/developers/applications](https://discord.com/developers/applications) → **New Application**
-2. Go to **Bot** → **Reset Token** → copy the token
-3. Under **Privileged Gateway Intents**, enable:
-   - ✅ **Message Content Intent**
-4. Go to **OAuth2 → URL Generator**:
-   - Scopes: `bot`
-   - Bot Permissions: `Read Messages/View Channels`, `Send Messages`, `Read Message History`, `Create Public Threads`, `Send Messages in Threads`, `Manage Threads`
-5. Copy the generated URL → open in browser → add the bot to your server
-
-### 2. Enable Discord OAuth in Supabase
-
-1. Supabase Dashboard → **Authentication → Providers → Discord** → toggle ON
-2. Copy **Client ID** and **Client Secret** from your Discord Application → paste into Supabase
-3. Add Redirect URLs:
-   - `https://0nefor.one/auth/callback`
-   - `http://localhost:5173/auth/callback` (for local dev)
-
-### 3. Run the DB migration
-
-Run `supabase/migrations/20260706_discord_link.sql` in the Supabase SQL editor.
-This adds the `discord_id` column to `Trader` and a trigger that auto-syncs it on login.
-
-### 4. Configure the bot
-
 ```bash
 cd discord-bot
-cp .env.example .env
-# Fill in all values in .env
+cp .env.example .env      # fill in all values, including DISCORD_PREMIUM_SKU_ID
 npm install
+npm run dev               # or: npm start
 ```
 
-### 5. Run locally
+Enable **Message Content Intent** in Dev Portal → Bot → Privileged Gateway Intents.
 
-```bash
-npm run dev   # auto-restarts on file changes
-# or
-npm start
-```
+Bot permissions (OAuth2 URL Generator, scope `bot`): Read Messages/View Channels,
+Send Messages, Read Message History, Create Public Threads, Send Messages in
+Threads, Manage Threads.
 
-### 6. Deploy to Railway (free)
+## Deploy (Railway)
 
-1. Push this repo to GitHub
-2. Go to [railway.app](https://railway.app) → New Project → Deploy from GitHub
-3. Select the repo, set **Root Directory** to `discord-bot`
-4. Add the env vars from `.env` in Railway's Variables tab
-5. Deploy — Railway detects Node.js automatically via `railway.json`
-
----
-
-## Message format
-
-The bot accepts any message. It tries to parse:
-
-| Field | How |
-|---|---|
-| **Title** | First line, strips `WTS:` / `WTT:` / `WTB:` prefix |
-| **Price** | Regex scan for patterns like `45€`, `45 EUR`, `$45`, `45.50 GBP` |
-| **Description** | All lines after the first |
-| **Images** | Any image attachments are uploaded to Supabase Storage |
-
-**Example post:**
-```
-WTS: Blue-Eyes White Dragon PSA 9
-Mint condition, bought from TCGplayer last year.
-Price: 45€
-[photo attached]
-```
-
-**A photo is required** — a post with no image attachment is rejected with a prompt to add one. All announces are published immediately (`status: 'active'`).
+Push to GitHub → New Project → Deploy from repo → set Root Directory to
+`discord-bot` → add the `.env` vars in Railway Variables (including
+`DISCORD_PREMIUM_SKU_ID`) → deploy.
 
 ---
 
 ## Commands
 
-Run these in Discord (they work in any channel):
-
 | Command | Who | Effect |
 |---|---|---|
-| `!help` | anyone | Explains how to post an announce + lists commands (admins also see admin commands) |
-| `!botcheck` | anyone | Shows the current listening channel and whether this channel matches |
-| `!setchannel` | **Manage Server** | Sets the listening channel to the one you run it in |
-| `!setchannel #other` | **Manage Server** | Sets the listening channel to the mentioned channel |
-| `!setmessage` | **Manage Server** | Shows the current thread message + placeholders |
-| `!setmessage <text>` | **Manage Server** | Sets a custom thread message (replies with a preview) |
-| `!setmessage reset` | **Manage Server** | Restores the default thread message |
+| `!help` | anyone | Overview + points to the sub-topics below |
+| `!help sell` | anyone | Step-by-step for a sell/trade announce |
+| `!help lf` | anyone | Step-by-step for a Looking For post |
+| `!help admin` | anyone | Lists the mod/admin commands |
+| `!upgrade` / `!premium` | anyone | Shows the native Discord purchase button |
+| `!botcheck` | mod/admin | Shows watched channel **and plan (Free/Premium)** |
+| `!setchannel [#channel]` | Manage Server | Set the announces channel |
+| `!setmessage <text\|reset>` | Manage Server | Customize the thread message |
+| `!setcommunity <url\|clear>` | **Premium** + Manage Server | Set the community link shown on announces |
 
-The chosen channel is saved in the Supabase `bot_config` table, so it **persists across restarts and redeploys**. `DISCORD_ANNOUNCES_CHANNEL_ID` in `.env` is only the initial default used before `!setchannel` has ever been run.
-
-### Customizing the thread message
-
-The first message the bot posts in each announce thread is customizable with `!setmessage <text>`. These placeholders are filled in per announce:
-
-| Placeholder | Becomes |
-|---|---|
-| `{link}` | The listing URL on the site |
-| `{title}` | The announce title |
-| `{price}` | The price |
-| `{currency}` | The currency (EUR/USD/GBP) |
-| `{photos}` | Number of photos uploaded |
-
-Example: `!setmessage 🔥 New listing: {title} for {price}{currency}! See it here: {link}`
-
-The template is stored in `bot_config` (persists across restarts). `!setmessage reset` restores the default.
+The upgrade button uses `ButtonStyle.Premium` + your `sku_id`; Discord renders
+the checkout. Non-premium admins who try `!setcommunity` get the button too.
 
 ---
 
-## Deletion sync
+## Testing the premium flow
 
-Announces posted from Discord are kept in sync both ways:
+- **Test entitlements** (no payment): create/delete a test entitlement for your
+  guild via the API to toggle the premium state, then re-run `syncEntitlements`
+  (restart, or wait for the 10-min timer) or fire an event.
+- **Live flow at 100% off**: team members see a full discount on the SKU, so you
+  can click the `!upgrade` button and complete a real (free) purchase to exercise
+  the whole `entitlementCreate` path.
 
-- **Delete the Discord thread → the announce is deleted** on the site (bot `threadDelete` handler). Its images and chat messages go too (via `ON DELETE CASCADE`). Note: auto-archiving a thread after 7 days does **not** delete it.
-- **Delete the announce on the site → the linked Discord thread is deleted** (within ~15s). A DELETE trigger on `announce` enqueues the thread id into `discord_thread_deletion_queue`; the bot polls that queue and deletes the thread. Needs `Manage Threads`.
+## What was reused from v1
+
+`lib/parseAnnounce.js` is copied **verbatim** — it's pure and library-agnostic,
+and its 21 unit tests pass unchanged (`npm test`). Only the Discord plumbing was
+migrated to v14 and the entitlement layer added.
+
+## Migration notes (v13 → v14)
+
+`Intents` → `GatewayIntentBits`; `Permissions.FLAGS` → `PermissionFlagsBits`;
+string events → `Events.*`; buttons via `ButtonBuilder`/`ButtonStyle`;
+`iconURL({ dynamic })` → `iconURL({ extension, size })`.
