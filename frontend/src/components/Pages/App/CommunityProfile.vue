@@ -55,16 +55,26 @@ onMounted(async () => {
   unsub = onAuthChange((auth) => {
     currentUserId.value = auth?.user?.id ?? null;
   });
-  load();
+  await load();
+
+  const claimResult = route.query.claim;
+  if (claimResult === "success") {
+    finalizeClaim();
+  } else if (claimResult === "cancel") {
+    claimOpen.value = true; // dialog resumes at the subscribe step (identity kept)
+  }
 });
 
 onBeforeUnmount(() => {
+  ++finalizeId;
   unsub?.();
 });
 
 // The page is reused across slugs (e.g. a related-profile link), so local UI
 // state must be reset here rather than relying on a fresh component mount.
 watch(() => route.params.slug, () => {
+  ++finalizeId;            // cancel any in-flight finalize poll for the old slug
+  finalizing.value = false;
   community.value = null;
   notFound.value  = false;
   load();
@@ -174,12 +184,33 @@ function onEdited(row) {
   if (community.value) Object.assign(community.value, row);
 }
 
-// After a successful claim, patch owner/status locally so the CTA flips from
-// "Claim" to the owner view without a reload, then open the edit dialog so
-// the new owner can fill in the profile details right away.
-function onClaimed(row) {
-  if (community.value) Object.assign(community.value, row);
-  editOpen.value = true;
+// After returning from Stripe Checkout with ?claim=success, the subscription
+// webhook may not have granted ownership yet (it fires within seconds). Poll the
+// row a few times until owner flips, then show the owned state. A finalizeId
+// token (same pattern as reqId) cancels the poll on slug change or unmount, and a
+// transient fetch error is swallowed so one network blip cannot strand the banner.
+const finalizing = ref(false);
+let finalizeId = 0;
+async function finalizeClaim() {
+  const myId = ++finalizeId;
+  const slug = route.params.slug;
+  finalizing.value = true;
+  try {
+    for (let i = 0; i < 8; i++) {
+      let fresh = null;
+      try { fresh = await fetchBySlug(slug); }
+      catch (e) { console.error("finalizeClaim: fetch failed", e); } // transient; keep polling
+      if (myId !== finalizeId) return;                 // superseded (slug change / unmount)
+      if (fresh) {
+        Object.assign(community.value ?? (community.value = fresh), fresh);
+        if (fresh.owner) return;                        // owned; finally clears the banner
+      }
+      await new Promise((r) => setTimeout(r, 2000));
+      if (myId !== finalizeId) return;
+    }
+  } finally {
+    if (myId === finalizeId) finalizing.value = false;  // only the current poll clears it
+  }
 }
 
 // A claim can fail because someone else claimed it first (race). Refetch and
@@ -310,8 +341,13 @@ async function onStale() {
         </button>
       </div>
 
+      <div v-if="finalizing" class="cp-finalizing">
+        <v-progress-circular indeterminate size="16" width="2" color="var(--c-trade)" />
+        {{ t('community.claimFinalizing') }}
+      </div>
+
       <CommunityEditDialog v-model="editOpen" :community="community" @saved="onEdited" />
-      <ClaimCommunityDialog v-model="claimOpen" :community="community" @claimed="onClaimed" @stale="onStale" />
+      <ClaimCommunityDialog v-model="claimOpen" :community="community" @stale="onStale" />
       <ReportCommunityDialog v-model="reportOpen" :community="community" @sent="onReported" />
 
     </div>
@@ -468,6 +504,13 @@ async function onStale() {
   border: 1.5px solid var(--c-border);
 }
 .cp-unclaimed { font-size: 12.5px; color: var(--c-muted); flex: 1; min-width: 180px; }
+
+.cp-finalizing {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 20px; padding: 12px 16px; border-radius: 12px;
+  background: color-mix(in srgb, var(--c-trade) 10%, transparent);
+  color: var(--c-trade); font-size: 13px; font-weight: 700;
+}
 
 .btn-claim {
   display: flex; align-items: center; gap: 6px;

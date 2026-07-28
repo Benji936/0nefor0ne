@@ -139,6 +139,41 @@ export async function requestManualReview(communityId, reason) {
   if (error) { console.error("requestManualReview failed", error); throw error; }
 }
 
+// Start the paid claim: the claim-create-checkout Edge Function returns a Stripe
+// Checkout URL (subscription mode, 365-day trial, local currency). The caller
+// redirects the browser to it. Requires identity_verified_at server-side.
+export async function startClaimCheckout(communityId) {
+  const { data, error } = await getClient().functions.invoke("claim-create-checkout", {
+    body: { community_id: communityId },
+  });
+  if (error) { console.error("startClaimCheckout failed", error); throw error; }
+  return data; // { url } on success, or { error }
+}
+
+// Open the Stripe Customer Portal for an owned community so the owner can update
+// the card or cancel. Returns a portal URL to redirect to.
+export async function openBillingPortal(communityId) {
+  const { data, error } = await getClient().functions.invoke("claim-portal", {
+    body: { community_id: communityId },
+  });
+  if (error) { console.error("openBillingPortal failed", error); throw error; }
+  return data; // { url } on success, or { error }
+}
+
+// The caller's own claim row for a community (RLS returns only their own).
+// Lets the dialog resume at the subscribe step after an identity code was
+// already verified (e.g. returning from a canceled Checkout).
+export async function fetchMyClaim(communityId) {
+  const me = (await getClient().auth.getSession()).data?.session?.user?.id;
+  if (!me) return null;
+  const { data, error } = await getClient()
+    .from("community_claim")
+    .select("identity_verified_at, subscription_status")
+    .eq("community", communityId).eq("claimer", me).maybeSingle();
+  if (error) { console.error("fetchMyClaim failed", error); throw error; }
+  return data ?? null;
+}
+
 export async function reportCommunity(id, reason) {
   const me = (await getClient().auth.getSession()).data?.session?.user?.id;
   if (!me) throw new Error("Sign in to report.");

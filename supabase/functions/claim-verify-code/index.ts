@@ -1,7 +1,7 @@
 // claim-verify-code: check the 6-digit code against the stored hash and, on a
-// match, mark identity verified and (Plan 1) grant free ownership. Ownership is
-// set only here, as service role, guarded by WHERE owner IS NULL so the first
-// claimer wins a race. Plan 2 will move the ownership grant to the paid webhook.
+// match, mark identity verified. Ownership is NOT granted here (Plan 2) — the
+// Stripe webhook grants it once a subscription becomes trialing/active. This
+// function only proves the claimer controls the store's on-file email.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const cors = {
@@ -47,17 +47,15 @@ Deno.serve(async (req) => {
       return json({ status: "invalid", attempts_left: Math.max(0, MAX_ATTEMPTS - attempts) });
     }
 
-    // Correct code: clear the code, mark identity verified, and grant ownership.
+    // Correct code: clear the code and mark identity verified. Ownership is NOT
+    // granted here anymore (Plan 2) — it is granted only by stripe-webhook once
+    // a subscription becomes trialing/active. The client now proceeds to the
+    // paid Checkout step.
     await admin.from("community_claim").update({
       identity_verified_at: new Date().toISOString(), code_hash: null, code_expires_at: null,
     }).eq("id", claim.id);
 
-    const { data: updated } = await admin.from("community")
-      .update({ owner: user.id, verified: true, status: "published", updated_at: new Date().toISOString() })
-      .eq("id", community_id).is("owner", null).select().maybeSingle();
-    if (!updated) return json({ status: "already_claimed" }, 409);
-
-    return json({ status: "verified", community: updated });
+    return json({ status: "verified" });
   } catch (e) {
     return json({ error: "unexpected", detail: String(e) }, 500);
   }

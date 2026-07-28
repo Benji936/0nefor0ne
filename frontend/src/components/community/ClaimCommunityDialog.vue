@@ -5,7 +5,8 @@
 // branch to a manual-review request.
 import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { requestClaimCode, verifyClaimCode, requestManualReview } from "@/lib/community";
+import { requestClaimCode, verifyClaimCode, requestManualReview, startClaimCheckout, fetchMyClaim } from "@/lib/community";
+import { communityPricing } from "@/lib/communityPricing";
 import { isValidCode } from "@/lib/claimState";
 import { getCurrentSession, signInWithDiscord } from "@/lib/supabaseClient";
 
@@ -16,7 +17,7 @@ const props = defineProps({
 const emit = defineEmits(["update:modelValue", "claimed", "stale"]);
 const { t } = useI18n();
 
-const step = ref("intro");          // intro | code | manual | done
+const step = ref("intro");          // intro | code | subscribe | manual | done
 const signedIn = ref(false);
 const submitting = ref(false);
 const errorMsg = ref("");
@@ -25,12 +26,20 @@ const manualReason = ref("");
 const doneMessage = ref("");
 
 const canVerify = computed(() => isValidCode(code.value) && !submitting.value);
+const price = computed(() => communityPricing(props.community));
 
 watch(() => props.modelValue, async (open) => {
   if (!open) return;
   step.value = "intro"; errorMsg.value = ""; code.value = "";
   manualReason.value = ""; doneMessage.value = ""; submitting.value = false;
-  signedIn.value = !!(await getCurrentSession())?.user;
+  const session = await getCurrentSession();
+  signedIn.value = !!session?.user;
+  if (signedIn.value && props.community?.id && props.community.owner == null) {
+    try {
+      const mine = await fetchMyClaim(props.community.id);
+      if (mine?.identity_verified_at) step.value = "subscribe";
+    } catch { /* non-fatal: fall back to the intro step */ }
+  }
 });
 
 function close() { emit("update:modelValue", false); }
@@ -67,9 +76,7 @@ async function verify() {
   try {
     const res = await verifyClaimCode(props.community.id, code.value);
     if (res.status === "verified") {
-      doneMessage.value = t("community.claimVerified");
-      step.value = "done";
-      emit("claimed", res.community);
+      step.value = "subscribe";
     } else if (res.status === "invalid") {
       errorMsg.value = t("community.claimInvalidCode", { count: res.attempts_left });
     } else if (res.status === "expired") {
@@ -80,6 +87,19 @@ async function verify() {
       errorMsg.value = res.error ?? "Verification failed.";
     }
   } catch (e) { errorMsg.value = e.message ?? "Verification failed."; }
+  finally { submitting.value = false; }
+}
+
+async function startCheckout() {
+  if (submitting.value) return;
+  submitting.value = true; errorMsg.value = "";
+  try {
+    const res = await startClaimCheckout(props.community.id);
+    if (res?.url) { window.location.href = res.url; return; } // leaves the page
+    if (res?.error === "already_claimed") { errorMsg.value = t("community.claimExpiredCode"); emit("stale"); }
+    else if (res?.error === "not_verified") { step.value = "code"; errorMsg.value = t("community.claimExpiredCode"); }
+    else errorMsg.value = res?.error ?? "Could not start checkout.";
+  } catch (e) { errorMsg.value = e.message ?? "Could not start checkout."; }
   finally { submitting.value = false; }
 }
 
@@ -110,7 +130,7 @@ async function sendManual() {
         <div class="dlg-head__icon">
           <v-icon icon="mdi-storefront-check-outline" size="18" />
         </div>
-        <span class="dlg-head__title">{{ step === 'manual' ? t('community.claimManualTitle') : t('community.claimTitle') }}</span>
+        <span class="dlg-head__title">{{ step === 'manual' ? t('community.claimManualTitle') : (step === 'subscribe' ? t('community.claimSubscribeTitle') : t('community.claimTitle')) }}</span>
         <button class="dlg-close" @click="close">
           <v-icon icon="mdi-close" size="19" />
         </button>
@@ -139,6 +159,11 @@ async function sendManual() {
             <button class="link-btn" :disabled="submitting" @click="sendCode">{{ t('community.claimResend') }}</button>
             <button class="link-btn link-btn--muted" :disabled="submitting" @click="goManual">{{ t('community.claimTryManual') }}</button>
           </div>
+        </template>
+
+        <!-- Subscribe (first year free) -->
+        <template v-else-if="step === 'subscribe'">
+          <p class="claim-body">{{ t('community.claimSubscribeBody', { price: price.display }) }}</p>
         </template>
 
         <!-- Manual review -->
@@ -185,6 +210,11 @@ async function sendManual() {
           <button v-else-if="step === 'code'" class="btn-submit" :disabled="!canVerify" @click="verify">
             <template v-if="submitting"><v-progress-circular indeterminate size="16" width="2" color="white" /></template>
             <template v-else><v-icon icon="mdi-check" size="16" />{{ t('community.claimVerify') }}</template>
+          </button>
+
+          <button v-else-if="step === 'subscribe'" class="btn-submit" :disabled="submitting" @click="startCheckout">
+            <template v-if="submitting"><v-progress-circular indeterminate size="16" width="2" color="white" /></template>
+            <template v-else><v-icon icon="mdi-credit-card-outline" size="16" />{{ t('community.claimStartFreeYear') }}</template>
           </button>
 
           <button v-else-if="step === 'manual'" class="btn-submit" :disabled="submitting || !manualReason.trim()" @click="sendManual">
