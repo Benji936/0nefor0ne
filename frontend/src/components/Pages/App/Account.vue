@@ -6,7 +6,6 @@ import { getClient, updateTraderProfile, linkDiscordAccount, syncDiscordIdToTrad
 import { COUNTRIES } from "@/lib/countries";
 import { countryByCode } from "@/lib/countries";
 import { fetchMyCommunities, openBillingPortal } from "@/lib/community";
-import CommunityEditDialog from "@/components/community/CommunityEditDialog.vue";
 
 const { t } = useI18n();
 
@@ -159,8 +158,6 @@ async function resyncDiscord() {
 // ── My communities ───────────────────────────────────────────────────────
 const communities        = ref([]);
 const loadingCommunities = ref(false);
-const editOpen           = ref(false);
-const editing            = ref(null);
 
 const KIND_LABELS = computed(() => ({
   store:   t('community.kindStore'),
@@ -188,16 +185,6 @@ const locale = computed(() => route.params.locale || "en");
 function statusStyle(status) {
   const color = status === "published" ? "var(--c-mutual)" : status === "hidden" ? "var(--c-accent)" : "var(--c-muted)";
   return { color, background: `color-mix(in srgb, ${color} 12%, transparent)` };
-}
-
-function openEditCommunity(row) {
-  editing.value = row;
-  editOpen.value = true;
-}
-
-function onCommunitySaved(row) {
-  const idx = communities.value.findIndex(c => c.id === row.id);
-  if (idx !== -1) communities.value[idx] = row;
 }
 
 const billingBusy = ref(false);
@@ -371,21 +358,18 @@ async function manageSubscription(row) {
             @click="manageSubscription(row)"
           >{{ t('community.manageSubscription') }}</button>
 
-          <button
-            type="button"
+          <router-link
+            :to="{ name: 'communityProfile', params: { locale, slug: row.slug }, query: { edit: '1' } }"
             class="shrink-0 flex items-center justify-center size-7 rounded-md cursor-pointer transition-colors"
             style="border: 1px solid var(--c-border); color: var(--c-muted)"
             :aria-label="t('community.editTitle')"
             :title="t('community.editTitle')"
-            @click="openEditCommunity(row)"
           >
             <v-icon icon="mdi-pencil-outline" size="14" />
-          </button>
+          </router-link>
         </div>
       </div>
     </div>
-
-    <CommunityEditDialog v-model="editOpen" :community="editing" @saved="onCommunitySaved" />
 
     <!-- Trade history -->
     <div class="rounded-2xl border overflow-hidden" style="background: var(--c-surface); border-color: var(--c-border)">
