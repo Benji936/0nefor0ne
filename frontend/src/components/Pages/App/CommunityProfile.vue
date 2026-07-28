@@ -333,7 +333,7 @@ async function onStale() {
     </div>
 
     <!-- Profile -->
-    <div v-else-if="community" class="cp-profile">
+    <div v-else-if="community" class="cp-profile" :class="{ 'cp-profile--editing': editing }">
 
       <!-- Banner -->
       <div class="cp-banner" :class="{ 'cp-banner--editing': editing }">
@@ -486,7 +486,7 @@ async function onStale() {
       <div v-if="editing" class="cp-editbar">
         <span v-if="editErr" class="cp-editbar__err">{{ editErr }}</span>
         <div class="cp-editbar__actions">
-          <button class="btn-cancel-edit" @click="cancelEdit" :disabled="savingEdit">
+          <button class="btn-cancel-edit" @click="cancelEdit" :disabled="savingEdit || uploadingAvatar || uploadingBanner">
             {{ t('community.discardChanges') }}
           </button>
           <button

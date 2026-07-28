@@ -226,7 +226,7 @@ onMounted(load);
       </button>
     </div>
 
-    <CommunityEditDialog v-model="createOpen" :community="null" @saved="onCreated" />
+    <CommunityEditDialog v-model="createOpen" @saved="onCreated" />
 
   </div>
 </template>
