@@ -1217,6 +1217,13 @@
     "manage": "Verwalten",
     "metaProfileTitle": "{name}: Yu-Gi-Oh {kind} in {city}",
     "metaProfileTitleNoCity": "{name}: Yu-Gi-Oh {kind}",
-    "metaProfileDesc": "{name}: Adresse, Discord und Anzeigen auf 0nefor.one."
+    "metaProfileDesc": "{name}: Adresse, Discord und Anzeigen auf 0nefor.one.",
+    "changeBanner": "Banner ändern",
+    "changeAvatar": "Foto ändern",
+    "saveChanges": "Speichern",
+    "discardChanges": "Verwerfen",
+    "imageTooLarge": "Bild ist zu groß (max. 5 MB).",
+    "imageWrongType": "Bitte eine Bilddatei wählen.",
+    "uploadFailed": "Upload fehlgeschlagen. Bitte erneut versuchen."
   }
 }
