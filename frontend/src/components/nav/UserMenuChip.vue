@@ -1,7 +1,9 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRoute, useRouter } from 'vue-router';
 import { getClient } from '@/lib/supabaseClient';
+import { communityMenuTarget } from '@/lib/communityMenu';
 
 const props = defineProps({
   login: { type: Object, required: true },
@@ -10,9 +12,12 @@ const props = defineProps({
 const emit = defineEmits(['navigate', 'logout']);
 
 const { t } = useI18n();
+const route  = useRoute();
+const router = useRouter();
 const menuOpen   = ref(false);
 const traderName = ref(null);
 const avatarUrl  = ref(null);
+const ownedSlugs = ref([]);
 
 async function loadProfile(userId) {
   if (!userId) return;
@@ -27,7 +32,22 @@ async function loadProfile(userId) {
   }
 }
 
-watch(() => props.login?.user?.id, id => loadProfile(id), { immediate: true });
+async function loadOwnedCommunities(userId) {
+  if (!userId) { ownedSlugs.value = []; return; }
+  const { data, error } = await getClient()
+    .from('community')
+    .select('slug')
+    .eq('owner', userId)
+    .limit(2);
+  if (props.login?.user?.id !== userId) return; // superseded by a newer user
+  if (error) { console.error('loadOwnedCommunities failed', error); ownedSlugs.value = []; return; }
+  ownedSlugs.value = (data ?? []).map(r => r.slug);
+}
+
+watch(() => props.login?.user?.id, id => {
+  loadProfile(id);
+  loadOwnedCommunities(id);
+}, { immediate: true });
 
 const initials = computed(() => {
   const raw = traderName.value?.trim() || props.login?.user?.email || '?';
@@ -49,6 +69,13 @@ const menuItems = computed(() => [
     action: 'account',
   },
 ]);
+
+const communityTarget = computed(() => communityMenuTarget(ownedSlugs.value, route.params.locale || 'en'));
+
+function goCommunity() {
+  menuOpen.value = false;
+  if (communityTarget.value) router.push(communityTarget.value);
+}
 
 function handleAction(action) {
   menuOpen.value = false;
@@ -138,6 +165,14 @@ function handleAction(action) {
         >
           <v-icon :icon="item.icon" size="16" style="color: var(--c-muted)" />
           <span class="text-sm" style="color: var(--c-text)">{{ item.label }}</span>
+        </button>
+        <button
+          v-if="communityTarget"
+          class="menu-item flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors text-left w-full"
+          @click="goCommunity"
+        >
+          <v-icon icon="mdi-storefront-outline" size="16" style="color: var(--c-muted)" />
+          <span class="text-sm" style="color: var(--c-text)">{{ t('userMenu.myCommunity') }}</span>
         </button>
       </div>
 
