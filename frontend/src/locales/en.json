@@ -201,6 +201,7 @@
   },
   "userMenu": {
     "accountProfile": "Account & profile",
+    "myCommunity": "My community",
     "signOut": "Sign out"
   },
   "notifications": {
