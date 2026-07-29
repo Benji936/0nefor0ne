@@ -552,8 +552,8 @@ export default {
           { rel: "alternate", hreflang: "x-default", href: `${BASE}${enPath}` },
         ],
         script: [
-          { type: "application/ld+json", innerHTML: JSON.stringify(schema) },
-          { type: "application/ld+json", innerHTML: JSON.stringify(breadcrumb) },
+          { type: "application/ld+json", innerHTML: JSON.stringify(schema).replace(/</g, '\\u003c') },
+          { type: "application/ld+json", innerHTML: JSON.stringify(breadcrumb).replace(/</g, '\\u003c') },
         ],
       };
     }));

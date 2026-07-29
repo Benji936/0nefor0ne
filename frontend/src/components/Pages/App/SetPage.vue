@@ -158,7 +158,7 @@ export default {
                 '@type': 'CollectionPage',
                 name: decodeURIComponent(route.params.setSlug || ''),
                 url: `https://0nefor.one/${route.params.locale || 'en'}/set/${route.params.setSlug || ''}`,
-              })
+              }).replace(/</g, '\\u003c')
             }
           ],
         }
@@ -207,7 +207,7 @@ export default {
                   url: `https://0nefor.one/${route.params.locale || 'en'}/card/${card.id}`,
                 }))
               }
-            })
+            }).replace(/</g, '\\u003c')
           }
         ]
       }
