@@ -204,7 +204,11 @@ async function manageSubscription(row) {
 </script>
 
 <template>
-  <div class="flex flex-col gap-5 py-4 md:py-8 max-w-2xl mx-auto">
+  <div class="py-4 md:py-8 max-w-2xl lg:max-w-6xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+    <!-- Left column: profile (sticky on desktop) -->
+    <div class="lg:col-span-5 flex flex-col gap-5 lg:sticky lg:top-6">
 
     <!-- Profile card -->
     <div class="rounded-2xl border overflow-hidden" style="background: var(--c-surface); border-color: var(--c-border)">
@@ -310,6 +314,10 @@ async function manageSubscription(row) {
         </div>
       </div>
     </div>
+    </div>
+
+    <!-- Right column: communities, history, connections, settings -->
+    <div class="lg:col-span-7 flex flex-col gap-5">
 
     <!-- My communities -->
     <div class="rounded-2xl border overflow-hidden" style="background: var(--c-surface); border-color: var(--c-border)">
@@ -521,6 +529,8 @@ async function manageSubscription(row) {
           @click="$emit('logout')"
         >{{ t('userMenu.signOut') }}</v-btn>
       </div>
+    </div>
+    </div>
     </div>
 
   </div>
