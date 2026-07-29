@@ -220,20 +220,24 @@ async function manageSubscription(row) {
             style="background: color-mix(in srgb, var(--c-trade) 18%, transparent); color: var(--c-trade); border: 1px solid color-mix(in srgb, var(--c-trade) 30%, transparent)"
           >
             <template v-if="loading">
-              <div class="size-full rounded-2xl animate-pulse" style="background: var(--c-skeleton)" />
+              <div class="size-full rounded-2xl animate-pulse motion-reduce:animate-none" style="background: var(--c-skeleton)" />
             </template>
             <span v-else>{{ initials }}</span>
           </div>
           <div class="flex flex-col min-w-0">
             <span class="font-bold text-xl truncate" style="color: var(--c-text)">{{ name || login?.user?.email }}</span>
-            <span class="text-sm mt-1" style="color: var(--c-muted)">
-              {{ [countryDisplay, city].filter(Boolean).join(", ") || t('account.locationNotSet') }}
+            <span class="text-sm mt-1 flex items-center gap-1.5 min-w-0" style="color: var(--c-muted)">
+              <v-icon icon="mdi-map-marker-outline" size="14" class="shrink-0" />
+              <span class="truncate">{{ [countryDisplay, city].filter(Boolean).join(", ") || t('account.locationNotSet') }}</span>
             </span>
           </div>
         </div>
 
+        <!-- Separator -->
+        <div class="h-px w-full" style="background: var(--c-border)" />
+
         <!-- Edit form -->
-        <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-4">
           <p class="text-xs font-bold uppercase tracking-wide" style="color: var(--c-muted)">{{ t('account.profile') }}</p>
 
           <v-text-field
@@ -272,19 +276,20 @@ async function manageSubscription(row) {
           <!-- Trade scope -->
           <div class="flex flex-col gap-2">
             <p class="text-xs font-semibold uppercase tracking-wide" style="color: var(--c-muted)">{{ t('account.tradingRange') }}</p>
-            <div class="flex gap-2">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2" role="group" :aria-label="t('account.tradingRange')">
               <button
                 v-for="s in SCOPES"
                 :key="s.value"
                 type="button"
-                class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border text-xs font-semibold transition-colors cursor-pointer"
+                :aria-pressed="tradeScope === s.value"
+                class="scope-pill flex items-center justify-center gap-2 py-2 rounded-xl border text-xs font-semibold transition-colors cursor-pointer"
                 :style="tradeScope === s.value
                   ? { background: 'color-mix(in srgb, var(--c-accent) 12%, transparent)', borderColor: 'var(--c-accent)', color: 'var(--c-accent)' }
                   : { background: 'transparent', borderColor: 'var(--c-border)', color: 'var(--c-muted)' }"
                 :disabled="loading || saving"
                 @click="tradeScope = s.value"
               >
-                <v-icon :icon="s.icon" size="14" />
+                <v-icon :icon="tradeScope === s.value ? 'mdi-check' : s.icon" size="14" />
                 {{ s.label }}
               </button>
             </div>
@@ -294,8 +299,10 @@ async function manageSubscription(row) {
 
           <v-btn
             variant="flat"
+            size="large"
+            block
             style="background: var(--c-accent); color: white"
-            prepend-icon="mdi-content-save-outline"
+            :prepend-icon="saved ? 'mdi-check' : 'mdi-content-save-outline'"
             :loading="saving"
             :disabled="loading"
             @click="saveProfile"
@@ -518,3 +525,10 @@ async function manageSubscription(row) {
 
   </div>
 </template>
+
+<style scoped>
+/* Trade-scope segmented control: comfortable touch target + keyboard focus ring. */
+.scope-pill { min-height: 44px; }
+.scope-pill:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+.scope-pill:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
