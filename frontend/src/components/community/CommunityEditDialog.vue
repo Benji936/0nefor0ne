@@ -1,19 +1,14 @@
 <script setup>
 import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { createCommunity, updateCommunity } from "@/lib/community";
+import { createCommunity } from "@/lib/community";
 import { COUNTRIES } from "@/lib/countries";
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
-  // When set, the dialog opens in EDIT mode for this community; otherwise
-  // CREATE mode.
-  community:  { type: Object,  default: null },
 });
 const emit = defineEmits(["update:modelValue", "saved"]);
 const { t } = useI18n();
-
-const isEdit = computed(() => !!props.community);
 
 const name       = ref("");
 const kind       = ref("store");
@@ -32,25 +27,14 @@ const canSubmit = computed(() => {
   return n.length > 0 && n.length <= 120 && bio.value.length <= 2000;
 });
 
-// Hydrate the form whenever the dialog opens: from `props.community` in EDIT
-// mode, blank in CREATE mode. Resetting on open (rather than relying on the
-// component staying mounted with stale refs) keeps a re-open always showing
-// the current data.
+// Hydrate the form blank whenever the dialog opens (create only). Resetting
+// on open (rather than relying on the component staying mounted with stale
+// refs) keeps a re-open always showing a clean form.
 watch(() => props.modelValue, open => {
   if (!open) return;
   errorMsg.value = "";
-  if (props.community) {
-    name.value       = props.community.name ?? "";
-    kind.value       = props.community.kind ?? "store";
-    bio.value        = props.community.bio ?? "";
-    website.value    = props.community.website ?? "";
-    discordUrl.value = props.community.discord_url ?? "";
-    city.value       = props.community.city ?? "";
-    country.value    = props.community.country ?? "";
-  } else {
-    name.value = ""; kind.value = "store"; bio.value = "";
-    website.value = ""; discordUrl.value = ""; city.value = ""; country.value = "";
-  }
+  name.value = ""; kind.value = "store"; bio.value = "";
+  website.value = ""; discordUrl.value = ""; city.value = ""; country.value = "";
 });
 
 function close() { emit("update:modelValue", false); }
@@ -67,9 +51,7 @@ async function submit() {
       city:        city.value.trim() || null,
       country:     country.value || null,
     };
-    const row = isEdit.value
-      ? await updateCommunity(props.community.id, patch)
-      : await createCommunity({ kind: kind.value, ...patch });
+    const row = await createCommunity({ kind: kind.value, ...patch });
     emit("saved", row);
     close();
   } catch (err) {
@@ -95,7 +77,7 @@ async function submit() {
         <div class="dlg-head__icon">
           <v-icon icon="mdi-storefront-outline" size="18" />
         </div>
-        <span class="dlg-head__title">{{ isEdit ? t('community.editTitle') : t('community.createTitle') }}</span>
+        <span class="dlg-head__title">{{ t('community.createTitle') }}</span>
         <button class="dlg-close" @click="close">
           <v-icon icon="mdi-close" size="19" />
         </button>
@@ -121,7 +103,7 @@ async function submit() {
           <!-- Kind -->
           <div class="field-block">
             <label class="field-label">{{ t('community.fieldKind') }}</label>
-            <select v-model="kind" class="field-input field-select" :disabled="isEdit">
+            <select v-model="kind" class="field-input field-select">
               <option value="store">{{ t('community.kindStore') }}</option>
               <option value="discord">{{ t('community.kindDiscord') }}</option>
               <option value="group">{{ t('community.kindGroup') }}</option>
@@ -184,8 +166,8 @@ async function submit() {
             <v-progress-circular indeterminate size="16" width="2" color="white" />
           </template>
           <template v-else>
-            <v-icon :icon="isEdit ? 'mdi-content-save-outline' : 'mdi-plus'" size="16" />
-            {{ isEdit ? t('community.save') : t('community.create') }}
+            <v-icon icon="mdi-plus" size="16" />
+            {{ t('community.create') }}
           </template>
         </button>
       </div>

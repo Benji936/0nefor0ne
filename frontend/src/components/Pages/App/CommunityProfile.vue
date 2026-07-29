@@ -6,9 +6,10 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useHead } from "@unhead/vue";
-import { fetchBySlug } from "@/lib/community";
+import { fetchBySlug, updateCommunity } from "@/lib/community";
+import { validateImageFile, uploadCommunityMedia } from "@/lib/communityMedia";
+import { COUNTRIES } from "@/lib/countries";
 import { getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
-import CommunityEditDialog from "@/components/community/CommunityEditDialog.vue";
 import ClaimCommunityDialog from "@/components/community/ClaimCommunityDialog.vue";
 import ReportCommunityDialog from "@/components/community/ReportCommunityDialog.vue";
 
@@ -57,6 +58,8 @@ onMounted(async () => {
   });
   await load();
 
+  if (route.query.edit === "1" && isOwner.value) startEdit();
+
   const claimResult = route.query.claim;
   if (claimResult === "success") {
     finalizeClaim();
@@ -73,6 +76,7 @@ onBeforeUnmount(() => {
 // The page is reused across slugs (e.g. a related-profile link), so local UI
 // state must be reset here rather than relying on a fresh component mount.
 watch(() => route.params.slug, () => {
+  editing.value = false;
   ++finalizeId;            // cancel any in-flight finalize poll for the old slug
   finalizing.value = false;
   community.value = null;
@@ -175,13 +179,92 @@ function openReport() { reportOpen.value = true; }
 // closing itself; nothing else needs to happen on this page.
 function onReported() {}
 
-const editOpen = ref(false);
-function openEdit() { editOpen.value = true; }
+// ── Inline edit mode ─────────────────────────────────────────────────────────
+// The owner edits the profile in place: `edit` is a working copy seeded from the
+// loaded community; the template renders inputs bound to it while `editing`. Save
+// commits everything via updateCommunity in one write; cancel drops the copy.
+const editing = ref(false);
+const savingEdit = ref(false);
+const editErr = ref("");
+const uploadingAvatar = ref(false);   // used by the image upload task
+const uploadingBanner = ref(false);
+const edit = ref({
+  name: "", bio: "", website: "", discord_url: "",
+  city: "", country: "", avatar_url: null, banner_url: null,
+});
 
-// Patch the local object with the updated row rather than refetching, so the
-// page reflects the edit immediately.
-function onEdited(row) {
-  if (community.value) Object.assign(community.value, row);
+function startEdit() {
+  const c = community.value;
+  if (!c) return;
+  edit.value = {
+    name: c.name ?? "", bio: c.bio ?? "", website: c.website ?? "",
+    discord_url: c.discord_url ?? "", city: c.city ?? "", country: c.country ?? "",
+    avatar_url: c.avatar_url ?? null, banner_url: c.banner_url ?? null,
+  };
+  editErr.value = "";
+  editing.value = true;
+}
+function cancelEdit() { editing.value = false; editErr.value = ""; }
+
+const editValid = computed(() => {
+  const n = edit.value.name.trim();
+  return n.length > 0 && n.length <= 120 && edit.value.bio.length <= 2000;
+});
+
+// Preview sources: while editing, render the working copy so changes show live.
+const displayName   = computed(() => editing.value ? edit.value.name       : (community.value?.name ?? ""));
+const displayAvatar = computed(() => editing.value ? edit.value.avatar_url  : community.value?.avatar_url);
+const displayBanner = computed(() => editing.value ? edit.value.banner_url  : community.value?.banner_url);
+
+async function saveEdit() {
+  if (!editValid.value || savingEdit.value || uploadingAvatar.value || uploadingBanner.value) return;
+  savingEdit.value = true; editErr.value = "";
+  try {
+    const patch = {
+      name:        edit.value.name.trim(),
+      bio:         edit.value.bio.trim(),
+      website:     edit.value.website.trim() || null,
+      discord_url: edit.value.discord_url.trim() || null,
+      city:        edit.value.city.trim() || null,
+      country:     edit.value.country || null,
+      avatar_url:  edit.value.avatar_url || null,
+      banner_url:  edit.value.banner_url || null,
+    };
+    const row = await updateCommunity(community.value.id, patch);
+    Object.assign(community.value, row);
+    editing.value = false;
+  } catch (e) {
+    editErr.value = e.message ?? "Failed to save.";
+  } finally {
+    savingEdit.value = false;
+  }
+}
+
+const avatarInput = ref(null);
+const bannerInput = ref(null);
+
+async function onPickImage(kind, ev) {
+  const file = ev.target.files?.[0];
+  ev.target.value = ""; // allow re-picking the same file
+  if (!file) return;
+  const check = validateImageFile(file);
+  if (!check.ok) {
+    editErr.value = check.error === "too_large" ? t("community.imageTooLarge")
+      : check.error === "wrong_type" ? t("community.imageWrongType")
+      : t("community.uploadFailed");
+    return;
+  }
+  const busy = kind === "avatar" ? uploadingAvatar : uploadingBanner;
+  busy.value = true; editErr.value = "";
+  try {
+    const url = await uploadCommunityMedia(community.value.id, kind, file);
+    if (kind === "avatar") edit.value.avatar_url = url;
+    else edit.value.banner_url = url;
+  } catch (e) {
+    editErr.value = t("community.uploadFailed");
+  } finally {
+    busy.value = false;
+  }
 }
 
 // After returning from Stripe Checkout with ?claim=success, the subscription
@@ -250,42 +333,82 @@ async function onStale() {
     </div>
 
     <!-- Profile -->
-    <div v-else-if="community" class="cp-profile">
+    <div v-else-if="community" class="cp-profile" :class="{ 'cp-profile--editing': editing }">
 
       <!-- Banner -->
-      <div class="cp-banner">
-        <img v-if="community.banner_url" :src="community.banner_url" :alt="community.name" class="cp-banner__img" />
+      <div class="cp-banner" :class="{ 'cp-banner--editing': editing }">
+        <img v-if="displayBanner" :src="displayBanner" :alt="displayName" class="cp-banner__img" />
+        <template v-if="editing">
+          <input ref="bannerInput" type="file" accept="image/*" class="cp-file-hidden" @change="onPickImage('banner', $event)" />
+          <button type="button" class="cp-img-btn cp-img-btn--banner" :disabled="uploadingBanner" @click="bannerInput?.click()">
+            <v-progress-circular v-if="uploadingBanner" indeterminate size="16" width="2" color="white" />
+            <template v-else><v-icon icon="mdi-image-edit-outline" size="16" />{{ t('community.changeBanner') }}</template>
+          </button>
+        </template>
       </div>
 
       <!-- Header -->
       <div class="cp-header">
-        <div class="cp-avatar">
-          <img v-if="community.avatar_url" :src="community.avatar_url" :alt="community.name" />
-          <span v-else>{{ (community.name || '?')[0].toUpperCase() }}</span>
+        <div class="cp-avatar" :class="{ 'cp-avatar--editing': editing }">
+          <img v-if="displayAvatar" :src="displayAvatar" :alt="displayName" />
+          <span v-else>{{ (displayName || '?')[0].toUpperCase() }}</span>
+          <template v-if="editing">
+            <input ref="avatarInput" type="file" accept="image/*" class="cp-file-hidden" @change="onPickImage('avatar', $event)" />
+            <button type="button" class="cp-img-btn cp-img-btn--avatar" :disabled="uploadingAvatar" @click="avatarInput?.click()" :aria-label="t('community.changeAvatar')">
+              <v-progress-circular v-if="uploadingAvatar" indeterminate size="14" width="2" color="white" />
+              <v-icon v-else icon="mdi-camera-outline" size="15" />
+            </button>
+          </template>
         </div>
         <div class="cp-header__text">
           <div class="cp-title-row">
-            <h1 class="cp-name">{{ community.name }}</h1>
-            <span v-if="community.verified" class="badge-verified">
+            <h1 v-if="!editing" class="cp-name">{{ community.name }}</h1>
+            <input
+              v-else
+              v-model="edit.name"
+              class="cp-name-input"
+              maxlength="120"
+              :placeholder="t('community.fieldName')"
+              aria-label="Name"
+            />
+            <span v-if="!editing && community.verified" class="badge-verified">
               <v-icon icon="mdi-check-decagram" size="13" />
               {{ t('community.verified') }}
             </span>
           </div>
           <div class="cp-identity">
             <span>{{ kindLabel }}</span>
-            <span v-if="cityCountry" class="cp-dot">·</span>
-            <span v-if="cityCountry">{{ cityCountry }}</span>
-            <span v-if="community.region" class="cp-dot">·</span>
-            <span v-if="community.region">{{ community.region }}</span>
+            <template v-if="!editing">
+              <span v-if="cityCountry" class="cp-dot">·</span>
+              <span v-if="cityCountry">{{ cityCountry }}</span>
+              <span v-if="community.region" class="cp-dot">·</span>
+              <span v-if="community.region">{{ community.region }}</span>
+            </template>
+            <template v-else>
+              <span class="cp-dot">·</span>
+              <input v-model="edit.city" class="cp-inline-input" :placeholder="t('community.fieldCity')" aria-label="City" />
+              <select v-model="edit.country" class="cp-inline-input cp-inline-select" aria-label="Country">
+                <option value="">{{ t('community.kindAll') }}</option>
+                <option v-for="c in COUNTRIES" :key="c.code" :value="c.name">{{ c.flag }} {{ c.name }}</option>
+              </select>
+            </template>
           </div>
         </div>
       </div>
 
       <!-- Bio -->
-      <p v-if="community.bio" class="cp-bio">{{ community.bio }}</p>
+      <p v-if="!editing && community.bio" class="cp-bio">{{ community.bio }}</p>
+      <textarea
+        v-else-if="editing"
+        v-model="edit.bio"
+        class="cp-bio-input"
+        maxlength="2000"
+        :placeholder="t('community.fieldBio')"
+        aria-label="Bio"
+      />
 
       <!-- Action row -->
-      <div class="cp-actions">
+      <div v-if="!editing" class="cp-actions">
         <a
           v-if="community.website"
           :href="community.website"
@@ -321,9 +444,19 @@ async function onStale() {
           <v-icon icon="mdi-map-marker-outline" size="16" />
         </a>
       </div>
+      <div v-else class="cp-actions cp-actions--edit">
+        <div class="cp-link-edit">
+          <v-icon icon="mdi-web" size="16" />
+          <input v-model="edit.website" class="cp-inline-input" placeholder="https://" aria-label="Website" />
+        </div>
+        <div class="cp-link-edit">
+          <v-icon icon="mdi-discord" size="16" />
+          <input v-model="edit.discord_url" class="cp-inline-input" placeholder="https://discord.gg/…" aria-label="Discord link" />
+        </div>
+      </div>
 
-      <!-- CTA row -->
-      <div class="cp-cta">
+      <!-- CTA row (hidden while editing) -->
+      <div v-if="!editing" class="cp-cta">
         <template v-if="community.owner == null">
           <button type="button" class="btn-claim" @click="openClaim">
             <v-icon icon="mdi-storefront-check-outline" size="16" />
@@ -335,7 +468,7 @@ async function onStale() {
           <v-icon icon="mdi-flag-outline" size="16" />
           {{ t('community.report') }}
         </button>
-        <button v-if="isOwner" type="button" class="btn-edit-profile" @click="openEdit">
+        <button v-if="isOwner" type="button" class="btn-edit-profile" @click="startEdit">
           <v-icon icon="mdi-pencil-outline" size="16" />
           {{ t('community.editTitle') }}
         </button>
@@ -346,9 +479,26 @@ async function onStale() {
         {{ t('community.claimFinalizing') }}
       </div>
 
-      <CommunityEditDialog v-model="editOpen" :community="community" @saved="onEdited" />
       <ClaimCommunityDialog v-model="claimOpen" :community="community" @stale="onStale" />
       <ReportCommunityDialog v-model="reportOpen" :community="community" @sent="onReported" />
+
+      <!-- Sticky edit bar -->
+      <div v-if="editing" class="cp-editbar">
+        <span v-if="editErr" class="cp-editbar__err">{{ editErr }}</span>
+        <div class="cp-editbar__actions">
+          <button class="btn-cancel-edit" @click="cancelEdit" :disabled="savingEdit || uploadingAvatar || uploadingBanner">
+            {{ t('community.discardChanges') }}
+          </button>
+          <button
+            class="btn-save-edit"
+            :disabled="!editValid || savingEdit || uploadingAvatar || uploadingBanner"
+            @click="saveEdit"
+          >
+            <v-progress-circular v-if="savingEdit" indeterminate size="16" width="2" color="white" />
+            <template v-else><v-icon icon="mdi-content-save-outline" size="16" />{{ t('community.saveChanges') }}</template>
+          </button>
+        </div>
+      </div>
 
     </div>
   </div>
@@ -539,4 +689,71 @@ async function onStale() {
   cursor: pointer; transition: background 0.15s ease;
 }
 .btn-edit-profile:hover { background: color-mix(in srgb, var(--c-trade) 22%, transparent); }
+
+/* ── Inline edit mode ─────────────────────────────── */
+.cp-profile--editing { padding-bottom: 88px; } /* room for the sticky bar */
+
+.cp-name-input {
+  width: 100%;
+  background: var(--c-surface); border: 1.5px solid var(--c-border); border-radius: 12px;
+  padding: 6px 12px; font-size: 1.375rem; font-weight: 800; color: var(--c-text);
+  letter-spacing: -0.01em; outline: none; transition: border-color 0.15s ease;
+}
+.cp-name-input:focus { border-color: var(--c-trade); }
+
+.cp-inline-input {
+  background: var(--c-surface); border: 1.5px solid var(--c-border); border-radius: 10px;
+  padding: 6px 10px; font-size: 13px; font-weight: 600; color: var(--c-text);
+  outline: none; transition: border-color 0.15s ease; min-width: 0;
+}
+.cp-inline-input:focus { border-color: var(--c-trade); }
+.cp-inline-select { cursor: pointer; appearance: none; }
+
+.cp-bio-input {
+  width: calc(100% - 40px); margin: 0 20px; box-sizing: border-box;
+  background: var(--c-surface); border: 1.5px solid var(--c-border); border-radius: 12px;
+  padding: 10px 13px; font-size: 13.5px; color: var(--c-text); line-height: 1.6;
+  min-height: 96px; resize: vertical; outline: none; font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+.cp-bio-input:focus { border-color: var(--c-trade); }
+
+.cp-actions--edit { flex-direction: column; align-items: stretch; gap: 8px; }
+.cp-link-edit { display: flex; align-items: center; gap: 8px; color: var(--c-muted); }
+.cp-link-edit .cp-inline-input { flex: 1; }
+
+.cp-editbar {
+  position: sticky; bottom: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: flex-end; gap: 12px; flex-wrap: wrap;
+  margin: 8px -20px -56px; padding: 14px 20px;
+  background: var(--c-surface); border-top: 1px solid var(--c-border);
+}
+.cp-editbar__err { color: #ef4444; font-size: 12.5px; font-weight: 600; margin-right: auto; }
+.cp-editbar__actions { display: flex; align-items: center; gap: 10px; }
+.btn-cancel-edit {
+  padding: 9px 16px; border-radius: 11px; font-size: 13px; font-weight: 600;
+  color: var(--c-muted); cursor: pointer; transition: background 0.15s ease;
+}
+.btn-cancel-edit:hover { background: var(--c-surface-2); }
+.btn-cancel-edit:disabled { opacity: 0.4; pointer-events: none; }
+.btn-save-edit {
+  display: flex; align-items: center; gap: 7px; min-width: 130px; justify-content: center;
+  padding: 9px 20px; border-radius: 11px; background: var(--c-trade); color: #fff;
+  font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity 0.15s ease;
+}
+.btn-save-edit:hover:not(:disabled) { opacity: 0.88; }
+.btn-save-edit:disabled { opacity: 0.4; pointer-events: none; }
+
+.cp-file-hidden { display: none; }
+.cp-banner--editing, .cp-avatar--editing { position: relative; }
+.cp-img-btn {
+  position: absolute; display: flex; align-items: center; justify-content: center; gap: 6px;
+  background: color-mix(in srgb, #000 55%, transparent); color: #fff;
+  font-size: 12px; font-weight: 700; cursor: pointer; border: none;
+  transition: opacity 0.15s ease;
+}
+.cp-img-btn:hover:not(:disabled) { opacity: 0.85; }
+.cp-img-btn:disabled { opacity: 0.6; pointer-events: none; }
+.cp-img-btn--banner { inset: auto 12px 12px auto; padding: 8px 14px; border-radius: 11px; }
+.cp-img-btn--avatar { inset: auto -4px -4px auto; width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--c-bg); }
 </style>
