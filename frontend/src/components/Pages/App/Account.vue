@@ -48,6 +48,11 @@ const countryDisplay = computed(() => {
   return c ? `${c.flag} ${c.name}` : "";
 });
 
+// Display-only: the currently selected trade-range option, for the header badge.
+const activeScope = computed(() =>
+  SCOPES.value.find(s => s.value === tradeScope.value) || SCOPES.value[SCOPES.value.length - 1]
+);
+
 // ── Trade history ─────────────────────────────────────────────────────────
 const trades   = ref([]);
 const loadingTrades = ref(false);
@@ -204,46 +209,42 @@ async function manageSubscription(row) {
 </script>
 
 <template>
-  <div class="py-4 md:py-8 max-w-2xl lg:max-w-6xl mx-auto">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+  <div class="acct">
 
-    <!-- Left column: profile (sticky on desktop) -->
-    <div class="lg:col-span-5 flex flex-col gap-5 lg:sticky lg:top-6">
-
-    <!-- Profile card -->
-    <div class="rounded-2xl border overflow-hidden" style="background: var(--c-surface); border-color: var(--c-border)">
-      <!-- Header band -->
-      <div class="h-1 w-full" style="background: linear-gradient(90deg, var(--c-trade), var(--c-accent))" />
-
-      <div class="px-6 py-5 flex flex-col gap-5">
-
-        <!-- Identity row -->
-        <div class="flex items-center gap-4">
-          <div
-            class="size-16 rounded-2xl flex items-center justify-center text-2xl font-bold shrink-0 select-none"
-            style="background: color-mix(in srgb, var(--c-trade) 18%, transparent); color: var(--c-trade); border: 1px solid color-mix(in srgb, var(--c-trade) 30%, transparent)"
-          >
-            <template v-if="loading">
-              <div class="size-full rounded-2xl animate-pulse motion-reduce:animate-none" style="background: var(--c-skeleton)" />
-            </template>
-            <span v-else>{{ initials }}</span>
-          </div>
-          <div class="flex flex-col min-w-0">
-            <span class="font-bold text-xl truncate" style="color: var(--c-text)">{{ name || login?.user?.email }}</span>
-            <span class="text-sm mt-1 flex items-center gap-1.5 min-w-0" style="color: var(--c-muted)">
-              <v-icon icon="mdi-map-marker-outline" size="14" class="shrink-0" />
-              <span class="truncate">{{ [countryDisplay, city].filter(Boolean).join(", ") || t('account.locationNotSet') }}</span>
-            </span>
-          </div>
+    <!-- Identity header: the page's H1 and the trading "reach" it drives -->
+    <header class="acct-hero">
+      <div class="acct-hero__id">
+        <div class="acct-avatar" aria-hidden="true">
+          <div v-if="loading" class="acct-avatar__sk animate-pulse motion-reduce:animate-none" />
+          <span v-else>{{ initials }}</span>
         </div>
+        <div class="acct-hero__text">
+          <h1 class="acct-name">{{ name || login?.user?.email || t('nav.account') }}</h1>
+          <p class="acct-loc">
+            <v-icon icon="mdi-map-marker-outline" size="15" class="shrink-0" />
+            <span>{{ [countryDisplay, city].filter(Boolean).join(", ") || t('account.locationNotSet') }}</span>
+          </p>
+        </div>
+      </div>
 
-        <!-- Separator -->
-        <div class="h-px w-full" style="background: var(--c-border)" />
+      <!-- Reach badge — a live reflection of the trade-range control below -->
+      <div class="acct-reach">
+        <span class="acct-reach__label">{{ t('account.tradingRange') }}</span>
+        <span class="acct-reach__chip">
+          <v-icon :icon="activeScope.icon" size="15" />
+          {{ activeScope.label }}
+        </span>
+      </div>
+    </header>
 
-        <!-- Edit form -->
+    <!-- Body: details form (primary) + communities / history (secondary) -->
+    <div class="acct-body">
+
+      <!-- Details: the one true surface panel, because it is the editable form -->
+      <section class="acct-details" aria-labelledby="acct-details-h">
+        <h2 id="acct-details-h" class="acct-h2">{{ t('account.profile') }}</h2>
+
         <div class="flex flex-col gap-4">
-          <p class="text-xs font-bold uppercase tracking-wide" style="color: var(--c-muted)">{{ t('account.profile') }}</p>
-
           <v-text-field
             v-model="name"
             :label="t('account.displayName')"
@@ -277,9 +278,8 @@ async function manageSubscription(row) {
             />
           </div>
 
-          <!-- Trade scope -->
           <div class="flex flex-col gap-2">
-            <p class="text-xs font-semibold uppercase tracking-wide" style="color: var(--c-muted)">{{ t('account.tradingRange') }}</p>
+            <p class="acct-sub">{{ t('account.tradingRange') }}</p>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2" role="group" :aria-label="t('account.tradingRange')">
               <button
                 v-for="s in SCOPES"
@@ -288,7 +288,7 @@ async function manageSubscription(row) {
                 :aria-pressed="tradeScope === s.value"
                 class="scope-pill flex items-center justify-center gap-2 py-2 rounded-xl border text-xs font-semibold transition-colors cursor-pointer"
                 :style="tradeScope === s.value
-                  ? { background: 'color-mix(in srgb, var(--c-accent) 12%, transparent)', borderColor: 'var(--c-accent)', color: 'var(--c-accent)' }
+                  ? { background: 'color-mix(in srgb, var(--c-trade) 14%, transparent)', borderColor: 'var(--c-trade)', color: 'var(--c-trade)' }
                   : { background: 'transparent', borderColor: 'var(--c-border)', color: 'var(--c-muted)' }"
                 :disabled="loading || saving"
                 @click="tradeScope = s.value"
@@ -312,214 +312,135 @@ async function manageSubscription(row) {
             @click="saveProfile"
           >{{ saved ? t('account.saved') : t('account.save') }}</v-btn>
         </div>
-      </div>
-    </div>
-    </div>
+      </section>
 
-    <!-- Right column: communities, history, connections, settings -->
-    <div class="lg:col-span-7 flex flex-col gap-5">
+      <!-- Secondary: rule-divided lists, no card boxes -->
+      <div class="acct-secondary">
 
-    <!-- My communities -->
-    <div class="rounded-2xl border overflow-hidden" style="background: var(--c-surface); border-color: var(--c-border)">
-      <div class="px-5 py-4 flex items-center gap-2" style="border-bottom: 1px solid var(--c-border)">
-        <v-icon icon="mdi-storefront-outline" size="16" color="var(--c-muted)" />
-        <span class="text-sm font-semibold" style="color: var(--c-text)">{{ t('community.myCommunities') }}</span>
-      </div>
+        <!-- My communities -->
+        <section aria-labelledby="acct-comm-h">
+          <div class="acct-section-head">
+            <h2 id="acct-comm-h" class="acct-h2">
+              <v-icon icon="mdi-storefront-outline" size="15" />{{ t('community.myCommunities') }}
+            </h2>
+          </div>
 
-      <div v-if="loadingCommunities" class="flex flex-col divide-y" style="border-color: var(--c-border)">
-        <div v-for="i in 2" :key="i" class="flex items-center gap-3 px-5 py-3 animate-pulse">
-          <div class="h-4 rounded w-32" style="background: var(--c-skeleton)" />
-          <div class="h-5 rounded w-16 ml-auto" style="background: var(--c-skeleton)" />
-        </div>
-      </div>
-
-      <div v-else-if="communities.length === 0" class="px-5 py-8 text-center text-sm" style="color: var(--c-muted)">
-        <router-link :to="{ name: 'community', params: { locale } }" class="font-semibold" style="color: var(--c-accent)">
-          {{ t('community.addYours') }}
-        </router-link>
-      </div>
-
-      <div v-else class="flex flex-col divide-y" style="border-color: var(--c-border)">
-        <div
-          v-for="row in communities"
-          :key="row.id"
-          class="flex items-center gap-3 px-5 py-3 text-sm"
-        >
-          <div class="flex flex-col min-w-0" style="gap: 2px">
-            <div class="flex items-center gap-1.5 min-w-0">
-              <span class="font-semibold truncate" style="color: var(--c-text)">{{ row.name }}</span>
-              <v-icon v-if="row.verified" icon="mdi-check-decagram" size="14" style="color: var(--c-mutual)" :title="t('community.verified')" />
+          <div v-if="loadingCommunities" class="acct-rows">
+            <div v-for="i in 2" :key="i" class="acct-row acct-row--sk">
+              <div class="h-4 rounded w-32 animate-pulse motion-reduce:animate-none" style="background: var(--c-skeleton)" />
+              <div class="h-5 rounded w-16 ml-auto animate-pulse motion-reduce:animate-none" style="background: var(--c-skeleton)" />
             </div>
-            <span class="text-xs truncate" style="color: var(--c-muted)">{{ KIND_LABELS[row.kind] ?? row.kind }}</span>
           </div>
 
-          <span
-            class="ml-auto shrink-0 text-xs font-semibold px-2 py-1 rounded-md"
-            :style="{ textTransform: 'capitalize', ...statusStyle(row.status) }"
-          >{{ row.status }}</span>
+          <p v-else-if="communities.length === 0" class="acct-empty">
+            <router-link :to="{ name: 'community', params: { locale } }" style="color: var(--c-accent); font-weight: 600">
+              {{ t('community.addYours') }}
+            </router-link>
+          </p>
 
-          <router-link
-            :to="{ name: 'communityProfile', params: { locale, slug: row.slug } }"
-            class="shrink-0 text-xs font-semibold"
-            style="color: var(--c-trade)"
-          >{{ t('community.manage') }}</router-link>
+          <div v-else class="acct-rows">
+            <div v-for="row in communities" :key="row.id" class="acct-row">
+              <div class="flex flex-col min-w-0" style="gap: 2px">
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span class="font-semibold truncate" style="color: var(--c-text)">{{ row.name }}</span>
+                  <v-icon v-if="row.verified" icon="mdi-check-decagram" size="14" style="color: var(--c-mutual)" :title="t('community.verified')" />
+                </div>
+                <span class="text-xs truncate" style="color: var(--c-muted)">{{ KIND_LABELS[row.kind] ?? row.kind }}</span>
+              </div>
 
-          <button
-            v-if="row.verified"
-            type="button"
-            class="shrink-0 text-xs font-semibold"
-            style="color: var(--c-muted)"
-            :disabled="billingBusy"
-            @click="manageSubscription(row)"
-          >{{ t('community.manageSubscription') }}</button>
+              <span
+                class="ml-auto shrink-0 text-xs font-semibold px-2 py-1 rounded-md"
+                :style="{ textTransform: 'capitalize', ...statusStyle(row.status) }"
+              >{{ row.status }}</span>
 
-          <router-link
-            :to="{ name: 'communityProfile', params: { locale, slug: row.slug }, query: { edit: '1' } }"
-            class="shrink-0 flex items-center justify-center size-7 rounded-md cursor-pointer transition-colors"
-            style="border: 1px solid var(--c-border); color: var(--c-muted)"
-            :aria-label="t('community.editTitle')"
-            :title="t('community.editTitle')"
-          >
-            <v-icon icon="mdi-pencil-outline" size="14" />
-          </router-link>
-        </div>
+              <button v-if="row.verified" type="button" class="acct-linkbtn" :disabled="billingBusy" @click="manageSubscription(row)">
+                {{ t('community.manageSubscription') }}
+              </button>
+
+              <router-link :to="{ name: 'communityProfile', params: { locale, slug: row.slug } }" class="acct-linkbtn" style="color: var(--c-trade)">
+                {{ t('community.manage') }}
+              </router-link>
+
+              <router-link
+                :to="{ name: 'communityProfile', params: { locale, slug: row.slug }, query: { edit: '1' } }"
+                class="acct-iconbtn"
+                :aria-label="t('community.editTitle')"
+                :title="t('community.editTitle')"
+              >
+                <v-icon icon="mdi-pencil-outline" size="15" />
+              </router-link>
+            </div>
+          </div>
+        </section>
+
+        <!-- Trade history -->
+        <section aria-labelledby="acct-hist-h">
+          <div class="acct-section-head">
+            <h2 id="acct-hist-h" class="acct-h2">
+              <v-icon icon="mdi-swap-horizontal" size="15" />{{ t('account.tradeHistory') }}
+            </h2>
+          </div>
+
+          <div v-if="loadingTrades" class="acct-rows">
+            <div v-for="i in 3" :key="i" class="acct-row acct-row--sk">
+              <div class="h-4 rounded w-12 animate-pulse motion-reduce:animate-none" style="background: var(--c-skeleton)" />
+              <div class="h-4 rounded w-28 animate-pulse motion-reduce:animate-none" style="background: var(--c-skeleton)" />
+              <div class="h-5 rounded w-20 ml-auto animate-pulse motion-reduce:animate-none" style="background: var(--c-skeleton)" />
+            </div>
+          </div>
+
+          <p v-else-if="trades.length === 0" class="acct-empty">{{ t('account.noHistory') }}</p>
+
+          <div v-else class="acct-rows">
+            <div v-for="trade in trades" :key="trade.trade_id" class="acct-row">
+              <span class="font-mono text-xs shrink-0" style="color: var(--c-muted)">#{{ trade.trade_id }}</span>
+              <span class="truncate" style="color: var(--c-text)">{{ trade.counterparty_name ?? t('common.anonymous') }}</span>
+              <span
+                class="ml-auto shrink-0 text-xs font-semibold px-2 py-1 rounded-md"
+                :style="{ color: (statusMeta[trade.status] ?? statusMeta.pending).color, background: `color-mix(in srgb, ${(statusMeta[trade.status] ?? statusMeta.pending).color} 12%, transparent)` }"
+              >{{ (statusMeta[trade.status] ?? statusMeta.pending).label }}</span>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
 
-    <!-- Trade history -->
-    <div class="rounded-2xl border overflow-hidden" style="background: var(--c-surface); border-color: var(--c-border)">
-      <div class="px-5 py-4 flex items-center gap-2" style="border-bottom: 1px solid var(--c-border)">
-        <v-icon icon="mdi-swap-horizontal" size="16" color="var(--c-muted)" />
-        <span class="text-sm font-semibold" style="color: var(--c-text)">{{ t('account.tradeHistory') }}</span>
-      </div>
+    <!-- Footer strip: connections + account, low emphasis -->
+    <footer class="acct-footer">
 
-      <div v-if="loadingTrades" class="flex flex-col divide-y" style="border-color: var(--c-border)">
-        <div v-for="i in 4" :key="i" class="flex items-center gap-3 px-5 py-3 animate-pulse">
-          <div class="h-4 rounded w-16" style="background: var(--c-skeleton)" />
-          <div class="h-4 rounded w-32" style="background: var(--c-skeleton)" />
-          <div class="h-5 rounded w-20 ml-auto" style="background: var(--c-skeleton)" />
-        </div>
-      </div>
-
-      <div v-else-if="trades.length === 0" class="px-5 py-8 text-center text-sm" style="color: var(--c-muted)">
-        {{ t('account.noHistory') }}
-      </div>
-
-      <div v-else class="flex flex-col divide-y" style="border-color: var(--c-border)">
-        <div
-          v-for="trade in trades"
-          :key="trade.trade_id"
-          class="flex items-center gap-3 px-5 py-3 text-sm"
-        >
-          <span class="font-mono text-xs shrink-0" style="color: var(--c-muted)">#{{ trade.trade_id }}</span>
-          <span class="truncate" style="color: var(--c-text)">{{ trade.counterparty_name ?? t('common.anonymous') }}</span>
-          <span
-            class="ml-auto shrink-0 text-xs font-semibold px-2 py-1 rounded-md"
-            :style="{ color: (statusMeta[trade.status] ?? statusMeta.pending).color, background: `color-mix(in srgb, ${(statusMeta[trade.status] ?? statusMeta.pending).color} 12%, transparent)` }"
-          >{{ (statusMeta[trade.status] ?? statusMeta.pending).label }}</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Discord connection -->
-    <div class="rounded-2xl border overflow-hidden" style="background: var(--c-surface); border-color: var(--c-border)">
-      <div class="flex items-center gap-2 px-5 py-4" style="border-bottom: 1px solid var(--c-border)">
-        <svg width="16" height="16" viewBox="0 0 127.14 96.36" style="fill: var(--c-muted); flex-shrink:0">
-          <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/>
-        </svg>
-        <span class="text-sm font-semibold" style="color: var(--c-text)">Discord</span>
-      </div>
-
-      <div class="flex items-center justify-between gap-4 px-5 py-4">
-        <!-- Left: status text -->
-        <div class="flex flex-col gap-1 min-w-0">
-          <span class="text-sm font-semibold" style="color: var(--c-text)">
-            {{ discordId ? 'Connected' : 'Not connected' }}
-          </span>
-
-          <!-- When linked: show username + discord_id for verification -->
-          <template v-if="discordId">
-            <span v-if="discordUsername" class="text-xs font-medium" style="color: #5865F2">
-              @{{ discordUsername }}
-            </span>
-            <span class="text-xs font-mono truncate" style="color: var(--c-muted)" :title="discordId">
-              ID: {{ discordId }}
-            </span>
-          </template>
-          <span v-else class="text-xs" style="color: var(--c-muted)">
-            Link your Discord account to post announces from the server
-          </span>
-
-          <v-alert v-if="discordError" type="error" variant="tonal" density="compact" class="mt-1 text-xs">
-            {{ discordError }}
-          </v-alert>
+      <!-- Discord -->
+      <div class="acct-foot-cell">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <svg width="20" height="20" viewBox="0 0 127.14 96.36" style="fill: var(--discord); flex-shrink: 0" aria-hidden="true">
+            <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/>
+          </svg>
+          <div class="flex flex-col min-w-0">
+            <span class="text-sm font-semibold" style="color: var(--c-text)">{{ discordId ? 'Discord connected' : 'Discord' }}</span>
+            <span v-if="discordId && discordUsername" class="text-xs font-medium truncate" style="color: var(--discord)">@{{ discordUsername }}</span>
+            <span v-else-if="!discordId" class="text-xs" style="color: var(--c-muted)">Post announces from the server</span>
+            <v-alert v-if="discordError" type="error" variant="tonal" density="compact" class="mt-1 text-xs">{{ discordError }}</v-alert>
+          </div>
         </div>
 
-        <!-- Right: action buttons -->
-        <div class="flex flex-col items-end gap-2 shrink-0">
-
-          <!-- Re-sync button (only when linked) -->
-          <button
-            v-if="discordId"
-            id="discord-resync-btn"
-            :disabled="discordSyncing"
-            class="flex items-center gap-1.5 px-3 !py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all"
-            style="border: 1px solid var(--c-border); background: transparent; color: var(--c-muted)"
-            :style="discordSyncing ? { opacity: 0.6 } : {}"
-            @click="resyncDiscord"
-          >
-            <v-icon
-              :icon="discordSynced ? 'mdi-check-circle' : 'mdi-refresh'"
-              size="13"
-              :style="discordSynced ? { color: '#57f287' } : {}"
-              :class="discordSyncing ? 'animate-spin' : ''"
-            />
-            {{ discordSynced ? 'Synced!' : discordSyncing ? 'Syncing…' : 'Re-sync' }}
+        <div class="shrink-0">
+          <button v-if="discordId" id="discord-resync-btn" :disabled="discordSyncing" class="acct-ghostbtn" @click="resyncDiscord">
+            <v-icon :icon="discordSynced ? 'mdi-check-circle' : 'mdi-refresh'" size="14" :class="discordSyncing ? 'animate-spin motion-reduce:animate-none' : ''" />
+            {{ discordSynced ? 'Synced' : discordSyncing ? 'Syncing' : 'Re-sync' }}
           </button>
-
-          <!-- Linked badge (alongside re-sync) -->
-          <div
-            v-if="discordId"
-            class="flex items-center gap-1.5 px-3 !py-1.5 rounded-lg"
-            style="background: color-mix(in srgb, #57f287 12%, transparent); border: 1px solid color-mix(in srgb, #57f287 30%, transparent)"
-          >
-            <v-icon icon="mdi-check-circle" size="13" style="color: #57f287" />
-            <span class="text-xs font-semibold" style="color: #57f287">Linked</span>
-          </div>
-
-          <!-- Connect button (when not linked) -->
-          <button
-            v-else
-            id="discord-link-btn"
-            :disabled="discordLinking || loading"
-            class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer transition-opacity"
-            style="background: #5865F2; color: white; border: none;"
-            :style="discordLinking ? { opacity: 0.6, cursor: 'not-allowed' } : {}"
-            @click="connectDiscord"
-          >
-            <svg width="14" height="14" viewBox="0 0 127.14 96.36" fill="white">
+          <button v-else id="discord-link-btn" :disabled="discordLinking || loading" class="acct-discordbtn" @click="connectDiscord">
+            <svg width="14" height="14" viewBox="0 0 127.14 96.36" fill="white" aria-hidden="true">
               <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/>
             </svg>
-            {{ discordLinking ? 'Redirecting…' : 'Connect Discord' }}
+            {{ discordLinking ? 'Redirecting' : 'Connect' }}
           </button>
-
         </div>
       </div>
-    </div>
 
-    <!-- Account settings -->
-    <div class="rounded-2xl border overflow-hidden" style="background: var(--c-surface); border-color: var(--c-border)">
-      <div class="flex items-center justify-between px-5 py-4" style="border-bottom: 1px solid var(--c-border)">
-        <div class="flex flex-col">
-          <span class="text-sm font-semibold" style="color: var(--c-text)">{{ t('account.emailAddress') }}</span>
-          <span class="text-xs mt-1" style="color: var(--c-muted)">{{ login?.user?.email ?? "—" }}</span>
-        </div>
-        <v-icon icon="mdi-email-outline" size="18" color="var(--c-muted)" />
-      </div>
-
-      <div class="flex items-center justify-between px-5 py-4">
-        <div class="flex flex-col">
-          <span class="text-sm font-semibold" style="color: var(--c-text)">{{ t('userMenu.signOut') }}</span>
+      <!-- Account: email + sign out -->
+      <div class="acct-foot-cell">
+        <div class="flex flex-col min-w-0">
+          <span class="text-xs" style="color: var(--c-muted)">{{ t('account.emailAddress') }}</span>
+          <span class="text-sm font-medium truncate" style="color: var(--c-text)">{{ login?.user?.email }}</span>
         </div>
         <v-btn
           size="small"
@@ -529,16 +450,181 @@ async function manageSubscription(row) {
           @click="$emit('logout')"
         >{{ t('userMenu.signOut') }}</v-btn>
       </div>
-    </div>
-    </div>
-    </div>
+    </footer>
 
   </div>
 </template>
 
 <style scoped>
-/* Trade-scope segmented control: comfortable touch target + keyboard focus ring. */
+.acct {
+  --discord: #5865F2;
+  max-width: 42rem;                 /* comfortable single column on mobile / tablet */
+  margin: 0 auto;
+  padding: 20px 0 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+@media (min-width: 768px)  { .acct { padding-top: 32px; } }
+@media (min-width: 1024px) { .acct { max-width: 72rem; } } /* use the width on desktop */
+
+/* ── Identity header ─────────────────────────────── */
+.acct-hero {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px 28px;
+  padding-bottom: 20px;
+}
+.acct-hero::after {
+  content: "";
+  position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+  background: linear-gradient(90deg, var(--c-trade), color-mix(in srgb, var(--c-accent) 55%, transparent) 52%, transparent);
+}
+.acct-hero__id { display: flex; align-items: center; gap: 18px; min-width: 0; }
+.acct-avatar {
+  width: 72px; height: 72px; border-radius: 20px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 800; user-select: none;
+  background: color-mix(in srgb, var(--c-trade) 18%, transparent);
+  color: var(--c-trade);
+  border: 1px solid color-mix(in srgb, var(--c-trade) 30%, transparent);
+}
+.acct-avatar__sk { width: 100%; height: 100%; border-radius: 20px; background: var(--c-skeleton); }
+.acct-hero__text { min-width: 0; }
+.acct-name {
+  margin: 0;
+  font-size: 1.75rem; line-height: 1.15; font-weight: 800; letter-spacing: -0.02em;
+  color: var(--c-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
+}
+.acct-loc {
+  display: flex; align-items: center; gap: 6px; margin: 7px 0 0;
+  font-size: 0.875rem; font-weight: 600; color: var(--c-muted); min-width: 0;
+}
+.acct-loc span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.acct-reach { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.acct-reach__label {
+  font-size: 0.625rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--c-muted);
+}
+.acct-reach__chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 14px; border-radius: 999px;
+  font-size: 0.8125rem; font-weight: 700;
+  background: color-mix(in srgb, var(--c-trade) 15%, transparent);
+  color: var(--c-trade);
+  border: 1px solid color-mix(in srgb, var(--c-trade) 32%, transparent);
+}
+
+/* ── Body ────────────────────────────────────────── */
+.acct-body { display: grid; grid-template-columns: 1fr; gap: 32px; }
+@media (min-width: 1024px) {
+  .acct-body { grid-template-columns: 7fr 5fr; gap: 40px; align-items: start; }
+}
+
+.acct-h2 {
+  display: flex; align-items: center; gap: 7px; margin: 0;
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--c-muted);
+}
+.acct-sub {
+  margin: 0;
+  font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--c-muted);
+}
+
+/* Details: the single surface panel */
+.acct-details {
+  display: flex; flex-direction: column; gap: 16px;
+  padding: 22px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 16px;
+}
+@media (min-width: 1024px) { .acct-details { position: sticky; top: 24px; } }
+
+.acct-secondary { display: flex; flex-direction: column; gap: 30px; min-width: 0; }
+.acct-section-head {
+  padding-bottom: 8px; margin-bottom: 2px;
+  border-bottom: 1px solid var(--c-border);
+}
+
+/* Rule-divided rows (no card boxes) */
+.acct-rows { display: flex; flex-direction: column; }
+.acct-row {
+  display: flex; align-items: center; gap: 12px;
+  min-height: 52px; padding: 8px 10px;
+  border-radius: 10px;
+  transition: background-color 0.15s ease;
+}
+.acct-row + .acct-row { border-top: 1px solid var(--c-border); border-radius: 0; }
+.acct-row:hover:not(.acct-row--sk) { background: color-mix(in srgb, var(--c-surface-2) 55%, transparent); }
+.acct-empty { padding: 22px 10px; font-size: 0.875rem; color: var(--c-muted); }
+
+/* Row affordances (comfortable touch targets) */
+.acct-linkbtn {
+  flex-shrink: 0; min-height: 36px; padding: 8px 10px; border-radius: 8px;
+  font-size: 0.75rem; font-weight: 700; color: var(--c-muted);
+  cursor: pointer; transition: background-color 0.15s ease, color 0.15s ease;
+}
+.acct-linkbtn:hover { background: var(--c-surface-2); color: var(--c-text); }
+.acct-linkbtn:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+.acct-linkbtn:disabled { opacity: 0.5; pointer-events: none; }
+
+.acct-iconbtn {
+  flex-shrink: 0; width: 36px; height: 36px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--c-border); color: var(--c-muted);
+  cursor: pointer; transition: border-color 0.15s ease, color 0.15s ease;
+}
+.acct-iconbtn:hover { border-color: var(--c-trade); color: var(--c-trade); }
+.acct-iconbtn:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+
+/* Trade-scope segmented control */
 .scope-pill { min-height: 44px; }
-.scope-pill:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+.scope-pill:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
 .scope-pill:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Footer strip ────────────────────────────────── */
+.acct-footer {
+  display: grid; grid-template-columns: 1fr; gap: 1px;
+  background: var(--c-border);
+  border: 1px solid var(--c-border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+@media (min-width: 640px) { .acct-footer { grid-template-columns: 1fr 1fr; } }
+.acct-foot-cell {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  min-width: 0; padding: 16px 18px;
+  background: var(--c-surface);
+}
+
+.acct-ghostbtn {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 40px; padding: 8px 14px; border-radius: 10px;
+  border: 1px solid var(--c-border); background: transparent; color: var(--c-muted);
+  font-size: 0.75rem; font-weight: 700; cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.acct-ghostbtn:hover:not(:disabled) { border-color: var(--discord); color: var(--discord); }
+.acct-ghostbtn:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+.acct-ghostbtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.acct-discordbtn {
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 40px; padding: 9px 16px; border-radius: 10px;
+  background: var(--discord); color: #fff; border: none;
+  font-size: 0.8125rem; font-weight: 700; cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.acct-discordbtn:hover:not(:disabled) { opacity: 0.9; }
+.acct-discordbtn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.acct-discordbtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+@media (max-width: 520px) { .acct-name { font-size: 1.5rem; } }
 </style>
