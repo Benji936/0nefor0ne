@@ -1,5 +1,6 @@
 import { getClient } from "@/lib/supabaseClient";
 import { slugify, withSuffix } from "@/lib/communitySlug";
+import { sanitizeLinks } from "@/lib/communityLinks";
 
 const PAGE_SIZE = 24;
 const MAX_UNVERIFIED_PER_OWNER = 5; // spam cap
@@ -75,6 +76,12 @@ export async function createCommunity(input) {
     bio: input.bio ?? "",
     website: assertHttp(input.website, "Website"),
     discord_url: assertHttp(input.discord_url, "Discord link"),
+    // Seed the links list from the create form's website/discord fields; richer
+    // platform links are added later on the profile itself.
+    links: sanitizeLinks(input.links ?? [
+      input.website     ? { platform: "website", url: input.website } : null,
+      input.discord_url ? { platform: "discord", url: input.discord_url } : null,
+    ].filter(Boolean)),
     avatar_url: input.avatar_url ?? null,
     banner_url: input.banner_url ?? null,
     city: input.city ?? null,
@@ -103,6 +110,7 @@ export async function updateCommunity(id, patch) {
   const clean = { ...patch, updated_at: new Date().toISOString() };
   if ("website" in clean)     clean.website = assertHttp(clean.website, "Website");
   if ("discord_url" in clean) clean.discord_url = assertHttp(clean.discord_url, "Discord link");
+  if ("links" in clean)       clean.links = sanitizeLinks(clean.links);
   const { data, error } = await getClient().from("community").update(clean).eq("id", id).select().single();
   if (error) { console.error("updateCommunity failed", error); throw error; }
   return data;

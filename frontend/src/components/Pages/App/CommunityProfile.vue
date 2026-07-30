@@ -10,8 +10,10 @@ import { fetchBySlug, updateCommunity } from "@/lib/community";
 import { validateImageFile, uploadCommunityMedia } from "@/lib/communityMedia";
 import { COUNTRIES } from "@/lib/countries";
 import { getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
+import { LINK_PLATFORMS, MAX_LINKS, linkHref, isValidLink } from "@/lib/communityLinks";
 import ClaimCommunityDialog from "@/components/community/ClaimCommunityDialog.vue";
 import ReportCommunityDialog from "@/components/community/ReportCommunityDialog.vue";
+import PlatformIcon from "@/components/community/PlatformIcon.vue";
 
 const route = useRoute();
 const { t } = useI18n();
@@ -22,6 +24,9 @@ const notFound       = ref(false);
 const currentUserId  = ref(null);
 
 const KIND_KEYS = { store: "kindStore", discord: "kindDiscord", group: "kindGroup" };
+// Singular type labels for the on-page identity line ("Store", not the plural
+// "Stores" the directory filter reuses). Meta/SEO copy keeps kindLabel.
+const TYPE_KEYS = { store: "typeStore", discord: "typeDiscord", group: "typeGroup" };
 
 // Stale-response guard: only the most recently issued load() may commit its
 // result, so a slower earlier fetch (e.g. after a rapid slug change) can't
@@ -91,6 +96,12 @@ const kindLabel = computed(() => {
   return key ? t(`community.${key}`) : (community.value?.kind ?? "");
 });
 
+// Display-only: singular type shown in the identity line.
+const typeLabel = computed(() => {
+  const key = TYPE_KEYS[community.value?.kind];
+  return key ? t(`community.${key}`) : (community.value?.kind ?? "");
+});
+
 const cityCountry = computed(() => {
   const c = community.value;
   if (!c) return null;
@@ -103,6 +114,25 @@ const mapUrl = computed(() => {
   if (!c || c.lat == null || c.lng == null) return null;
   return `https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lng}`;
 });
+
+// Keyless static map thumbnail (Wikimedia's OSM renderer) for the location
+// preview: a plain retina PNG centered on the store, no API key and no tracking
+// script; only the public coordinates travel in the URL. The image is centered
+// on the point, so a pin overlaid at the panel's center marks the exact spot.
+// Null when the row has no coordinates (Discord servers / groups) so the panel
+// is skipped for them.
+const mapImgUrl = computed(() => {
+  const c = community.value;
+  if (!c || c.lat == null || c.lng == null) return null;
+  return `https://maps.wikimedia.org/img/osm-intl,15,${c.lat},${c.lng},640x280@2x.png`;
+});
+
+// Display label for a rendered link: a custom "other" label if set, otherwise
+// the localized platform name.
+function linkLabel(link) {
+  if (link.platform === "other" && link.label) return link.label;
+  return t(`community.platform_${link.platform}`);
+}
 
 const localeParams = computed(() => ({ locale: route.params.locale || "en" }));
 
@@ -189,16 +219,23 @@ const editErr = ref("");
 const uploadingAvatar = ref(false);   // used by the image upload task
 const uploadingBanner = ref(false);
 const edit = ref({
-  name: "", bio: "", website: "", discord_url: "",
+  name: "", bio: "", links: [],
   city: "", country: "", avatar_url: null, banner_url: null,
 });
+
+// Local key so v-for rows stay stable across reorder / add / remove (the stored
+// links carry no id). Never persisted; sanitizeLinks reads only platform/url/label.
+let linkKey = 0;
 
 function startEdit() {
   const c = community.value;
   if (!c) return;
   edit.value = {
-    name: c.name ?? "", bio: c.bio ?? "", website: c.website ?? "",
-    discord_url: c.discord_url ?? "", city: c.city ?? "", country: c.country ?? "",
+    name: c.name ?? "", bio: c.bio ?? "",
+    links: (c.links ?? []).map((l) => ({
+      platform: l.platform, url: l.url ?? "", label: l.label ?? "", _k: ++linkKey,
+    })),
+    city: c.city ?? "", country: c.country ?? "",
     avatar_url: c.avatar_url ?? null, banner_url: c.banner_url ?? null,
   };
   editErr.value = "";
@@ -206,9 +243,69 @@ function startEdit() {
 }
 function cancelEdit() { editing.value = false; editErr.value = ""; }
 
+// ── Link editor ──────────────────────────────────────────────────────────────
+// Platforms already used (each may appear once, except "other" which repeats for
+// arbitrary labeled links). Drives which options a row's picker disables.
+const usedPlatforms = computed(() => {
+  const set = new Set();
+  for (const l of edit.value.links) if (l.platform !== "other") set.add(l.platform);
+  return set;
+});
+
+function firstFreePlatform() {
+  const p = LINK_PLATFORMS.find((p) => !usedPlatforms.value.has(p.id));
+  return p ? p.id : "other";
+}
+
+function addLink() {
+  if (edit.value.links.length >= MAX_LINKS) return;
+  edit.value.links.push({ platform: firstFreePlatform(), url: "", label: "", _k: ++linkKey });
+}
+function removeLink(i) { edit.value.links.splice(i, 1); }
+
+// An option is offered only if it is this row's current value or still unused;
+// "other" is always available.
+function platformDisabled(row, id) {
+  return id !== "other" && id !== row.platform && usedPlatforms.value.has(id);
+}
+
+const placeholders = {
+  website: "https://your-site.com", instagram: "https://instagram.com/you",
+  facebook: "https://facebook.com/you", x: "https://x.com/you",
+  tiktok: "https://tiktok.com/@you", youtube: "https://youtube.com/@you",
+  discord: "https://discord.gg/invite", whatsapp: "https://wa.me/1555…",
+  email: "you@store.com", other: "https://…",
+};
+function placeholderFor(platform) { return placeholders[platform] ?? "https://…"; }
+
+// Native drag-to-reorder, started from each row's handle (so the url inputs stay
+// selectable). dragIndex tracks the row being moved; dropIndex highlights the
+// insertion target.
+const dragIndex = ref(-1);
+const dropIndex = ref(-1);
+function onDragStart(i, ev) {
+  dragIndex.value = i;
+  ev.dataTransfer.effectAllowed = "move";
+  // Firefox requires data to be set for a drag to begin.
+  ev.dataTransfer.setData("text/plain", String(i));
+}
+function onDragOver(i) { dropIndex.value = i; }
+function onDrop(i) {
+  const from = dragIndex.value;
+  if (from < 0 || from === i) { onDragEnd(); return; }
+  const rows = edit.value.links;
+  const [moved] = rows.splice(from, 1);
+  rows.splice(i, 0, moved);
+  onDragEnd();
+}
+function onDragEnd() { dragIndex.value = -1; dropIndex.value = -1; }
+
 const editValid = computed(() => {
   const n = edit.value.name.trim();
-  return n.length > 0 && n.length <= 120 && edit.value.bio.length <= 2000;
+  if (n.length === 0 || n.length > 120 || edit.value.bio.length > 2000) return false;
+  // An empty row is fine (it is dropped on save); a row with a url typed in must
+  // be valid (well-formed email / non-blank).
+  return edit.value.links.every((l) => !String(l.url ?? "").trim() || isValidLink(l));
 });
 
 // Preview sources: while editing, render the working copy so changes show live.
@@ -223,8 +320,8 @@ async function saveEdit() {
     const patch = {
       name:        edit.value.name.trim(),
       bio:         edit.value.bio.trim(),
-      website:     edit.value.website.trim() || null,
-      discord_url: edit.value.discord_url.trim() || null,
+      // sanitizeLinks (in updateCommunity) drops the local _k and empty rows.
+      links:       edit.value.links,
       city:        edit.value.city.trim() || null,
       country:     edit.value.country || null,
       avatar_url:  edit.value.avatar_url || null,
@@ -307,176 +404,269 @@ async function onStale() {
 </script>
 
 <template>
-  <div class="cp-page">
+  <main class="cp-page" :class="{ 'cp-page--editing': editing }">
 
     <!-- Loading -->
-    <div v-if="loading" class="cp-skeleton">
-      <div class="cp-skeleton__banner" />
-      <div class="cp-skeleton__row">
-        <div class="cp-skeleton__avatar" />
-        <div class="cp-skeleton__lines">
-          <div class="cp-skeleton__line cp-skeleton__line--wide" />
-          <div class="cp-skeleton__line" />
+    <div v-if="loading" class="cp-skel" aria-hidden="true">
+      <div class="cp-skel__band">
+        <div class="cp-skel__avatar" />
+        <div class="cp-skel__lines">
+          <div class="cp-skel__line cp-skel__line--wide" />
+          <div class="cp-skel__line" />
         </div>
+      </div>
+      <div class="cp-skel__row">
+        <div class="cp-skel__pill" />
+        <div class="cp-skel__pill" />
       </div>
     </div>
 
     <!-- Not found -->
-    <div v-else-if="notFound" class="state-center">
-      <div class="state-icon">
-        <v-icon icon="mdi-storefront-outline" size="44" style="color: var(--c-muted)" />
+    <div v-else-if="notFound" class="cp-missing">
+      <div class="cp-missing__icon">
+        <v-icon icon="mdi-storefront-outline" size="40" style="color: var(--c-muted)" />
       </div>
-      <p class="state-title">{{ t('community.empty') }}</p>
-      <router-link class="btn-back" :to="{ name: 'community', params: localeParams }">
+      <p class="cp-missing__title">{{ t('community.empty') }}</p>
+      <router-link class="cp-missing__back" :to="{ name: 'community', params: localeParams }">
+        <v-icon icon="mdi-arrow-left" size="16" />
         {{ t('community.directoryTitle') }}
       </router-link>
     </div>
 
     <!-- Profile -->
-    <div v-else-if="community" class="cp-profile" :class="{ 'cp-profile--editing': editing }">
+    <article v-else-if="community" class="cp">
 
-      <!-- Banner -->
-      <div class="cp-banner" :class="{ 'cp-banner--editing': editing }">
-        <img v-if="displayBanner" :src="displayBanner" :alt="displayName" class="cp-banner__img" />
+      <!-- Identity field — amethyst by default, banner enriches it when present -->
+      <header
+        class="cp-id"
+        :class="{ 'cp-id--has-banner': displayBanner, 'cp-id--editing': editing }"
+      >
+        <div class="cp-id__backdrop" aria-hidden="true">
+          <img v-if="displayBanner" :src="displayBanner" alt="" class="cp-id__banner" />
+          <span v-else class="cp-id__mark">{{ (displayName || '?')[0].toUpperCase() }}</span>
+        </div>
+
         <template v-if="editing">
-          <input ref="bannerInput" type="file" accept="image/*" class="cp-file-hidden" @change="onPickImage('banner', $event)" />
-          <button type="button" class="cp-img-btn cp-img-btn--banner" :disabled="uploadingBanner" @click="bannerInput?.click()">
+          <input ref="bannerInput" type="file" accept="image/*" class="cp-hide" @change="onPickImage('banner', $event)" />
+          <button type="button" class="cp-imgbtn cp-imgbtn--banner" :disabled="uploadingBanner" @click="bannerInput?.click()">
             <v-progress-circular v-if="uploadingBanner" indeterminate size="16" width="2" color="white" />
             <template v-else><v-icon icon="mdi-image-edit-outline" size="16" />{{ t('community.changeBanner') }}</template>
           </button>
         </template>
-      </div>
 
-      <!-- Header -->
-      <div class="cp-header">
-        <div class="cp-avatar" :class="{ 'cp-avatar--editing': editing }">
-          <img v-if="displayAvatar" :src="displayAvatar" :alt="displayName" />
-          <span v-else>{{ (displayName || '?')[0].toUpperCase() }}</span>
-          <template v-if="editing">
-            <input ref="avatarInput" type="file" accept="image/*" class="cp-file-hidden" @change="onPickImage('avatar', $event)" />
-            <button type="button" class="cp-img-btn cp-img-btn--avatar" :disabled="uploadingAvatar" @click="avatarInput?.click()" :aria-label="t('community.changeAvatar')">
-              <v-progress-circular v-if="uploadingAvatar" indeterminate size="14" width="2" color="white" />
-              <v-icon v-else icon="mdi-camera-outline" size="15" />
+        <div class="cp-id__fg">
+          <div class="cp-avatar" :class="{ 'cp-avatar--editing': editing }">
+            <img v-if="displayAvatar" :src="displayAvatar" :alt="displayName" />
+            <span v-else>{{ (displayName || '?')[0].toUpperCase() }}</span>
+            <template v-if="editing">
+              <input ref="avatarInput" type="file" accept="image/*" class="cp-hide" @change="onPickImage('avatar', $event)" />
+              <button
+                type="button"
+                class="cp-imgbtn cp-imgbtn--avatar"
+                :disabled="uploadingAvatar"
+                @click="avatarInput?.click()"
+                :aria-label="t('community.changeAvatar')"
+              >
+                <v-progress-circular v-if="uploadingAvatar" indeterminate size="14" width="2" color="white" />
+                <v-icon v-else icon="mdi-camera-outline" size="15" />
+              </button>
+            </template>
+          </div>
+
+          <div class="cp-id__text">
+            <div class="cp-namerow">
+              <h1 v-if="!editing" class="cp-name">{{ community.name }}</h1>
+              <input
+                v-else
+                v-model="edit.name"
+                class="cp-name-input"
+                maxlength="120"
+                :placeholder="t('community.fieldName')"
+                :aria-label="t('community.fieldName')"
+              />
+              <span v-if="!editing && community.verified" class="cp-verified">
+                <v-icon icon="mdi-check-decagram" size="13" />
+                {{ t('community.verified') }}
+              </span>
+            </div>
+
+            <div class="cp-meta">
+              <span class="cp-meta__type">{{ typeLabel }}</span>
+              <template v-if="!editing">
+                <span v-if="cityCountry" class="cp-meta__sep" aria-hidden="true">·</span>
+                <span v-if="cityCountry" class="cp-meta__loc">
+                  <v-icon icon="mdi-map-marker" size="13" />{{ cityCountry }}
+                </span>
+              </template>
+              <template v-else>
+                <span class="cp-meta__sep" aria-hidden="true">·</span>
+                <input v-model="edit.city" class="cp-inline-input" :placeholder="t('community.fieldCity')" :aria-label="t('community.fieldCity')" />
+                <select v-model="edit.country" class="cp-inline-input cp-inline-select" :aria-label="t('community.fieldCountry')">
+                  <option value="">{{ t('community.kindAll') }}</option>
+                  <option v-for="c in COUNTRIES" :key="c.code" :value="c.name">{{ c.flag }} {{ c.name }}</option>
+                </select>
+              </template>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Body: wide two-column on desktop — bio + governance at left,
+           location map and reach links stacked in the right rail. -->
+      <div class="cp-body">
+
+        <!-- Left column: bio, then governance -->
+        <div class="cp-main">
+          <p v-if="!editing && community.bio" class="cp-bio">{{ community.bio }}</p>
+          <textarea
+            v-else-if="editing"
+            v-model="edit.bio"
+            class="cp-bio-input"
+            maxlength="2000"
+            :placeholder="t('community.fieldBio')"
+            :aria-label="t('community.fieldBio')"
+          />
+
+          <!-- Governance row: claim / edit / report -->
+          <div v-if="!editing" class="cp-gov">
+            <template v-if="community.owner == null">
+              <button type="button" class="cp-claim" @click="openClaim">
+                <v-icon icon="mdi-storefront-check-outline" size="16" />
+                {{ t('community.claimThis') }}
+              </button>
+              <span class="cp-gov__notice">{{ t('community.unclaimedNotice') }}</span>
+            </template>
+            <button v-if="isOwner" type="button" class="cp-edit" @click="startEdit">
+              <v-icon icon="mdi-pencil-outline" size="16" />
+              {{ t('community.editTitle') }}
             </button>
-          </template>
+            <button type="button" class="cp-report" @click="openReport">
+              <v-icon icon="mdi-flag-outline" size="15" />
+              {{ t('community.report') }}
+            </button>
+          </div>
+
+          <div v-if="finalizing" class="cp-finalizing" role="status">
+            <v-progress-circular indeterminate size="16" width="2" color="var(--c-trade)" />
+            {{ t('community.claimFinalizing') }}
+          </div>
         </div>
-        <div class="cp-header__text">
-          <div class="cp-title-row">
-            <h1 v-if="!editing" class="cp-name">{{ community.name }}</h1>
-            <input
-              v-else
-              v-model="edit.name"
-              class="cp-name-input"
-              maxlength="120"
-              :placeholder="t('community.fieldName')"
-              aria-label="Name"
-            />
-            <span v-if="!editing && community.verified" class="badge-verified">
-              <v-icon icon="mdi-check-decagram" size="13" />
-              {{ t('community.verified') }}
+
+        <!-- Right rail: location + reach -->
+        <aside class="cp-aside">
+
+          <!-- Location preview: click-through map (pan/zoom disabled) -->
+          <a
+            v-if="!editing && mapUrl"
+            :href="mapUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="cp-map"
+            :aria-label="t('community.openMap')"
+          >
+            <span class="cp-map__placeholder" aria-hidden="true">
+              <v-icon icon="mdi-map-marker-radius-outline" size="30" />
             </span>
+            <img
+              :src="mapImgUrl"
+              class="cp-map__img"
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+              decoding="async"
+            />
+            <span class="cp-map__pin" aria-hidden="true">
+              <v-icon icon="mdi-map-marker" size="32" />
+            </span>
+            <span class="cp-map__bar">
+              <v-icon icon="mdi-map-marker" size="15" />
+              <span class="cp-map__label">{{ cityCountry || t('community.openMap') }}</span>
+              <v-icon icon="mdi-open-in-new" size="14" class="cp-map__ext" />
+            </span>
+          </a>
+
+          <!-- Reach actions: one link per platform, plus the internal listings link -->
+          <nav v-if="!editing" class="cp-reach" :aria-label="community.name">
+            <a
+              v-for="(lnk, i) in (community.links || [])"
+              :key="i"
+              :href="linkHref(lnk)"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="cp-reach__link"
+            >
+              <PlatformIcon :platform="lnk.platform" :size="16" />
+              <span class="cp-reach__label">{{ linkLabel(lnk) }}</span>
+            </a>
+            <router-link :to="{ name: 'TradeCenter', params: localeParams }" class="cp-reach__link cp-reach__link--listings">
+              <v-icon icon="mdi-cards-outline" size="16" />
+              <span class="cp-reach__label">{{ t('community.viewAnnounces') }}</span>
+            </router-link>
+          </nav>
+
+          <!-- Link editor: add any number, pick a platform, drag to reorder -->
+          <div v-else class="cp-linkedit">
+            <p class="cp-linkedit__title">{{ t('community.linksTitle') }}</p>
+            <ul class="cp-linklist">
+              <li
+                v-for="(lnk, i) in edit.links"
+                :key="lnk._k"
+                class="cp-linkrow"
+                :class="{ 'cp-linkrow--drop': dropIndex === i && dragIndex !== i, 'cp-linkrow--dragging': dragIndex === i }"
+                @dragover.prevent="onDragOver(i)"
+                @drop="onDrop(i)"
+              >
+                <button
+                  type="button"
+                  class="cp-linkrow__handle"
+                  draggable="true"
+                  :aria-label="t('community.reorderLink')"
+                  @dragstart="onDragStart(i, $event)"
+                  @dragend="onDragEnd"
+                >
+                  <v-icon icon="mdi-drag-vertical" size="18" />
+                </button>
+                <span class="cp-linkrow__icon"><PlatformIcon :platform="lnk.platform" :size="16" /></span>
+                <select v-model="lnk.platform" class="cp-inline-input cp-inline-select cp-linkrow__plat" :aria-label="t('community.platform')">
+                  <option
+                    v-for="p in LINK_PLATFORMS"
+                    :key="p.id"
+                    :value="p.id"
+                    :disabled="platformDisabled(lnk, p.id)"
+                  >{{ t(`community.platform_${p.id}`) }}</option>
+                </select>
+                <input
+                  v-if="lnk.platform === 'other'"
+                  v-model="lnk.label"
+                  class="cp-inline-input cp-linkrow__label"
+                  maxlength="40"
+                  :placeholder="t('community.linkLabel')"
+                  :aria-label="t('community.linkLabel')"
+                />
+                <input
+                  v-model="lnk.url"
+                  class="cp-inline-input cp-linkrow__url"
+                  :class="{ 'cp-linkrow__url--invalid': lnk.url && !isValidLink(lnk) }"
+                  :type="lnk.platform === 'email' ? 'email' : 'url'"
+                  :placeholder="placeholderFor(lnk.platform)"
+                  :aria-label="t('community.linkUrl')"
+                />
+                <button type="button" class="cp-linkrow__del" :aria-label="t('community.removeLink')" @click="removeLink(i)">
+                  <v-icon icon="mdi-close" size="16" />
+                </button>
+              </li>
+            </ul>
+            <button
+              type="button"
+              class="cp-addlink"
+              :disabled="edit.links.length >= MAX_LINKS"
+              @click="addLink"
+            >
+              <v-icon icon="mdi-plus" size="16" />
+              {{ t('community.addLink') }}
+            </button>
           </div>
-          <div class="cp-identity">
-            <span>{{ kindLabel }}</span>
-            <template v-if="!editing">
-              <span v-if="cityCountry" class="cp-dot">·</span>
-              <span v-if="cityCountry">{{ cityCountry }}</span>
-              <span v-if="community.region" class="cp-dot">·</span>
-              <span v-if="community.region">{{ community.region }}</span>
-            </template>
-            <template v-else>
-              <span class="cp-dot">·</span>
-              <input v-model="edit.city" class="cp-inline-input" :placeholder="t('community.fieldCity')" aria-label="City" />
-              <select v-model="edit.country" class="cp-inline-input cp-inline-select" aria-label="Country">
-                <option value="">{{ t('community.kindAll') }}</option>
-                <option v-for="c in COUNTRIES" :key="c.code" :value="c.name">{{ c.flag }} {{ c.name }}</option>
-              </select>
-            </template>
-          </div>
-        </div>
-      </div>
-
-      <!-- Bio -->
-      <p v-if="!editing && community.bio" class="cp-bio">{{ community.bio }}</p>
-      <textarea
-        v-else-if="editing"
-        v-model="edit.bio"
-        class="cp-bio-input"
-        maxlength="2000"
-        :placeholder="t('community.fieldBio')"
-        aria-label="Bio"
-      />
-
-      <!-- Action row -->
-      <div v-if="!editing" class="cp-actions">
-        <a
-          v-if="community.website"
-          :href="community.website"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="cp-action-link"
-        >
-          <v-icon icon="mdi-web" size="16" />
-          {{ t('community.openWebsite') }}
-        </a>
-        <a
-          v-if="community.discord_url"
-          :href="community.discord_url"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="cp-action-link"
-        >
-          <v-icon icon="mdi-discord" size="16" />
-          {{ t('community.openDiscord') }}
-        </a>
-        <router-link :to="{ name: 'TradeCenter', params: localeParams }" class="cp-action-link">
-          <v-icon icon="mdi-cards-outline" size="16" />
-          {{ t('community.viewAnnounces') }}
-        </router-link>
-        <a
-          v-if="mapUrl"
-          :href="mapUrl"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="cp-action-link cp-action-link--icon"
-          aria-label="Google Maps"
-        >
-          <v-icon icon="mdi-map-marker-outline" size="16" />
-        </a>
-      </div>
-      <div v-else class="cp-actions cp-actions--edit">
-        <div class="cp-link-edit">
-          <v-icon icon="mdi-web" size="16" />
-          <input v-model="edit.website" class="cp-inline-input" placeholder="https://" aria-label="Website" />
-        </div>
-        <div class="cp-link-edit">
-          <v-icon icon="mdi-discord" size="16" />
-          <input v-model="edit.discord_url" class="cp-inline-input" placeholder="https://discord.gg/…" aria-label="Discord link" />
-        </div>
-      </div>
-
-      <!-- CTA row (hidden while editing) -->
-      <div v-if="!editing" class="cp-cta">
-        <template v-if="community.owner == null">
-          <button type="button" class="btn-claim" @click="openClaim">
-            <v-icon icon="mdi-storefront-check-outline" size="16" />
-            {{ t('community.claimThis') }}
-          </button>
-          <span class="cp-unclaimed">{{ t('community.unclaimedNotice') }}</span>
-        </template>
-        <button type="button" class="btn-report" @click="openReport">
-          <v-icon icon="mdi-flag-outline" size="16" />
-          {{ t('community.report') }}
-        </button>
-        <button v-if="isOwner" type="button" class="btn-edit-profile" @click="startEdit">
-          <v-icon icon="mdi-pencil-outline" size="16" />
-          {{ t('community.editTitle') }}
-        </button>
-      </div>
-
-      <div v-if="finalizing" class="cp-finalizing">
-        <v-progress-circular indeterminate size="16" width="2" color="var(--c-trade)" />
-        {{ t('community.claimFinalizing') }}
+        </aside>
       </div>
 
       <ClaimCommunityDialog v-model="claimOpen" :community="community" @stale="onStale" />
@@ -484,7 +674,7 @@ async function onStale() {
 
       <!-- Sticky edit bar -->
       <div v-if="editing" class="cp-editbar">
-        <span v-if="editErr" class="cp-editbar__err">{{ editErr }}</span>
+        <span v-if="editErr" class="cp-editbar__err" role="alert">{{ editErr }}</span>
         <div class="cp-editbar__actions">
           <button class="btn-cancel-edit" @click="cancelEdit" :disabled="savingEdit || uploadingAvatar || uploadingBanner">
             {{ t('community.discardChanges') }}
@@ -500,260 +690,430 @@ async function onStale() {
         </div>
       </div>
 
-    </div>
-  </div>
+    </article>
+  </main>
 </template>
 
 <style scoped>
+/* Scoped danger role: the design system has no danger token, so centralize the
+   one red used for report + save errors here instead of scattering raw hex. */
 .cp-page {
-  max-width: 880px;
+  --cp-danger: #F2555A;
+  --cp-id-h: 188px;
+  --cp-rail: 320px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: 24px 20px 56px;
 }
+@media (min-width: 640px) { .cp-page { padding: 32px 24px 64px; } }
 
 /* ── Loading skeleton ─────────────────────────────── */
-.cp-skeleton__banner {
-  width: 100%;
-  aspect-ratio: 16 / 5;
+.cp-skel__band {
+  display: flex; align-items: center; gap: 16px;
+  min-height: var(--cp-id-h);
+  padding: 20px 22px;
   border-radius: 20px;
   background: var(--c-skeleton);
-  animation: cp-pulse 1.6s ease-in-out infinite;
 }
-.cp-skeleton__row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-top: -32px;
-  padding: 0 20px;
+.cp-skel__avatar {
+  width: 88px; height: 88px; border-radius: 22px; flex-shrink: 0;
+  background: color-mix(in srgb, var(--c-bg) 45%, var(--c-skeleton));
 }
-.cp-skeleton__avatar {
-  width: 84px; height: 84px; border-radius: 20px;
-  background: var(--c-skeleton);
-  border: 3px solid var(--c-bg);
-  flex-shrink: 0;
-  animation: cp-pulse 1.6s ease-in-out infinite;
+.cp-skel__lines { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.cp-skel__line {
+  height: 16px; width: 45%; border-radius: 8px;
+  background: color-mix(in srgb, var(--c-bg) 45%, var(--c-skeleton));
 }
-.cp-skeleton__lines { display: flex; flex-direction: column; gap: 8px; padding-top: 36px; flex: 1; }
-.cp-skeleton__line {
-  height: 14px; width: 40%; border-radius: 7px;
-  background: var(--c-skeleton);
-  animation: cp-pulse 1.6s ease-in-out infinite;
-}
-.cp-skeleton__line--wide { width: 60%; height: 20px; }
-@keyframes cp-pulse {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: 0.45; }
-}
+.cp-skel__line--wide { width: 68%; height: 24px; }
+.cp-skel__row { display: flex; gap: 10px; margin-top: 20px; padding: 0 2px; }
+.cp-skel__pill { height: 44px; width: 128px; border-radius: 12px; background: var(--c-skeleton); }
+.cp-skel { animation: cp-pulse 1.6s ease-in-out infinite; }
+@keyframes cp-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+@media (prefers-reduced-motion: reduce) { .cp-skel { animation: none; } }
 
 /* ── Not-found state ──────────────────────────────── */
-.state-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 72px 20px;
-  text-align: center;
+.cp-missing {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; padding: 76px 20px; text-align: center;
 }
-.state-icon {
-  width: 72px; height: 72px; border-radius: 50%;
+.cp-missing__icon {
+  width: 76px; height: 76px; border-radius: 50%;
   background: var(--c-surface-2);
   display: flex; align-items: center; justify-content: center;
 }
-.state-title { font-size: 15px; font-weight: 700; color: var(--c-text); margin: 0; }
-.btn-back {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 16px; border-radius: 12px;
+.cp-missing__title { font-size: 15px; font-weight: 700; color: var(--c-text); margin: 0; }
+.cp-missing__back {
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 44px; padding: 0 18px; border-radius: 12px;
   background: var(--c-trade); color: #fff;
-  font-size: 13px; font-weight: 700;
-  text-decoration: none;
+  font-size: 13px; font-weight: 700; text-decoration: none;
   transition: opacity 0.15s ease;
 }
-.btn-back:hover { opacity: 0.88; }
+.cp-missing__back:hover { opacity: 0.9; }
 
-/* ── Profile ──────────────────────────────────────── */
-.cp-profile { display: flex; flex-direction: column; gap: 18px; }
+/* ── Profile shell ────────────────────────────────── */
+.cp { display: flex; flex-direction: column; gap: 22px; }
 
-.cp-banner {
-  width: 100%;
-  aspect-ratio: 16 / 5;
+/* ── Identity field ───────────────────────────────── */
+.cp-id {
+  position: relative;
+  min-height: var(--cp-id-h);
   border-radius: 20px;
   overflow: hidden;
-  background: var(--c-surface-2);
-}
-.cp-banner__img { width: 100%; height: 100%; object-fit: cover; }
-
-.cp-header {
+  border: 1px solid color-mix(in srgb, var(--c-trade) 34%, var(--c-border));
   display: flex;
   align-items: flex-end;
-  gap: 16px;
-  margin-top: -32px;
-  padding: 0 20px;
-  flex-wrap: wrap;
+  /* Committed amethyst: the field itself carries the brand color, so a bare
+     store reads as a place, not an empty banner. */
+  background:
+    radial-gradient(120% 140% at 12% 0%, color-mix(in srgb, var(--c-trade) 34%, var(--c-surface)) 0%, transparent 60%),
+    linear-gradient(150deg, color-mix(in srgb, var(--c-trade) 20%, var(--c-surface)) 0%, var(--c-surface) 72%);
 }
+.cp-id__backdrop { position: absolute; inset: 0; z-index: 0; }
+.cp-id__banner { width: 100%; height: 100%; object-fit: cover; }
+/* Ghosted monogram fills the no-banner field with intent instead of dead space. */
+.cp-id__mark {
+  position: absolute; top: 50%; right: 4%; transform: translateY(-50%);
+  font-size: clamp(150px, 34vw, 300px); font-weight: 900; line-height: 1;
+  color: color-mix(in srgb, var(--c-trade) 24%, transparent);
+  user-select: none; pointer-events: none;
+}
+/* Scrim so foreground text stays legible over any banner image or the wash. */
+.cp-id::after {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(to top, var(--c-bg) 2%, color-mix(in srgb, var(--c-bg) 55%, transparent) 34%, transparent 78%);
+}
+.cp-id--has-banner { background: var(--c-surface-2); }
+
+.cp-id__fg {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 14px;
+  width: 100%; padding: 20px 22px;
+}
+/* Avatar sits beside the text once there's room; stacks above it on phones. */
+@media (min-width: 480px) {
+  .cp-id__fg { flex-direction: row; align-items: flex-end; gap: 16px; }
+}
+
 .cp-avatar {
-  width: 84px; height: 84px; border-radius: 20px;
+  width: 88px; height: 88px; border-radius: 22px;
   overflow: hidden; flex-shrink: 0;
   border: 3px solid var(--c-bg);
   background: var(--c-surface-2);
   display: flex; align-items: center; justify-content: center;
-  font-size: 30px; font-weight: 800; color: var(--c-text);
+  font-size: 32px; font-weight: 800; color: var(--c-text);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 }
 .cp-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-.cp-header__text { min-width: 0; padding-bottom: 2px; }
-.cp-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cp-id__text { min-width: 0; flex: 1; padding-bottom: 4px; }
+.cp-namerow { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
 .cp-name {
-  font-size: 1.375rem; font-weight: 800; color: var(--c-text);
-  margin: 0; letter-spacing: -0.01em;
+  font-size: clamp(1.4rem, 4vw, 1.65rem); font-weight: 800; color: var(--c-text);
+  margin: 0; letter-spacing: -0.015em; line-height: 1.15;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
 }
-.badge-verified {
+.cp-verified {
   display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 9px; border-radius: 999px;
-  background: color-mix(in srgb, var(--c-mutual) 14%, transparent);
-  color: var(--c-mutual);
+  padding: 3px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--c-trade) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-trade) 40%, transparent);
+  color: var(--c-text);
   font-size: 11px; font-weight: 700;
 }
-.cp-identity {
-  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-  margin-top: 4px;
-  font-size: 13px; font-weight: 600; color: var(--c-muted);
+.cp-verified .v-icon { color: var(--c-trade); }
+.cp-meta {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-top: 7px;
+  font-size: 13px; font-weight: 600; color: var(--c-text);
 }
-.cp-dot { opacity: 0.6; }
+.cp-meta__type {
+  text-transform: uppercase; letter-spacing: 0.06em; font-size: 11.5px;
+  color: var(--c-text);
+  background: color-mix(in srgb, var(--c-bg) 40%, transparent);
+  padding: 3px 9px; border-radius: 7px;
+}
+.cp-meta__sep { color: color-mix(in srgb, var(--c-text) 55%, transparent); }
+@media (max-width: 479px) { .cp-meta__sep { display: none; } }
+.cp-meta__loc { display: inline-flex; align-items: center; gap: 4px; }
+.cp-meta__loc .v-icon { color: var(--c-trade); }
+
+/* ── Body ─────────────────────────────────────────── */
+/* Mobile: single stacked column (bio + governance, then the location rail).
+   Desktop: the bio and governance hold the fluid left column, the map and
+   reach links a fixed right rail, both top-aligned. */
+.cp-body { display: flex; flex-direction: column; gap: 20px; padding: 0 4px; }
+@media (min-width: 900px) {
+  .cp-page:not(.cp-page--editing) .cp-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--cp-rail);
+    column-gap: 40px;
+    align-items: start;
+  }
+}
+
+/* Left column: bio sits above the governance row. */
+.cp-main { min-width: 0; display: flex; flex-direction: column; gap: 24px; }
+
+/* Right rail: location map above the stacked reach links. */
+.cp-aside { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 
 .cp-bio {
-  font-size: 13.5px; color: var(--c-muted);
-  line-height: 1.6; margin: 0; white-space: pre-wrap;
-  padding: 0 20px;
+  font-size: 14px; color: var(--c-muted); line-height: 1.7;
+  margin: 0; white-space: pre-wrap; max-width: 64ch;
 }
 
-/* ── Actions ──────────────────────────────────────── */
-.cp-actions {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  padding: 0 20px;
+/* ── Reach actions ────────────────────────────────── */
+/* Stacked full-width buttons inside the rail. */
+.cp-reach {
+  display: flex; flex-direction: column; align-items: stretch; gap: 10px;
 }
-.cp-action-link {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 14px; border-radius: 11px;
+.cp-reach__link {
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 44px; padding: 0 16px; border-radius: 12px;
   background: var(--c-surface);
   border: 1.5px solid var(--c-border);
   color: var(--c-text);
-  font-size: 13px; font-weight: 700;
+  font-size: 13px; font-weight: 700; text-decoration: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.cp-reach__link .v-icon,
+.cp-reach__link .cpi-svg { color: var(--c-trade); flex-shrink: 0; }
+.cp-reach__link:hover {
+  border-color: var(--c-trade);
+  background: color-mix(in srgb, var(--c-trade) 8%, var(--c-surface));
+}
+.cp-reach__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The internal listings link reads as secondary to the outbound social links. */
+.cp-reach__link--listings { color: var(--c-muted); }
+
+/* ── Location map preview ─────────────────────────── */
+.cp-map {
+  position: relative; display: block;
+  border-radius: 16px; overflow: hidden;
+  border: 1px solid var(--c-border);
+  background: var(--c-surface-2);
   text-decoration: none;
   transition: border-color 0.15s ease;
 }
-.cp-action-link:hover { border-color: var(--c-trade); }
-.cp-action-link--icon { padding: 8px; }
-
-/* ── CTA row ──────────────────────────────────────── */
-.cp-cta {
-  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  margin: 0 20px;
-  padding: 16px; border-radius: 14px;
-  background: var(--c-surface);
-  border: 1.5px solid var(--c-border);
+.cp-map:hover { border-color: var(--c-trade); }
+/* Loading state: shows through until the (transparent-until-painted) iframe
+   fills with tiles, so the panel never reads as an empty/broken box. */
+.cp-map__placeholder {
+  position: absolute; inset: 0; z-index: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: color-mix(in srgb, var(--c-trade) 45%, transparent);
 }
-.cp-unclaimed { font-size: 12.5px; color: var(--c-muted); flex: 1; min-width: 180px; }
+.cp-map__img {
+  position: relative; z-index: 1;
+  display: block; width: 100%; height: 200px;
+  object-fit: cover; object-position: center; /* keeps the store centered */
+  /* Tame OSM's bright tiles so the panel sits in the dim UI. */
+  filter: saturate(0.85) brightness(0.9) contrast(1.02);
+}
+@media (min-width: 640px) { .cp-map__img { height: 224px; } }
+/* Pin marks the exact spot: its tip rests on the image center (the store). */
+.cp-map__pin {
+  position: absolute; left: 50%; top: 50%; z-index: 2;
+  transform: translate(-50%, -100%); pointer-events: none;
+  color: var(--c-trade);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
+}
+.cp-map__bar {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 3;
+  display: flex; align-items: center; gap: 7px;
+  padding: 12px 14px 11px;
+  background: linear-gradient(
+    to top,
+    var(--c-bg) 0%,
+    color-mix(in srgb, var(--c-bg) 82%, transparent) 45%,
+    transparent 100%);
+  color: var(--c-text); font-size: 13px; font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
+}
+.cp-map__bar > .v-icon:first-child { color: var(--c-trade); }
+.cp-map__label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-map__ext { color: var(--c-muted); }
+.cp-map:hover .cp-map__ext { color: var(--c-trade); }
+
+/* ── Governance row ───────────────────────────────── */
+.cp-gov {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding-top: 18px;
+  border-top: 1px solid var(--c-border);
+}
+/* No bio: the governance row leads the column, so drop the separating hairline. */
+.cp-main > .cp-gov:first-child { border-top: none; padding-top: 0; }
+.cp-gov__notice { font-size: 12.5px; color: var(--c-muted); flex: 1; min-width: 160px; }
+.cp-claim {
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 44px; padding: 0 18px; border-radius: 12px;
+  background: var(--c-trade); color: #fff;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.cp-claim:hover { opacity: 0.9; }
+.cp-edit {
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 44px; padding: 0 16px; border-radius: 12px;
+  background: color-mix(in srgb, var(--c-trade) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-trade) 30%, transparent);
+  color: var(--c-trade);
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  transition: background 0.15s ease;
+}
+.cp-edit:hover { background: color-mix(in srgb, var(--c-trade) 24%, transparent); }
+.cp-report {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 44px; padding: 0 14px; border-radius: 12px;
+  margin-left: auto;
+  background: transparent; color: var(--c-muted);
+  font-size: 12.5px; font-weight: 700; cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.cp-report:hover { background: color-mix(in srgb, var(--cp-danger) 14%, transparent); color: var(--cp-danger); }
 
 .cp-finalizing {
   display: flex; align-items: center; gap: 8px;
-  margin: 0 20px; padding: 12px 16px; border-radius: 12px;
+  padding: 12px 16px; border-radius: 12px;
   background: color-mix(in srgb, var(--c-trade) 10%, transparent);
   color: var(--c-trade); font-size: 13px; font-weight: 700;
 }
 
-.btn-claim {
-  display: flex; align-items: center; gap: 6px;
-  padding: 9px 15px; border-radius: 11px;
-  background: var(--c-trade); color: #fff;
-  font-size: 13px; font-weight: 700;
-  cursor: pointer; transition: opacity 0.15s ease;
+/* ── Shared focus ring ────────────────────────────── */
+.cp-reach__link:focus-visible,
+.cp-map:focus-visible,
+.cp-claim:focus-visible,
+.cp-edit:focus-visible,
+.cp-report:focus-visible,
+.cp-missing__back:focus-visible,
+.cp-imgbtn:focus-visible,
+.cp-addlink:focus-visible,
+.cp-linkrow__handle:focus-visible,
+.cp-linkrow__del:focus-visible,
+.btn-save-edit:focus-visible,
+.btn-cancel-edit:focus-visible,
+.cp-name-input:focus-visible,
+.cp-inline-input:focus-visible,
+.cp-bio-input:focus-visible {
+  outline: 2px solid var(--c-trade);
+  outline-offset: 2px;
 }
-.btn-claim:hover { opacity: 0.88; }
-
-.btn-report {
-  display: flex; align-items: center; gap: 6px;
-  padding: 9px 15px; border-radius: 11px;
-  background: color-mix(in srgb, #ef4444 12%, transparent);
-  color: #ef4444; font-size: 13px; font-weight: 700;
-  cursor: pointer; transition: background 0.15s ease;
-  margin-left: auto;
-}
-.btn-report:hover { background: color-mix(in srgb, #ef4444 22%, transparent); }
-
-.btn-edit-profile {
-  display: flex; align-items: center; gap: 6px;
-  padding: 9px 15px; border-radius: 11px;
-  background: color-mix(in srgb, var(--c-trade) 12%, transparent);
-  color: var(--c-trade); font-size: 13px; font-weight: 700;
-  cursor: pointer; transition: background 0.15s ease;
-}
-.btn-edit-profile:hover { background: color-mix(in srgb, var(--c-trade) 22%, transparent); }
 
 /* ── Inline edit mode ─────────────────────────────── */
-.cp-profile--editing { padding-bottom: 88px; } /* room for the sticky bar */
+.cp-page--editing { padding-bottom: 92px; } /* room for the sticky bar */
 
 .cp-name-input {
-  width: 100%;
-  background: var(--c-surface); border: 1.5px solid var(--c-border); border-radius: 12px;
-  padding: 6px 12px; font-size: 1.375rem; font-weight: 800; color: var(--c-text);
-  letter-spacing: -0.01em; outline: none; transition: border-color 0.15s ease;
+  width: 100%; max-width: 420px;
+  background: color-mix(in srgb, var(--c-bg) 55%, var(--c-surface));
+  border: 1.5px solid var(--c-border); border-radius: 12px;
+  padding: 7px 12px; font-size: 1.4rem; font-weight: 800; color: var(--c-text);
+  letter-spacing: -0.015em; outline: none; transition: border-color 0.15s ease;
 }
 .cp-name-input:focus { border-color: var(--c-trade); }
 
 .cp-inline-input {
-  background: var(--c-surface); border: 1.5px solid var(--c-border); border-radius: 10px;
-  padding: 6px 10px; font-size: 13px; font-weight: 600; color: var(--c-text);
+  background: color-mix(in srgb, var(--c-bg) 55%, var(--c-surface));
+  border: 1.5px solid var(--c-border); border-radius: 10px;
+  padding: 7px 10px; font-size: 13px; font-weight: 600; color: var(--c-text);
   outline: none; transition: border-color 0.15s ease; min-width: 0;
 }
 .cp-inline-input:focus { border-color: var(--c-trade); }
 .cp-inline-select { cursor: pointer; appearance: none; }
 
 .cp-bio-input {
-  width: calc(100% - 40px); margin: 0 20px; box-sizing: border-box;
-  background: var(--c-surface); border: 1.5px solid var(--c-border); border-radius: 12px;
-  padding: 10px 13px; font-size: 13.5px; color: var(--c-text); line-height: 1.6;
-  min-height: 96px; resize: vertical; outline: none; font-family: inherit;
+  width: 100%; box-sizing: border-box;
+  background: var(--c-surface); border: 1.5px solid var(--c-border); border-radius: 14px;
+  padding: 12px 14px; font-size: 14px; color: var(--c-text); line-height: 1.65;
+  min-height: 104px; resize: vertical; outline: none; font-family: inherit;
   transition: border-color 0.15s ease;
 }
 .cp-bio-input:focus { border-color: var(--c-trade); }
 
-.cp-actions--edit { flex-direction: column; align-items: stretch; gap: 8px; }
-.cp-link-edit { display: flex; align-items: center; gap: 8px; color: var(--c-muted); }
-.cp-link-edit .cp-inline-input { flex: 1; }
+/* Link editor (owner) */
+.cp-linkedit { display: flex; flex-direction: column; gap: 12px; }
+.cp-linkedit__title {
+  margin: 0; font-size: 11.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--c-muted);
+}
+.cp-linklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.cp-linkrow {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 4px; border-radius: 10px;
+  transition: background 0.12s ease, opacity 0.12s ease;
+}
+.cp-linkrow--dragging { opacity: 0.4; }
+.cp-linkrow--drop { background: color-mix(in srgb, var(--c-trade) 14%, transparent); }
+.cp-linkrow__handle {
+  flex-shrink: 0; display: flex; align-items: center; padding: 4px 0;
+  color: var(--c-muted); cursor: grab; background: transparent; border: none;
+}
+.cp-linkrow__handle:active { cursor: grabbing; }
+.cp-linkrow__icon {
+  flex-shrink: 0; width: 20px; display: flex; align-items: center; justify-content: center;
+  color: var(--c-trade);
+}
+.cp-linkrow__plat { flex: 0 0 auto; width: 120px; min-height: 40px; }
+.cp-linkrow__label { flex: 1 1 110px; min-height: 40px; }
+.cp-linkrow__url { flex: 2 1 150px; min-height: 40px; }
+.cp-linkrow__url--invalid, .cp-linkrow__url--invalid:focus { border-color: var(--cp-danger); }
+.cp-linkrow__del {
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 8px;
+  color: var(--c-muted); background: transparent; border: none; cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.cp-linkrow__del:hover { color: var(--cp-danger); background: color-mix(in srgb, var(--cp-danger) 14%, transparent); }
+.cp-addlink {
+  display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+  min-height: 40px; padding: 0 14px; border-radius: 10px;
+  background: color-mix(in srgb, var(--c-trade) 12%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--c-trade) 40%, transparent);
+  color: var(--c-trade); font-size: 13px; font-weight: 700; cursor: pointer;
+  transition: background 0.12s ease;
+}
+.cp-addlink:hover:not(:disabled) { background: color-mix(in srgb, var(--c-trade) 22%, transparent); }
+.cp-addlink:disabled { opacity: 0.4; pointer-events: none; }
 
 .cp-editbar {
   position: sticky; bottom: 0; z-index: 5;
   display: flex; align-items: center; justify-content: flex-end; gap: 12px; flex-wrap: wrap;
-  margin: 8px -20px -56px; padding: 14px 20px;
-  background: var(--c-surface); border-top: 1px solid var(--c-border);
+  margin: 4px -20px -56px; padding: 14px 20px;
+  background: color-mix(in srgb, var(--c-surface) 94%, transparent);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--c-border);
 }
-.cp-editbar__err { color: #ef4444; font-size: 12.5px; font-weight: 600; margin-right: auto; }
+@media (min-width: 640px) { .cp-editbar { margin: 4px -24px -64px; padding: 14px 24px; } }
+.cp-editbar__err { color: var(--cp-danger); font-size: 12.5px; font-weight: 600; margin-right: auto; }
 .cp-editbar__actions { display: flex; align-items: center; gap: 10px; }
 .btn-cancel-edit {
-  padding: 9px 16px; border-radius: 11px; font-size: 13px; font-weight: 600;
+  min-height: 44px; padding: 0 16px; border-radius: 12px; font-size: 13px; font-weight: 600;
   color: var(--c-muted); cursor: pointer; transition: background 0.15s ease;
 }
 .btn-cancel-edit:hover { background: var(--c-surface-2); }
 .btn-cancel-edit:disabled { opacity: 0.4; pointer-events: none; }
 .btn-save-edit {
-  display: flex; align-items: center; gap: 7px; min-width: 130px; justify-content: center;
-  padding: 9px 20px; border-radius: 11px; background: var(--c-trade); color: #fff;
+  display: flex; align-items: center; gap: 7px; min-width: 140px; min-height: 44px; justify-content: center;
+  padding: 0 20px; border-radius: 12px; background: var(--c-trade); color: #fff;
   font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity 0.15s ease;
 }
-.btn-save-edit:hover:not(:disabled) { opacity: 0.88; }
+.btn-save-edit:hover:not(:disabled) { opacity: 0.9; }
 .btn-save-edit:disabled { opacity: 0.4; pointer-events: none; }
 
-.cp-file-hidden { display: none; }
-.cp-banner--editing, .cp-avatar--editing { position: relative; }
-.cp-img-btn {
-  position: absolute; display: flex; align-items: center; justify-content: center; gap: 6px;
-  background: color-mix(in srgb, #000 55%, transparent); color: #fff;
+/* ── Image upload controls ────────────────────────── */
+.cp-hide { display: none; }
+.cp-imgbtn {
+  position: absolute; z-index: 3;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  background: color-mix(in srgb, var(--c-bg) 62%, transparent); color: #fff;
   font-size: 12px; font-weight: 700; cursor: pointer; border: none;
   transition: opacity 0.15s ease;
 }
-.cp-img-btn:hover:not(:disabled) { opacity: 0.85; }
-.cp-img-btn:disabled { opacity: 0.6; pointer-events: none; }
-.cp-img-btn--banner { inset: auto 12px 12px auto; padding: 8px 14px; border-radius: 11px; }
-.cp-img-btn--avatar { inset: auto -4px -4px auto; width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--c-bg); }
+.cp-imgbtn:hover:not(:disabled) { opacity: 0.85; }
+.cp-imgbtn:disabled { opacity: 0.6; pointer-events: none; }
+.cp-imgbtn--banner { inset: 12px 12px auto auto; min-height: 40px; padding: 0 14px; border-radius: 12px; }
+.cp-imgbtn--avatar {
+  inset: auto -4px -4px auto; width: 32px; height: 32px; border-radius: 50%;
+  border: 2px solid var(--c-bg);
+}
 </style>
