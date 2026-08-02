@@ -186,6 +186,7 @@ function helpOverview(cfg, isAdmin) {
     `**What do you want to do?**`,
     `• 💰 **Sell or trade a card** → type \`!help sell\``,
     `• 🔎 **Look for a card (LF)** → type \`!help lf\``,
+    `• 🗡️ **Duel someone over webcam** → type \`!duel\``,
     ``,
     `⚠️ First time? You need a free account — click **Login with Discord** on ${APP_URL}`,
   ];
@@ -492,6 +493,20 @@ client.on(Events.MessageCreate, async (message) => {
           ? `❌ **No match.** Post in <#${watching}>, or run \`!setchannel\` here to switch.`
           : `⚠️ Run \`!setchannel\` in your announces channel to set it up.`,
     ].filter(Boolean).join('\n'));
+    return;
+  }
+
+  // ── !duel — anyone, explains the Remote Duel activity ───────────────────────
+  if (lower === '!duel' || lower === '!remoteduel') {
+    await message.reply([
+      `🗡️ **Remote Duel**`,
+      ``,
+      `Play a webcam duel with the built-in companion. Join a voice channel with your opponent, then open **Remote Duel** from the channel's activity launcher (the rocket 🚀 button).`,
+      ``,
+      `You both share, live: **Life Points**, a **coin flip**, a **dice roll**, a **first-turn** picker and a **turn timer**.`,
+      ``,
+      `No account needed to duel.`,
+    ].join('\n'));
     return;
   }
 

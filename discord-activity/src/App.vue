@@ -1,0 +1,111 @@
+<script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { setupDiscord } from './discord.js';
+import { createRoom } from './realtime.js';
+import PlayerLife from './components/PlayerLife.vue';
+import ToolsBar from './components/ToolsBar.vue';
+import DuelTimer from './components/DuelTimer.vue';
+
+const status = ref('connecting'); // connecting | ready | error
+const errorMsg = ref('');
+const me = ref(null);
+const state = ref(null);
+let room = null;
+
+const players = computed(() => {
+  if (!state.value) return [];
+  return Object.entries(state.value.players)
+    .map(([uid, p]) => ({ uid, ...p, lp: state.value.lp[uid] ?? state.value.startLp }))
+    .sort((a, b) => a.order - b.order);
+});
+
+function send(action) {
+  if (room) room.send(action);
+}
+
+onMounted(async () => {
+  try {
+    const ctx = await setupDiscord();
+    me.value = ctx.user.id;
+    room = createRoom({
+      instanceId: ctx.instanceId,
+      user: ctx.user,
+      onState: (next) => {
+        state.value = next;
+        if (status.value !== 'ready') status.value = 'ready';
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    errorMsg.value = err?.message || String(err);
+    status.value = 'error';
+  }
+});
+
+onUnmounted(() => {
+  if (room) room.close();
+});
+</script>
+
+<template>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="mark">Remote Duel</span>
+        <span class="sub">0nefor.one</span>
+      </div>
+    </header>
+
+    <div v-if="status === 'connecting'" class="center muted">Connecting to your duel…</div>
+
+    <div v-else-if="status === 'error'" class="center error">
+      <p>Couldn't start the duel.</p>
+      <p class="small">{{ errorMsg }}</p>
+    </div>
+
+    <main v-else class="board">
+      <div class="main">
+        <section class="players" :class="{ solo: players.length < 2 }">
+          <PlayerLife
+            v-for="p in players"
+            :key="p.uid"
+            :player="p"
+            :is-me="p.uid === me"
+            :is-turn="state.turn === p.uid"
+            @adjust="(delta) => send({ t: 'adjustLp', target: p.uid, delta })"
+            @set="(value) => send({ t: 'setLp', target: p.uid, value })"
+          />
+          <p v-if="players.length < 2" class="waiting muted">
+            Waiting for your opponent to open the activity…
+          </p>
+        </section>
+
+        <ToolsBar
+          :coin="state.coin"
+          :dice="state.dice"
+          @coin="send({ t: 'coin' })"
+          @dice="send({ t: 'dice' })"
+          @first-turn="send({ t: 'firstTurn' })"
+          @reset="send({ t: 'resetDuel' })"
+        />
+
+        <DuelTimer
+          :timer="state.timer"
+          @start="send({ t: 'timer:start' })"
+          @pause="send({ t: 'timer:pause' })"
+          @reset="send({ t: 'timer:reset' })"
+        />
+      </div>
+
+      <aside class="log">
+        <h2 class="log-title">Duel log</h2>
+        <div class="log-entries">
+          <div v-for="entry in state.log.slice().reverse()" :key="entry.seq" class="log-line">
+            {{ entry.text }}
+          </div>
+          <p v-if="!state.log.length" class="muted small log-empty">No moves yet.</p>
+        </div>
+      </aside>
+    </main>
+  </div>
+</template>
