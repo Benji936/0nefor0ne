@@ -25,7 +25,7 @@ async function uniqueSlug(name, city) {
 export async function fetchDirectory({ kind, country, region, remoteDuel, q, page = 0, pageSize = PAGE_SIZE } = {}) {
   let query = getClient()
     .from("community")
-    .select("id, kind, name, slug, city, country, region, avatar_url, remote_duel, verified, owner", { count: "exact" })
+    .select("id, kind, name, slug, city, country, region, avatar_url, banner_url, remote_duel, verified, owner, follower_count", { count: "exact" })
     .eq("status", "published");
 
   if (kind)               query = query.eq("kind", kind);

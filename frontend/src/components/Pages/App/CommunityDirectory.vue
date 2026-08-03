@@ -9,6 +9,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useHead } from "@unhead/vue";
 import { fetchDirectory } from "@/lib/community";
+import { getCurrentSession, onAuthChange, signInWithDiscord } from "@/lib/supabaseClient";
 import { toQueryParams, fromQueryParams } from "@/lib/communityFilters";
 import { COUNTRIES } from "@/lib/countries";
 import CommunityCard from "@/components/community/CommunityCard.vue";
@@ -131,7 +132,23 @@ useHead(computed(() => {
   return { title, meta: [{ name: "description", content: desc }] };
 }));
 
-onMounted(load);
+// Viewer identity drives each card's follow state. Tracked here (rather than
+// per card) so the grid resolves the session once.
+const currentUserId = ref(null);
+let stopAuth = null;
+
+async function onFollowAuthRequired() {
+  try { await signInWithDiscord(); }
+  catch (e) { console.error("sign-in failed", e); }
+}
+
+onMounted(async () => {
+  load();
+  const session = await getCurrentSession();
+  currentUserId.value = session?.user?.id ?? null;
+  stopAuth = onAuthChange((s) => { currentUserId.value = s?.user?.id ?? null; });
+});
+onBeforeUnmount(() => { if (typeof stopAuth === "function") stopAuth(); });
 </script>
 
 <template>
@@ -212,7 +229,13 @@ onMounted(load);
 
     <!-- Grid -->
     <div v-else class="cd-grid">
-      <CommunityCard v-for="c in rows" :key="c.id" :community="c" />
+      <CommunityCard
+        v-for="c in rows"
+        :key="c.id"
+        :community="c"
+        :current-user-id="currentUserId"
+        @auth-required="onFollowAuthRequired"
+      />
     </div>
 
     <!-- Pagination -->
@@ -408,13 +431,13 @@ onMounted(load);
 /* ── Grid ─────────────────────────────────────────── */
 .cd-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
 }
 
 .skeleton-card {
-  height: 76px;
-  border-radius: 14px;
+  height: 174px;
+  border-radius: 16px;
   background: var(--c-skeleton);
   animation: cd-pulse 1.6s ease-in-out infinite;
 }

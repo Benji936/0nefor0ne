@@ -17,6 +17,7 @@ const website    = ref("");
 const discordUrl = ref("");
 const city       = ref("");
 const country    = ref("");
+const remoteDuel = ref(false);
 
 const submitting = ref(false);
 const errorMsg    = ref("");
@@ -35,6 +36,7 @@ watch(() => props.modelValue, open => {
   errorMsg.value = "";
   name.value = ""; kind.value = "store"; bio.value = "";
   website.value = ""; discordUrl.value = ""; city.value = ""; country.value = "";
+  remoteDuel.value = false;
 });
 
 function close() { emit("update:modelValue", false); }
@@ -50,6 +52,7 @@ async function submit() {
       discord_url: discordUrl.value.trim() || null,
       city:        city.value.trim() || null,
       country:     country.value || null,
+      remote_duel: remoteDuel.value,
     };
     const row = await createCommunity({ kind: kind.value, ...patch });
     emit("saved", row);
@@ -147,6 +150,24 @@ async function submit() {
                 <option v-for="c in COUNTRIES" :key="c.code" :value="c.name">{{ c.flag }} {{ c.name }}</option>
               </select>
             </div>
+          </div>
+
+          <!-- Remote duels -->
+          <div class="field-block">
+            <label class="field-label">{{ t('community.remoteDuelLabel') }}</label>
+            <button
+              type="button"
+              class="remote-toggle"
+              :class="{ 'remote-toggle--on': remoteDuel }"
+              :aria-pressed="remoteDuel"
+              @click="remoteDuel = !remoteDuel"
+            >
+              <v-icon :icon="remoteDuel ? 'mdi-check-circle' : 'mdi-web'" size="16" />
+              <span class="remote-toggle__label">
+                <span class="remote-toggle__title">{{ remoteDuel ? t('community.remoteDuelOn') : t('community.remoteDuelOff') }}</span>
+                <span class="remote-toggle__hint">{{ t('community.remoteDuelHint') }}</span>
+              </span>
+            </button>
           </div>
 
           <!-- Error -->
@@ -270,6 +291,26 @@ async function submit() {
 
 .field-textarea { resize: none; line-height: 1.5; }
 .field-select   { cursor: pointer; appearance: none; padding-right: 10px; }
+
+/* ── Remote-duel toggle ───────────────────────────── */
+.remote-toggle {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  text-align: left; cursor: pointer;
+  padding: 11px 13px; border-radius: 12px;
+  border: 1.5px solid var(--c-border); background: var(--c-surface);
+  color: var(--c-text);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.remote-toggle:hover { border-color: color-mix(in srgb, var(--c-trade) 45%, var(--c-border)); }
+.remote-toggle > .v-icon { color: var(--c-muted); flex-shrink: 0; }
+.remote-toggle--on {
+  border-color: color-mix(in srgb, var(--c-trade) 55%, transparent);
+  background: color-mix(in srgb, var(--c-trade) 10%, var(--c-surface));
+}
+.remote-toggle--on > .v-icon { color: var(--c-trade); }
+.remote-toggle__label { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.remote-toggle__title { font-size: 13px; font-weight: 700; }
+.remote-toggle__hint { font-size: 11px; font-weight: 500; color: var(--c-muted); }
 
 /* ── Error bar ────────────────────────────────────── */
 .error-bar {
