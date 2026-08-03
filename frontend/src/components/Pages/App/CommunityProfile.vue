@@ -9,11 +9,14 @@ import { useHead } from "@unhead/vue";
 import { fetchBySlug, updateCommunity } from "@/lib/community";
 import { validateImageFile, uploadCommunityMedia } from "@/lib/communityMedia";
 import { COUNTRIES } from "@/lib/countries";
-import { getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
+import { getCurrentSession, onAuthChange, signInWithDiscord } from "@/lib/supabaseClient";
 import { LINK_PLATFORMS, MAX_LINKS, linkHref, isValidLink } from "@/lib/communityLinks";
 import ClaimCommunityDialog from "@/components/community/ClaimCommunityDialog.vue";
 import ReportCommunityDialog from "@/components/community/ReportCommunityDialog.vue";
 import PlatformIcon from "@/components/community/PlatformIcon.vue";
+import CommunityKindIcon from "@/components/community/CommunityKindIcon.vue";
+import FollowButton from "@/components/community/FollowButton.vue";
+import CommunityEvents from "@/components/community/CommunityEvents.vue";
 
 const route = useRoute();
 const { t } = useI18n();
@@ -175,6 +178,41 @@ const jsonLd = computed(() => {
   return { ...base, "@type": "Organization" };
 });
 
+// Upcoming events (published from the CommunityEvents child) drive Event JSON-LD.
+const upcomingEvents = ref([]);
+function onEventsLoaded(list) { upcomingEvents.value = Array.isArray(list) ? list : []; }
+
+const eventsJsonLd = computed(() => {
+  const c = community.value;
+  if (!c) return [];
+  return upcomingEvents.value.slice(0, 25).map((e) => ({
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: e.title,
+    startDate: e.starts_at,
+    ...(e.ends_at ? { endDate: e.ends_at } : {}),
+    eventAttendanceMode: e.is_online
+      ? "https://schema.org/OnlineEventAttendanceMode"
+      : "https://schema.org/OfflineEventAttendanceMode",
+    location: e.is_online
+      ? { "@type": "VirtualLocation", ...(e.url ? { url: e.url } : {}) }
+      : {
+          "@type": "Place",
+          name: e.location || c.name,
+          ...((c.city || c.country) ? { address: [c.city, c.country].filter(Boolean).join(", ") } : {}),
+        },
+    ...(e.url ? { url: e.url } : {}),
+    ...(e.cover_url ? { image: e.cover_url } : {}),
+    organizer: { "@type": "Organization", name: c.name, url: canonicalUrl.value },
+  }));
+});
+
+// Serialize a JSON-LD object to a script entry, escaping "<" so owner-typed free
+// text can never break out of the <script> block (defense-in-depth).
+function ldScript(obj) {
+  return { type: "application/ld+json", innerHTML: JSON.stringify(obj).replace(/</g, "\\u003c") };
+}
+
 // Guarded on community.value so the not-found state gets no title override
 // and no JSON-LD script.
 useHead(computed(() => {
@@ -191,17 +229,22 @@ useHead(computed(() => {
     link: [
       { rel: "canonical", href: canonicalUrl.value },
     ],
-    script: jsonLd.value ? [
-      // Escape "<" so an owner-typed name/city can never break out of the
-      // <script> block (defense-in-depth; the JSON-LD carries free user text).
-      { type: "application/ld+json", innerHTML: JSON.stringify(jsonLd.value).replace(/</g, "\\u003c") },
-    ] : [],
+    script: [
+      ...(jsonLd.value ? [ldScript(jsonLd.value)] : []),
+      ...eventsJsonLd.value.map(ldScript),
+    ],
   };
 }));
 
 // ── CTA row ────────────────────────────────────────────────────────────────
 const claimOpen = ref(false);
 function openClaim()  { claimOpen.value = true; }
+
+// Following needs an account; Discord OAuth redirects away and returns here.
+async function onFollowAuthRequired() {
+  try { await signInWithDiscord(); }
+  catch (e) { console.error("sign-in failed", e); }
+}
 
 const reportOpen = ref(false);
 function openReport() { reportOpen.value = true; }
@@ -221,6 +264,7 @@ const uploadingBanner = ref(false);
 const edit = ref({
   name: "", bio: "", links: [],
   city: "", country: "", avatar_url: null, banner_url: null,
+  remote_duel: false,
 });
 
 // Local key so v-for rows stay stable across reorder / add / remove (the stored
@@ -237,6 +281,7 @@ function startEdit() {
     })),
     city: c.city ?? "", country: c.country ?? "",
     avatar_url: c.avatar_url ?? null, banner_url: c.banner_url ?? null,
+    remote_duel: !!c.remote_duel,
   };
   editErr.value = "";
   editing.value = true;
@@ -326,6 +371,7 @@ async function saveEdit() {
       country:     edit.value.country || null,
       avatar_url:  edit.value.avatar_url || null,
       banner_url:  edit.value.banner_url || null,
+      remote_duel: edit.value.remote_duel,
     };
     const row = await updateCommunity(community.value.id, patch);
     Object.assign(community.value, row);
@@ -436,6 +482,32 @@ async function onStale() {
     <!-- Profile -->
     <article v-else-if="community" class="cp">
 
+      <!-- Top actions: follow, edit (owner) + report -->
+      <div v-if="!editing" class="cp-actions">
+        <!-- The owner sees their follower tally instead of a follow button;
+             following your own community is not a thing. -->
+        <span v-if="isOwner" class="cp-followers">
+          <v-icon icon="mdi-account-heart-outline" size="15" />
+          {{ t('community.followerCount', community.follower_count ?? 0) }}
+        </span>
+        <FollowButton
+          v-else
+          :community-id="community.id"
+          :user-id="currentUserId"
+          :count="community.follower_count ?? 0"
+          @update:count="community.follower_count = $event"
+          @auth-required="onFollowAuthRequired"
+        />
+        <button v-if="isOwner" type="button" class="cp-edit" @click="startEdit">
+          <v-icon icon="mdi-pencil-outline" size="16" />
+          {{ t('community.editTitle') }}
+        </button>
+        <button type="button" class="cp-report" @click="openReport">
+          <v-icon icon="mdi-flag-outline" size="15" />
+          {{ t('community.report') }}
+        </button>
+      </div>
+
       <!-- Identity field — amethyst by default, banner enriches it when present -->
       <header
         class="cp-id"
@@ -491,8 +563,15 @@ async function onStale() {
             </div>
 
             <div class="cp-meta">
-              <span class="cp-meta__type">{{ typeLabel }}</span>
+              <span class="cp-meta__type">
+                <CommunityKindIcon :kind="community.kind" :size="13" />
+                {{ typeLabel }}
+              </span>
               <template v-if="!editing">
+                <span v-if="community.remote_duel" class="cp-meta__sep" aria-hidden="true">·</span>
+                <span v-if="community.remote_duel" class="cp-meta__remote">
+                  <v-icon icon="mdi-web" size="13" />{{ t('community.remoteDuel') }}
+                </span>
                 <span v-if="cityCountry" class="cp-meta__sep" aria-hidden="true">·</span>
                 <span v-if="cityCountry" class="cp-meta__loc">
                   <v-icon icon="mdi-map-marker" size="13" />{{ cityCountry }}
@@ -527,23 +606,37 @@ async function onStale() {
             :aria-label="t('community.fieldBio')"
           />
 
-          <!-- Governance row: claim / edit / report -->
-          <div v-if="!editing" class="cp-gov">
-            <template v-if="community.owner == null">
-              <button type="button" class="cp-claim" @click="openClaim">
-                <v-icon icon="mdi-storefront-check-outline" size="16" />
-                {{ t('community.claimThis') }}
-              </button>
-              <span class="cp-gov__notice">{{ t('community.unclaimedNotice') }}</span>
-            </template>
-            <button v-if="isOwner" type="button" class="cp-edit" @click="startEdit">
-              <v-icon icon="mdi-pencil-outline" size="16" />
-              {{ t('community.editTitle') }}
+          <!-- Remote-duel toggle (edit only) -->
+          <button
+            v-if="editing"
+            type="button"
+            class="cp-remote-toggle"
+            :class="{ 'cp-remote-toggle--on': edit.remote_duel }"
+            :aria-pressed="edit.remote_duel"
+            @click="edit.remote_duel = !edit.remote_duel"
+          >
+            <v-icon :icon="edit.remote_duel ? 'mdi-check-circle' : 'mdi-web'" size="16" />
+            <span class="cp-remote-toggle__label">
+              <span class="cp-remote-toggle__title">{{ t('community.remoteDuelLabel') }}</span>
+              <span class="cp-remote-toggle__hint">{{ t('community.remoteDuelHint') }}</span>
+            </span>
+          </button>
+
+          <!-- Events, directly below the description -->
+          <CommunityEvents
+            v-if="!editing"
+            :community="community"
+            :is-owner="isOwner"
+            @loaded="onEventsLoaded"
+          />
+
+          <!-- Claim CTA (unclaimed only; edit + report live in the top bar) -->
+          <div v-if="!editing && community.owner == null" class="cp-gov">
+            <button type="button" class="cp-claim" @click="openClaim">
+              <v-icon icon="mdi-storefront-check-outline" size="16" />
+              {{ t('community.claimThis') }}
             </button>
-            <button type="button" class="cp-report" @click="openReport">
-              <v-icon icon="mdi-flag-outline" size="15" />
-              {{ t('community.report') }}
-            </button>
+            <span class="cp-gov__notice">{{ t('community.unclaimedNotice') }}</span>
           </div>
 
           <div v-if="finalizing" class="cp-finalizing" role="status">
@@ -754,6 +847,16 @@ async function onStale() {
 /* ── Profile shell ────────────────────────────────── */
 .cp { display: flex; flex-direction: column; gap: 22px; }
 
+/* ── Top actions (edit / report) ──────────────────── */
+.cp-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-bottom: -8px; }
+.cp-actions .cp-report { margin-left: 0; }
+/* Owner-side readout: their follower tally sits where the follow button would be. */
+.cp-followers {
+  display: inline-flex; align-items: center; gap: 6px; margin-right: auto;
+  font-size: 13px; font-weight: 600; color: var(--c-muted);
+}
+.cp-followers .v-icon { color: var(--c-trade); }
+
 /* ── Identity field ───────────────────────────────── */
 .cp-id {
   position: relative;
@@ -828,15 +931,37 @@ async function onStale() {
   font-size: 13px; font-weight: 600; color: var(--c-text);
 }
 .cp-meta__type {
+  display: inline-flex; align-items: center; gap: 5px;
   text-transform: uppercase; letter-spacing: 0.06em; font-size: 11.5px;
   color: var(--c-text);
   background: color-mix(in srgb, var(--c-bg) 40%, transparent);
   padding: 3px 9px; border-radius: 7px;
 }
+.cp-meta__type .v-icon, .cp-meta__type .cpi-svg { color: var(--c-trade); }
 .cp-meta__sep { color: color-mix(in srgb, var(--c-text) 55%, transparent); }
 @media (max-width: 479px) { .cp-meta__sep { display: none; } }
-.cp-meta__loc { display: inline-flex; align-items: center; gap: 4px; }
-.cp-meta__loc .v-icon { color: var(--c-trade); }
+.cp-meta__loc, .cp-meta__remote { display: inline-flex; align-items: center; gap: 4px; }
+.cp-meta__loc .v-icon, .cp-meta__remote .v-icon { color: var(--c-trade); }
+
+/* ── Remote-duel toggle (edit) ────────────────────── */
+.cp-remote-toggle {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  text-align: left; cursor: pointer;
+  padding: 12px 14px; border-radius: 14px;
+  border: 1.5px solid var(--c-border); background: var(--c-surface);
+  color: var(--c-text);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.cp-remote-toggle:hover { border-color: color-mix(in srgb, var(--c-trade) 45%, var(--c-border)); }
+.cp-remote-toggle > .v-icon { color: var(--c-muted); flex-shrink: 0; }
+.cp-remote-toggle--on {
+  border-color: color-mix(in srgb, var(--c-trade) 55%, transparent);
+  background: color-mix(in srgb, var(--c-trade) 10%, var(--c-surface));
+}
+.cp-remote-toggle--on > .v-icon { color: var(--c-trade); }
+.cp-remote-toggle__label { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cp-remote-toggle__title { font-size: 13.5px; font-weight: 700; }
+.cp-remote-toggle__hint { font-size: 11.5px; font-weight: 500; color: var(--c-muted); }
 
 /* ── Body ─────────────────────────────────────────── */
 /* Mobile: single stacked column (bio + governance, then the location rail).

@@ -6,6 +6,8 @@ import { getClient, updateTraderProfile, linkDiscordAccount, syncDiscordIdToTrad
 import { COUNTRIES } from "@/lib/countries";
 import { countryByCode } from "@/lib/countries";
 import { fetchMyCommunities, openBillingPortal } from "@/lib/community";
+import { fetchFollowing, unfollow } from "@/lib/communityFollow";
+import CommunityKindIcon from "@/components/community/CommunityKindIcon.vue";
 
 const { t } = useI18n();
 
@@ -180,8 +182,30 @@ async function loadCommunities() {
   }
 }
 
+// ── Communities I follow ─────────────────────────────────────────────────
+const following        = ref([]);
+const loadingFollowing = ref(false);
+
+async function loadFollowing() {
+  if (!props.login?.user?.id) return;
+  loadingFollowing.value = true;
+  try {
+    following.value = await fetchFollowing(props.login.user.id);
+  } finally {
+    loadingFollowing.value = false;
+  }
+}
+
+// Unfollowing from this list drops the row straight away rather than refetching.
+async function onUnfollow(row) {
+  const prev = following.value;
+  following.value = following.value.filter((r) => r.id !== row.id);
+  try { await unfollow(row.id, props.login.user.id); }
+  catch { following.value = prev; }
+}
+
 watch(() => props.login?.user?.id, (id) => {
-  if (id) { loadProfile(); loadTrades(); loadCommunities(); }
+  if (id) { loadProfile(); loadTrades(); loadCommunities(); loadFollowing(); }
 }, { immediate: true });
 
 const route = useRoute();
@@ -369,6 +393,56 @@ async function manageSubscription(row) {
               >
                 <v-icon icon="mdi-pencil-outline" size="15" />
               </router-link>
+            </div>
+          </div>
+        </section>
+
+        <!-- Communities I follow -->
+        <section aria-labelledby="acct-follow-h">
+          <div class="acct-section-head">
+            <h2 id="acct-follow-h" class="acct-h2">
+              <v-icon icon="mdi-account-heart-outline" size="15" />{{ t('community.followingTitle') }}
+            </h2>
+          </div>
+
+          <div v-if="loadingFollowing" class="acct-rows">
+            <div v-for="i in 2" :key="i" class="acct-row acct-row--sk">
+              <div class="h-4 rounded w-32 animate-pulse motion-reduce:animate-none" style="background: var(--c-skeleton)" />
+              <div class="h-5 rounded w-16 ml-auto animate-pulse motion-reduce:animate-none" style="background: var(--c-skeleton)" />
+            </div>
+          </div>
+
+          <p v-else-if="following.length === 0" class="acct-empty">
+            <router-link :to="{ name: 'community', params: { locale } }" style="color: var(--c-accent); font-weight: 600">
+              {{ t('community.followingEmpty') }}
+            </router-link>
+          </p>
+
+          <div v-else class="acct-rows">
+            <div v-for="row in following" :key="row.id" class="acct-row">
+              <div class="flex flex-col min-w-0" style="gap: 2px">
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span class="font-semibold truncate" style="color: var(--c-text)">{{ row.name }}</span>
+                  <v-icon v-if="row.verified" icon="mdi-check-decagram" size="14" style="color: var(--c-mutual)" :title="t('community.verified')" />
+                </div>
+                <span class="text-xs truncate flex items-center gap-1" style="color: var(--c-muted)">
+                  <CommunityKindIcon :kind="row.kind" :size="12" />
+                  {{ KIND_LABELS[row.kind] ?? row.kind }}
+                  <template v-if="row.city">· {{ row.city }}</template>
+                </span>
+              </div>
+
+              <router-link
+                :to="{ name: 'communityProfile', params: { locale, slug: row.slug } }"
+                class="acct-linkbtn ml-auto"
+                style="color: var(--c-trade)"
+              >
+                {{ t('community.view') }}
+              </router-link>
+
+              <button type="button" class="acct-linkbtn" @click="onUnfollow(row)">
+                {{ t('community.unfollow') }}
+              </button>
             </div>
           </div>
         </section>

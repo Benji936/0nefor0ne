@@ -1,10 +1,13 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRoute, useRouter } from 'vue-router';
 import { getClient } from '@/lib/supabaseClient';
 import { notifMeta, notifText, timeAgo } from '@/lib/notifications';
 
 const { t } = useI18n();
+const route = useRoute();
+const router = useRouter();
 
 const props = defineProps({
   login: { type: Object, default: null },
@@ -47,8 +50,20 @@ async function toggle() {
   }
 }
 
-function onItemClick() {
+async function onItemClick(n) {
   open.value = false;
+  // Community notifications point at a community, not at the trade centre.
+  if (n?.kind === 'community_event' && n.community_id) {
+    const { data } = await getClient()
+      .from('community').select('slug').eq('id', n.community_id).maybeSingle();
+    if (data?.slug) {
+      router.push({
+        name: 'communityProfile',
+        params: { locale: route.params.locale || 'en', slug: data.slug },
+      });
+      return;
+    }
+  }
   emit('navigate', 'proposals');
 }
 
@@ -158,7 +173,7 @@ onBeforeUnmount(() => {
               :key="n.id"
               class="flex items-start gap-3 px-4 py-3 w-full text-left cursor-pointer transition-colors"
               :style="{ backgroundColor: n.read ? 'transparent' : 'color-mix(in srgb, var(--c-trade) 5%, transparent)' }"
-              @click="onItemClick"
+              @click="onItemClick(n)"
             >
               <v-icon
                 :icon="notifMeta(n).icon"
