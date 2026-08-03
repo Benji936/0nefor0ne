@@ -1160,10 +1160,10 @@
     "kindStore": "Negozi",
     "kindDiscord": "Discord",
     "kindGroup": "Gruppi",
-  "typeStore": "Negozio",
-  "typeDiscord": "Server Discord",
-  "typeGroup": "Gruppo",
-  "openMap": "Apri in Google Maps",
+    "typeStore": "Negozio",
+    "typeDiscord": "Server Discord",
+    "typeGroup": "Gruppo",
+    "openMap": "Apri in Google Maps",
     "linksTitle": "Link",
     "platform": "Piattaforma",
     "platform_website": "Sito web",
@@ -1246,6 +1246,7 @@
     "discardChanges": "Annulla",
     "imageTooLarge": "Immagine troppo grande (max 5 MB).",
     "imageWrongType": "Scegli un file immagine.",
-    "uploadFailed": "Caricamento non riuscito. Riprova."
+    "uploadFailed": "Caricamento non riuscito. Riprova.",
+    "placeCredit": "Ricerca fornita da OpenStreetMap"
   }
 }

@@ -1160,10 +1160,10 @@
     "kindStore": "Boutiques",
     "kindDiscord": "Discord",
     "kindGroup": "Groupes",
-  "typeStore": "Boutique",
-  "typeDiscord": "Serveur Discord",
-  "typeGroup": "Groupe",
-  "openMap": "Ouvrir dans Google Maps",
+    "typeStore": "Boutique",
+    "typeDiscord": "Serveur Discord",
+    "typeGroup": "Groupe",
+    "openMap": "Ouvrir dans Google Maps",
     "linksTitle": "Liens",
     "platform": "Plateforme",
     "platform_website": "Site web",
@@ -1246,6 +1246,7 @@
     "discardChanges": "Annuler",
     "imageTooLarge": "Image trop volumineuse (max 5 Mo).",
     "imageWrongType": "Veuillez choisir un fichier image.",
-    "uploadFailed": "Échec du téléversement. Veuillez réessayer."
+    "uploadFailed": "Échec du téléversement. Veuillez réessayer.",
+    "placeCredit": "Recherche propulsée par OpenStreetMap"
   }
 }

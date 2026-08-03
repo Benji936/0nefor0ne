@@ -1160,10 +1160,10 @@
     "kindStore": "Stores",
     "kindDiscord": "Discord",
     "kindGroup": "Groups",
-  "typeStore": "Store",
-  "typeDiscord": "Discord server",
-  "typeGroup": "Group",
-  "openMap": "Open in Google Maps",
+    "typeStore": "Store",
+    "typeDiscord": "Discord server",
+    "typeGroup": "Group",
+    "openMap": "Open in Google Maps",
     "linksTitle": "Links",
     "platform": "Platform",
     "platform_website": "Website",
@@ -1246,6 +1246,7 @@
     "discardChanges": "Discard",
     "imageTooLarge": "Image is too large (max 5 MB).",
     "imageWrongType": "Please choose an image file.",
-    "uploadFailed": "Upload failed. Please try again."
+    "uploadFailed": "Upload failed. Please try again.",
+    "placeCredit": "Search powered by OpenStreetMap"
   }
 }

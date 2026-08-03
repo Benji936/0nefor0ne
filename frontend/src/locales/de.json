@@ -1160,10 +1160,10 @@
     "kindStore": "Läden",
     "kindDiscord": "Discord",
     "kindGroup": "Gruppen",
-  "typeStore": "Laden",
-  "typeDiscord": "Discord-Server",
-  "typeGroup": "Gruppe",
-  "openMap": "In Google Maps öffnen",
+    "typeStore": "Laden",
+    "typeDiscord": "Discord-Server",
+    "typeGroup": "Gruppe",
+    "openMap": "In Google Maps öffnen",
     "linksTitle": "Links",
     "platform": "Plattform",
     "platform_website": "Website",
@@ -1246,6 +1246,7 @@
     "discardChanges": "Verwerfen",
     "imageTooLarge": "Bild ist zu groß (max. 5 MB).",
     "imageWrongType": "Bitte eine Bilddatei wählen.",
-    "uploadFailed": "Upload fehlgeschlagen. Bitte erneut versuchen."
+    "uploadFailed": "Upload fehlgeschlagen. Bitte erneut versuchen.",
+    "placeCredit": "Suche unterstützt von OpenStreetMap"
   }
 }
