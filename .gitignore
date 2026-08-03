@@ -1,2 +1,11 @@
 node_modules
 .specs/scratchpad/
+
+# macOS
+.DS_Store
+
+# Python virtualenv (local tooling)
+.venv/
+
+# Ad-hoc script output
+out.json
