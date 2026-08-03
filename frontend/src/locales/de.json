@@ -220,7 +220,9 @@
     "tradeCompleted": "Tausch mit {name} abgeschlossen",
     "fallback": "Benachrichtigung",
     "someone": "Jemand",
-    "them": "sie"
+    "them": "sie",
+    "communityEvent": "{name} hat ein neues Event angekündigt",
+    "aCommunity": "Eine Community"
   },
   "library": {
     "tradePile": "Tauschstapel",
@@ -1275,6 +1277,12 @@
     "eventErrTooLong": "Dieser Text ist zu lang.",
     "eventErrDate": "Bitte gib ein gültiges Datum und eine gültige Uhrzeit ein.",
     "eventErrEndBeforeStart": "Das Ende muss nach dem Beginn liegen.",
-    "eventErrUrl": "Der Link muss mit http:// oder https:// beginnen"
+    "eventErrUrl": "Der Link muss mit http:// oder https:// beginnen",
+    "follow": "Folgen",
+    "following": "Folge ich",
+    "unfollow": "Entfolgen",
+    "followerCount": "keine Follower | 1 Follower | {n} Follower",
+    "followingTitle": "Communities, denen ich folge",
+    "followingEmpty": "Communities zum Folgen finden"
   }
 }

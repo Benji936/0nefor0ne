@@ -9,6 +9,8 @@ export const NOTIF_META = {
   proposal_cancelled: { icon: 'mdi-cancel',                color: 'var(--c-muted)',  text: n => `Trade with ${n.counterparty_name ?? 'them'} was cancelled` },
   side_confirmed:     { icon: 'mdi-handshake-outline',     color: 'var(--c-mutual)', text: n => `${n.counterparty_name ?? 'They'} confirmed the exchange` },
   trade_completed:    { icon: 'mdi-handshake',             color: 'var(--c-mutual)', text: n => `Exchange with ${n.counterparty_name ?? 'them'} complete` },
+  // Community fan-out: counterparty_name carries the community's name.
+  community_event:    { icon: 'mdi-calendar-star',         color: 'var(--c-trade)',  text: n => `${n.counterparty_name ?? 'A community'} announced a new event` },
 };
 
 const FALLBACK_META = { icon: 'mdi-bell-outline', color: 'var(--c-muted)', text: () => 'Notification' };
@@ -32,6 +34,7 @@ export function notifText(n, t) {
     case 'proposal_cancelled': return t('notifications.proposalCancelled', { name: name ?? t('notifications.them') });
     case 'side_confirmed':     return t('notifications.sideConfirmed',     { name: name ?? t('notifications.them') });
     case 'trade_completed':    return t('notifications.tradeCompleted',    { name: name ?? t('notifications.them') });
+    case 'community_event':    return t('notifications.communityEvent',    { name: name ?? t('notifications.aCommunity') });
     default:                   return t('notifications.fallback');
   }
 }

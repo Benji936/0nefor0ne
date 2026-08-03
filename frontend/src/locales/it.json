@@ -220,7 +220,9 @@
     "tradeCompleted": "Scambio con {name} completato",
     "fallback": "Notifica",
     "someone": "Qualcuno",
-    "them": "loro"
+    "them": "loro",
+    "communityEvent": "{name} ha annunciato un nuovo evento",
+    "aCommunity": "Una community"
   },
   "library": {
     "tradePile": "Mazzo di scambio",
@@ -1275,6 +1277,12 @@
     "eventErrTooLong": "Questo testo è troppo lungo.",
     "eventErrDate": "Inserisci una data e un'ora valide.",
     "eventErrEndBeforeStart": "La fine deve essere successiva all'inizio.",
-    "eventErrUrl": "Il link deve iniziare con http:// o https://"
+    "eventErrUrl": "Il link deve iniziare con http:// o https://",
+    "follow": "Segui",
+    "following": "Seguito",
+    "unfollow": "Non seguire più",
+    "followerCount": "nessun follower | 1 follower | {n} follower",
+    "followingTitle": "Community che seguo",
+    "followingEmpty": "Trova community da seguire"
   }
 }
