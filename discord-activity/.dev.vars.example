@@ -1,0 +1,4 @@
+# Local secrets for `wrangler dev` (this file is gitignored).
+# Dev Portal -> your app -> OAuth2 -> Client Secret.
+# For production, set it with:  npx wrangler secret put DISCORD_CLIENT_SECRET
+DISCORD_CLIENT_SECRET=your-oauth2-client-secret

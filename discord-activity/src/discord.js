@@ -1,7 +1,5 @@
 import { DiscordSDK } from '@discord/embedded-app-sdk';
 
-const CLIENT_ID = import.meta.env.VITE_DISCORD_CLIENT_ID;
-
 // Discord injects `frame_id` into the query string when the page is loaded as
 // an Activity. Outside Discord (plain browser dev) we fall back to a mock so
 // the UI is still usable/testable.
@@ -28,13 +26,18 @@ export async function setupDiscord() {
     };
   }
 
-  if (!CLIENT_ID) throw new Error('VITE_DISCORD_CLIENT_ID is not set at build time.');
+  // The Worker owns the client id (see wrangler.jsonc), so nothing about the
+  // Discord app is baked into the bundle at build time.
+  const configRes = await fetch('/.proxy/api/config');
+  if (!configRes.ok) throw new Error('Could not load app config (' + configRes.status + ').');
+  const { clientId } = await configRes.json();
+  if (!clientId) throw new Error('DISCORD_CLIENT_ID is not configured on the server.');
 
-  discordSdk = new DiscordSDK(CLIENT_ID);
+  discordSdk = new DiscordSDK(clientId);
   await discordSdk.ready();
 
   const { code } = await discordSdk.commands.authorize({
-    client_id: CLIENT_ID,
+    client_id: clientId,
     response_type: 'code',
     state: '',
     prompt: 'none',

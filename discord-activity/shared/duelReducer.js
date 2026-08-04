@@ -13,9 +13,13 @@ export function initialState() {
     dice: null, // { value: 1..6, by, seq }
     timer: { running: false, startedAt: null, baseElapsedMs: 0 },
     log: [], // [{ seq, text, at }]
+    chat: [], // [{ seq, uid, name, text, at }]
     seq: 0,
   };
 }
+
+const CHAT_MAX_LEN = 240;
+const CHAT_HISTORY = 60;
 
 function commit(state, patch, logText) {
   const seq = state.seq + 1;
@@ -125,6 +129,16 @@ export function reduce(state, action) {
 
     case 'setTurn': {
       return commit(state, { turn: action.target || null });
+    }
+
+    case 'chat': {
+      // Chat is not part of the duel record, so it never touches the log.
+      const text = String(action.text ?? '').replace(/\s+/g, ' ').trim().slice(0, CHAT_MAX_LEN);
+      if (!text) return state;
+      const seq = state.seq + 1;
+      const entry = { seq, uid, name: actorName, text, at: Date.now() };
+      // `?? []` covers rooms persisted before chat existed.
+      return { ...state, seq, chat: [...(state.chat ?? []), entry].slice(-CHAT_HISTORY) };
     }
 
     case 'timer:start': {

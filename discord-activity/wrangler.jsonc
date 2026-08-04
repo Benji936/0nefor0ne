@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "remote-duel",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-01-15",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "DUEL_ROOM", "class_name": "DuelRoom" }]
+  },
+  // SQLite-backed classes are the only kind available on the Workers Free plan.
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DuelRoom"] }],
+  "vars": {
+    "DISCORD_CLIENT_ID": "1523756849051205692"
+  },
+  "observability": { "enabled": true }
+}

@@ -5,6 +5,7 @@ import { createRoom } from './realtime.js';
 import PlayerLife from './components/PlayerLife.vue';
 import ToolsBar from './components/ToolsBar.vue';
 import DuelTimer from './components/DuelTimer.vue';
+import SidePanel from './components/SidePanel.vue';
 
 const status = ref('connecting'); // connecting | ready | error
 const errorMsg = ref('');
@@ -97,15 +98,12 @@ onUnmounted(() => {
         />
       </div>
 
-      <aside class="log">
-        <h2 class="log-title">Duel log</h2>
-        <div class="log-entries">
-          <div v-for="entry in state.log.slice().reverse()" :key="entry.seq" class="log-line">
-            {{ entry.text }}
-          </div>
-          <p v-if="!state.log.length" class="muted small log-empty">No moves yet.</p>
-        </div>
-      </aside>
+      <SidePanel
+        :log="state.log"
+        :chat="state.chat"
+        :me="me"
+        @send="(text) => send({ t: 'chat', text })"
+      />
     </main>
   </div>
 </template>
