@@ -25,11 +25,14 @@ const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  MessageFlags,
 } = require('discord.js');
 const https = require('https');
 const { createClient } = require('@supabase/supabase-js');
 const { parseAnnounce, ANNOUNCE_KIND } = require('./lib/parseAnnounce');
 const { parseWantList, buildWantRows, wantListTitle } = require('./lib/wantList');
+const { searchListings } = require('./lib/marketplace');
+const { commandDefinitions, buildSearchEmbed } = require('./lib/slashCommands');
 
 // ── Validate env ──────────────────────────────────────────────────────────────
 const {
@@ -904,11 +907,131 @@ async function processThreadDeletionQueue() {
   }
 }
 
+// ── Slash commands ────────────────────────────────────────────────────────────
+// `set()` replaces the whole global command list, so lib/slashCommands.js stays
+// the single source of truth and re-running this is idempotent.
+async function registerSlashCommands(c) {
+  try {
+    const registered = await c.application.commands.set(commandDefinitions());
+    console.log(`   Slash commands registered (${registered.size}): ${[...registered.values()].map((x) => '/' + x.name).join(' ')}`);
+  } catch (err) {
+    console.error('⚠️ Slash command registration failed:', err);
+  }
+}
+
+async function handleSearchCommand(interaction) {
+  const query = interaction.options.getString('card', true);
+  await interaction.deferReply(); // YGO/Supabase lookups can exceed the 3s window
+  const results = await searchListings(supabase, query);
+  await interaction.editReply({ embeds: [buildSearchEmbed(results, APP_URL)] });
+}
+
+async function handleLfCommand(interaction) {
+  // Ephemeral: the announce itself is the public artifact, not this reply.
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+  const sellerId = await findUserByDiscordId(interaction.user.id);
+  if (!sellerId) {
+    await interaction.editReply(
+      `❌ I could not find your 0nefor.one account. Click **Login with Discord** on ${APP_URL}, then try again.`
+    );
+    return;
+  }
+
+  // The bulk parser is line based; a slash option is one line, so treat commas
+  // as line breaks (and keep real newlines if the user pasted any).
+  const raw = interaction.options.getString('cards', true);
+  const content = raw
+    .split(/[\n,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .join('\n');
+
+  const parsed = parseWantList(content);
+  const resolved = await resolveWantLines(parsed.wantLines);
+  const wantRows = buildWantRows(resolved);
+  const archetype = await normalizeArchetype(
+    interaction.options.getString('archetype') ?? parsed.archetype
+  );
+
+  if (wantRows.length === 0 && !archetype) {
+    await interaction.editReply(
+      '❓ I could not read any cards from that. Separate them with commas, e.g. `3x Maxx "C", Ash Blossom & Joyous Spring`.'
+    );
+    return;
+  }
+
+  const premium = isPremiumGuild(interaction.guildId);
+  const cfg = getConfig(interaction.guildId);
+  const title = wantRows.length > 0 ? wantListTitle(wantRows) : `LF: ${archetype}`;
+
+  const { data: announceData, error: announceError } = await supabase
+    .from('announce')
+    .insert({
+      seller: sellerId,
+      title,
+      description: null,
+      price: parsed.price ?? null,
+      currency: parsed.currency ?? null,
+      status: 'active',
+      kind: ANNOUNCE_KIND.LOOKING_FOR,
+      archetype: archetype ?? null,
+      want_detail: null,
+      discord_url: null, // no source message for a slash command
+      discord_guild_name: premium ? (interaction.guild?.name ?? null) : null,
+      discord_guild_icon: premium ? (interaction.guild?.iconURL({ extension: 'png', size: 128 }) ?? null) : null,
+      community_url: premium ? (cfg.communityUrl ?? null) : null,
+    })
+    .select('id')
+    .single();
+
+  if (announceError) {
+    console.error('/lf announce insert error:', announceError);
+    await interaction.editReply('⚠️ Something went wrong saving your want list. Please try again in a moment.');
+    return;
+  }
+
+  const announceId = announceData.id;
+  if (wantRows.length > 0) {
+    const { error: wantErr } = await supabase
+      .from('announce_want_card')
+      .insert(wantRows.map((r) => ({ announce: announceId, ...r })));
+    if (wantErr) console.error('/lf want rows insert error:', wantErr);
+  }
+
+  const matched = wantRows.filter((r) => r.ygo_card_id != null).length;
+  await interaction.editReply(
+    [
+      `🔎 **Looking For** posted — ${wantRows.length} card(s)` +
+        (matched ? ` (${matched} matched to the marketplace)` : '') +
+        (archetype ? ` · archetype **${archetype}**` : ''),
+      `${APP_URL}/en/announces/${announceId}`,
+    ].join('\n')
+  );
+}
+
+client.on(Events.InteractionCreate, async (interaction) => {
+  if (!interaction.isChatInputCommand()) return;
+  try {
+    if (interaction.commandName === 'search') return await handleSearchCommand(interaction);
+    if (interaction.commandName === 'lf') return await handleLfCommand(interaction);
+  } catch (err) {
+    console.error(`/${interaction.commandName} failed:`, err);
+    const msg = '⚠️ Something went wrong. Please try again in a moment.';
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply(msg).catch(() => {});
+    } else {
+      await interaction.reply({ content: msg, flags: MessageFlags.Ephemeral }).catch(() => {});
+    }
+  }
+});
+
 // ── Ready ──────────────────────────────────────────────────────────────────────
 const ENTITLEMENT_RESYNC_MS = 10 * 60 * 1000; // re-sync every 10 min, self-heals
 
 client.once(Events.ClientReady, async (c) => {
   await loadAllGuildConfigs();
+  await registerSlashCommands(c);
   await syncEntitlements(c);
   setInterval(() => syncEntitlements(c), ENTITLEMENT_RESYNC_MS);
 
