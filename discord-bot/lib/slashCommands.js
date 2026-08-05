@@ -35,21 +35,34 @@ function truncate(text, max = 70) {
   return s.length > max ? s.slice(0, max - 1) + '…' : s;
 }
 
+/** "×3 · Near Mint · 1st ed" — only the parts that carry information. */
+function cardDetail(entry) {
+  const bits = [];
+  if (entry.qty > 1) bits.push(`×${entry.qty}`);
+  if (entry.condition) bits.push(escapeMd(String(entry.condition)));
+  if (entry.rarity && entry.rarity.toLowerCase() !== 'common') bits.push(escapeMd(entry.rarity));
+  if (entry.firstEdition) bits.push('1st ed');
+  if (entry.language && entry.language.toLowerCase() !== 'english') bits.push(escapeMd(entry.language));
+  return bits.join(' · ');
+}
+
+const trader = (name) => `**${escapeMd(truncate(name, 40))}**`;
+
 /**
  * Builds the /search reply. `appUrl` is the marketplace origin.
  */
-function buildSearchEmbed({ query, sells, wants }, appUrl) {
+function buildSearchEmbed({ query, trading = [], wanted = [], listings = [] }, appUrl) {
   const embed = new EmbedBuilder()
     .setColor(BRAND)
     .setTitle(`Search: ${truncate(query, 80)}`)
-    .setURL(`${appUrl}/en/announces`);
+    .setURL(`${appUrl}/en/cards?q=${encodeURIComponent(query)}`);
 
-  if (sells.length === 0 && wants.length === 0) {
+  if (trading.length === 0 && wanted.length === 0 && listings.length === 0) {
     embed.setDescription(
       [
-        `No active listings match **${escapeMd(truncate(query, 60))}**.`,
+        `Nobody is trading, wanting or selling **${escapeMd(truncate(query, 60))}** right now.`,
         ``,
-        `Post a card in the announces channel to list it, or type \`!help sell\` to see how.`,
+        `Add cards to your collection on ${appUrl} so others can find you.`,
       ].join('\n'),
     );
     return embed;
@@ -57,23 +70,32 @@ function buildSearchEmbed({ query, sells, wants }, appUrl) {
 
   const sections = [];
 
-  if (sells.length > 0) {
-    const lines = sells.slice(0, MAX_LINES).map((s) => {
-      const name = escapeMd(truncate(s.card_name || s.title));
-      const link = `${appUrl}/en/announces/${s.id}`;
-      return `**${name}** — ${formatPrice(s.price, s.currency)}\n↳ by **${escapeMd(truncate(s.traderName, 40))}** · [View listing](${link})`;
+  // Who has the card — the thing people actually search for.
+  if (trading.length > 0) {
+    const lines = trading.slice(0, MAX_LINES).map((t) => {
+      const detail = cardDetail(t);
+      return `**${escapeMd(truncate(t.name))}**${detail ? ` — ${detail}` : ''}\n↳ ${trader(t.traderName)}`;
     });
-    sections.push(`## 💰 For sale (${sells.length})\n${lines.join('\n')}`);
+    sections.push(`## 🤝 Trading (${trading.length})\n${lines.join('\n')}`);
   }
 
-  if (wants.length > 0) {
-    const lines = wants.slice(0, MAX_LINES).map((w) => {
-      const name = escapeMd(truncate(w.label));
+  if (wanted.length > 0) {
+    const lines = wanted.slice(0, MAX_LINES).map((w) => {
       const qty = w.qty && w.qty > 1 ? ` ×${w.qty}` : '';
-      const link = `${appUrl}/en/announces/${w.id}`;
-      return `**${name}**${qty}\n↳ wanted by **${escapeMd(truncate(w.traderName, 40))}** · [View post](${link})`;
+      const link =
+        w.source === 'announce' ? ` · [View post](${appUrl}/en/announces/${w.id})` : '';
+      return `**${escapeMd(truncate(w.label))}**${qty}\n↳ ${trader(w.traderName)}${link}`;
     });
-    sections.push(`## 🔎 Looking for (${wants.length})`.concat('\n', lines.join('\n')));
+    sections.push(`## 🔎 Wanted (${wanted.length})\n${lines.join('\n')}`);
+  }
+
+  if (listings.length > 0) {
+    const lines = listings.slice(0, MAX_LINES).map((s) => {
+      const name = escapeMd(truncate(s.card_name || s.title));
+      const link = `${appUrl}/en/announces/${s.id}`;
+      return `**${name}** — ${formatPrice(s.price, s.currency)}\n↳ ${trader(s.traderName)} · [View listing](${link})`;
+    });
+    sections.push(`## 💰 Listings (${listings.length})\n${lines.join('\n')}`);
   }
 
   embed.setDescription(sections.join('\n\n').slice(0, 4000));
@@ -88,7 +110,7 @@ function commandDefinitions() {
   return [
     {
       name: 'search',
-      description: 'Find who sells or wants a card on 0nefor.one',
+      description: 'Find who trades, wants or sells a card on 0nefor.one',
       type: ApplicationCommandType.ChatInput,
       options: [
         {
