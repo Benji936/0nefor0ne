@@ -66,6 +66,21 @@ export async function fetchFollowing(userId) {
 }
 
 /**
+ * Just the ids of the communities the user follows. fetchFollowing joins the
+ * whole community row for rendering; feeds only need the ids to scope a query,
+ * so this stays a narrow read.
+ */
+export async function fetchFollowedIds(userId) {
+  if (!userId) return [];
+  const { data, error } = await getClient()
+    .from("community_follow")
+    .select("community")
+    .eq("follower", userId);
+  if (error) { console.error("fetchFollowedIds failed", error); return []; }
+  return (data ?? []).map((r) => r.community);
+}
+
+/**
  * Follower rows for a community the caller owns (RLS returns nothing for
  * anyone else). Used by the owner-only followers readout.
  */

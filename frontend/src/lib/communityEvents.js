@@ -27,6 +27,66 @@ export async function fetchEvents(communityId) {
   return data ?? [];
 }
 
+// The columns the cross-community feed renders. The community is embedded with
+// an inner join so an owner's event on a community they have unpublished does
+// not leak into the public feed — community_event's own RLS would still return
+// it to them, and a feed that shows one user rows nobody else can see is worse
+// than one that shows nothing.
+const FEED_SELECT =
+  "id, title, starts_at, ends_at, timezone, is_online, location, url, cover_url, " +
+  "community:community!inner ( id, name, slug, kind, city, country, lat, lng, avatar_url, verified )";
+
+/**
+ * Upcoming published events across every community the caller can see, soonest
+ * first. Pass `communityIds` to restrict to a subset (the caller's follows).
+ * Returns [] rather than throwing: a feed row is decoration on the announces
+ * page, and a failure there must not take the page down with it.
+ */
+export async function fetchUpcomingEvents({ communityIds = null, limit = 24 } = {}) {
+  if (communityIds && communityIds.length === 0) return [];
+
+  let q = getClient()
+    .from("community_event")
+    .select(FEED_SELECT)
+    .eq("status", "published")
+    .eq("community.status", "published")
+    .gte("starts_at", new Date().toISOString())
+    .order("starts_at", { ascending: true })
+    .limit(limit);
+
+  if (communityIds) q = q.in("community", communityIds);
+
+  const { data, error } = await q;
+  if (error) { console.error("fetchUpcomingEvents failed", error); return []; }
+  return data ?? [];
+}
+
+/**
+ * Order a feed so events from followed communities lead, each group still
+ * soonest-first. `followed` and `all` come from two separate queries so a
+ * followed event months out cannot be pushed past the global limit by a busy
+ * week elsewhere; the overlap between them is deduped here by id.
+ *
+ * Each returned row carries `followed: true|false` so the card can badge it
+ * without the component re-deriving membership.
+ */
+export function mergeFollowedFirst(followed, all) {
+  const seen = new Set();
+  const out = [];
+  for (const e of [...(followed ?? []), ...(all ?? [])]) {
+    if (!e || seen.has(e.id)) continue;
+    seen.add(e.id);
+    out.push(e);
+  }
+  const followedIds = new Set((followed ?? []).map((e) => e?.id));
+  return out
+    .map((e) => ({ ...e, followed: followedIds.has(e.id) }))
+    .sort((a, b) =>
+      a.followed === b.followed
+        ? new Date(a.starts_at) - new Date(b.starts_at)
+        : (a.followed ? -1 : 1));
+}
+
 // Split rows into upcoming (start >= now, soonest first) and past (start < now,
 // most recent first). `now` is injectable for deterministic tests.
 export function partitionEvents(rows, now = Date.now()) {

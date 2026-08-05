@@ -2,6 +2,7 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import AnnounceCard from "@/components/trade/AnnounceCard.vue";
+import UpcomingEventsRow from "@/components/community/UpcomingEventsRow.vue";
 import { ANNOUNCE_KIND } from "@/lib/announceKind";
 
 const props = defineProps({
@@ -121,6 +122,11 @@ function openCreate() {
       </div>
 
       <div class="content-area">
+
+        <!-- ── Upcoming community events ─────────────────── -->
+        <!-- Self-hiding: renders nothing when no events are coming up, so it
+             costs no vertical space on a quiet week. -->
+        <UpcomingEventsRow :user-id="currentUserId" />
 
         <!-- ── My Announces section ──────────────────────── -->
         <section v-if="myAnnounces.length > 0" class="my-section">

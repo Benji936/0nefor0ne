@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   partitionEvents, validateEvent, formatEventWhen,
-  communityLocation, eventPlace, eventMapUrl,
+  communityLocation, eventPlace, eventMapUrl, mergeFollowedFirst,
 } from "./communityEvents";
 
 const at = (iso) => ({ starts_at: iso });
@@ -106,6 +106,48 @@ describe("eventPlace", () => {
   });
   it("is empty for online events", () => {
     expect(eventPlace({ is_online: true, location: "Palexpo" }, store)).toBe("");
+  });
+});
+
+describe("mergeFollowedFirst", () => {
+  const ev = (id, starts_at) => ({ id, starts_at });
+
+  it("puts followed events first even when they start later", () => {
+    const out = mergeFollowedFirst(
+      [ev(1, "2026-09-01T10:00:00Z")],
+      [ev(2, "2026-08-06T10:00:00Z")],
+    );
+    expect(out.map((e) => e.id)).toEqual([1, 2]);
+  });
+
+  it("sorts within each group by start ascending", () => {
+    const out = mergeFollowedFirst(
+      [ev(1, "2026-09-01T10:00:00Z"), ev(2, "2026-08-20T10:00:00Z")],
+      [ev(3, "2026-08-15T10:00:00Z"), ev(4, "2026-08-07T10:00:00Z")],
+    );
+    expect(out.map((e) => e.id)).toEqual([2, 1, 4, 3]);
+  });
+
+  it("dedupes an event present in both queries and keeps it followed", () => {
+    const out = mergeFollowedFirst([ev(1, "2026-09-01T10:00:00Z")], [ev(1, "2026-09-01T10:00:00Z")]);
+    expect(out).toHaveLength(1);
+    expect(out[0].followed).toBe(true);
+  });
+
+  it("flags followed membership on every row", () => {
+    const out = mergeFollowedFirst([ev(1, "2026-08-10T10:00:00Z")], [ev(2, "2026-08-11T10:00:00Z")]);
+    expect(out.map((e) => e.followed)).toEqual([true, false]);
+  });
+
+  it("does not mutate its inputs", () => {
+    const followed = [ev(1, "2026-08-10T10:00:00Z")];
+    mergeFollowedFirst(followed, []);
+    expect(followed[0]).not.toHaveProperty("followed");
+  });
+
+  it("tolerates null, empty and holey input", () => {
+    expect(mergeFollowedFirst(null, null)).toEqual([]);
+    expect(mergeFollowedFirst([null], [ev(1, "2026-08-10T10:00:00Z")]).map((e) => e.id)).toEqual([1]);
   });
 });
 
