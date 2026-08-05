@@ -537,7 +537,7 @@
     "declinePlaceholder": "Optionnel  expliquez pourquoi vous refusez…"
   },
   "traderProfile": {
-    "rating": "Note",
+    "tradesCompleted": "{count} échange conclu | {count} échanges conclus",
     "reviewCount": "{count} avis | {count} avis",
     "openFullPage": "Voir la page complète",
     "back": "Retour",
@@ -545,7 +545,6 @@
     "wishlistEmpty": "Liste de souhaits vide.",
     "noCardsForTrade": "Aucune carte listée pour l'échange.",
     "noReviewsYet": "Aucun avis pour l'instant.",
-    "forTrade": "À échanger",
     "reviews": "Avis",
     "noLocationSet": "Localisation non renseignée",
     "traderNotFound": "Joueur introuvable.",

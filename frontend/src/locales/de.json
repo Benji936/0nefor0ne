@@ -537,7 +537,7 @@
     "declinePlaceholder": "Optional  teile mit, warum du ablehnst…"
   },
   "traderProfile": {
-    "rating": "Bewertung",
+    "tradesCompleted": "{count} abgeschlossener Tausch | {count} abgeschlossene Tausche",
     "reviewCount": "{count} Bewertung | {count} Bewertungen",
     "openFullPage": "Ganze Seite öffnen",
     "back": "Zurück",
@@ -545,7 +545,6 @@
     "wishlistEmpty": "Wunschliste ist leer.",
     "noCardsForTrade": "Keine Karten zum Tauschen aufgelistet.",
     "noReviewsYet": "Noch keine Bewertungen.",
-    "forTrade": "Zum Tausch",
     "reviews": "Bewertungen",
     "noLocationSet": "Kein Standort angegeben",
     "traderNotFound": "Trader nicht gefunden.",

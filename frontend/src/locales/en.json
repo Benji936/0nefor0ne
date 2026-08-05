@@ -537,7 +537,7 @@
     "declinePlaceholder": "Optional  let them know why you're declining…"
   },
   "traderProfile": {
-    "rating": "Rating",
+    "tradesCompleted": "{count} trade completed | {count} trades completed",
     "reviewCount": "{count} review | {count} reviews",
     "openFullPage": "Open full page",
     "back": "Back",
@@ -545,7 +545,6 @@
     "wishlistEmpty": "Wishlist is empty.",
     "noCardsForTrade": "No cards listed for trade.",
     "noReviewsYet": "No reviews yet.",
-    "forTrade": "For trade",
     "reviews": "Reviews",
     "noLocationSet": "No location set",
     "traderNotFound": "Trader not found.",

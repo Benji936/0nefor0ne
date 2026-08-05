@@ -537,7 +537,7 @@
     "declinePlaceholder": "Facoltativo  spiega perché rifiuti…"
   },
   "traderProfile": {
-    "rating": "Valutazione",
+    "tradesCompleted": "{count} scambio concluso | {count} scambi conclusi",
     "reviewCount": "{count} recensione | {count} recensioni",
     "openFullPage": "Apri pagina completa",
     "back": "Indietro",
@@ -545,7 +545,6 @@
     "wishlistEmpty": "Lista desideri vuota.",
     "noCardsForTrade": "Nessuna carta listata per lo scambio.",
     "noReviewsYet": "Nessuna recensione ancora.",
-    "forTrade": "Da scambiare",
     "reviews": "Recensioni",
     "noLocationSet": "Posizione non impostata",
     "traderNotFound": "Trader non trovato.",

@@ -44,9 +44,9 @@ const initials = computed(() => {
 });
 
 const scopeMeta = computed(() => ({
-  local:     { label: t('account.localOnly'),       icon: 'mdi-map-marker',   color: 'var(--c-trade)' },
-  national:  { label: t('account.nationalOnly'),    icon: 'mdi-flag-outline', color: 'var(--c-trade)' },
-  worldwide: { label: t('account.scopes.worldwide'), icon: 'mdi-earth',       color: 'var(--c-muted)' },
+  local:     { label: t('account.localOnly'),        icon: 'mdi-map-marker' },
+  national:  { label: t('account.nationalOnly'),     icon: 'mdi-flag-outline' },
+  worldwide: { label: t('account.scopes.worldwide'), icon: 'mdi-earth' },
 }[profile.value?.trade_scope ?? 'worldwide']));
 
 async function load(id) {
@@ -87,19 +87,12 @@ watch(() => [props.active, props.traderId], ([on, id]) => {
   if (on && id) load(id);
 }, { immediate: true });
 
-const statItems = computed(() => [
-  { label: t('traderProfile.forTrade'), icon: 'mdi-cards-outline',    color: 'var(--c-trade)',  value: profile.value?.trade_pile_count, sub: null },
-  { label: t('library.wishlist'),       icon: 'mdi-heart-outline',    color: 'var(--c-accent)', value: profile.value?.wishlist_count,   sub: null },
-  { label: t('proposal.completed'),     icon: 'mdi-handshake-outline', color: 'var(--c-mutual)', value: profile.value?.completed_trades, sub: null },
-  {
-    label: t('traderProfile.rating'), icon: 'mdi-star', color: 'var(--c-mutual)',
-    value: profile.value?.avg_rating ? `${profile.value.avg_rating}★` : '—',
-    // Three-arg form: vue-i18n needs the count positionally to pick the plural.
-    sub: profile.value?.rating_count > 0
-      ? t('traderProfile.reviewCount', { count: Number(profile.value.rating_count) }, Number(profile.value.rating_count))
-      : null,
-  },
-]);
+// A restricted scope means this trader may not trade with you at all, so it is
+// the one meta item that can change your next action.
+const scopeRestricted = computed(() => ['local', 'national'].includes(profile.value?.trade_scope));
+
+const completedTrades = computed(() => Number(profile.value?.completed_trades ?? 0));
+const ratingCount     = computed(() => Number(profile.value?.rating_count ?? 0));
 
 const tabItems = computed(() => [
   { key: 'pile',    label: t('library.tradePile'),     count: tradePile.value.length },
@@ -110,24 +103,21 @@ const tabItems = computed(() => [
 
 <template>
   <!-- Skeleton -->
-  <div v-if="loading" class="flex flex-col gap-6">
-    <div class="flex items-center gap-5">
+  <div v-if="loading" class="tpb">
+    <div class="tpb-id">
       <div class="tpb-skel-avatar animate-pulse shrink-0" style="background: var(--c-skeleton)" />
-      <div class="flex flex-col gap-3 grow">
-        <div class="h-5 rounded w-2/5 animate-pulse" style="background: var(--c-skeleton)" />
-        <div class="h-4 rounded w-1/3 animate-pulse" style="background: var(--c-skeleton)" />
+      <div class="tpb-id__text tpb-skel-lines">
+        <div class="h-6 rounded w-2/5 animate-pulse" style="background: var(--c-skeleton)" />
+        <div class="h-4 rounded w-3/5 animate-pulse" style="background: var(--c-skeleton)" />
       </div>
     </div>
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <div v-for="i in 4" :key="i" class="h-20 rounded-xl animate-pulse" style="background: var(--c-skeleton)" />
-    </div>
-    <div class="flex gap-3 flex-wrap">
-      <div v-for="i in 8" :key="i" class="animate-pulse rounded" style="width:68px;height:96px;background:var(--c-skeleton)" />
+    <div class="tpb-skel-cards flex gap-3 flex-wrap">
+      <div v-for="i in 12" :key="i" class="animate-pulse rounded" style="width:68px;height:96px;background:var(--c-skeleton)" />
     </div>
   </div>
 
   <!-- Content -->
-  <div v-else-if="profile" class="flex flex-col gap-6">
+  <div v-else-if="profile" class="tpb">
 
     <!-- Identity -->
     <div class="tpb-id">
@@ -138,39 +128,46 @@ const tabItems = computed(() => [
 
       <div class="tpb-id__text">
         <span class="tpb-id__name">{{ profile.name ?? t('userCard.anonymous') }}</span>
-        <span class="tpb-id__where">
-          <template v-if="country">
-            <span>{{ country.flag }}</span>
-            <span>{{ [profile.city, country.name].filter(Boolean).join(', ') }}</span>
-          </template>
-          <span v-else-if="profile.city">{{ profile.city }}</span>
-          <span v-else style="opacity: 0.6">{{ t('traderProfile.noLocationSet') }}</span>
-        </span>
-      </div>
 
-      <span
-        class="tpb-id__scope"
-        :style="{ color: scopeMeta.color, borderColor: `color-mix(in srgb, ${scopeMeta.color} 35%, transparent)`, backgroundColor: `color-mix(in srgb, ${scopeMeta.color} 8%, transparent)` }"
-      >
-        <v-icon :icon="scopeMeta.icon" size="14" />
-        {{ scopeMeta.label }}
-      </span>
-    </div>
+        <!-- Everything the tabs below do not already say. Pile and wishlist
+             counts live in the tab labels, so repeating them here would show
+             the same number twice within 100px — and via a different query,
+             which is a disagreement waiting to happen. -->
+        <ul class="tpb-meta">
+          <li>
+            <template v-if="country">
+              <span class="tpb-meta__flag">{{ country.flag }}</span>
+              <span>{{ [profile.city, country.name].filter(Boolean).join(', ') }}</span>
+            </template>
+            <template v-else-if="profile.city">
+              <v-icon icon="mdi-map-marker-outline" size="15" />
+              <span>{{ profile.city }}</span>
+            </template>
+            <span v-else class="tpb-meta__absent">{{ t('traderProfile.noLocationSet') }}</span>
+          </li>
 
-    <!-- Stats -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <div
-        v-for="stat in statItems"
-        :key="stat.label"
-        class="flex flex-col gap-2 rounded-xl border"
-        style="background: var(--c-surface-2); border-color: var(--c-border); padding: 14px"
-      >
-        <div class="flex items-center gap-2">
-          <v-icon :icon="stat.icon" size="15" :color="stat.color" />
-          <span class="text-xs font-semibold uppercase tracking-wide" :style="{ color: stat.color }">{{ stat.label }}</span>
-        </div>
-        <span class="text-2xl font-bold tabular-nums leading-tight" style="color: var(--c-text)">{{ stat.value }}</span>
-        <span v-if="stat.sub" class="text-xs" style="color: var(--c-muted)">{{ stat.sub }}</span>
+          <!-- Scope only earns emphasis when it is a constraint: "worldwide"
+               is the permissive default and says nothing you need to act on. -->
+          <li :class="{ 'tpb-meta--notable': scopeRestricted }">
+            <v-icon :icon="scopeMeta.icon" size="15" />
+            <span>{{ scopeMeta.label }}</span>
+          </li>
+
+          <li>
+            <v-icon icon="mdi-handshake-outline" size="15" />
+            <span>{{ t('traderProfile.tradesCompleted', { count: completedTrades }, completedTrades) }}</span>
+          </li>
+
+          <!-- Omitted rather than shown as "—": an unrated trader has no score,
+               and a dash reads as a broken value. The Reviews tab says 0. -->
+          <li v-if="ratingCount > 0" class="tpb-meta--rating">
+            <v-icon icon="mdi-star" size="15" />
+            <span class="tpb-meta__score">{{ profile.avg_rating }}</span>
+            <!-- Parenthesised: "4.3 3 reviews" runs two unrelated numbers
+                 together and reads as one broken figure. -->
+            <span>({{ t('traderProfile.reviewCount', { count: ratingCount }, ratingCount) }})</span>
+          </li>
+        </ul>
       </div>
     </div>
 
@@ -197,7 +194,7 @@ const tabItems = computed(() => [
     </div>
 
     <!-- Trade pile -->
-    <div v-if="activeTab === 'pile'">
+    <div v-if="activeTab === 'pile'" class="tpb-panel">
       <div v-if="tradePile.length > 0" class="flex flex-wrap gap-3">
         <v-tooltip
           v-for="card in tradePile"
@@ -222,7 +219,7 @@ const tabItems = computed(() => [
     </div>
 
     <!-- Wishlist -->
-    <div v-else-if="activeTab === 'wish'">
+    <div v-else-if="activeTab === 'wish'" class="tpb-panel">
       <div v-if="wishlist.length > 0" class="flex flex-wrap gap-3">
         <v-tooltip
           v-for="card in wishlist"
@@ -247,7 +244,7 @@ const tabItems = computed(() => [
     </div>
 
     <!-- Reviews -->
-    <div v-else-if="activeTab === 'reviews'">
+    <div v-else-if="activeTab === 'reviews'" class="tpb-panel">
       <div v-if="reviews.length > 0" class="flex flex-col divide-y" style="border-color: var(--c-border)">
         <div v-for="r in reviews" :key="r.rater_id + r.created_at" class="flex flex-col gap-2 py-4">
           <div class="flex items-center gap-2">
@@ -277,6 +274,46 @@ const tabItems = computed(() => [
 </template>
 
 <style scoped>
+/* ── Rhythm ────────────────────────────────────────────────────────────────
+   Was gap-6 (24px) between every block, which gave the page one flat beat.
+   Now: the meta line sits tight under the name because it is part of the same
+   thought, and the tabs get real air because they start a new one. */
+.tpb { display: flex; flex-direction: column; }
+.tpb > .tpb-tabs { margin-top: 30px; }
+.tpb-panel { margin-top: 20px; }
+.tpb-skel-lines { gap: 10px; }
+.tpb-skel-cards { margin-top: 30px; }
+
+/* ── Meta line ─────────────────────────────────────────────────────────────
+   Replaces four bordered stat tiles. They were cards inside a card, all four
+   the same size and shape, and the two loudest numbers in them were repeated
+   verbatim by the tab labels underneath. As a text line the facts read in one
+   pass and the name is unambiguously the largest thing on the page.
+
+   Icons carry the only colour here, so no small text sits on a tinted surface:
+   the old 12px labels needed 4.5:1 against surface-2 and three of the eight
+   label/theme combinations missed it. */
+.tpb-meta {
+  list-style: none; margin: 7px 0 0; padding: 0;
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 3px 18px;
+  font-size: 0.9375rem; color: var(--c-muted);
+}
+.tpb-meta li { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.tpb-meta .v-icon { color: var(--c-muted); flex-shrink: 0; }
+.tpb-meta__flag { font-size: 1rem; line-height: 1; }
+.tpb-meta__absent { opacity: 0.6; }
+
+/* Emphasis by weight and text colour, not by another saturated hue. */
+.tpb-meta--notable { color: var(--c-text); font-weight: 600; }
+.tpb-meta--notable .v-icon { color: var(--c-trade); }
+
+/* Amber star matches the seller rating elsewhere in the app
+   (AnnounceDetailDialog, AnnounceCard), rather than inventing a colour or
+   spending teal, which is reserved for confirmed mutual matches. */
+.tpb-meta--rating .v-icon { color: #f59e0b; }
+.tpb-meta__score { color: var(--c-text); font-weight: 700; font-variant-numeric: tabular-nums; }
+
 /* ── Identity ──────────────────────────────────────────────────────────────
    Was a single non-wrapping flex row sized for a 720px dialog. On a page at
    375px the avatar and the scope badge left the name about 50px, which
@@ -315,30 +352,21 @@ const tabItems = computed(() => [
   overflow-wrap: anywhere;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-.tpb-id__where {
-  margin-top: 4px; font-size: 1rem; color: var(--c-muted);
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-}
-
-.tpb-id__scope {
-  display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;
-  padding: 8px 12px; border-radius: 8px; border: 1px solid;
-  font-size: 0.75rem; font-weight: 600;
-  margin-left: auto;
-}
 
 /* Content-driven, not a device guess: below this the three-across row can no
    longer give the name a readable column (80px avatar + ~105px badge + gaps
    eats ~225px of it). */
 @media (max-width: 560px) {
-  .tpb-id { gap: 14px; }
+  /* The meta line stacks here, so centring would float the avatar against a
+     tall text column and pull it away from the name it belongs to. */
+  .tpb-id { gap: 14px; align-items: flex-start; }
   .tpb-id__avatar { width: 60px; height: 60px; border-radius: 14px; font-size: 1.5rem; }
   .tpb-id__name { font-size: 1.375rem; }
-  .tpb-id__where { font-size: 0.9375rem; }
-  /* Basis forces the badge onto its own line; max-content keeps it hugging its
-     label. Stretching it full width would make a passive status read as a
-     button, and nothing here is clickable. */
-  .tpb-id__scope { flex: 0 1 100%; max-width: max-content; margin-left: 0; }
+  /* Tighter column gap so two short facts can share a line instead of each
+     taking its own; the meta line is four items and would otherwise become a
+     four-line stack on a phone. */
+  .tpb-meta { font-size: 0.875rem; gap: 2px 13px; }
+  .tpb > .tpb-tabs { margin-top: 24px; }
 }
 
 /* ── Tabs ──────────────────────────────────────────────────────────────────
