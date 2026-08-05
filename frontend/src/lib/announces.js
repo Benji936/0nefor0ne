@@ -69,6 +69,43 @@ export async function fetchAnnounces() {
 }
 
 /**
+ * One seller's live announces, for their profile.
+ *
+ * Unlike fetchAnnounces this never returns expired rows, not even to the
+ * seller themselves: a profile is what you show other people, and a listing
+ * that has aged out is not something they can act on. The Trade Center is
+ * where an owner manages their own expired posts.
+ *
+ * Returns [] rather than throwing. Announces are one block on a page that has
+ * plenty else to say, so a failure here must not take the profile down.
+ */
+export async function fetchAnnouncesBySeller(sellerId, { limit = 6 } = {}) {
+  if (!sellerId) return [];
+  const { data, error } = await getClient()
+    .from("announce")
+    .select(`
+      id, title, kind, price, currency, created_at, archetype, want_detail,
+      images:announce_image(id, url, sort_order),
+      wantCards:announce_want_card(id, card_name, qty, sort_order)
+    `)
+    .eq("seller", sellerId)
+    .eq("status", "active")
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("fetchAnnouncesBySeller failed", error);
+    return [];
+  }
+  return (data ?? []).map((a) => ({
+    ...a,
+    images: (a.images ?? []).sort((x, y) => x.sort_order - y.sort_order),
+    wantCards: (a.wantCards ?? []).sort((x, y) => x.sort_order - y.sort_order),
+  }));
+}
+
+/**
  * Fetch announces for the current user (all statuses).
  * @returns {Promise<Array>}
  */

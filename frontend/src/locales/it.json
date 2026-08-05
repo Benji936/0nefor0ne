@@ -537,6 +537,10 @@
     "declinePlaceholder": "Facoltativo  spiega perché rifiuti…"
   },
   "traderProfile": {
+    "listingsTitle": "Annunci attivi",
+    "listingSelling": "Vende",
+    "listingsOpen": "Vedi tutti nel centro scambi",
+    "reviewScore": "{score} su 5",
     "binderCount": "{count} carta | {count} carte",
     "binderSearch": "Cerca carte",
     "binderSet": "Filtra per set",

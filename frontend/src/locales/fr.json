@@ -537,6 +537,10 @@
     "declinePlaceholder": "Optionnel  expliquez pourquoi vous refusez…"
   },
   "traderProfile": {
+    "listingsTitle": "Annonces actives",
+    "listingSelling": "Vend",
+    "listingsOpen": "Tout voir dans le centre d'échange",
+    "reviewScore": "{score} sur 5",
     "binderCount": "{count} carte | {count} cartes",
     "binderSearch": "Rechercher des cartes",
     "binderSet": "Filtrer par extension",

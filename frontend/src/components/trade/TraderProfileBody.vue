@@ -12,6 +12,7 @@ import { useI18n } from 'vue-i18n';
 import { getClient } from '@/lib/supabaseClient';
 import { cardImage } from '@/lib/cardImage';
 import CardBinder from '@/components/trade/CardBinder.vue';
+import TraderAnnounces from '@/components/trade/TraderAnnounces.vue';
 import { countryByCode } from '@/lib/countries';
 import { fetchUserTradePile, fetchUserWishlist, fetchWishlistNames } from '@/lib/matches';
 import { timeAgo } from '@/lib/notifications';
@@ -110,7 +111,8 @@ async function load(id) {
     profile.value   = profileRes.data?.[0] ?? null;
     tradePile.value = pile;
     wishlist.value  = wish;
-    reviews.value   = reviewsRes.data ?? [];
+    reviews.value   = await withRaters(reviewsRes.data ?? []);
+    if (token !== _loadToken) return;
     emit('loaded', profile.value);
   } catch (e) {
     if (token !== _loadToken) return;
@@ -119,6 +121,24 @@ async function load(id) {
   } finally {
     if (token === _loadToken) loading.value = false;
   }
+}
+
+/**
+ * Attach each review's author. A bare list of stars from nobody in particular
+ * is weak evidence; a name makes it a reference. Done as a second query rather
+ * than a PostgREST embed so it does not depend on the FK constraint's
+ * generated name, and it degrades to unnamed reviews rather than failing.
+ */
+async function withRaters(rows) {
+  const ids = [...new Set(rows.map((r) => r.rater_id).filter(Boolean))];
+  if (!ids.length) return rows;
+  const { data, error } = await getClient()
+    .from('Trader')
+    .select('id, Name, avatar_url')
+    .in('id', ids);
+  if (error) { console.error('review raters failed', error); return rows; }
+  const byId = Object.fromEntries((data ?? []).map((tr) => [tr.id, tr]));
+  return rows.map((r) => ({ ...r, rater: byId[r.rater_id] ?? null }));
 }
 
 function retry() { load(props.traderId); }
@@ -287,6 +307,9 @@ function onTabKeydown(e) {
       </ul>
     </section>
 
+    <!-- What they are after: the other half of a trade. -->
+    <TraderAnnounces :trader-id="traderId" />
+
     <!-- Tab row -->
     <div
       ref="tabList"
@@ -333,22 +356,32 @@ function onTabKeydown(e) {
 
     <!-- Reviews -->
     <div v-else-if="activeTab === 'reviews'" :id="panelId('reviews')" role="tabpanel" :aria-labelledby="tabId('reviews')" tabindex="0" class="tpb-panel">
-      <div v-if="reviews.length > 0" class="flex flex-col divide-y" style="border-color: var(--c-border)">
-        <div v-for="r in reviews" :key="r.rater_id + r.created_at" class="flex flex-col gap-2 py-4">
-          <div class="flex items-center gap-2">
-            <div class="flex gap-1">
+      <ul v-if="reviews.length > 0" class="tpb-rev">
+        <li v-for="r in reviews" :key="r.rater_id + r.created_at" class="tpb-rev__item">
+          <div class="tpb-rev__line">
+            <!-- Who said it. A row of stars from nobody in particular is weak
+                 evidence; a name makes it a reference. -->
+            <img v-if="r.rater?.avatar_url" :src="r.rater.avatar_url" alt="" class="tpb-rev__avatar" loading="lazy" />
+            <span v-else class="tpb-rev__avatar tpb-rev__avatar--letter">
+              {{ (r.rater?.Name || '?')[0].toUpperCase() }}
+            </span>
+            <span class="tpb-rev__who">{{ r.rater?.Name || t('userCard.anonymous') }}</span>
+
+            <span class="tpb-rev__stars" :aria-label="t('traderProfile.reviewScore', { score: r.score })">
               <v-icon
-                v-for="s in 5" :key="s"
-                :icon="s <= r.score ? 'mdi-star' : 'mdi-star-outline'"
-                size="16"
-                style="color: var(--c-mutual)"
+                v-for="n in 5" :key="n"
+                :icon="n <= r.score ? 'mdi-star' : 'mdi-star-outline'"
+                size="15"
+                aria-hidden="true"
               />
-            </div>
-            <span class="text-xs ml-auto" style="color: var(--c-muted)">{{ timeAgo(r.created_at) }}</span>
+            </span>
+
+            <!-- timeAgo needs `t`, or it silently renders English in every locale. -->
+            <span class="tpb-rev__when">{{ timeAgo(r.created_at, t, { short: true }) }}</span>
           </div>
-          <p v-if="r.comment" class="text-sm leading-relaxed" style="color: var(--c-text)">{{ r.comment }}</p>
-        </div>
-      </div>
+          <p v-if="r.comment" class="tpb-rev__comment">{{ r.comment }}</p>
+        </li>
+      </ul>
       <p v-else class="text-sm py-6 text-center" style="color: var(--c-muted)">{{ t('traderProfile.noReviewsYet') }}</p>
     </div>
 
@@ -568,6 +601,40 @@ function onTabKeydown(e) {
 .tpb-skel-avatar { width: 80px; height: 80px; border-radius: 16px; }
 @media (max-width: 560px) { .tpb-skel-avatar { width: 60px; height: 60px; border-radius: 14px; } }
 
+
+/* ── Reviews ───────────────────────────────────────────────────────────────
+   Most ratings carry no comment, so the score line has to stand on its own
+   rather than look like a card missing its body. Bordered rows, no tiles. */
+.tpb-rev { list-style: none; margin: 0; padding: 0; }
+.tpb-rev__item { padding: 11px 2px; border-bottom: 1px solid var(--c-border); }
+.tpb-rev__item:first-child { border-top: 1px solid var(--c-border); }
+.tpb-rev__line { display: flex; align-items: center; gap: 9px; }
+.tpb-rev__avatar {
+  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+  object-fit: cover; background: var(--c-surface-2);
+}
+.tpb-rev__avatar--letter {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; color: var(--c-muted);
+}
+.tpb-rev__who {
+  font-size: 13.5px; font-weight: 700; color: var(--c-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+/* Amber matches the seller rating elsewhere in the app. Teal was wrong here:
+   it is reserved for a confirmed mutual match. */
+.tpb-rev__stars { display: inline-flex; gap: 1px; margin-left: auto; flex-shrink: 0; }
+.tpb-rev__stars .v-icon { color: #f59e0b; }
+.tpb-rev__when {
+  flex-shrink: 0; font-size: 12px; color: var(--c-muted);
+  font-variant-numeric: tabular-nums;
+}
+.tpb-rev__comment {
+  margin: 7px 0 0 31px; font-size: 13.5px; line-height: 1.55; color: var(--c-text);
+}
+@media (max-width: 560px) {
+  .tpb-rev__comment { margin-left: 0; }
+}
 
 /* ── Focus ─────────────────────────────────────────────────────────────────
    The tab is one stop and the panel is the next, so both need a visible ring:

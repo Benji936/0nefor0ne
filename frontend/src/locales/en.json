@@ -537,6 +537,10 @@
     "declinePlaceholder": "Optional  let them know why you're declining…"
   },
   "traderProfile": {
+    "listingsTitle": "Active listings",
+    "listingSelling": "Sell",
+    "listingsOpen": "See all in Trade Center",
+    "reviewScore": "{score} out of 5",
     "binderCount": "{count} card | {count} cards",
     "binderSearch": "Search cards",
     "binderSet": "Filter by set",

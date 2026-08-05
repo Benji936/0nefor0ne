@@ -537,6 +537,10 @@
     "declinePlaceholder": "Optional  teile mit, warum du ablehnst…"
   },
   "traderProfile": {
+    "listingsTitle": "Aktive Anzeigen",
+    "listingSelling": "Verkauf",
+    "listingsOpen": "Alle im Tauschcenter ansehen",
+    "reviewScore": "{score} von 5",
     "binderCount": "{count} Karte | {count} Karten",
     "binderSearch": "Karten suchen",
     "binderSet": "Nach Set filtern",
