@@ -11,6 +11,7 @@ import { ref, computed, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { getClient } from '@/lib/supabaseClient';
 import { cardImage } from '@/lib/cardImage';
+import CardBinder from '@/components/trade/CardBinder.vue';
 import { countryByCode } from '@/lib/countries';
 import { fetchUserTradePile, fetchUserWishlist, fetchWishlistNames } from '@/lib/matches';
 import { timeAgo } from '@/lib/notifications';
@@ -322,53 +323,12 @@ function onTabKeydown(e) {
 
     <!-- Trade pile -->
     <div v-if="activeTab === 'pile'" :id="panelId('pile')" role="tabpanel" :aria-labelledby="tabId('pile')" tabindex="0" class="tpb-panel">
-      <div v-if="tradePile.length > 0" class="flex flex-wrap gap-3">
-        <v-tooltip
-          v-for="card in tradePile"
-          :key="card.id"
-          :text="`${card.name}${card.extension ? ' · ' + card.extension : ''}${card.condition ? ' (' + card.condition + ')' : ''}`"
-          location="top"
-          open-on-click
-        >
-          <template #activator="{ props: tip }">
-            <img
-              v-bind="tip"
-              :src="cardImage(card.image_id)"
-              :alt="card.name"
-              class="profile-card rounded object-contain shrink-0"
-              :class="{ 'profile-card--wanted': card.matchesMyWishlist }"
-              style="height:96px; width:68px; background:var(--c-surface-2)"
-              loading="lazy"
-            />
-          </template>
-        </v-tooltip>
-      </div>
-      <p v-else class="text-sm py-6 text-center" style="color: var(--c-muted)">{{ t('traderProfile.noCardsForTrade') }}</p>
+      <CardBinder :cards="tradePile" :empty-label="t('traderProfile.noCardsForTrade')" />
     </div>
 
     <!-- Wishlist -->
     <div v-else-if="activeTab === 'wish'" :id="panelId('wish')" role="tabpanel" :aria-labelledby="tabId('wish')" tabindex="0" class="tpb-panel">
-      <div v-if="wishlist.length > 0" class="flex flex-wrap gap-3">
-        <v-tooltip
-          v-for="card in wishlist"
-          :key="card.id"
-          :text="`${card.name}${card.extension ? ' · ' + card.extension : ''}`"
-          location="top"
-          open-on-click
-        >
-          <template #activator="{ props: tip }">
-            <img
-              v-bind="tip"
-              :src="cardImage(card.image_id)"
-              :alt="card.name"
-              class="profile-card rounded object-contain shrink-0"
-              style="height:96px; width:68px; background:var(--c-surface-2); opacity:0.85"
-              loading="lazy"
-            />
-          </template>
-        </v-tooltip>
-      </div>
-      <p v-else class="text-sm py-6 text-center" style="color: var(--c-muted)">{{ t('traderProfile.wishlistEmpty') }}</p>
+      <CardBinder :cards="wishlist" :empty-label="t('traderProfile.wishlistEmpty')" dim />
     </div>
 
     <!-- Reviews -->
@@ -608,20 +568,6 @@ function onTabKeydown(e) {
 .tpb-skel-avatar { width: 80px; height: 80px; border-radius: 16px; }
 @media (max-width: 560px) { .tpb-skel-avatar { width: 60px; height: 60px; border-radius: 14px; } }
 
-.profile-card {
-  outline: 1px solid rgba(255,255,255,0.07);
-  transition: transform 0.15s cubic-bezier(0.22,1,0.36,1), box-shadow 0.15s ease;
-}
-.profile-card:hover {
-  transform: translateY(-2px) scale(1.06);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-  outline-color: rgba(255,255,255,0.2);
-}
-/* Same signal repeated in the binder, so scrolling past the match block does
-   not lose the answer. Outline rather than a badge: 68px of card leaves no
-   room for chrome, and the ring reads at a glance across a wall of art. */
-.profile-card--wanted { outline: 2px solid var(--c-trade); }
-.profile-card--wanted:hover { outline-color: var(--c-trade); }
 
 /* ── Focus ─────────────────────────────────────────────────────────────────
    The tab is one stop and the panel is the next, so both need a visible ring:
@@ -663,8 +609,6 @@ function onTabKeydown(e) {
    at once. */
 @media (prefers-reduced-motion: reduce) {
   .animate-pulse { animation: none; }
-  .profile-card { transition: none; }
-  .profile-card:hover { transform: none; }
   .tpb-match__card { transition: none; }
   .tpb-match__card:hover { transform: none; }
   .tpb-match__cta { transition: none; }

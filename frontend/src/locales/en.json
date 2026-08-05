@@ -537,6 +537,14 @@
     "declinePlaceholder": "Optional  let them know why you're declining…"
   },
   "traderProfile": {
+    "binderCount": "{count} card | {count} cards",
+    "binderSearch": "Search cards",
+    "binderSet": "Filter by set",
+    "binderAllSets": "All sets",
+    "binderWantedOnly": "Only what I want",
+    "binderShowing": "Showing {shown} of {total}",
+    "binderLoadMore": "Load {count} more",
+    "binderNoResults": "No cards match.",
     "matchTitle": "{count} card you want | {count} cards you want",
     "tabsLabel": "Trader profile sections",
     "loadFailed": "Could not load this profile.",

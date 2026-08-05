@@ -537,6 +537,14 @@
     "declinePlaceholder": "Optional  teile mit, warum du ablehnst…"
   },
   "traderProfile": {
+    "binderCount": "{count} Karte | {count} Karten",
+    "binderSearch": "Karten suchen",
+    "binderSet": "Nach Set filtern",
+    "binderAllSets": "Alle Sets",
+    "binderWantedOnly": "Nur was ich suche",
+    "binderShowing": "{shown} von {total}",
+    "binderLoadMore": "{count} weitere laden",
+    "binderNoResults": "Keine Karte passt.",
     "matchTitle": "{count} Karte, die du suchst | {count} Karten, die du suchst",
     "tabsLabel": "Profilbereiche",
     "loadFailed": "Dieses Profil konnte nicht geladen werden.",

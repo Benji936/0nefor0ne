@@ -537,6 +537,14 @@
     "declinePlaceholder": "Facoltativo  spiega perché rifiuti…"
   },
   "traderProfile": {
+    "binderCount": "{count} carta | {count} carte",
+    "binderSearch": "Cerca carte",
+    "binderSet": "Filtra per set",
+    "binderAllSets": "Tutti i set",
+    "binderWantedOnly": "Solo quello che cerco",
+    "binderShowing": "{shown} su {total}",
+    "binderLoadMore": "Carica altre {count}",
+    "binderNoResults": "Nessuna carta corrisponde.",
     "matchTitle": "{count} carta che cerchi | {count} carte che cerchi",
     "tabsLabel": "Sezioni del profilo",
     "loadFailed": "Impossibile caricare questo profilo.",

@@ -537,6 +537,14 @@
     "declinePlaceholder": "Optionnel  expliquez pourquoi vous refusez…"
   },
   "traderProfile": {
+    "binderCount": "{count} carte | {count} cartes",
+    "binderSearch": "Rechercher des cartes",
+    "binderSet": "Filtrer par extension",
+    "binderAllSets": "Toutes les extensions",
+    "binderWantedOnly": "Seulement ce que je cherche",
+    "binderShowing": "{shown} sur {total}",
+    "binderLoadMore": "Afficher {count} de plus",
+    "binderNoResults": "Aucune carte ne correspond.",
     "matchTitle": "{count} carte que vous cherchez | {count} cartes que vous cherchez",
     "tabsLabel": "Sections du profil",
     "loadFailed": "Impossible de charger ce profil.",
