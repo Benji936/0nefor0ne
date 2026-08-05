@@ -97,29 +97,24 @@ function goBack() {
       {{ t('traderProfile.back') }}
     </button>
 
-    <div class="tp__card">
-      <div class="tp__band" />
-      <div class="tp__body">
-        <!-- heading-level 1: on a page the trader's name is the document's
-             heading. The dialog leaves it at the default 2. -->
-        <TraderProfileBody :trader-id="traderId" :heading-level="1" :viewer-id="currentUserId" @loaded="profile = $event" @propose="proposeOpen = true" @auth-required="onAuthRequired">
-          <template #not-found-action>
-            <router-link class="tp__recover" :to="{ name: 'TradeCenter', params: { locale } }">
-              <v-icon icon="mdi-arrow-left" size="16" />
-              {{ t('traderProfile.toTradeCenter') }}
-            </router-link>
-          </template>
-        </TraderProfileBody>
+    <!-- heading-level 1: on a page the trader's name is the document's
+         heading. The dialog leaves it at the default 2. -->
+    <TraderProfileBody :trader-id="traderId" :heading-level="1" :viewer-id="currentUserId" @loaded="profile = $event" @propose="proposeOpen = true" @auth-required="onAuthRequired">
+      <template #not-found-action>
+        <router-link class="tp__recover" :to="{ name: 'TradeCenter', params: { locale } }">
+          <v-icon icon="mdi-arrow-left" size="16" />
+          {{ t('traderProfile.toTradeCenter') }}
+        </router-link>
+      </template>
+    </TraderProfileBody>
 
-        <!-- Proposing needs an account, so a signed-out visitor gets no button
-             rather than one that dead-ends in the proposal dialog. -->
-        <div v-if="profile && currentUserId && !isSelf" class="tp__actions">
-          <button type="button" class="tp__propose" @click="proposeOpen = true">
-            <v-icon icon="mdi-swap-horizontal" size="18" />
-            {{ t('traderProfile.proposeTrade') }}
-          </button>
-        </div>
-      </div>
+    <!-- Proposing needs an account, so a signed-out visitor gets no button
+         rather than one that dead-ends in the proposal dialog. -->
+    <div v-if="profile && currentUserId && !isSelf" class="tp__actions">
+      <button type="button" class="tp__propose" @click="proposeOpen = true">
+        <v-icon icon="mdi-swap-horizontal" size="18" />
+        {{ t('traderProfile.proposeTrade') }}
+      </button>
     </div>
 
     <ProposeTradeDialog v-model="proposeOpen" :user="proposeUser" />
@@ -127,9 +122,13 @@ function goBack() {
 </template>
 
 <style scoped>
+/* The page is the container. There is no card: a single full-width panel
+   wrapping the entire contents of a page it exactly matches is a border drawn
+   around nothing, and the gradient strip on top of it carried no meaning at
+   all. Width and rhythm do the containing instead. */
 .tp {
-  display: flex; flex-direction: column; gap: 16px;
-  padding: 24px 20px 48px; max-width: 900px; margin: 0 auto; width: 100%;
+  display: flex; flex-direction: column; gap: 14px;
+  padding: 24px 24px 64px; max-width: 900px; margin: 0 auto; width: 100%;
 }
 
 .tp__back {
@@ -141,13 +140,6 @@ function goBack() {
 }
 .tp__back:hover { color: var(--c-text); background: var(--c-surface-2); }
 .tp__back:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
-
-.tp__card {
-  border: 1.5px solid var(--c-border); border-radius: 20px;
-  background: var(--c-surface); overflow: hidden;
-}
-.tp__band { height: 8px; background: linear-gradient(90deg, var(--c-trade), var(--c-accent)); }
-.tp__body { padding: 24px 28px 28px; }
 
 .tp__actions {
   display: flex; justify-content: flex-end;
@@ -164,8 +156,7 @@ function goBack() {
 .tp__propose:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
 
 @media (max-width: 600px) {
-  .tp { padding: 16px 12px 40px; }
-  .tp__body { padding: 18px 16px 20px; }
+  .tp { padding: 16px 16px 48px; }
   /* Full-width primary action: easier to hit one-handed than a right-aligned
      button, which on a phone sits furthest from the thumb. */
   .tp__actions { justify-content: stretch; }
