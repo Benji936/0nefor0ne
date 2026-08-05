@@ -537,6 +537,7 @@
     "declinePlaceholder": "Optionnel  expliquez pourquoi vous refusez…"
   },
   "traderProfile": {
+    "communitiesTitle": "Communautés",
     "signedOutLead": "{count} carte proposée à l'échange. | {count} cartes proposées à l'échange.",
     "signedOutCta": "Connectez-vous pour voir vos correspondances",
     "shareDesc": "{name} propose {count} cartes à l'échange sur One for One. {where}.",

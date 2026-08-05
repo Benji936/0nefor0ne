@@ -537,6 +537,7 @@
     "declinePlaceholder": "Facoltativo  spiega perché rifiuti…"
   },
   "traderProfile": {
+    "communitiesTitle": "Community",
     "signedOutLead": "{count} carta disponibile allo scambio. | {count} carte disponibili allo scambio.",
     "signedOutCta": "Accedi per vedere le tue corrispondenze",
     "shareDesc": "{name} ha {count} carte disponibili allo scambio su One for One. {where}.",

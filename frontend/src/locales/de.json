@@ -537,6 +537,7 @@
     "declinePlaceholder": "Optional  teile mit, warum du ablehnst…"
   },
   "traderProfile": {
+    "communitiesTitle": "Communitys",
     "signedOutLead": "{count} Karte zum Tausch. | {count} Karten zum Tausch.",
     "signedOutCta": "Anmelden, um deine Treffer zu sehen",
     "shareDesc": "{name} bietet {count} Karten zum Tausch auf One for One. {where}.",

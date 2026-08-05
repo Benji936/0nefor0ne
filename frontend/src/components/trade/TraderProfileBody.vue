@@ -13,6 +13,7 @@ import { getClient } from '@/lib/supabaseClient';
 import { cardImage } from '@/lib/cardImage';
 import CardBinder from '@/components/trade/CardBinder.vue';
 import TraderAnnounces from '@/components/trade/TraderAnnounces.vue';
+import TraderCommunities from '@/components/trade/TraderCommunities.vue';
 import { countryByCode } from '@/lib/countries';
 import { fetchUserTradePile, fetchUserWishlist, fetchWishlistNames } from '@/lib/matches';
 import { timeAgo } from '@/lib/notifications';
@@ -322,6 +323,9 @@ function onTabKeydown(e) {
 
     <!-- What they are after: the other half of a trade. -->
     <TraderAnnounces :trader-id="traderId" />
+
+    <!-- Where they play. Two people in the same shop are an easier trade. -->
+    <TraderCommunities :trader-id="traderId" />
 
     <!-- Tab row -->
     <div

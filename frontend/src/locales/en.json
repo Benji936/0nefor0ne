@@ -537,6 +537,7 @@
     "declinePlaceholder": "Optional  let them know why you're declining…"
   },
   "traderProfile": {
+    "communitiesTitle": "Communities",
     "signedOutLead": "{count} card up for trade. | {count} cards up for trade.",
     "signedOutCta": "Sign in to see your matches",
     "shareDesc": "{name} has {count} cards up for trade on One for One. {where}.",
