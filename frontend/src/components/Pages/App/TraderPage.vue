@@ -14,7 +14,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useHead } from "@unhead/vue";
 import TraderProfileBody from "@/components/trade/TraderProfileBody.vue";
 import ProposeTradeDialog from "@/components/trade/ProposeTradeDialog.vue";
-import { getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
+import { getCurrentSession, onAuthChange, signInWithDiscord } from "@/lib/supabaseClient";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -37,10 +37,46 @@ const isSelf = computed(() => !!currentUserId.value && currentUserId.value === t
 
 const displayName = computed(() => profile.value?.name || t("userCard.anonymous"));
 
-useHead(computed(() => ({
-  title: profile.value ? t("traderProfile.metaTitle", { name: displayName.value }) : undefined,
-  meta: [{ name: "robots", content: "noindex, nofollow" }],
-})));
+// Shareable but not indexed, which is the whole point of the link: Discord and
+// the like read og:*, search engines obey robots. The two are independent, so
+// a rich unfurl costs nothing in search exposure.
+const BASE = "https://0nefor.one";
+const shareTitle = computed(() =>
+  profile.value ? t("traderProfile.metaTitle", { name: displayName.value }) : "");
+const shareDesc = computed(() => {
+  if (!profile.value) return "";
+  const where = [profile.value.city, profile.value.country_code].filter(Boolean).join(", ");
+  return t("traderProfile.shareDesc", {
+    name: displayName.value,
+    count: Number(profile.value.trade_pile_count ?? 0),
+    where: where || t("traderProfile.noLocationSet"),
+  });
+});
+
+useHead(computed(() => {
+  const meta = [{ name: "robots", content: "noindex, nofollow" }];
+  if (profile.value) {
+    meta.push(
+      { property: "og:title", content: shareTitle.value },
+      { property: "og:description", content: shareDesc.value },
+      { property: "og:url", content: `${BASE}${route.path}` },
+      { name: "twitter:title", content: shareTitle.value },
+      { name: "twitter:description", content: shareDesc.value },
+    );
+    // Only override the site-wide logo when there is a real face to show.
+    if (profile.value.avatar_url) {
+      meta.push({ property: "og:image", content: profile.value.avatar_url });
+    }
+  }
+  return { title: profile.value ? shareTitle.value : undefined, meta };
+}));
+
+// Signing in leaves the page and returns here, so the visitor lands back on
+// the profile they were sent, now with matching switched on.
+async function onAuthRequired() {
+  try { await signInWithDiscord(); }
+  catch (e) { console.error("sign-in failed", e); }
+}
 
 // ── Propose ───────────────────────────────────────────────────────────────
 const proposeOpen = ref(false);
@@ -66,7 +102,7 @@ function goBack() {
       <div class="tp__body">
         <!-- heading-level 1: on a page the trader's name is the document's
              heading. The dialog leaves it at the default 2. -->
-        <TraderProfileBody :trader-id="traderId" :heading-level="1" :viewer-id="currentUserId" @loaded="profile = $event" @propose="proposeOpen = true">
+        <TraderProfileBody :trader-id="traderId" :heading-level="1" :viewer-id="currentUserId" @loaded="profile = $event" @propose="proposeOpen = true" @auth-required="onAuthRequired">
           <template #not-found-action>
             <router-link class="tp__recover" :to="{ name: 'TradeCenter', params: { locale } }">
               <v-icon icon="mdi-arrow-left" size="16" />

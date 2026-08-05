@@ -29,7 +29,7 @@ const props = defineProps({
   // viewer actually wants, which is the question the page exists to answer.
   viewerId: { type: String, default: null },
 });
-const emit = defineEmits(['loaded', 'propose']);
+const emit = defineEmits(['loaded', 'propose', 'auth-required']);
 
 const { t } = useI18n();
 
@@ -305,6 +305,19 @@ function onTabKeydown(e) {
           </v-tooltip>
         </li>
       </ul>
+    </section>
+
+    <!-- Signed out, matching is impossible: the viewer has no wishlist to
+         compare against. This takes the match block's slot rather than
+         leaving a hole, because a shared link landing on a stranger's page is
+         the single best moment to explain what the site is for. -->
+    <section v-else-if="!viewerId && tradePile.length" class="tpb-signin">
+      <p class="tpb-signin__lead">
+        {{ t('traderProfile.signedOutLead', { count: tradePile.length }, tradePile.length) }}
+      </p>
+      <button type="button" class="tpb-signin__cta" @click="emit('auth-required')">
+        {{ t('traderProfile.signedOutCta') }}
+      </button>
     </section>
 
     <!-- What they are after: the other half of a trade. -->
@@ -601,6 +614,35 @@ function onTabKeydown(e) {
 .tpb-skel-avatar { width: 80px; height: 80px; border-radius: 16px; }
 @media (max-width: 560px) { .tpb-skel-avatar { width: 60px; height: 60px; border-radius: 14px; } }
 
+
+/* ── Signed-out invitation ─────────────────────────────────────────────────
+   Deliberately quieter than the match block: that one reports a fact worth
+   acting on, this one asks for something. Same slot, less voice. */
+.tpb-signin {
+  margin-top: 26px; padding: 15px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 18px; flex-wrap: wrap;
+  border-radius: 14px;
+  border: 1px solid var(--c-border);
+  background: var(--c-surface-2);
+}
+.tpb-signin__lead { margin: 0; font-size: 0.9375rem; color: var(--c-text); }
+.tpb-signin__cta {
+  flex-shrink: 0;
+  display: inline-flex; align-items: center;
+  min-height: 38px; padding: 0 16px; border-radius: 10px;
+  background: var(--c-trade); color: #fff; border: none; cursor: pointer;
+  font-size: 13px; font-weight: 700; white-space: nowrap;
+  transition: opacity 0.15s ease;
+}
+.tpb-signin__cta:hover { opacity: 0.88; }
+.tpb-signin__cta:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
+@media (pointer: coarse) { .tpb-signin__cta { min-height: 44px; } }
+@media (max-width: 560px) {
+  .tpb-signin { margin-top: 20px; }
+  .tpb-signin__cta { width: 100%; justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) { .tpb-signin__cta { transition: none; } }
 
 /* ── Reviews ───────────────────────────────────────────────────────────────
    Most ratings carry no comment, so the score line has to stand on its own

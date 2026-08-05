@@ -537,6 +537,9 @@
     "declinePlaceholder": "Optional  let them know why you're declining…"
   },
   "traderProfile": {
+    "signedOutLead": "{count} card up for trade. | {count} cards up for trade.",
+    "signedOutCta": "Sign in to see your matches",
+    "shareDesc": "{name} has {count} cards up for trade on One for One. {where}.",
     "binderRarity": "Filter by rarity",
     "binderAllRarities": "All rarities",
     "listingsTitle": "Active listings",
