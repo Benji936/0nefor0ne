@@ -537,6 +537,10 @@
     "declinePlaceholder": "Optional  teile mit, warum du ablehnst…"
   },
   "traderProfile": {
+    "tabsLabel": "Profilbereiche",
+    "loadFailed": "Dieses Profil konnte nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "toTradeCenter": "Zurück zum Tauschcenter",
     "tradesCompleted": "{count} abgeschlossener Tausch | {count} abgeschlossene Tausche",
     "reviewCount": "{count} Bewertung | {count} Bewertungen",
     "openFullPage": "Ganze Seite öffnen",

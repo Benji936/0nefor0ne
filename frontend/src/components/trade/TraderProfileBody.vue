@@ -7,7 +7,7 @@
 // Owns its own loading, because both hosts want the same fetch on the same
 // trigger. `active` lets the dialog defer the fetch until it is actually
 // opened; the page passes nothing and loads immediately.
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { getClient } from '@/lib/supabaseClient';
 import { cardImage } from '@/lib/cardImage';
@@ -19,18 +19,32 @@ const props = defineProps({
   traderId: { type: String,  default: null },
   // False keeps the fetch from firing (a closed dialog). Always true on a page.
   active:   { type: Boolean, default: true },
+  // The host owns this: a page's trader name is its h1, but the same name in a
+  // dialog must not be, or the document ends up with two h1s and the dialog
+  // claims the page's own outline.
+  headingLevel: { type: Number, default: 2, validator: (n) => n >= 1 && n <= 6 },
 });
 const emit = defineEmits(['loaded']);
 
 const { t } = useI18n();
 
 const loading   = ref(false);
+const loadError = ref(false); // the request failed, as opposed to "no such trader"
 const profile   = ref(null);   // from get_trader_public_profile
 const tradePile = ref([]);
 const wishlist  = ref([]);
 const reviews   = ref([]);
 const activeTab = ref('pile'); // 'pile' | 'wish' | 'reviews'
 let _loadToken = 0;
+
+// Ties each tab to its panel for aria-controls / aria-labelledby. Scoped by
+// trader id so two profiles on one document (page behind an open dialog)
+// cannot mint colliding ids.
+const uid = `tpb-${Math.random().toString(36).slice(2, 9)}`;
+const tabId   = (k) => `${uid}-tab-${k}`;
+const panelId = (k) => `${uid}-panel-${k}`;
+
+const headingTag = computed(() => `h${props.headingLevel}`);
 
 // Hosts need the name for their own chrome (page title, propose payload).
 defineExpose({ profile, loading });
@@ -53,6 +67,7 @@ async function load(id) {
   if (!id) return;
   const token = ++_loadToken;
   loading.value = true;
+  loadError.value = false;
   profile.value = null;
   tradePile.value = [];
   wishlist.value  = [];
@@ -72,16 +87,29 @@ async function load(id) {
         .limit(20),
     ]);
     if (token !== _loadToken) return; // stale — a newer load() was started
-    if (profileRes.error) console.error('get_trader_public_profile failed', profileRes.error);
+    // A failed request and a trader who does not exist both used to render the
+    // same "not found", which told the user to stop looking when the real
+    // answer might be "try again".
+    if (profileRes.error) {
+      console.error('get_trader_public_profile failed', profileRes.error);
+      loadError.value = true;
+      return;
+    }
     profile.value   = profileRes.data?.[0] ?? null;
     tradePile.value = pile;
     wishlist.value  = wish;
     reviews.value   = reviewsRes.data ?? [];
     emit('loaded', profile.value);
+  } catch (e) {
+    if (token !== _loadToken) return;
+    console.error('TraderProfileBody: load failed', e);
+    loadError.value = true;
   } finally {
     if (token === _loadToken) loading.value = false;
   }
 }
+
+function retry() { load(props.traderId); }
 
 watch(() => [props.active, props.traderId], ([on, id]) => {
   if (on && id) load(id);
@@ -99,6 +127,34 @@ const tabItems = computed(() => [
   { key: 'wish',    label: t('library.wishlist'),      count: wishlist.value.length  },
   { key: 'reviews', label: t('traderProfile.reviews'), count: Number(profile.value?.rating_count ?? 0) },
 ]);
+
+// Roving tabindex with automatic activation, per the APG tabs pattern: the
+// tablist is one tab stop, arrows move between tabs, and moving selects. That
+// is the right variant here because switching panels is instant and cheap, so
+// there is nothing to gain from making the user press Enter as well.
+const tabList = ref(null);
+
+async function focusTab(key) {
+  activeTab.value = key;
+  // nextTick, not requestAnimationFrame: focus has to follow the DOM update,
+  // and rAF is tied to paint, which never comes in a backgrounded tab.
+  await nextTick();
+  tabList.value?.querySelector(`#${CSS.escape(tabId(key))}`)?.focus();
+}
+
+function onTabKeydown(e) {
+  const keys = tabItems.value.map((x) => x.key);
+  const i = keys.indexOf(activeTab.value);
+  let next;
+  if (e.key === 'ArrowRight')      next = keys[(i + 1) % keys.length];
+  else if (e.key === 'ArrowLeft')  next = keys[(i - 1 + keys.length) % keys.length];
+  else if (e.key === 'Home')       next = keys[0];
+  else if (e.key === 'End')        next = keys[keys.length - 1];
+  else return;
+  e.preventDefault();
+  focusTab(next);
+}
+
 </script>
 
 <template>
@@ -127,7 +183,7 @@ const tabItems = computed(() => [
       </div>
 
       <div class="tpb-id__text">
-        <span class="tpb-id__name">{{ profile.name ?? t('userCard.anonymous') }}</span>
+        <component :is="headingTag" class="tpb-id__name">{{ profile.name ?? t('userCard.anonymous') }}</component>
 
         <!-- Everything the tabs below do not already say. Pile and wishlist
              counts live in the tab labels, so repeating them here would show
@@ -172,10 +228,22 @@ const tabItems = computed(() => [
     </div>
 
     <!-- Tab row -->
-    <div class="tpb-tabs">
+    <div
+      ref="tabList"
+      class="tpb-tabs"
+      role="tablist"
+      :aria-label="t('traderProfile.tabsLabel')"
+      @keydown="onTabKeydown"
+    >
       <button
         v-for="tab in tabItems"
         :key="tab.key"
+        :id="tabId(tab.key)"
+        role="tab"
+        type="button"
+        :aria-selected="activeTab === tab.key"
+        :aria-controls="panelId(tab.key)"
+        :tabindex="activeTab === tab.key ? 0 : -1"
         class="tpb-tab flex items-center gap-2 text-base font-semibold cursor-pointer transition-colors"
         :style="{
           color: activeTab === tab.key ? 'var(--c-text)' : 'var(--c-muted)',
@@ -194,7 +262,7 @@ const tabItems = computed(() => [
     </div>
 
     <!-- Trade pile -->
-    <div v-if="activeTab === 'pile'" class="tpb-panel">
+    <div v-if="activeTab === 'pile'" :id="panelId('pile')" role="tabpanel" :aria-labelledby="tabId('pile')" tabindex="0" class="tpb-panel">
       <div v-if="tradePile.length > 0" class="flex flex-wrap gap-3">
         <v-tooltip
           v-for="card in tradePile"
@@ -219,7 +287,7 @@ const tabItems = computed(() => [
     </div>
 
     <!-- Wishlist -->
-    <div v-else-if="activeTab === 'wish'" class="tpb-panel">
+    <div v-else-if="activeTab === 'wish'" :id="panelId('wish')" role="tabpanel" :aria-labelledby="tabId('wish')" tabindex="0" class="tpb-panel">
       <div v-if="wishlist.length > 0" class="flex flex-wrap gap-3">
         <v-tooltip
           v-for="card in wishlist"
@@ -244,7 +312,7 @@ const tabItems = computed(() => [
     </div>
 
     <!-- Reviews -->
-    <div v-else-if="activeTab === 'reviews'" class="tpb-panel">
+    <div v-else-if="activeTab === 'reviews'" :id="panelId('reviews')" role="tabpanel" :aria-labelledby="tabId('reviews')" tabindex="0" class="tpb-panel">
       <div v-if="reviews.length > 0" class="flex flex-col divide-y" style="border-color: var(--c-border)">
         <div v-for="r in reviews" :key="r.rater_id + r.created_at" class="flex flex-col gap-2 py-4">
           <div class="flex items-center gap-2">
@@ -266,10 +334,23 @@ const tabItems = computed(() => [
 
   </div>
 
-  <!-- Not found -->
-  <div v-else class="flex flex-col items-center gap-3 py-16 px-6">
-    <v-icon icon="mdi-account-off-outline" size="36" color="var(--c-muted)" />
-    <p class="text-sm" style="color: var(--c-muted)">{{ t('traderProfile.traderNotFound') }}</p>
+  <!-- Request failed. Distinct from "not found", and the only one of the two
+       worth retrying, so it gets its own action rather than the host slot. -->
+  <div v-else-if="loadError" class="tpb-dead" role="alert">
+    <v-icon icon="mdi-wifi-off" size="36" />
+    <p class="tpb-dead__msg">{{ t('traderProfile.loadFailed') }}</p>
+    <button type="button" class="tpb-dead__action" @click="retry">
+      <v-icon icon="mdi-refresh" size="16" />
+      {{ t('traderProfile.retry') }}
+    </button>
+  </div>
+
+  <!-- No such trader. The way out depends on where you are, so the host
+       supplies it: a page sends you somewhere, a dialog just closes. -->
+  <div v-else class="tpb-dead">
+    <v-icon icon="mdi-account-off-outline" size="36" />
+    <p class="tpb-dead__msg">{{ t('traderProfile.traderNotFound') }}</p>
+    <slot name="not-found-action" />
   </div>
 </template>
 
@@ -347,6 +428,9 @@ const tabItems = computed(() => [
    push the stats off-screen, and `anywhere` so an unbroken string still
    breaks instead of overflowing. */
 .tpb-id__name {
+  /* Now a real heading element, so it arrives with UA margins and its own
+     font-size to override. */
+  margin: 0;
   font-size: 1.5rem; font-weight: 700; line-height: 1.25;
   color: var(--c-text);
   overflow-wrap: anywhere;
@@ -416,5 +500,51 @@ const tabItems = computed(() => [
   transform: translateY(-2px) scale(1.06);
   box-shadow: 0 6px 20px rgba(0,0,0,0.4);
   outline-color: rgba(255,255,255,0.2);
+}
+
+/* ── Focus ─────────────────────────────────────────────────────────────────
+   The tab is one stop and the panel is the next, so both need a visible ring:
+   a keyboard user arrowing through tabs and then tabbing into the card grid
+   must never lose track of where they are. */
+.tpb-tab:focus-visible,
+.tpb-panel:focus-visible {
+  outline: 2px solid var(--c-trade);
+  outline-offset: -2px;
+  border-radius: 8px;
+}
+
+/* ── Dead ends ─────────────────────────────────────────────────────────────
+   Both terminal states. Neither used to offer a way out, which left a bad URL
+   as a wall. */
+.tpb-dead {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; padding: 64px 20px; text-align: center;
+}
+.tpb-dead .v-icon { color: var(--c-muted); }
+.tpb-dead__msg { margin: 0; font-size: 0.875rem; color: var(--c-muted); }
+.tpb-dead__action {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 40px; padding: 0 16px; border-radius: 11px;
+  background: color-mix(in srgb, var(--c-trade) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-trade) 30%, transparent);
+  color: var(--c-trade); font-size: 13px; font-weight: 700; cursor: pointer;
+  transition: background 0.15s ease;
+}
+.tpb-dead__action:hover { background: color-mix(in srgb, var(--c-trade) 24%, transparent); }
+.tpb-dead__action .v-icon { color: var(--c-trade); }
+.tpb-dead__action:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
+@media (pointer: coarse) { .tpb-dead__action { min-height: 48px; } }
+
+/* ── Reduced motion ────────────────────────────────────────────────────────
+   Matches the targeted approach used elsewhere (CommunityProfile, SideNav):
+   kill the specific decorative animations, not every transition on the page.
+   The skeleton pulse is the worst offender here, running on a dozen elements
+   at once. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse { animation: none; }
+  .profile-card { transition: none; }
+  .profile-card:hover { transform: none; }
+  .tpb-tab { transition: none; }
+  .tpb-dead__action { transition: none; }
 }
 </style>

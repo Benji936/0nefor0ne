@@ -537,6 +537,10 @@
     "declinePlaceholder": "Facoltativo  spiega perché rifiuti…"
   },
   "traderProfile": {
+    "tabsLabel": "Sezioni del profilo",
+    "loadFailed": "Impossibile caricare questo profilo.",
+    "retry": "Riprova",
+    "toTradeCenter": "Torna al centro scambi",
     "tradesCompleted": "{count} scambio concluso | {count} scambi conclusi",
     "reviewCount": "{count} recensione | {count} recensioni",
     "openFullPage": "Apri pagina completa",

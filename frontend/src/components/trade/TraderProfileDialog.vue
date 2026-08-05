@@ -59,11 +59,22 @@ function propose() {
       <v-card-text class="pa-0 overflow-y-auto" style="max-height: 82vh">
         <div class="px-8 py-6">
           <!-- `active` defers the fetch until the dialog is actually opened. -->
+          <!-- headingLevel stays at its default 2: the page underneath owns
+               the document's h1, and a dialog must not claim it. -->
           <TraderProfileBody
             :trader-id="traderId"
             :active="open"
             @loaded="profile = $event"
-          />
+          >
+            <!-- From a dialog the way out is simply back to what you were
+                 doing, not a navigation. -->
+            <template #not-found-action>
+              <button type="button" class="tpd-recover" @click="close">
+                {{ t('traderProfile.close') }}
+              </button>
+            </template>
+
+          </TraderProfileBody>
         </div>
       </v-card-text>
 
@@ -94,3 +105,18 @@ function propose() {
     </v-card>
   </v-dialog>
 </template>
+
+<style scoped>
+.tpd-recover {
+  display: inline-flex; align-items: center;
+  min-height: 40px; padding: 0 16px; border-radius: 11px;
+  background: color-mix(in srgb, var(--c-trade) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-trade) 30%, transparent);
+  color: var(--c-trade); font-size: 13px; font-weight: 700; cursor: pointer;
+  transition: background 0.15s ease;
+}
+.tpd-recover:hover { background: color-mix(in srgb, var(--c-trade) 24%, transparent); }
+.tpd-recover:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
+@media (pointer: coarse) { .tpd-recover { min-height: 48px; } }
+@media (prefers-reduced-motion: reduce) { .tpd-recover { transition: none; } }
+</style>

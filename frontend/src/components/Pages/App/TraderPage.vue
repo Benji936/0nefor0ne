@@ -64,7 +64,16 @@ function goBack() {
     <div class="tp__card">
       <div class="tp__band" />
       <div class="tp__body">
-        <TraderProfileBody :trader-id="traderId" @loaded="profile = $event" />
+        <!-- heading-level 1: on a page the trader's name is the document's
+             heading. The dialog leaves it at the default 2. -->
+        <TraderProfileBody :trader-id="traderId" :heading-level="1" @loaded="profile = $event">
+          <template #not-found-action>
+            <router-link class="tp__recover" :to="{ name: 'TradeCenter', params: { locale } }">
+              <v-icon icon="mdi-arrow-left" size="16" />
+              {{ t('traderProfile.toTradeCenter') }}
+            </router-link>
+          </template>
+        </TraderProfileBody>
 
         <!-- Proposing needs an account, so a signed-out visitor gets no button
              rather than one that dead-ends in the proposal dialog. -->
@@ -132,5 +141,27 @@ function goBack() {
 @media (pointer: coarse) {
   .tp__back { min-height: 48px; padding: 0 14px; }
   .tp__propose { min-height: 48px; }
+  .tp__recover { min-height: 48px; }
+}
+
+/* A bad or stale URL used to end at a sentence with nowhere to go. */
+.tp__recover {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 40px; padding: 0 16px; border-radius: 11px;
+  background: color-mix(in srgb, var(--c-trade) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-trade) 30%, transparent);
+  color: var(--c-trade); font-size: 13px; font-weight: 700; text-decoration: none;
+  transition: background 0.15s ease;
+}
+.tp__recover:hover { background: color-mix(in srgb, var(--c-trade) 24%, transparent); }
+.tp__recover:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
+
+/* Targeted, matching CommunityProfile and SideNav rather than a blanket
+   `*` override. */
+@media (prefers-reduced-motion: reduce) {
+  .tp__back { transition: none; }
+  .tp__propose { transition: none; }
+  .tp__propose:hover { transform: none; }
+  .tp__recover { transition: none; }
 }
 </style>

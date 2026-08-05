@@ -537,6 +537,10 @@
     "declinePlaceholder": "Optional  let them know why you're declining…"
   },
   "traderProfile": {
+    "tabsLabel": "Trader profile sections",
+    "loadFailed": "Could not load this profile.",
+    "retry": "Try again",
+    "toTradeCenter": "Back to Trade Center",
     "tradesCompleted": "{count} trade completed | {count} trades completed",
     "reviewCount": "{count} review | {count} reviews",
     "openFullPage": "Open full page",

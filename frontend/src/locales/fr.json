@@ -537,6 +537,10 @@
     "declinePlaceholder": "Optionnel  expliquez pourquoi vous refusez…"
   },
   "traderProfile": {
+    "tabsLabel": "Sections du profil",
+    "loadFailed": "Impossible de charger ce profil.",
+    "retry": "Réessayer",
+    "toTradeCenter": "Retour au centre d'échange",
     "tradesCompleted": "{count} échange conclu | {count} échanges conclus",
     "reviewCount": "{count} avis | {count} avis",
     "openFullPage": "Voir la page complète",
