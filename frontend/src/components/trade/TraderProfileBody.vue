@@ -12,7 +12,7 @@ import { useI18n } from 'vue-i18n';
 import { getClient } from '@/lib/supabaseClient';
 import { cardImage } from '@/lib/cardImage';
 import { countryByCode } from '@/lib/countries';
-import { fetchUserTradePile, fetchUserWishlist } from '@/lib/matches';
+import { fetchUserTradePile, fetchUserWishlist, fetchWishlistNames } from '@/lib/matches';
 import { timeAgo } from '@/lib/notifications';
 
 const props = defineProps({
@@ -23,8 +23,11 @@ const props = defineProps({
   // dialog must not be, or the document ends up with two h1s and the dialog
   // claims the page's own outline.
   headingLevel: { type: Number, default: 2, validator: (n) => n >= 1 && n <= 6 },
+  // Whoever is looking. Needed to work out which of this trader's cards the
+  // viewer actually wants, which is the question the page exists to answer.
+  viewerId: { type: String, default: null },
 });
-const emit = defineEmits(['loaded']);
+const emit = defineEmits(['loaded', 'propose']);
 
 const { t } = useI18n();
 
@@ -75,9 +78,17 @@ async function load(id) {
   activeTab.value = 'pile';
 
   try {
+    // The viewer's wishlist has to land before the trader's pile, because the
+    // pile query is what tags each card as wanted. Own profile skips it: you
+    // cannot match against yourself.
+    const myWants = props.viewerId && props.viewerId !== id
+      ? await fetchWishlistNames(props.viewerId)
+      : [];
+    if (token !== _loadToken) return;
+
     const [profileRes, pile, wish, reviewsRes] = await Promise.all([
       getClient().rpc('get_trader_public_profile', { p_trader_id: id }),
-      fetchUserTradePile(id),
+      fetchUserTradePile(id, myWants),
       fetchUserWishlist(id),
       getClient()
         .from('trader_rating')
@@ -118,6 +129,15 @@ watch(() => [props.active, props.traderId], ([on, id]) => {
 // A restricted scope means this trader may not trade with you at all, so it is
 // the one meta item that can change your next action.
 const scopeRestricted = computed(() => ['local', 'national'].includes(profile.value?.trade_scope));
+
+// The cards of theirs that the viewer is hunting. fetchUserTradePile tags these
+// by name; this is the page's primary answer, so it leads the layout.
+const matches = computed(() => tradePile.value.filter((c) => c.matchesMyWishlist));
+
+// Matches only exist for a signed-in viewer looking at someone else, so this is
+// really just "not my own profile" — but stated explicitly so the CTA can never
+// appear on a page where it would dead-end.
+const canPropose = computed(() => !!props.viewerId && props.viewerId !== props.traderId);
 
 const completedTrades = computed(() => Number(profile.value?.completed_trades ?? 0));
 const ratingCount     = computed(() => Number(profile.value?.rating_count ?? 0));
@@ -227,6 +247,45 @@ function onTabKeydown(e) {
       </div>
     </div>
 
+    <!-- Match block: the page's primary answer, and the one place it raises
+         its voice. Amethyst, matching UserCard's "they_have" kind, since this
+         is the same signal in a different surface. Rendered only when there is
+         something to say; an empty box here would cost every viewer the space
+         to be told nothing. -->
+    <section v-if="matches.length" class="tpb-match" :aria-labelledby="`${uid}-match`">
+      <div class="tpb-match__head">
+        <p :id="`${uid}-match`" class="tpb-match__title">
+          <v-icon icon="mdi-cards-outline" size="17" />
+          <strong>{{ t('traderProfile.matchTitle', { count: matches.length }, matches.length) }}</strong>
+        </p>
+        <!-- The action belongs here, at the moment of intent, not below three
+             screens of binder. -->
+        <button v-if="canPropose" type="button" class="tpb-match__cta" @click="emit('propose')">
+          <v-icon icon="mdi-swap-horizontal" size="16" />
+          {{ t('traderProfile.proposeTrade') }}
+        </button>
+      </div>
+      <ul class="tpb-match__row">
+        <li v-for="card in matches" :key="card.id">
+          <v-tooltip
+            :text="`${card.name}${card.extension ? ' · ' + card.extension : ''}${card.condition ? ' (' + card.condition + ')' : ''}`"
+            location="top"
+            open-on-click
+          >
+            <template #activator="{ props: tip }">
+              <img
+                v-bind="tip"
+                :src="cardImage(card.image_id)"
+                :alt="card.name"
+                class="tpb-match__card"
+                loading="lazy"
+              />
+            </template>
+          </v-tooltip>
+        </li>
+      </ul>
+    </section>
+
     <!-- Tab row -->
     <div
       ref="tabList"
@@ -277,6 +336,7 @@ function onTabKeydown(e) {
               :src="cardImage(card.image_id)"
               :alt="card.name"
               class="profile-card rounded object-contain shrink-0"
+              :class="{ 'profile-card--wanted': card.matchesMyWishlist }"
               style="height:96px; width:68px; background:var(--c-surface-2)"
               loading="lazy"
             />
@@ -364,6 +424,62 @@ function onTabKeydown(e) {
 .tpb-panel { margin-top: 20px; }
 .tpb-skel-lines { gap: 10px; }
 .tpb-skel-cards { margin-top: 30px; }
+
+/* ── Match block ───────────────────────────────────────────────────────────
+   Leads the page. Amethyst because UserCard already maps "they have your
+   wants" to --c-trade; teal would be wrong, that is reserved for a confirmed
+   mutual match, which this is not. */
+.tpb-match {
+  /* Hugs its content so a single match is a compact statement, not one card
+     stranded in a wide empty box. Grows to full width as matches accumulate. */
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 26px;
+  padding: 16px 18px 18px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--c-trade) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-trade) 28%, transparent);
+}
+.tpb-match__head {
+  margin: 0 0 12px; display: flex; align-items: center; gap: 24px;
+  justify-content: space-between; flex-wrap: wrap;
+}
+.tpb-match__title {
+  margin: 0; display: flex; align-items: center; gap: 8px;
+  font-size: 0.9375rem; color: var(--c-text);
+}
+.tpb-match__title .v-icon { color: var(--c-trade); }
+.tpb-match__title strong { font-weight: 700; }
+.tpb-match__cta {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 36px; padding: 0 14px; border-radius: 10px;
+  background: var(--c-trade); color: #fff; border: none; cursor: pointer;
+  font-size: 13px; font-weight: 700; white-space: nowrap;
+  transition: opacity 0.15s ease;
+}
+.tpb-match__cta:hover { opacity: 0.88; }
+.tpb-match__cta:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
+@media (pointer: coarse) { .tpb-match__cta { min-height: 44px; } }
+.tpb-match__row {
+  list-style: none; margin: 0; padding: 0 0 4px;
+  display: flex; gap: 10px; overflow-x: auto;
+  scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--c-trade) 40%, transparent) transparent;
+}
+.tpb-match__row::-webkit-scrollbar { height: 3px; }
+.tpb-match__row::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--c-trade) 40%, transparent); border-radius: 99px;
+}
+.tpb-match__card {
+  height: 104px; width: 74px; flex-shrink: 0; display: block;
+  border-radius: 5px; object-fit: contain; background: var(--c-surface-2);
+  outline: 1.5px solid color-mix(in srgb, var(--c-trade) 55%, transparent);
+  transition: transform 0.15s cubic-bezier(0.22,1,0.36,1);
+}
+.tpb-match__card:hover { transform: translateY(-2px) scale(1.05); }
+
+@media (max-width: 560px) {
+  .tpb-match { margin-top: 20px; padding: 13px 14px 15px; }
+}
 
 /* ── Meta line ─────────────────────────────────────────────────────────────
    Replaces four bordered stat tiles. They were cards inside a card, all four
@@ -501,6 +617,11 @@ function onTabKeydown(e) {
   box-shadow: 0 6px 20px rgba(0,0,0,0.4);
   outline-color: rgba(255,255,255,0.2);
 }
+/* Same signal repeated in the binder, so scrolling past the match block does
+   not lose the answer. Outline rather than a badge: 68px of card leaves no
+   room for chrome, and the ring reads at a glance across a wall of art. */
+.profile-card--wanted { outline: 2px solid var(--c-trade); }
+.profile-card--wanted:hover { outline-color: var(--c-trade); }
 
 /* ── Focus ─────────────────────────────────────────────────────────────────
    The tab is one stop and the panel is the next, so both need a visible ring:
@@ -544,6 +665,9 @@ function onTabKeydown(e) {
   .animate-pulse { animation: none; }
   .profile-card { transition: none; }
   .profile-card:hover { transform: none; }
+  .tpb-match__card { transition: none; }
+  .tpb-match__card:hover { transform: none; }
+  .tpb-match__cta { transition: none; }
   .tpb-tab { transition: none; }
   .tpb-dead__action { transition: none; }
 }

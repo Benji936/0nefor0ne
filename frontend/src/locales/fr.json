@@ -537,6 +537,7 @@
     "declinePlaceholder": "Optionnel  expliquez pourquoi vous refusez…"
   },
   "traderProfile": {
+    "matchTitle": "{count} carte que vous cherchez | {count} cartes que vous cherchez",
     "tabsLabel": "Sections du profil",
     "loadFailed": "Impossible de charger ce profil.",
     "retry": "Réessayer",

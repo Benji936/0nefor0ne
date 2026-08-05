@@ -255,6 +255,27 @@ export async function fetchTrendingCards(limit = 8) {
 }
 
 /** Fetch the full wishlist of any user. */
+/**
+ * Just the card names on a user's wishlist.
+ *
+ * fetchUserTradePile matches by name, so a profile only needs the names to
+ * work out which of someone else's cards the viewer is hunting. Kept narrow
+ * because this runs alongside three other requests on every profile open.
+ */
+export async function fetchWishlistNames(userId) {
+  if (!userId) return [];
+  const { data, error } = await getClient()
+    .from("Card")
+    .select("name")
+    .eq("trader", userId)
+    .eq("wish", true);
+  if (error) {
+    console.error("fetchWishlistNames failed", error);
+    return [];
+  }
+  return [...new Set((data ?? []).map((c) => c.name).filter(Boolean))];
+}
+
 export async function fetchUserWishlist(userId) {
   const { data, error } = await getClient()
     .from("Card")

@@ -66,7 +66,7 @@ function goBack() {
       <div class="tp__body">
         <!-- heading-level 1: on a page the trader's name is the document's
              heading. The dialog leaves it at the default 2. -->
-        <TraderProfileBody :trader-id="traderId" :heading-level="1" @loaded="profile = $event">
+        <TraderProfileBody :trader-id="traderId" :heading-level="1" :viewer-id="currentUserId" @loaded="profile = $event" @propose="proposeOpen = true">
           <template #not-found-action>
             <router-link class="tp__recover" :to="{ name: 'TradeCenter', params: { locale } }">
               <v-icon icon="mdi-arrow-left" size="16" />

@@ -537,6 +537,7 @@
     "declinePlaceholder": "Optional  teile mit, warum du ablehnst…"
   },
   "traderProfile": {
+    "matchTitle": "{count} Karte, die du suchst | {count} Karten, die du suchst",
     "tabsLabel": "Profilbereiche",
     "loadFailed": "Dieses Profil konnte nicht geladen werden.",
     "retry": "Erneut versuchen",

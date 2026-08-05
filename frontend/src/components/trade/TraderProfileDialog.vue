@@ -64,7 +64,9 @@ function propose() {
           <TraderProfileBody
             :trader-id="traderId"
             :active="open"
+            :viewer-id="currentUserId"
             @loaded="profile = $event"
+            @propose="propose"
           >
             <!-- From a dialog the way out is simply back to what you were
                  doing, not a navigation. -->

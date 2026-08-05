@@ -537,6 +537,7 @@
     "declinePlaceholder": "Facoltativo  spiega perché rifiuti…"
   },
   "traderProfile": {
+    "matchTitle": "{count} carta che cerchi | {count} carte che cerchi",
     "tabsLabel": "Sezioni del profilo",
     "loadFailed": "Impossibile caricare questo profilo.",
     "retry": "Riprova",

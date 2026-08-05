@@ -537,6 +537,7 @@
     "declinePlaceholder": "Optional  let them know why you're declining…"
   },
   "traderProfile": {
+    "matchTitle": "{count} card you want | {count} cards you want",
     "tabsLabel": "Trader profile sections",
     "loadFailed": "Could not load this profile.",
     "retry": "Try again",
