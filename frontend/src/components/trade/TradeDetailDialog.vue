@@ -6,6 +6,7 @@ import { fetchTradeEvents } from "@/lib/proposals";
 import { timeAgo as sharedTimeAgo } from "@/lib/notifications";
 import TradeChatDialog   from "@/components/trade/TradeChatDialog.vue";
 import TradePhotosPanel  from "@/components/trade/TradePhotosPanel.vue";
+import TraderLink        from "@/components/trade/TraderLink.vue";
 
 const { t } = useI18n();
 
@@ -161,7 +162,8 @@ function confirmDecline() {
           </div>
           <div class="flex flex-col grow min-w-0">
             <span class="font-bold text-sm md:text-lg leading-tight truncate" style="color: var(--c-text)">
-              Trade #{{ proposal.id }} · {{ proposal.counterparty_name ?? t('tradeDetail.anonymous') }}
+              Trade #{{ proposal.id }} ·
+              <TraderLink :trader-id="proposal.counterparty_id" underline>{{ proposal.counterparty_name ?? t('tradeDetail.anonymous') }}</TraderLink>
             </span>
             <span class="text-xs md:text-sm mt-1 truncate" style="color: var(--c-muted)">
               {{ proposal.i_am_proposer ? t('proposal.youProposed') : t('proposal.proposedToYou') }} · {{ formattedDate }}

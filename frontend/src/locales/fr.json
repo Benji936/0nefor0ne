@@ -537,6 +537,11 @@
     "declinePlaceholder": "Optionnel  expliquez pourquoi vous refusez…"
   },
   "traderProfile": {
+    "rating": "Note",
+    "reviewCount": "{count} avis | {count} avis",
+    "openFullPage": "Voir la page complète",
+    "back": "Retour",
+    "metaTitle": "{name} — Profil de collectionneur",
     "wishlistEmpty": "Liste de souhaits vide.",
     "noCardsForTrade": "Aucune carte listée pour l'échange.",
     "noReviewsYet": "Aucun avis pour l'instant.",
@@ -912,6 +917,10 @@
     "community": {
       "title": "Boutiques & communautés",
       "desc": "Trouvez des boutiques Yu-Gi-Oh, des serveurs Discord et des groupes près de chez vous."
+    },
+    "trader": {
+      "title": "Profil de collectionneur",
+      "desc": "La réserve d'échange, la wishlist et les avis d'un collectionneur Yu-Gi-Oh sur 0nefor.one."
     },
     "communityProfile": {
       "title": "Profil de la communauté",

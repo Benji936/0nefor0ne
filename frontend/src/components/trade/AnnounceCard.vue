@@ -2,6 +2,7 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { timeAgo } from "@/lib/notifications";
+import TraderLink from "@/components/trade/TraderLink.vue";
 import { isLookingFor } from "@/lib/announceKind";
 import { isExpired, isExpiringSoon, daysUntilExpiry } from "@/lib/announceExpiry";
 import { archetypeArtUrl, ensureArchetypeArtManifest } from "@/lib/archetypeArt";
@@ -141,14 +142,14 @@ const location = computed(() => {
 
       <div class="ac-footer">
         <!-- Seller -->
-        <div class="ac-seller">
+        <TraderLink :trader-id="announce.seller" class="ac-seller">
           <img v-if="sellerAvatar" :src="sellerAvatar" :alt="sellerName" class="ac-avatar" loading="lazy" />
           <span v-else class="ac-avatar ac-avatar--letter">{{ sellerInitial }}</span>
           <div class="ac-seller-text">
-            <span class="ac-seller-name">{{ sellerName }}</span>
+            <span class="ac-seller-name tl-name">{{ sellerName }}</span>
             <span v-if="location" class="ac-seller-loc">{{ location }}</span>
           </div>
-        </div>
+        </TraderLink>
         <span class="ac-time">{{ timeAgo(announce.created_at, t) }}</span>
       </div>
     </div>

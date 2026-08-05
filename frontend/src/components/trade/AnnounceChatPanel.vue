@@ -3,6 +3,7 @@ import { ref, computed, watch, nextTick, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { getClient } from "@/lib/supabaseClient";
 import { fetchAnnounceThread, sendAnnounceMessage, fetchAnnounceThreads } from "@/lib/announceMessages";
+import TraderLink from "@/components/trade/TraderLink.vue";
 
 const props = defineProps({
   announceId:    { type: [Number, String], default: null },
@@ -132,11 +133,12 @@ const openThreadName = computed(() => {
         <v-icon icon="mdi-chevron-left" size="20" />
       </button>
       <v-icon v-else icon="mdi-message-outline" size="18" style="color: var(--c-muted)" />
-      <span class="chat-title">
-        {{ isOwner
-          ? (selectedUser ? openThreadName : t("announceChat.messages"))
-          : t("announceChat.withSeller") }}
-      </span>
+      <!-- Links to whoever is on the other end, once a thread is actually
+           open; the list header names no one in particular. -->
+      <TraderLink v-if="otherUser" :trader-id="otherUser" class="chat-title" underline>
+        {{ isOwner ? openThreadName : t("announceChat.withSeller") }}
+      </TraderLink>
+      <span v-else class="chat-title">{{ t("announceChat.messages") }}</span>
     </div>
 
     <!-- Not logged in -->

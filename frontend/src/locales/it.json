@@ -537,6 +537,11 @@
     "declinePlaceholder": "Facoltativo  spiega perché rifiuti…"
   },
   "traderProfile": {
+    "rating": "Valutazione",
+    "reviewCount": "{count} recensione | {count} recensioni",
+    "openFullPage": "Apri pagina completa",
+    "back": "Indietro",
+    "metaTitle": "{name} — Profilo del giocatore",
     "wishlistEmpty": "Lista desideri vuota.",
     "noCardsForTrade": "Nessuna carta listata per lo scambio.",
     "noReviewsYet": "Nessuna recensione ancora.",
@@ -912,6 +917,10 @@
     "community": {
       "title": "Negozi & community",
       "desc": "Trova negozi Yu-Gi-Oh, server Discord e gruppi vicino a te."
+    },
+    "trader": {
+      "title": "Profilo del giocatore",
+      "desc": "Pila di scambio, lista dei desideri e recensioni di un giocatore Yu-Gi-Oh su 0nefor.one."
     },
     "communityProfile": {
       "title": "Profilo community",

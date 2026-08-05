@@ -537,6 +537,11 @@
     "declinePlaceholder": "Optional  teile mit, warum du ablehnst…"
   },
   "traderProfile": {
+    "rating": "Bewertung",
+    "reviewCount": "{count} Bewertung | {count} Bewertungen",
+    "openFullPage": "Ganze Seite öffnen",
+    "back": "Zurück",
+    "metaTitle": "{name} — Händlerprofil",
     "wishlistEmpty": "Wunschliste ist leer.",
     "noCardsForTrade": "Keine Karten zum Tauschen aufgelistet.",
     "noReviewsYet": "Noch keine Bewertungen.",
@@ -912,6 +917,10 @@
     "community": {
       "title": "Läden & Communitys",
       "desc": "Finde Yu-Gi-Oh-Läden, Discord-Server und Gruppen in deiner Nähe."
+    },
+    "trader": {
+      "title": "Händlerprofil",
+      "desc": "Tauschstapel, Wunschliste und Bewertungen eines Yu-Gi-Oh-Händlers auf 0nefor.one."
     },
     "communityProfile": {
       "title": "Community-Profil",

@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import TraderLink from "@/components/trade/TraderLink.vue";
 import { useRoute } from "vue-router";
 import { timeAgo } from "@/lib/notifications";
 import { deleteAnnounce, updateAnnounce, renewAnnounce } from "@/lib/announces";
@@ -482,12 +483,12 @@ function onCardAdded() {
         <div class="divider" />
 
         <!-- Seller card -->
-        <div class="seller">
+        <TraderLink :trader-id="announce.seller" class="seller">
           <img v-if="sellerAvatar" :src="sellerAvatar" class="seller__avatar" :alt="sellerName" />
           <div v-else class="seller__avatar seller__avatar--letter">{{ sellerInitial }}</div>
           <div class="seller__info">
             <span class="seller__label">{{ t('announce.postedBy') }}</span>
-            <span class="seller__name">{{ sellerName }}</span>
+            <span class="seller__name tl-name">{{ sellerName }}</span>
             <span v-if="location" class="seller__loc">
               <v-icon icon="mdi-map-marker-outline" size="11" />
               {{ location }}
@@ -497,7 +498,7 @@ function onCardAdded() {
             <v-icon icon="mdi-star" size="13" style="color: #f59e0b" />
             <span>{{ Number(rating).toFixed(1) }}</span>
           </div>
-        </div>
+        </TraderLink>
 
       </div>
 
