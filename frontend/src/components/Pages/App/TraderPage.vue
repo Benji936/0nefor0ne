@@ -121,5 +121,16 @@ function goBack() {
 @media (max-width: 600px) {
   .tp { padding: 16px 12px 40px; }
   .tp__body { padding: 18px 16px 20px; }
+  /* Full-width primary action: easier to hit one-handed than a right-aligned
+     button, which on a phone sits furthest from the thumb. */
+  .tp__actions { justify-content: stretch; }
+  .tp__propose { width: 100%; justify-content: center; }
+}
+
+/* Touch targets. The back button is 40px on a pointer device, which is fine
+   for a mouse and under the mark for a thumb. */
+@media (pointer: coarse) {
+  .tp__back { min-height: 48px; padding: 0 14px; }
+  .tp__propose { min-height: 48px; }
 }
 </style>

@@ -112,7 +112,7 @@ const tabItems = computed(() => [
   <!-- Skeleton -->
   <div v-if="loading" class="flex flex-col gap-6">
     <div class="flex items-center gap-5">
-      <div class="size-20 rounded-2xl animate-pulse shrink-0" style="background: var(--c-skeleton)" />
+      <div class="tpb-skel-avatar animate-pulse shrink-0" style="background: var(--c-skeleton)" />
       <div class="flex flex-col gap-3 grow">
         <div class="h-5 rounded w-2/5 animate-pulse" style="background: var(--c-skeleton)" />
         <div class="h-4 rounded w-1/3 animate-pulse" style="background: var(--c-skeleton)" />
@@ -130,20 +130,15 @@ const tabItems = computed(() => [
   <div v-else-if="profile" class="flex flex-col gap-6">
 
     <!-- Identity -->
-    <div class="flex items-center gap-5">
-      <div
-        class="size-20 rounded-2xl flex items-center justify-center text-3xl font-bold shrink-0 select-none overflow-hidden"
-        style="background: color-mix(in srgb, var(--c-trade) 18%, transparent); color: var(--c-trade); border: 1px solid color-mix(in srgb, var(--c-trade) 30%, transparent)"
-      >
-        <img v-if="profile.avatar_url" :src="profile.avatar_url" alt="" class="w-full h-full object-cover" />
+    <div class="tpb-id">
+      <div class="tpb-id__avatar">
+        <img v-if="profile.avatar_url" :src="profile.avatar_url" alt="" />
         <span v-else>{{ initials }}</span>
       </div>
 
-      <div class="flex flex-col min-w-0 grow">
-        <span class="font-bold text-2xl leading-tight truncate" style="color: var(--c-text)">
-          {{ profile.name ?? t('userCard.anonymous') }}
-        </span>
-        <span class="text-base mt-1 flex items-center gap-2 flex-wrap" style="color: var(--c-muted)">
+      <div class="tpb-id__text">
+        <span class="tpb-id__name">{{ profile.name ?? t('userCard.anonymous') }}</span>
+        <span class="tpb-id__where">
           <template v-if="country">
             <span>{{ country.flag }}</span>
             <span>{{ [profile.city, country.name].filter(Boolean).join(', ') }}</span>
@@ -154,7 +149,7 @@ const tabItems = computed(() => [
       </div>
 
       <span
-        class="flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-lg border shrink-0"
+        class="tpb-id__scope"
         :style="{ color: scopeMeta.color, borderColor: `color-mix(in srgb, ${scopeMeta.color} 35%, transparent)`, backgroundColor: `color-mix(in srgb, ${scopeMeta.color} 8%, transparent)` }"
       >
         <v-icon :icon="scopeMeta.icon" size="14" />
@@ -180,15 +175,14 @@ const tabItems = computed(() => [
     </div>
 
     <!-- Tab row -->
-    <div class="flex gap-0" style="border-bottom: 1px solid var(--c-border)">
+    <div class="tpb-tabs">
       <button
         v-for="tab in tabItems"
         :key="tab.key"
-        class="flex items-center gap-2 px-5 py-4 text-base font-semibold cursor-pointer transition-colors"
+        class="tpb-tab flex items-center gap-2 text-base font-semibold cursor-pointer transition-colors"
         :style="{
           color: activeTab === tab.key ? 'var(--c-text)' : 'var(--c-muted)',
           borderBottom: activeTab === tab.key ? '2px solid var(--c-accent)' : '2px solid transparent',
-          marginBottom: '-1px',
         }"
         @click="activeTab = tab.key"
       >
@@ -210,6 +204,7 @@ const tabItems = computed(() => [
           :key="card.id"
           :text="`${card.name}${card.extension ? ' · ' + card.extension : ''}${card.condition ? ' (' + card.condition + ')' : ''}`"
           location="top"
+          open-on-click
         >
           <template #activator="{ props: tip }">
             <img
@@ -234,6 +229,7 @@ const tabItems = computed(() => [
           :key="card.id"
           :text="`${card.name}${card.extension ? ' · ' + card.extension : ''}`"
           location="top"
+          open-on-click
         >
           <template #activator="{ props: tip }">
             <img
@@ -281,6 +277,109 @@ const tabItems = computed(() => [
 </template>
 
 <style scoped>
+/* ── Identity ──────────────────────────────────────────────────────────────
+   Was a single non-wrapping flex row sized for a 720px dialog. On a page at
+   375px the avatar and the scope badge left the name about 50px, which
+   truncated "TinyHex" to "Ti…". Now a wrapping row: the badge is the piece
+   that drops to its own line, because it is the least important of the three
+   and the only one that can leave without breaking the avatar/name pairing. */
+.tpb-id {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.tpb-id__avatar {
+  width: 80px; height: 80px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 16px; overflow: hidden;
+  font-size: 1.875rem; font-weight: 700; user-select: none;
+  background: color-mix(in srgb, var(--c-trade) 18%, transparent);
+  color: var(--c-trade);
+  border: 1px solid color-mix(in srgb, var(--c-trade) 30%, transparent);
+}
+.tpb-id__avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Grows to fill, but may shrink below its content width — without min-width:0
+   a long name would push the badge off the row instead of wrapping. */
+.tpb-id__text { display: flex; flex-direction: column; min-width: 0; flex: 1 1 200px; }
+
+/* Wraps rather than truncates: a name is the one thing on this page that must
+   be readable in full. Capped at two lines so a pathological handle cannot
+   push the stats off-screen, and `anywhere` so an unbroken string still
+   breaks instead of overflowing. */
+.tpb-id__name {
+  font-size: 1.5rem; font-weight: 700; line-height: 1.25;
+  color: var(--c-text);
+  overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.tpb-id__where {
+  margin-top: 4px; font-size: 1rem; color: var(--c-muted);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+
+.tpb-id__scope {
+  display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;
+  padding: 8px 12px; border-radius: 8px; border: 1px solid;
+  font-size: 0.75rem; font-weight: 600;
+  margin-left: auto;
+}
+
+/* Content-driven, not a device guess: below this the three-across row can no
+   longer give the name a readable column (80px avatar + ~105px badge + gaps
+   eats ~225px of it). */
+@media (max-width: 560px) {
+  .tpb-id { gap: 14px; }
+  .tpb-id__avatar { width: 60px; height: 60px; border-radius: 14px; font-size: 1.5rem; }
+  .tpb-id__name { font-size: 1.375rem; }
+  .tpb-id__where { font-size: 0.9375rem; }
+  /* Basis forces the badge onto its own line; max-content keeps it hugging its
+     label. Stretching it full width would make a passive status read as a
+     button, and nothing here is clickable. */
+  .tpb-id__scope { flex: 0 1 100%; max-width: max-content; margin-left: 0; }
+}
+
+/* ── Tabs ──────────────────────────────────────────────────────────────────
+   Overflowed silently at 375px (382px of tabs in a 276px box, overflow
+   visible), so "Reviews" was clipped and unreachable. Scrolls now, and the
+   buttons refuse to compress into unreadability. */
+.tpb-tabs {
+  display: flex;
+  gap: 0;
+  /* The rule was a border-bottom plus a -1px margin on each tab to overhang it.
+     Inside a scroll container that 1px overhang makes scrollHeight exceed
+     clientHeight, which grows a stray vertical scrollbar. An inset shadow draws
+     the same line without occupying layout, so nothing overhangs. */
+  box-shadow: inset 0 -1px 0 var(--c-border);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--c-border) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+.tpb-tabs::-webkit-scrollbar { height: 3px; }
+.tpb-tabs::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 99px; }
+
+.tpb-tab { flex-shrink: 0; padding: 16px 20px; white-space: nowrap; }
+
+/* Tighter tabs on narrow screens so all three usually fit without scrolling;
+   the scroll above is the safety net for long translations, not the norm. */
+@media (max-width: 560px) {
+  .tpb-tab { padding: 14px 13px; font-size: 0.9375rem; }
+}
+
+/* Touch devices get the 44px target PRODUCT.md asks for; pointer devices keep
+   the tighter rhythm. */
+@media (pointer: coarse) {
+  .tpb-tab { min-height: 48px; }
+}
+
+/* Tracks .tpb-id__avatar at both sizes so nothing jumps when the profile lands. */
+.tpb-skel-avatar { width: 80px; height: 80px; border-radius: 16px; }
+@media (max-width: 560px) { .tpb-skel-avatar { width: 60px; height: 60px; border-radius: 14px; } }
+
 .profile-card {
   outline: 1px solid rgba(255,255,255,0.07);
   transition: transform 0.15s cubic-bezier(0.22,1,0.36,1), box-shadow 0.15s ease;
