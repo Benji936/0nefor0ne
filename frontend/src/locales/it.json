@@ -537,14 +537,14 @@
     "declinePlaceholder": "Facoltativo  spiega perché rifiuti…"
   },
   "traderProfile": {
+    "binderRarity": "Filtra per rarità",
+    "binderAllRarities": "Tutte le rarità",
     "listingsTitle": "Annunci attivi",
     "listingSelling": "Vende",
     "listingsOpen": "Vedi tutti nel centro scambi",
     "reviewScore": "{score} su 5",
     "binderCount": "{count} carta | {count} carte",
     "binderSearch": "Cerca carte",
-    "binderSet": "Filtra per set",
-    "binderAllSets": "Tutti i set",
     "binderWantedOnly": "Solo quello che cerco",
     "binderShowing": "{shown} su {total}",
     "binderLoadMore": "Carica altre {count}",

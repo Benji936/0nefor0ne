@@ -537,14 +537,14 @@
     "declinePlaceholder": "Optional  let them know why you're declining…"
   },
   "traderProfile": {
+    "binderRarity": "Filter by rarity",
+    "binderAllRarities": "All rarities",
     "listingsTitle": "Active listings",
     "listingSelling": "Sell",
     "listingsOpen": "See all in Trade Center",
     "reviewScore": "{score} out of 5",
     "binderCount": "{count} card | {count} cards",
     "binderSearch": "Search cards",
-    "binderSet": "Filter by set",
-    "binderAllSets": "All sets",
     "binderWantedOnly": "Only what I want",
     "binderShowing": "Showing {shown} of {total}",
     "binderLoadMore": "Load {count} more",

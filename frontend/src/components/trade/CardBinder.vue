@@ -27,25 +27,38 @@ const { t } = useI18n();
 // presses, small enough that first paint stays cheap.
 const PAGE = 60;
 
-const query    = ref("");
-const setValue = ref("");
+const query      = ref("");
+const rarityValue = ref("");
 const wantedOnly = ref(false);
-const shown    = ref(PAGE);
+const shown      = ref(PAGE);
 
 const hasWanted = computed(() => props.cards.some((c) => c.matchesMyWishlist));
 
-// Sets the trader actually owns, so the filter can never offer a dead option.
-const sets = computed(() => {
-  const seen = new Set();
-  for (const c of props.cards) if (c.extension) seen.add(c.extension);
-  return [...seen].sort((a, b) => a.localeCompare(b));
+// Rarity, not `extension`. Extension is a print code (MZMU-EN001) that
+// identifies one printing of one card, so filtering by it returned a single
+// card; it is also blank on the large majority of rows, which made the control
+// vanish on the biggest collections. Rarity is present on every card.
+const rarityKey = (c) => String(c?.rarity ?? "").trim().toLowerCase();
+
+// Stored casing is inconsistent ("common" alongside "Ultra Rare"), so group on
+// a lowercase key and capitalise for display. slice(1) rather than a full
+// title-case, or "Collector's Rare" becomes "Collector'S Rare".
+const rarities = computed(() => {
+  const byKey = new Map();
+  for (const c of props.cards) {
+    const k = rarityKey(c);
+    if (!k || byKey.has(k)) continue;
+    byKey.set(k, k.split(" ").map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w)).join(" "));
+  }
+  return [...byKey].map(([value, label]) => ({ value, label }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 });
 
 const filtered = computed(() => {
   const q = query.value.trim().toLowerCase();
   return props.cards.filter((c) => {
     if (wantedOnly.value && !c.matchesMyWishlist) return false;
-    if (setValue.value && c.extension !== setValue.value) return false;
+    if (rarityValue.value && rarityKey(c) !== rarityValue.value) return false;
     if (q && !String(c.name ?? "").toLowerCase().includes(q)) return false;
     return true;
   });
@@ -56,7 +69,7 @@ const more    = computed(() => Math.max(filtered.value.length - shown.value, 0))
 
 // Any change to the query re-pages from the top, or the user would press
 // "load more" to reveal results that were never hidden from this filter.
-watch([query, setValue, wantedOnly, () => props.cards], () => { shown.value = PAGE; });
+watch([query, rarityValue, wantedOnly, () => props.cards], () => { shown.value = PAGE; });
 
 function label(c) {
   const bits = [c.name];
@@ -85,9 +98,9 @@ function label(c) {
           />
         </div>
 
-        <select v-if="sets.length > 1" v-model="setValue" class="cb__select" :aria-label="t('traderProfile.binderSet')">
-          <option value="">{{ t('traderProfile.binderAllSets') }}</option>
-          <option v-for="s in sets" :key="s" :value="s">{{ s }}</option>
+        <select v-if="rarities.length > 1" v-model="rarityValue" class="cb__select" :aria-label="t('traderProfile.binderRarity')">
+          <option value="">{{ t('traderProfile.binderAllRarities') }}</option>
+          <option v-for="r in rarities" :key="r.value" :value="r.value">{{ r.label }}</option>
         </select>
 
         <button

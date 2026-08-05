@@ -537,14 +537,14 @@
     "declinePlaceholder": "Optionnel  expliquez pourquoi vous refusez…"
   },
   "traderProfile": {
+    "binderRarity": "Filtrer par rareté",
+    "binderAllRarities": "Toutes les raretés",
     "listingsTitle": "Annonces actives",
     "listingSelling": "Vend",
     "listingsOpen": "Tout voir dans le centre d'échange",
     "reviewScore": "{score} sur 5",
     "binderCount": "{count} carte | {count} cartes",
     "binderSearch": "Rechercher des cartes",
-    "binderSet": "Filtrer par extension",
-    "binderAllSets": "Toutes les extensions",
     "binderWantedOnly": "Seulement ce que je cherche",
     "binderShowing": "{shown} sur {total}",
     "binderLoadMore": "Afficher {count} de plus",
