@@ -388,6 +388,9 @@ function signIn() {
 
         <!-- What it does. A plain list: these are facts, not four cards. -->
         <ul class="cv__unlocks">
+          <!-- Events first: it is the one line that names a capability the
+               community does not have until this is done. -->
+          <li><v-icon icon="mdi-calendar-plus" size="15" />{{ t('communityVerify.unlockEvents') }}</li>
           <li><v-icon icon="mdi-check-decagram" size="15" />{{ t('communityVerify.unlockBadge') }}</li>
           <li><v-icon icon="mdi-sort-variant" size="15" />{{ t('communityVerify.unlockRanking') }}</li>
           <li><v-icon icon="mdi-shield-account-outline" size="15" />{{ t('communityVerify.unlockTrust') }}</li>

@@ -1323,7 +1323,9 @@
     "followerCount": "nessun follower | 1 follower | {n} follower",
     "followingTitle": "Community che seguo",
     "followingEmpty": "Trova community da seguire",
-    "placeCredit": "Ricerca fornita da OpenStreetMap"
+    "placeCredit": "Ricerca fornita da OpenStreetMap",
+    "addEventLocked": "Verifica per pubblicare eventi",
+    "eventsEmptyUnverified": "Le community verificate possono pubblicare eventi qui. La tua non lo è ancora."
   },
   "communityVerify": {
     "metaTitle": "Verifica {name}",
@@ -1335,6 +1337,7 @@
     "titleProcessing": "Ci siamo quasi",
     "titlePending": "In attesa di revisione",
     "lede": "La verifica dice agli altri collezionisti che questo posto esiste davvero e che sei tu a gestirlo. È un solo passaggio, e il primo anno non costa nulla.",
+    "unlockEvents": "Pubblicare eventi sul tuo profilo e nella pagina Annunci",
     "unlockBadge": "Un segno di verifica sulla tua community, ovunque compaia",
     "unlockRanking": "Posizione prioritaria nell'elenco delle community",
     "unlockTrust": "Chi scambia vede subito che dietro c'è una persona vera",

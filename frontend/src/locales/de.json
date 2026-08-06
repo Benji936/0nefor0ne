@@ -1323,7 +1323,9 @@
     "followerCount": "keine Follower | 1 Follower | {n} Follower",
     "followingTitle": "Communities, denen ich folge",
     "followingEmpty": "Communities zum Folgen finden",
-    "placeCredit": "Suche unterstützt von OpenStreetMap"
+    "placeCredit": "Suche unterstützt von OpenStreetMap",
+    "addEventLocked": "Zum Posten verifizieren",
+    "eventsEmptyUnverified": "Verifizierte Communities können hier Events posten. Deine ist noch nicht verifiziert."
   },
   "communityVerify": {
     "metaTitle": "{name} verifizieren",
@@ -1335,6 +1337,7 @@
     "titleProcessing": "Fast geschafft",
     "titlePending": "Wartet auf Prüfung",
     "lede": "Die Verifizierung zeigt anderen Sammlern, dass es diesen Ort wirklich gibt und dass du ihn führst. Ein Schritt, und das erste Jahr kostet nichts.",
+    "unlockEvents": "Events auf deinem Profil und auf der Anzeigen-Seite posten",
     "unlockBadge": "Ein Verifiziert-Zeichen an deiner Community, überall wo sie auftaucht",
     "unlockRanking": "Bevorzugte Platzierung im Community-Verzeichnis",
     "unlockTrust": "Händler sehen auf einen Blick, dass eine echte Person dahintersteht",

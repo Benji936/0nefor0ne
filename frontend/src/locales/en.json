@@ -1323,7 +1323,9 @@
     "followerCount": "no followers | 1 follower | {n} followers",
     "followingTitle": "Communities I follow",
     "followingEmpty": "Find communities to follow",
-    "placeCredit": "Search powered by OpenStreetMap"
+    "placeCredit": "Search powered by OpenStreetMap",
+    "addEventLocked": "Verify to post events",
+    "eventsEmptyUnverified": "Verified communities can post events here. Yours is not verified yet."
   },
   "communityVerify": {
     "metaTitle": "Verify {name}",
@@ -1335,6 +1337,7 @@
     "titleProcessing": "Almost there",
     "titlePending": "Waiting on a review",
     "lede": "Verification tells other collectors this place is real and that you run it. It is one step, and the first year costs nothing.",
+    "unlockEvents": "Post events to your profile and to the Announces page",
     "unlockBadge": "A verified mark on your community, everywhere it appears",
     "unlockRanking": "Priority placement in the community directory",
     "unlockTrust": "Traders can see at a glance that a real person stands behind this",
