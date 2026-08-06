@@ -158,6 +158,24 @@ function commandDefinitions() {
       ],
     },
     {
+      // Verifying a community on 0nefor.one by proving you run this server.
+      // Guild-only: the whole point is which server the command was run in.
+      name: 'verify',
+      description: 'Verify this server as your community on 0nefor.one',
+      type: ApplicationCommandType.ChatInput,
+      dm_permission: false,
+      options: [
+        {
+          name: 'code',
+          description: 'The code shown on your community verification page',
+          type: ApplicationCommandOptionType.String,
+          required: true,
+          min_length: 8,
+          max_length: 8,
+        },
+      ],
+    },
+    {
       // Discord launches the activity itself; no interaction reaches the bot.
       name: 'duel',
       description: 'Start a Remote Duel in your voice channel',

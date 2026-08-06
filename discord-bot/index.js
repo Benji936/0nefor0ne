@@ -28,11 +28,12 @@ const {
   MessageFlags,
 } = require('discord.js');
 const https = require('https');
+const { createHash } = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 const { parseAnnounce, ANNOUNCE_KIND } = require('./lib/parseAnnounce');
 const { parseWantList, buildWantRows, wantListTitle } = require('./lib/wantList');
 const { searchListings } = require('./lib/marketplace');
-const { commandDefinitions, buildSearchEmbed } = require('./lib/slashCommands');
+const { commandDefinitions, buildSearchEmbed, escapeMd } = require('./lib/slashCommands');
 
 // ── Validate env ──────────────────────────────────────────────────────────────
 const {
@@ -1010,11 +1011,83 @@ async function handleLfCommand(interaction) {
   );
 }
 
+/**
+ * /verify <code> — the bot half of community verification.
+ *
+ * The website issues a one-time code to the owner of a community and stores its
+ * hash. Running the command here proves two things at once that the website
+ * cannot prove on its own: that the caller holds Manage Server on a real guild,
+ * and which guild it is. Both replies are ephemeral; nobody else in the channel
+ * needs to see somebody's verification code being handled.
+ */
+async function handleVerifyCommand(interaction) {
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+  if (!interaction.guild) {
+    return interaction.editReply('Run this in the server you want to verify, not in a DM.');
+  }
+  if (!interaction.member?.permissions.has(PermissionFlagsBits.ManageGuild)) {
+    return interaction.editReply(
+      'Only someone with **Manage Server** here can verify this server. Ask an admin to run it.',
+    );
+  }
+
+  const code = interaction.options.getString('code', true).trim().toUpperCase();
+  const hash = createHash('sha256').update(code).digest('hex');
+
+  const { data: claim, error } = await supabase
+    .from('community_claim')
+    .select('id, link_token_expires_at, community:community ( slug, name )')
+    .eq('link_token_hash', hash)
+    .maybeSingle();
+
+  if (error) {
+    console.error('/verify lookup failed:', error);
+    return interaction.editReply('⚠️ Could not check that code. Try again in a moment.');
+  }
+  // One message for "wrong" and "already used": a used token is deleted, so the
+  // two are indistinguishable here, and saying which would leak whether a code
+  // was ever real.
+  if (!claim) {
+    return interaction.editReply(
+      'That code is not valid. Codes are single-use and last 15 minutes, so generate a fresh one on the verification page.',
+    );
+  }
+  if (!claim.link_token_expires_at || new Date(claim.link_token_expires_at) < new Date()) {
+    return interaction.editReply('That code has expired. Generate a new one on the verification page.');
+  }
+
+  const { error: updateError } = await supabase
+    .from('community_claim')
+    .update({
+      identity_verified_at: new Date().toISOString(),
+      discord_guild_id: interaction.guild.id,
+      proof_method: 'discord_bot',
+      link_token_hash: null,
+      link_token_expires_at: null,
+    })
+    .eq('id', claim.id);
+
+  if (updateError) {
+    console.error('/verify update failed:', updateError);
+    return interaction.editReply('⚠️ Could not complete verification. Try again in a moment.');
+  }
+
+  const slug = claim.community?.slug;
+  return interaction.editReply(
+    [
+      `✅ **${escapeMd(interaction.guild.name)}** is verified as ${claim.community?.name ? `**${escapeMd(claim.community.name)}**` : 'your community'}.`,
+      slug ? `Finish setting it up: ${APP_URL}/en/community/${slug}/verify` : '',
+    ].filter(Boolean).join('\n'),
+  );
+}
+
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
   try {
     if (interaction.commandName === 'search') return await handleSearchCommand(interaction);
     if (interaction.commandName === 'lf') return await handleLfCommand(interaction);
+    if (interaction.commandName === 'verify') return await handleVerifyCommand(interaction);
   } catch (err) {
     console.error(`/${interaction.commandName} failed:`, err);
     const msg = '⚠️ Something went wrong. Please try again in a moment.';
