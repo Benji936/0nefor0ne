@@ -1337,7 +1337,8 @@
     "giveUpFailed": "Cela n'a pas abouti. Rien n'a été modifié.",
     "yoursAlready": "Votre communauté",
     "alreadyOwnOne": "Vous gérez déjà une communauté. Un compte n'en a qu'une, alors rendez celle-ci d'abord si vous voulez repartir ailleurs.",
-    "claimBlocked": "Vous gérez déjà une communauté, et un compte n'en a qu'une."
+    "claimBlocked": "Vous gérez déjà une communauté, et un compte n'en a qu'une.",
+    "fieldKindHint": "Cochez tout ce qui correspond. Le premier est celui affiché dans l'annuaire."
   },
   "communityVerify": {
     "metaTitle": "Vérifier {name}",

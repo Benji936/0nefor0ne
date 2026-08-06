@@ -1,6 +1,7 @@
 import { getClient } from "@/lib/supabaseClient";
 import { slugify, withSuffix } from "@/lib/communitySlug";
 import { sanitizeLinks } from "@/lib/communityLinks";
+import { normalizeKinds } from "@/lib/communityKinds";
 
 const PAGE_SIZE = 24;
 
@@ -29,10 +30,12 @@ async function uniqueSlug(name, city) {
 export async function fetchDirectory({ kind, country, region, remoteDuel, q, page = 0, pageSize = PAGE_SIZE } = {}) {
   let query = getClient()
     .from("community")
-    .select("id, kind, name, slug, city, country, region, avatar_url, banner_url, remote_duel, verified, owner, follower_count", { count: "exact" })
+    .select("id, kind, kinds, name, slug, city, country, region, avatar_url, banner_url, remote_duel, verified, owner, follower_count", { count: "exact" })
     .eq("status", "published");
 
-  if (kind)               query = query.eq("kind", kind);
+  // "Is store among your kinds", not "is store your kind": a shop that also
+  // runs a Discord belongs under both filters, which is the point of kinds.
+  if (kind)               query = query.contains("kinds", [kind]);
   if (country)            query = query.eq("country", country);
   if (region)             query = query.eq("region", region);
   if (remoteDuel === true) query = query.eq("remote_duel", true);
@@ -73,7 +76,9 @@ export async function createCommunity(input) {
   const slug = await uniqueSlug(input.name, input.city);
   const row = {
     owner: me,
-    kind: input.kind,
+    // kinds only: the database derives kind from it, and sending both invites
+    // the two to disagree.
+    kinds: normalizeKinds(input.kinds ?? [input.kind]),
     name: input.name,
     slug,
     bio: input.bio ?? "",
@@ -111,6 +116,7 @@ export async function createCommunity(input) {
 
 export async function updateCommunity(id, patch) {
   const clean = { ...patch, updated_at: new Date().toISOString() };
+  if ("kinds" in clean)       clean.kinds = normalizeKinds(clean.kinds);
   if ("website" in clean)     clean.website = assertHttp(clean.website, "Website");
   if ("discord_url" in clean) clean.discord_url = assertHttp(clean.discord_url, "Discord link");
   if ("links" in clean)       clean.links = sanitizeLinks(clean.links);

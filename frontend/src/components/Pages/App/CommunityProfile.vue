@@ -7,6 +7,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useHead } from "@unhead/vue";
 import { fetchBySlug, updateCommunity, fetchMyCommunities } from "@/lib/community";
+import { kindsOf, KINDS, TYPE_KEYS } from "@/lib/communityKinds";
 import { validateImageFile, uploadCommunityMedia } from "@/lib/communityMedia";
 import { COUNTRIES } from "@/lib/countries";
 import { getCurrentSession, onAuthChange, signInWithDiscord } from "@/lib/supabaseClient";
@@ -29,9 +30,6 @@ const notFound       = ref(false);
 const currentUserId  = ref(null);
 
 const KIND_KEYS = { store: "kindStore", discord: "kindDiscord", group: "kindGroup" };
-// Singular type labels for the on-page identity line ("Store", not the plural
-// "Stores" the directory filter reuses). Meta/SEO copy keeps kindLabel.
-const TYPE_KEYS = { store: "typeStore", discord: "typeDiscord", group: "typeGroup" };
 
 // Stale-response guard: only the most recently issued load() may commit its
 // result, so a slower earlier fetch (e.g. after a rapid slug change) can't
@@ -125,11 +123,10 @@ const kindLabel = computed(() => {
   return key ? t(`community.${key}`) : (community.value?.kind ?? "");
 });
 
-// Display-only: singular type shown in the identity line.
-const typeLabel = computed(() => {
-  const key = TYPE_KEYS[community.value?.kind];
-  return key ? t(`community.${key}`) : (community.value?.kind ?? "");
-});
+// Everything this community is, in the owner's chosen order. The SEO title
+// above keeps the primary kind alone: "Store in Geneva" is a title, "Store,
+// Discord server and play group in Geneva" is a sentence.
+const profileKinds = computed(() => kindsOf(community.value));
 
 const cityCountry = computed(() => {
   const c = community.value;
@@ -288,10 +285,19 @@ const editErr = ref("");
 const uploadingAvatar = ref(false);   // used by the image upload task
 const uploadingBanner = ref(false);
 const edit = ref({
-  name: "", bio: "", links: [],
+  name: "", bio: "", links: [], kinds: [],
   city: "", country: "", avatar_url: null, banner_url: null,
   remote_duel: false,
 });
+
+// A place picks up a Discord server or starts a play group long after its page
+// exists, so the set of kinds has to be editable, not just chosen once at
+// creation. Same rule as the create form: you cannot be nothing.
+function toggleEditKind(k) {
+  const list = edit.value.kinds;
+  if (!list.includes(k)) edit.value.kinds = [...list, k];
+  else if (list.length > 1) edit.value.kinds = list.filter((x) => x !== k);
+}
 
 // Local key so v-for rows stay stable across reorder / add / remove (the stored
 // links carry no id). Never persisted; sanitizeLinks reads only platform/url/label.
@@ -305,6 +311,7 @@ function startEdit() {
     links: (c.links ?? []).map((l) => ({
       platform: l.platform, url: l.url ?? "", label: l.label ?? "", _k: ++linkKey,
     })),
+    kinds: kindsOf(c),
     city: c.city ?? "", country: c.country ?? "",
     avatar_url: c.avatar_url ?? null, banner_url: c.banner_url ?? null,
     remote_duel: !!c.remote_duel,
@@ -393,6 +400,7 @@ async function saveEdit() {
       bio:         edit.value.bio.trim(),
       // sanitizeLinks (in updateCommunity) drops the local _k and empty rows.
       links:       edit.value.links,
+      kinds:       edit.value.kinds,
       city:        edit.value.city.trim() || null,
       country:     edit.value.country || null,
       avatar_url:  edit.value.avatar_url || null,
@@ -589,9 +597,34 @@ async function onStale() {
             </div>
 
             <div class="cp-meta">
-              <span class="cp-meta__type">
-                <CommunityKindIcon :kind="community.kind" :size="13" />
-                {{ typeLabel }}
+              <!-- Every kind, spelled out. The profile has the room the card
+                   does not, and this is the page that has to be exact about
+                   what the place actually is. -->
+              <template v-if="!editing">
+                <template v-for="(k, i) in profileKinds" :key="k">
+                  <span v-if="i > 0" class="cp-meta__sep" aria-hidden="true">·</span>
+                  <span class="cp-meta__type">
+                    <CommunityKindIcon :kind="k" :size="13" />
+                    {{ t(TYPE_KEYS[k] ?? TYPE_KEYS.group) }}
+                  </span>
+                </template>
+              </template>
+              <span v-else class="cp-kindset" role="group" :aria-label="t('community.fieldKind')">
+                <label
+                  v-for="k in KINDS"
+                  :key="k"
+                  class="cp-kindchip"
+                  :class="{ 'cp-kindchip--on': edit.kinds.includes(k) }"
+                >
+                  <input
+                    type="checkbox"
+                    class="cp-kindchip__box"
+                    :checked="edit.kinds.includes(k)"
+                    @change="toggleEditKind(k)"
+                  />
+                  <CommunityKindIcon :kind="k" :size="13" />
+                  {{ t(TYPE_KEYS[k]) }}
+                </label>
               </span>
               <template v-if="!editing">
                 <span v-if="community.remote_duel" class="cp-meta__sep" aria-hidden="true">·</span>
@@ -1005,6 +1038,26 @@ async function onStale() {
 .cp-meta__sep { color: color-mix(in srgb, var(--c-text) 55%, transparent); }
 @media (max-width: 479px) { .cp-meta__sep { display: none; } }
 .cp-meta__loc, .cp-meta__remote { display: inline-flex; align-items: center; gap: 4px; }
+
+/* Editing the kinds: the same pills the identity line already shows, made
+   tickable, so the row does not change shape between reading and editing. */
+.cp-kindset { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.cp-kindchip {
+  display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+  text-transform: uppercase; letter-spacing: 0.06em; font-size: 11.5px;
+  color: color-mix(in srgb, var(--c-text) 62%, transparent);
+  background: color-mix(in srgb, var(--c-bg) 40%, transparent);
+  border: 1.5px solid transparent;
+  padding: 3px 9px; border-radius: 7px;
+}
+.cp-kindchip .v-icon, .cp-kindchip .cpi-svg { color: currentColor; }
+.cp-kindchip--on {
+  color: var(--c-text);
+  border-color: color-mix(in srgb, var(--c-trade) 55%, transparent);
+}
+.cp-kindchip--on .v-icon, .cp-kindchip--on .cpi-svg { color: var(--c-trade); }
+.cp-kindchip__box { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.cp-kindchip:focus-within { outline: 2px solid var(--c-trade); outline-offset: 2px; }
 .cp-meta__loc .v-icon, .cp-meta__remote .v-icon { color: var(--c-trade); }
 
 /* ── Remote-duel toggle (edit) ────────────────────── */

@@ -1,5 +1,8 @@
 <script setup>
+import { computed } from "vue";
 import { useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
+import { kindsOf, TYPE_KEYS } from "@/lib/communityKinds";
 import CommunityKindIcon from "@/components/community/CommunityKindIcon.vue";
 import FollowButton from "@/components/community/FollowButton.vue";
 const props = defineProps({
@@ -9,9 +12,16 @@ const props = defineProps({
 defineEmits(["auth-required"]);
 const route = useRoute();
 const locale = route.params.locale || "en";
+const { t } = useI18n();
 
-// Singular, localized label per kind (the meta filter reuses the plural kindX).
-const TYPE_KEYS = { store: "community.typeStore", discord: "community.typeDiscord", group: "community.typeGroup" };
+// The meta line has room for one word. A community that is several things gets
+// the primary kind spelled out and the rest as glyphs, rather than a comma list
+// that pushes the city off the card.
+const kinds = computed(() => kindsOf(props.community));
+const primary = computed(() => kinds.value[0] ?? "group");
+const extras = computed(() => kinds.value.slice(1));
+const kindsLabel = computed(() =>
+  kinds.value.map((k) => t(TYPE_KEYS[k] ?? TYPE_KEYS.group)).join(", "));
 </script>
 <template>
   <router-link
@@ -22,7 +32,7 @@ const TYPE_KEYS = { store: "community.typeStore", discord: "community.typeDiscor
     <div class="cc__banner">
       <img v-if="community.banner_url" :src="community.banner_url" alt="" />
       <span v-else class="cc__banner-mark" aria-hidden="true">
-        <CommunityKindIcon :kind="community.kind" :size="34" />
+        <CommunityKindIcon :kind="primary" :size="34" />
       </span>
     </div>
 
@@ -37,9 +47,10 @@ const TYPE_KEYS = { store: "community.typeStore", discord: "community.typeDiscor
         <v-icon v-if="community.verified" icon="mdi-check-decagram" size="15" class="cc__verified" />
       </div>
       <div class="cc__meta">
-        <span class="cc__kind">
-          <CommunityKindIcon :kind="community.kind" :size="12" />
-          {{ $t(TYPE_KEYS[community.kind] || 'community.typeGroup') }}
+        <span class="cc__kind" :aria-label="kindsLabel">
+          <CommunityKindIcon :kind="primary" :size="12" />
+          <span aria-hidden="true">{{ $t(TYPE_KEYS[primary] || 'community.typeGroup') }}</span>
+          <CommunityKindIcon v-for="k in extras" :key="k" :kind="k" :size="12" aria-hidden="true" />
         </span>
         <span v-if="community.city">· {{ community.city }}<template v-if="community.country">, {{ community.country }}</template></span>
       </div>

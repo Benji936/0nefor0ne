@@ -10,6 +10,7 @@
 // browser for the length of this request and never written down. It is minted
 // with the `guilds` scope, which is read-only over the server list.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { strictestKind } from "../_shared/kinds.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -58,11 +59,12 @@ Deno.serve(async (req) => {
     }
 
     const { data: community } = await admin.from("community")
-      .select("id, owner, kind, discord_url, verified").eq("id", community_id).maybeSingle();
+      .select("id, owner, kind, kinds, discord_url, verified").eq("id", community_id).maybeSingle();
     if (!community) return json({ error: "not_found" }, 404);
     if (community.owner !== user.id) return json({ error: "not_owner" }, 403);
     if (community.verified) return json({ error: "already_verified" }, 409);
-    if (community.kind !== "discord") return json({ error: "wrong_kind" }, 400);
+    // Only when Discord is the whole story; see community-verify-bot-token.
+    if (strictestKind(community) !== "discord") return json({ error: "wrong_kind" }, 400);
 
     const code = inviteCode(community.discord_url ?? "");
     if (!code) return json({ status: "needs_invite" });

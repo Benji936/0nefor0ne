@@ -2,6 +2,8 @@
 import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { createCommunity, ALREADY_OWN_ONE } from "@/lib/community";
+import { KINDS } from "@/lib/communityKinds";
+import CommunityKindIcon from "@/components/community/CommunityKindIcon.vue";
 import { COUNTRIES } from "@/lib/countries";
 
 const props = defineProps({
@@ -11,7 +13,7 @@ const emit = defineEmits(["update:modelValue", "saved"]);
 const { t } = useI18n();
 
 const name       = ref("");
-const kind       = ref("store");
+const kinds      = ref(["store"]);
 const bio        = ref("");
 const website    = ref("");
 const discordUrl = ref("");
@@ -34,10 +36,18 @@ const canSubmit = computed(() => {
 watch(() => props.modelValue, open => {
   if (!open) return;
   errorMsg.value = "";
-  name.value = ""; kind.value = "store"; bio.value = "";
+  name.value = ""; kinds.value = ["store"]; bio.value = "";
   website.value = ""; discordUrl.value = ""; city.value = ""; country.value = "";
   remoteDuel.value = false;
 });
+
+// Order is meaning: the first kind picked is the primary one, the glyph the
+// directory shows when it has room for only one. Unticking the last remaining
+// kind would leave the community as nothing, so it stays ticked.
+function toggleKind(k) {
+  if (!kinds.value.includes(k)) kinds.value = [...kinds.value, k];
+  else if (kinds.value.length > 1) kinds.value = kinds.value.filter((x) => x !== k);
+}
 
 function close() { emit("update:modelValue", false); }
 
@@ -54,7 +64,7 @@ async function submit() {
       country:     country.value || null,
       remote_duel: remoteDuel.value,
     };
-    const row = await createCommunity({ kind: kind.value, ...patch });
+    const row = await createCommunity({ kinds: kinds.value, ...patch });
     emit("saved", row);
     close();
   } catch (err) {
@@ -108,15 +118,24 @@ async function submit() {
             <span v-if="name.length > 100" class="field-hint" style="text-align:right">{{ name.length }} / 120</span>
           </div>
 
-          <!-- Kind -->
-          <div class="field-block">
-            <label class="field-label">{{ t('community.fieldKind') }}</label>
-            <select v-model="kind" class="field-input field-select">
-              <option value="store">{{ t('community.kindStore') }}</option>
-              <option value="discord">{{ t('community.kindDiscord') }}</option>
-              <option value="group">{{ t('community.kindGroup') }}</option>
-            </select>
-          </div>
+          <!-- Kind: a place is often several of these at once, so this is a
+               set rather than a choice. First one picked leads. -->
+          <fieldset class="field-block kind-set">
+            <legend class="field-label">{{ t('community.fieldKind') }}</legend>
+            <div class="kind-set__row">
+              <label v-for="k in KINDS" :key="k" class="kind-chip" :class="{ 'kind-chip--on': kinds.includes(k) }">
+                <input
+                  type="checkbox"
+                  class="kind-chip__box"
+                  :checked="kinds.includes(k)"
+                  @change="toggleKind(k)"
+                />
+                <CommunityKindIcon :kind="k" :size="14" />
+                {{ t(`community.kind${k[0].toUpperCase()}${k.slice(1)}`) }}
+              </label>
+            </div>
+            <span class="field-hint">{{ t('community.fieldKindHint') }}</span>
+          </fieldset>
 
           <!-- Bio -->
           <div class="field-block">
@@ -316,6 +335,30 @@ async function submit() {
 .remote-toggle__label { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .remote-toggle__title { font-size: 13px; font-weight: 700; }
 .remote-toggle__hint { font-size: 11px; font-weight: 500; color: var(--c-muted); }
+
+/* ── Kind set ─────────────────────────────────────── */
+.kind-set { border: none; padding: 0; margin: 0; min-width: 0; }
+.kind-set__row { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 6px; }
+
+.kind-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 13px; border-radius: 999px; cursor: pointer;
+  border: 1.5px solid var(--c-border); background: var(--c-surface);
+  color: var(--c-text); font-size: 13px; font-weight: 600;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.kind-chip:hover { border-color: color-mix(in srgb, var(--c-trade) 45%, var(--c-border)); }
+.kind-chip > .v-icon { color: var(--c-muted); }
+.kind-chip--on {
+  border-color: color-mix(in srgb, var(--c-trade) 55%, transparent);
+  background: color-mix(in srgb, var(--c-trade) 10%, var(--c-surface));
+}
+.kind-chip--on > .v-icon { color: var(--c-trade); }
+
+/* The tick is the chip. Kept reachable rather than display:none so the set is
+   still a real group of checkboxes to a keyboard and a screen reader. */
+.kind-chip__box { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.kind-chip:focus-within { outline: 2px solid var(--c-trade); outline-offset: 2px; }
 
 /* ── Error bar ────────────────────────────────────── */
 .error-bar {

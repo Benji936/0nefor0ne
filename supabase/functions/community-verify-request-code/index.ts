@@ -10,6 +10,7 @@
 // Mailbox control at a domain is the same bar GitHub and Google Workspace use.
 // It is not proof of incorporation, and it is not meant to be.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { kindsOf } from "../_shared/kinds.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -76,11 +77,13 @@ Deno.serve(async (req) => {
     if (typeof email !== "string" || !email.trim()) return json({ error: "missing_email" }, 400);
 
     const { data: community } = await admin.from("community")
-      .select("id, owner, kind, website, verified").eq("id", community_id).maybeSingle();
+      .select("id, owner, kind, kinds, website, verified").eq("id", community_id).maybeSingle();
     if (!community) return json({ error: "not_found" }, 404);
     if (community.owner !== user.id) return json({ error: "not_owner" }, 403);
     if (community.verified) return json({ error: "already_verified" }, 409);
-    if (community.kind !== "store") return json({ error: "wrong_kind" }, 400);
+    // Store proof is the hardest one, so it is right for anyone claiming to be
+    // a store, whatever else they also are.
+    if (!kindsOf(community).includes("store")) return json({ error: "wrong_kind" }, 400);
     if (!community.website) return json({ status: "needs_website" });
 
     const address = email.trim();

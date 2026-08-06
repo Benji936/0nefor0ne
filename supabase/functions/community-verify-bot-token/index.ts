@@ -10,6 +10,7 @@
 // trades entropy for legibility: 8 characters from a 32-symbol alphabet is
 // ~40 bits, one-time, and dead after 15 minutes. Only the hash is stored.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { strictestKind } from "../_shared/kinds.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -50,11 +51,13 @@ Deno.serve(async (req) => {
     if (!community_id) return json({ error: "missing_community_id" }, 400);
 
     const { data: community } = await admin.from("community")
-      .select("id, owner, kind, verified").eq("id", community_id).maybeSingle();
+      .select("id, owner, kind, kinds, verified").eq("id", community_id).maybeSingle();
     if (!community) return json({ error: "not_found" }, 404);
     if (community.owner !== user.id) return json({ error: "not_owner" }, 403);
     if (community.verified) return json({ error: "already_verified" }, 409);
-    if (community.kind !== "discord") return json({ error: "wrong_kind" }, 400);
+    // Only when Discord is the whole story. A community that also calls itself
+    // a store or a group has a harder proof to pass first.
+    if (strictestKind(community) !== "discord") return json({ error: "wrong_kind" }, 400);
 
     const plain = newToken();
     const expiresAt = new Date(Date.now() + TOKEN_TTL_MS).toISOString();

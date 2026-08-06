@@ -75,6 +75,21 @@ describe("proofRoute", () => {
   it("defaults an unknown kind to review rather than to a proof it cannot pass", () => {
     expect(proofRoute({ kind: "something-new" })).toBe("manual");
   });
+
+  // The whole reason multi-kind cannot be a shortcut: a shop with a Discord
+  // server must still prove the shop.
+  it("makes a store prove the store even when it also runs a discord", () => {
+    expect(proofRoute({ kinds: ["discord", "store"], website: "https://x.fr" })).toBe("domain");
+    expect(proofRoute({ kinds: ["discord", "store"], website: "" })).toBe("no-website");
+  });
+
+  it("sends a group that also runs a discord to review", () => {
+    expect(proofRoute({ kinds: ["discord", "group"] })).toBe("manual");
+  });
+
+  it("keeps the discord route when discord is the only claim", () => {
+    expect(proofRoute({ kinds: ["discord"] })).toBe("discord");
+  });
 });
 
 describe("verifyStep", () => {

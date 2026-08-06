@@ -5,6 +5,7 @@
 // single answer to "what do I render", derived entirely from server data, which
 // is what makes a cold load of the URL resume correctly.
 import { getClient } from "@/lib/supabaseClient";
+import { strictestKind } from "@/lib/communityKinds";
 
 // ── Domain matching ─────────────────────────────────────────────────────────
 // Mirrored from community-verify-request-code so the owner finds out their
@@ -88,10 +89,15 @@ export function verifyStep({ community, claim, viewerId, justPaid = false } = {}
  * making them pick a verification method is making them do routing.
  */
 export function proofRoute(community) {
-  if (community?.kind === "store") {
+  // A community can be several kinds at once, and the proof follows the
+  // hardest one it claims. Otherwise a shop tags itself "discord", proves a
+  // server it made this morning, and wears a verified badge in front of
+  // people who came to buy cards from a shop.
+  const strictest = strictestKind(community);
+  if (strictest === "store") {
     return siteHost(community.website) ? "domain" : "no-website";
   }
-  if (community?.kind === "discord") {
+  if (strictest === "discord") {
     return "discord";
   }
   return "manual"; // groups, and anything a later kind adds, get read by a person
