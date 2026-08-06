@@ -2,7 +2,7 @@
 import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { createCommunity, ALREADY_OWN_ONE } from "@/lib/community";
-import { KINDS } from "@/lib/communityKinds";
+import { KINDS, TYPE_KEYS } from "@/lib/communityKinds";
 import CommunityKindIcon from "@/components/community/CommunityKindIcon.vue";
 import { COUNTRIES } from "@/lib/countries";
 
@@ -131,7 +131,9 @@ async function submit() {
                   @change="toggleKind(k)"
                 />
                 <CommunityKindIcon :kind="k" :size="14" />
-                {{ t(`community.kind${k[0].toUpperCase()}${k.slice(1)}`) }}
+                <!-- Singular: this describes one community, not a filter over
+                     many. "Store", not "Stores". -->
+                {{ t(TYPE_KEYS[k]) }}
               </label>
             </div>
             <span class="field-hint">{{ t('community.fieldKindHint') }}</span>

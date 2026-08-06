@@ -10,7 +10,17 @@
 // Mailbox control at a domain is the same bar GitHub and Google Workspace use.
 // It is not proof of incorporation, and it is not meant to be.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { kindsOf } from "../_shared/kinds.ts";
+
+// Mirror of frontend/src/lib/communityKinds.js, kept by hand like currencyFor in
+// claim-create-checkout. Proof gets harder down this list and a community has to
+// pass the hardest one it claims: a shop that also runs a Discord server does
+// not get to prove the server instead of the shop.
+const STRICTNESS = ["store", "group", "discord"];
+
+function kindsOf(c: { kinds?: string[] | null; kind?: string | null }): string[] {
+  const list = Array.isArray(c?.kinds) ? c.kinds.filter((k) => STRICTNESS.includes(k)) : [];
+  return list.length ? list : (c?.kind ? [c.kind] : []);
+}
 
 const cors = {
   "Access-Control-Allow-Origin": "*",

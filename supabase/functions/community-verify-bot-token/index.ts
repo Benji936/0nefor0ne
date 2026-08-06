@@ -10,7 +10,22 @@
 // trades entropy for legibility: 8 characters from a 32-symbol alphabet is
 // ~40 bits, one-time, and dead after 15 minutes. Only the hash is stored.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { strictestKind } from "../_shared/kinds.ts";
+
+// Mirror of frontend/src/lib/communityKinds.js, kept by hand like currencyFor in
+// claim-create-checkout. Proof gets harder down this list and a community has to
+// pass the hardest one it claims: a shop that also runs a Discord server does
+// not get to prove the server instead of the shop.
+const STRICTNESS = ["store", "group", "discord"];
+
+function kindsOf(c: { kinds?: string[] | null; kind?: string | null }): string[] {
+  const list = Array.isArray(c?.kinds) ? c.kinds.filter((k) => STRICTNESS.includes(k)) : [];
+  return list.length ? list : (c?.kind ? [c.kind] : []);
+}
+
+function strictestKind(c: { kinds?: string[] | null; kind?: string | null }): string | null {
+  const list = kindsOf(c);
+  return STRICTNESS.find((k) => list.includes(k)) ?? null;
+}
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
