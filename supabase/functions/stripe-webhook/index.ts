@@ -2,9 +2,15 @@
 // Verifies the Stripe signature (async, Deno crypto), dedupes on event id, then
 // maps subscription status to community state:
 //   trialing | active  -> owner = claimer, verified = true, status = published
-//   canceled | unpaid  -> revert to unclaimed (owner NULL, verified false),
-//                         keeping all owner-edited content
+//   canceled | unpaid  -> drop verified; whether ownership also goes back depends
+//                         on claim.origin (see below). Content is kept either way.
 //   past_due           -> keep ownership (Stripe is dunning), just record status
+//
+// On lapse the two origins have to part company. A claimed store was owned
+// BECAUSE of the subscription, so it reverts to unclaimed and becomes claimable
+// again. A self-created community was owned before any subscription existed, so
+// reverting would delete somebody's ownership of a place they made over a failed
+// card. Those keep the owner and lose only the badge.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@17.7.0?target=deno";
 
@@ -56,13 +62,17 @@ Deno.serve(async (req) => {
 
     try {
       // Mirror subscription state onto the claim row (service role bypasses guard).
-      const { error: mirrorErr } = await admin.from("community_claim").update({
+      // Read origin back from the same write rather than a second round trip.
+      // A missing claim row reads as null and falls through to 'claim', which is
+      // the conservative branch: it never leaves a stranger owning a store.
+      const { data: claimRow, error: mirrorErr } = await admin.from("community_claim").update({
         stripe_customer_id: typeof sub.customer === "string" ? sub.customer : sub.customer?.id ?? null,
         stripe_subscription_id: sub.id,
         subscription_status: status,
         current_period_end: periodEnd,
-      }).eq("community", communityId).eq("claimer", claimer);
+      }).eq("community", communityId).eq("claimer", claimer).select("origin").maybeSingle();
       if (mirrorErr) throw new Error(`mirror: ${mirrorErr.message}`);
+      const selfCreated = claimRow?.origin === "self";
 
       if (status === "trialing" || status === "active") {
         // Grant ownership. WHERE guard: only if unclaimed, or already owned by this
@@ -72,10 +82,13 @@ Deno.serve(async (req) => {
           .eq("id", communityId).or(`owner.is.null,owner.eq.${claimer}`);
         if (grantErr) throw new Error(`grant: ${grantErr.message}`);
       } else if (status === "canceled" || status === "unpaid") {
-        // Lapse: revert to unclaimed but keep content. Only if THIS claimer still
-        // owns it (don't clobber a different current owner).
+        // Lapse. Either way keep the content, and either way only touch the row
+        // if THIS claimer still owns it, so a later owner is never clobbered.
+        const lapsed = selfCreated
+          ? { verified: false }                 // they built it; it stays theirs
+          : { owner: null, verified: false };   // granted by the subscription, so it goes back
         const { error: revertErr } = await admin.from("community")
-          .update({ owner: null, verified: false, status: "published", updated_at: new Date().toISOString() })
+          .update({ ...lapsed, status: "published", updated_at: new Date().toISOString() })
           .eq("id", communityId).eq("owner", claimer);
         if (revertErr) throw new Error(`revert: ${revertErr.message}`);
       }
