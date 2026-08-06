@@ -639,6 +639,20 @@ async function onStale() {
             <span class="cp-gov__notice">{{ t('community.unclaimedNotice') }}</span>
           </div>
 
+          <!-- Verify CTA: the owner's counterpart to the claim row above. Without
+               it there is nothing anywhere that tells someone who created a
+               community that verifying it is even possible. -->
+          <div v-if="!editing && isOwner && !community.verified" class="cp-gov">
+            <router-link
+              class="cp-claim"
+              :to="{ name: 'communityVerify', params: { ...localeParams, slug: community.slug } }"
+            >
+              <v-icon icon="mdi-check-decagram-outline" size="16" />
+              {{ t('communityVerify.verifyPromptAction') }}
+            </router-link>
+            <span class="cp-gov__notice">{{ t('communityVerify.verifyPrompt') }}</span>
+          </div>
+
           <div v-if="finalizing" class="cp-finalizing" role="status">
             <v-progress-circular indeterminate size="16" width="2" color="var(--c-trade)" />
             {{ t('community.claimFinalizing') }}
@@ -1078,6 +1092,8 @@ async function onStale() {
   transition: opacity 0.15s ease;
 }
 .cp-claim:hover { opacity: 0.9; }
+/* The verify CTA uses this same treatment but is a link, not a button. */
+a.cp-claim { text-decoration: none; }
 .cp-edit {
   display: inline-flex; align-items: center; gap: 7px;
   min-height: 44px; padding: 0 16px; border-radius: 12px;
