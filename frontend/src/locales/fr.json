@@ -1325,7 +1325,16 @@
     "followingEmpty": "Trouver des communautés à suivre",
     "placeCredit": "Recherche propulsée par OpenStreetMap",
     "addEventLocked": "Vérifiez pour publier des événements",
-    "eventsEmptyUnverified": "Les communautés vérifiées peuvent publier des événements ici. La vôtre ne l'est pas encore."
+    "eventsEmptyUnverified": "Les communautés vérifiées peuvent publier des événements ici. La vôtre ne l'est pas encore.",
+    "giveUpDelete": "Supprimer cette communauté",
+    "giveUpRelease": "Rendre cette communauté",
+    "giveUpDeleteBody": "La page disparaît, avec ses événements et toutes les personnes qui la suivent. Rien ne se récupère.",
+    "giveUpReleaseBody": "La boutique reste dans l'annuaire, sans propriétaire et non vérifiée, et n'importe qui pourra la revendiquer ensuite, vous compris. Ses événements à venir sont supprimés et tout abonnement en cours est annulé.",
+    "giveUpTypeName": "Tapez {name} pour confirmer",
+    "giveUpDeleteAction": "Supprimer définitivement",
+    "giveUpReleaseAction": "La rendre",
+    "giveUpKeep": "La garder",
+    "giveUpFailed": "Cela n'a pas abouti. Rien n'a été modifié."
   },
   "communityVerify": {
     "metaTitle": "Vérifier {name}",

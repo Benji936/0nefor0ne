@@ -1325,7 +1325,16 @@
     "followingEmpty": "Communities zum Folgen finden",
     "placeCredit": "Suche unterstützt von OpenStreetMap",
     "addEventLocked": "Zum Posten verifizieren",
-    "eventsEmptyUnverified": "Verifizierte Communities können hier Events posten. Deine ist noch nicht verifiziert."
+    "eventsEmptyUnverified": "Verifizierte Communities können hier Events posten. Deine ist noch nicht verifiziert.",
+    "giveUpDelete": "Diese Community löschen",
+    "giveUpRelease": "Diese Community zurückgeben",
+    "giveUpDeleteBody": "Die Seite verschwindet, samt ihren Events und allen, die ihr folgen. Nichts davon kommt zurück.",
+    "giveUpReleaseBody": "Der Laden bleibt im Verzeichnis, ohne Inhaber und ohne Verifizierung, und jede Person kann ihn danach beanspruchen, du eingeschlossen. Anstehende Events werden entfernt, ein laufendes Abo wird gekündigt.",
+    "giveUpTypeName": "Tippe {name} zur Bestätigung",
+    "giveUpDeleteAction": "Endgültig löschen",
+    "giveUpReleaseAction": "Zurückgeben",
+    "giveUpKeep": "Behalten",
+    "giveUpFailed": "Das hat nicht geklappt. Es wurde nichts geändert."
   },
   "communityVerify": {
     "metaTitle": "{name} verifizieren",

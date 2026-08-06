@@ -3,7 +3,7 @@
 // renders a loading / not-found / profile state. The CTA row (claim, report,
 // edit) each opens its own dialog below.
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useHead } from "@unhead/vue";
 import { fetchBySlug, updateCommunity } from "@/lib/community";
@@ -17,8 +17,10 @@ import PlatformIcon from "@/components/community/PlatformIcon.vue";
 import CommunityKindIcon from "@/components/community/CommunityKindIcon.vue";
 import FollowButton from "@/components/community/FollowButton.vue";
 import CommunityEvents from "@/components/community/CommunityEvents.vue";
+import CommunityGiveUp from "@/components/community/CommunityGiveUp.vue";
 
 const route = useRoute();
+const router = useRouter();
 const { t } = useI18n();
 
 const community      = ref(null);
@@ -54,6 +56,14 @@ async function load() {
   } finally {
     if (myId === reqId) loading.value = false;
   }
+}
+
+// Deleted, and there is no page left to stand on. Released, and the page is
+// still here as an unclaimed directory entry, so reloading shows it as the
+// public now sees it.
+function onGaveUp(mode) {
+  if (mode === "delete") router.push({ name: "community", params: localeParams.value });
+  else load();
 }
 
 let unsub = null;
@@ -652,6 +662,15 @@ async function onStale() {
             </router-link>
             <span class="cp-gov__notice">{{ t('communityVerify.verifyPrompt') }}</span>
           </div>
+
+          <!-- Last thing in the column, under everything the owner might
+               actually want to do. -->
+          <CommunityGiveUp
+            v-if="!editing && isOwner"
+            :community="community"
+            :viewer-id="currentUserId"
+            @gone="onGaveUp"
+          />
 
           <div v-if="finalizing" class="cp-finalizing" role="status">
             <v-progress-circular indeterminate size="16" width="2" color="var(--c-trade)" />

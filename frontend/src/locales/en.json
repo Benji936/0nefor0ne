@@ -1325,7 +1325,16 @@
     "followingEmpty": "Find communities to follow",
     "placeCredit": "Search powered by OpenStreetMap",
     "addEventLocked": "Verify to post events",
-    "eventsEmptyUnverified": "Verified communities can post events here. Yours is not verified yet."
+    "eventsEmptyUnverified": "Verified communities can post events here. Yours is not verified yet.",
+    "giveUpDelete": "Delete this community",
+    "giveUpRelease": "Give this community back",
+    "giveUpDeleteBody": "The page goes, and so do its events and everyone following it. None of it comes back.",
+    "giveUpReleaseBody": "The shop stays in the directory, unowned and unverified, and anyone can claim it next, including you. Its upcoming events are removed and any subscription on it is cancelled.",
+    "giveUpTypeName": "Type {name} to confirm",
+    "giveUpDeleteAction": "Delete for good",
+    "giveUpReleaseAction": "Hand it back",
+    "giveUpKeep": "Keep it",
+    "giveUpFailed": "That did not go through. Nothing changed."
   },
   "communityVerify": {
     "metaTitle": "Verify {name}",

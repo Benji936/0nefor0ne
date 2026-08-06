@@ -192,6 +192,23 @@ export async function reportCommunity(id, reason) {
   }
 }
 
+// Which way out a community has. A row you created leaves with you; a seeded
+// directory entry you claimed is handed back and stays in the directory. The
+// server decides this too, from the same column, and refuses a mismatch: this
+// is here so the UI can say the right sentence, not so it can pick.
+export function giveUpMode(community, viewerId) {
+  if (!community || !viewerId || community.owner !== viewerId) return null;
+  return community.created_by === viewerId ? "delete" : "release";
+}
+
+export async function releaseCommunity(communityId, intent) {
+  const { data, error } = await getClient().functions.invoke("community-release", {
+    body: { community_id: communityId, intent },
+  });
+  if (error) { console.error("releaseCommunity failed", error); throw error; }
+  return data; // { ok: true, mode } or { error }
+}
+
 export async function fetchMyCommunities() {
   const me = (await getClient().auth.getSession()).data?.session?.user?.id;
   if (!me) return [];

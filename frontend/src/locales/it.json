@@ -1325,7 +1325,16 @@
     "followingEmpty": "Trova community da seguire",
     "placeCredit": "Ricerca fornita da OpenStreetMap",
     "addEventLocked": "Verifica per pubblicare eventi",
-    "eventsEmptyUnverified": "Le community verificate possono pubblicare eventi qui. La tua non lo è ancora."
+    "eventsEmptyUnverified": "Le community verificate possono pubblicare eventi qui. La tua non lo è ancora.",
+    "giveUpDelete": "Elimina questa community",
+    "giveUpRelease": "Restituisci questa community",
+    "giveUpDeleteBody": "La pagina sparisce, insieme ai suoi eventi e a chi la segue. Non torna indietro nulla.",
+    "giveUpReleaseBody": "Il negozio resta nella directory, senza proprietario e non verificato, e chiunque potrà rivendicarlo in seguito, anche tu. Gli eventi in programma vengono rimossi e ogni abbonamento attivo viene annullato.",
+    "giveUpTypeName": "Scrivi {name} per confermare",
+    "giveUpDeleteAction": "Elimina definitivamente",
+    "giveUpReleaseAction": "Restituiscila",
+    "giveUpKeep": "Tienila",
+    "giveUpFailed": "Non è andata a buon fine. Non è stato modificato nulla."
   },
   "communityVerify": {
     "metaTitle": "Verifica {name}",
