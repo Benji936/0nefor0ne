@@ -82,6 +82,31 @@ export async function signInWithDiscord() {
 }
 
 /**
+ * Re-authenticate with Discord, additionally asking for `guilds`.
+ *
+ * Kept separate from signInWithDiscord on purpose: `guilds` reads the list of
+ * servers someone is in, and every user signing in normally has no reason to
+ * hand that over. Only community verification needs it, so only community
+ * verification asks.
+ *
+ * The returning session carries `provider_token`, which is the Discord access
+ * token the verify Edge Function needs. It survives in-app navigation but not a
+ * full reload, so the caller must use it on the way back, not later.
+ *
+ * @param {string} next  same-origin path to land on afterwards
+ */
+export async function reauthWithDiscordGuilds(next) {
+    const safeNext = typeof next === 'string' && /^\/[^/\\]/.test(next) ? next : '/'
+    return await supabase.auth.signInWithOAuth({
+        provider: 'discord',
+        options: {
+            redirectTo: `${window.location.origin}/en/auth/callback?next=${encodeURIComponent(safeNext)}`,
+            scopes: 'identify email guilds',
+        },
+    })
+}
+
+/**
  * Link Discord to an EXISTING logged-in account.
  * Use this on the Account page for users who already have an email/password account.
  * This will NOT create a new account — it attaches Discord as a second identity.
