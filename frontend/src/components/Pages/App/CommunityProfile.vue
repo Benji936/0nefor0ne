@@ -6,7 +6,7 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useHead } from "@unhead/vue";
-import { fetchBySlug, updateCommunity } from "@/lib/community";
+import { fetchBySlug, updateCommunity, fetchMyCommunities } from "@/lib/community";
 import { validateImageFile, uploadCommunityMedia } from "@/lib/communityMedia";
 import { COUNTRIES } from "@/lib/countries";
 import { getCurrentSession, onAuthChange, signInWithDiscord } from "@/lib/supabaseClient";
@@ -57,6 +57,22 @@ async function load() {
     if (myId === reqId) loading.value = false;
   }
 }
+
+// The community this viewer already owns, if any. An account can own one, so
+// on an unclaimed profile this decides between offering the claim and
+// explaining why it is not on offer. Cleared on sign-out.
+const myOther = ref(null);
+
+async function loadMine() {
+  if (!currentUserId.value) { myOther.value = null; return; }
+  try {
+    const mine = await fetchMyCommunities();
+    myOther.value = mine.find((c) => c.slug !== route.params.slug) ?? null;
+  } catch (e) {
+    console.error("CommunityProfile: fetchMyCommunities failed", e);
+  }
+}
+watch(currentUserId, loadMine, { immediate: true });
 
 // Deleted, and there is no page left to stand on. Released, and the page is
 // still here as an unclaimed directory entry, so reloading shows it as the
@@ -642,11 +658,26 @@ async function onStale() {
 
           <!-- Claim CTA (unclaimed only; edit + report live in the top bar) -->
           <div v-if="!editing && community.owner == null" class="cp-gov">
-            <button type="button" class="cp-claim" @click="openClaim">
-              <v-icon icon="mdi-storefront-check-outline" size="16" />
-              {{ t('community.claimThis') }}
-            </button>
-            <span class="cp-gov__notice">{{ t('community.unclaimedNotice') }}</span>
+            <!-- Offering a claim to someone who already runs a community would
+                 walk them through an email code and a checkout only to be
+                 refused at the grant. Say it here instead. -->
+            <template v-if="myOther">
+              <router-link
+                class="cp-claim"
+                :to="{ name: 'communityProfile', params: { ...localeParams, slug: myOther.slug } }"
+              >
+                <v-icon icon="mdi-storefront-outline" size="16" />
+                {{ myOther.name }}
+              </router-link>
+              <span class="cp-gov__notice">{{ t('community.claimBlocked') }}</span>
+            </template>
+            <template v-else>
+              <button type="button" class="cp-claim" @click="openClaim">
+                <v-icon icon="mdi-storefront-check-outline" size="16" />
+                {{ t('community.claimThis') }}
+              </button>
+              <span class="cp-gov__notice">{{ t('community.unclaimedNotice') }}</span>
+            </template>
           </div>
 
           <!-- Verify CTA: the owner's counterpart to the claim row above. Without

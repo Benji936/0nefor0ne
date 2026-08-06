@@ -1334,7 +1334,10 @@
     "giveUpDeleteAction": "Supprimer définitivement",
     "giveUpReleaseAction": "La rendre",
     "giveUpKeep": "La garder",
-    "giveUpFailed": "Cela n'a pas abouti. Rien n'a été modifié."
+    "giveUpFailed": "Cela n'a pas abouti. Rien n'a été modifié.",
+    "yoursAlready": "Votre communauté",
+    "alreadyOwnOne": "Vous gérez déjà une communauté. Un compte n'en a qu'une, alors rendez celle-ci d'abord si vous voulez repartir ailleurs.",
+    "claimBlocked": "Vous gérez déjà une communauté, et un compte n'en a qu'une."
   },
   "communityVerify": {
     "metaTitle": "Vérifier {name}",

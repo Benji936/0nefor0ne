@@ -1334,7 +1334,10 @@
     "giveUpDeleteAction": "Elimina definitivamente",
     "giveUpReleaseAction": "Restituiscila",
     "giveUpKeep": "Tienila",
-    "giveUpFailed": "Non è andata a buon fine. Non è stato modificato nulla."
+    "giveUpFailed": "Non è andata a buon fine. Non è stato modificato nulla.",
+    "yoursAlready": "La tua community",
+    "alreadyOwnOne": "Gestisci già una community. Un account ne ha una sola, quindi lascia prima questa se vuoi ricominciare altrove.",
+    "claimBlocked": "Gestisci già una community, e un account ne ha una sola."
   },
   "communityVerify": {
     "metaTitle": "Verifica {name}",

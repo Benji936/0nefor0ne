@@ -58,6 +58,14 @@ Deno.serve(async (req) => {
       return json({ error: "already_claimed" }, 409);
     }
 
+    // One community per account, checked before Stripe rather than after. The
+    // unique index would refuse the grant anyway, but by then there would be a
+    // card on file for a community they were never going to get.
+    const { count: ownedElsewhere } = await admin.from("community")
+      .select("id", { count: "exact", head: true })
+      .eq("owner", user.id).neq("id", community_id);
+    if ((ownedElsewhere ?? 0) > 0) return json({ error: "already_own_one" }, 409);
+
     const { data: claim } = await admin.from("community_claim")
       .select("id, identity_verified_at, stripe_customer_id, origin")
       .eq("community", community_id).eq("claimer", user.id).maybeSingle();

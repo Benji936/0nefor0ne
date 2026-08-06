@@ -1334,7 +1334,10 @@
     "giveUpDeleteAction": "Endgültig löschen",
     "giveUpReleaseAction": "Zurückgeben",
     "giveUpKeep": "Behalten",
-    "giveUpFailed": "Das hat nicht geklappt. Es wurde nichts geändert."
+    "giveUpFailed": "Das hat nicht geklappt. Es wurde nichts geändert.",
+    "yoursAlready": "Deine Community",
+    "alreadyOwnOne": "Du betreibst schon eine Community. Ein Konto hat genau eine, gib diese also zuerst ab, wenn du woanders neu anfangen willst.",
+    "claimBlocked": "Du betreibst schon eine Community, und ein Konto hat genau eine."
   },
   "communityVerify": {
     "metaTitle": "{name} verifizieren",

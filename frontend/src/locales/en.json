@@ -1334,7 +1334,10 @@
     "giveUpDeleteAction": "Delete for good",
     "giveUpReleaseAction": "Hand it back",
     "giveUpKeep": "Keep it",
-    "giveUpFailed": "That did not go through. Nothing changed."
+    "giveUpFailed": "That did not go through. Nothing changed.",
+    "yoursAlready": "Your community",
+    "alreadyOwnOne": "You already run a community. An account can have one, so give that one up first if you want to start again somewhere else.",
+    "claimBlocked": "You already run a community, and an account can have one."
   },
   "communityVerify": {
     "metaTitle": "Verify {name}",

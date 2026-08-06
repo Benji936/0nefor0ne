@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { createCommunity } from "@/lib/community";
+import { createCommunity, ALREADY_OWN_ONE } from "@/lib/community";
 import { COUNTRIES } from "@/lib/countries";
 
 const props = defineProps({
@@ -58,7 +58,12 @@ async function submit() {
     emit("saved", row);
     close();
   } catch (err) {
-    errorMsg.value = err.message ?? "Failed to save.";
+    // 23505 on the way through is the one-per-owner index, reached when the
+    // pre-check passed and something else took the slot in between. Same
+    // sentence either way; the reader does not care which layer said no.
+    errorMsg.value = (err.message === ALREADY_OWN_ONE || err.code === "23505")
+      ? t("community.alreadyOwnOne")
+      : (err.message ?? "Failed to save.");
   } finally {
     submitting.value = false;
   }

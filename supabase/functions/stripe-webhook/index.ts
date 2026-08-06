@@ -80,7 +80,18 @@ Deno.serve(async (req) => {
         const { error: grantErr } = await admin.from("community")
           .update({ owner: claimer, verified: true, status: "published", updated_at: new Date().toISOString() })
           .eq("id", communityId).or(`owner.is.null,owner.eq.${claimer}`);
-        if (grantErr) throw new Error(`grant: ${grantErr.message}`);
+        if (grantErr?.code === "23505") {
+          // community_one_per_owner. claim-create-checkout refuses this up
+          // front, so getting here means they took on another community while
+          // this checkout was in flight. Retrying will never succeed, and the
+          // only fair end is to stop charging for what we cannot grant.
+          console.error(`grant refused, already own one: claimer=${claimer} community=${communityId}`);
+          await stripe.subscriptions.cancel(sub.id).catch((e) => {
+            console.error("cancel after refused grant failed", String(e));
+          });
+        } else if (grantErr) {
+          throw new Error(`grant: ${grantErr.message}`);
+        }
       } else if (status === "canceled" || status === "unpaid") {
         // Lapse. Either way keep the content, and either way only touch the row
         // if THIS claimer still owns it, so a later owner is never clobbered.

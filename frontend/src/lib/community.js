@@ -3,7 +3,11 @@ import { slugify, withSuffix } from "@/lib/communitySlug";
 import { sanitizeLinks } from "@/lib/communityLinks";
 
 const PAGE_SIZE = 24;
-const MAX_UNVERIFIED_PER_OWNER = 5; // spam cap
+
+// Thrown by createCommunity and matched by the form so it can show the message
+// in the reader's language and link to the community they already have. A code
+// rather than a sentence, because this string is not the copy.
+export const ALREADY_OWN_ONE = "already_own_one";
 
 function assertHttp(url, label) {
   if (!url) return null;
@@ -60,12 +64,11 @@ export async function createCommunity(input) {
   const me = (await getClient().auth.getSession()).data?.session?.user?.id;
   if (!me) throw new Error("Sign in to create a community.");
 
+  // One per account. The unique index is what actually enforces this; the check
+  // is here so the form can say so before asking for a name, a city and a logo.
   const { count } = await getClient()
-    .from("community").select("id", { count: "exact", head: true })
-    .eq("owner", me).eq("verified", false);
-  if ((count ?? 0) >= MAX_UNVERIFIED_PER_OWNER) {
-    throw new Error("You have reached the limit of unverified communities.");
-  }
+    .from("community").select("id", { count: "exact", head: true }).eq("owner", me);
+  if ((count ?? 0) > 0) throw new Error(ALREADY_OWN_ONE);
 
   const slug = await uniqueSlug(input.name, input.city);
   const row = {
