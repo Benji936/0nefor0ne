@@ -1,0 +1,133 @@
+import { describe, it, expect } from "vitest";
+import { siteHost, emailDomain, domainMatches, proofRoute, verifyStep } from "./communityVerify";
+
+describe("siteHost", () => {
+  it("drops scheme, path and a leading www", () => {
+    expect(siteHost("https://www.maboutique.fr/contact")).toBe("maboutique.fr");
+  });
+  it("accepts a bare host with no scheme", () => {
+    expect(siteHost("maboutique.fr")).toBe("maboutique.fr");
+  });
+  it("keeps a meaningful subdomain", () => {
+    expect(siteHost("https://shop.example.com")).toBe("shop.example.com");
+  });
+  it("returns null on junk rather than throwing", () => {
+    expect(siteHost("not a url at all !!")).toBe(null);
+    expect(siteHost("")).toBe(null);
+    expect(siteHost(null)).toBe(null);
+  });
+});
+
+describe("emailDomain", () => {
+  it("reads the part after the last @", () => {
+    expect(emailDomain("contact@maboutique.fr")).toBe("maboutique.fr");
+  });
+  it("lowercases and trims", () => {
+    expect(emailDomain("  Contact@MaBoutique.FR ")).toBe("maboutique.fr");
+  });
+  it("rejects an address with no local part", () => {
+    expect(emailDomain("@maboutique.fr")).toBe(null);
+  });
+  it("rejects a string with no @", () => {
+    expect(emailDomain("maboutique.fr")).toBe(null);
+  });
+});
+
+describe("domainMatches", () => {
+  it("matches the site host exactly", () => {
+    expect(domainMatches("https://maboutique.fr", "contact@maboutique.fr")).toBe(true);
+  });
+  it("ignores www on the site", () => {
+    expect(domainMatches("https://www.maboutique.fr", "contact@maboutique.fr")).toBe(true);
+  });
+  it("accepts a subdomain of the site host", () => {
+    expect(domainMatches("https://maboutique.fr", "info@mail.maboutique.fr")).toBe(true);
+  });
+  it("refuses a parent domain of the site host", () => {
+    // An address at example.com proves nothing about shop.example.com.
+    expect(domainMatches("https://shop.example.com", "me@example.com")).toBe(false);
+  });
+  it("refuses an unrelated domain", () => {
+    expect(domainMatches("https://maboutique.fr", "me@gmail.com")).toBe(false);
+  });
+  it("refuses a domain that merely ends with the host string", () => {
+    expect(domainMatches("https://boutique.fr", "me@notboutique.fr")).toBe(false);
+  });
+  it("is false when either side is missing", () => {
+    expect(domainMatches("", "me@x.fr")).toBe(false);
+    expect(domainMatches("https://x.fr", "")).toBe(false);
+  });
+});
+
+describe("proofRoute", () => {
+  it("sends a store with a website down the domain route", () => {
+    expect(proofRoute({ kind: "store", website: "https://x.fr" })).toBe("domain");
+  });
+  it("stops a store that never filled in a website", () => {
+    expect(proofRoute({ kind: "store", website: "" })).toBe("no-website");
+  });
+  it("sends a discord community to the guild routes", () => {
+    expect(proofRoute({ kind: "discord" })).toBe("discord");
+  });
+  it("sends a group to review", () => {
+    expect(proofRoute({ kind: "group" })).toBe("manual");
+  });
+  it("defaults an unknown kind to review rather than to a proof it cannot pass", () => {
+    expect(proofRoute({ kind: "something-new" })).toBe("manual");
+  });
+});
+
+describe("verifyStep", () => {
+  const community = { id: 1, kind: "store", website: "https://x.fr", owner: "me", verified: false };
+
+  it("waits while the community is still loading", () => {
+    expect(verifyStep({ community: null, viewerId: "me" }).step).toBe("loading");
+  });
+  it("asks a signed-out visitor to sign in", () => {
+    expect(verifyStep({ community, viewerId: null }).step).toBe("signed-out");
+  });
+  it("refuses somebody else's community", () => {
+    expect(verifyStep({ community, viewerId: "someone-else" }).step).toBe("not-owner");
+  });
+  it("starts at proof, routed by kind", () => {
+    const r = verifyStep({ community, viewerId: "me" });
+    expect(r.step).toBe("prove");
+    expect(r.proof).toBe("domain");
+  });
+  it("moves to payment once identity is proved", () => {
+    const claim = { identity_verified_at: "2026-08-06T10:00:00Z" };
+    expect(verifyStep({ community, claim, viewerId: "me" }).step).toBe("pay");
+  });
+  it("shows the webhook gap instead of asking for the card twice", () => {
+    const claim = { identity_verified_at: "2026-08-06T10:00:00Z" };
+    expect(verifyStep({ community, claim, viewerId: "me", justPaid: true }).step).toBe("processing");
+  });
+  it("is done once verified and subscribed", () => {
+    const claim = { identity_verified_at: "x", subscription_status: "active" };
+    const verified = { ...community, verified: true };
+    expect(verifyStep({ community: verified, claim, viewerId: "me" }).step).toBe("done");
+  });
+  it("treats a trial as done, because the first year is the trial", () => {
+    const claim = { identity_verified_at: "x", subscription_status: "trialing" };
+    const verified = { ...community, verified: true };
+    expect(verifyStep({ community: verified, claim, viewerId: "me" }).step).toBe("done");
+  });
+  it("names a lapsed subscription rather than sending them back to proof", () => {
+    const claim = { identity_verified_at: "x", subscription_status: "canceled" };
+    expect(verifyStep({ community, claim, viewerId: "me" }).step).toBe("lapsed");
+  });
+  it("keeps past_due separate from canceled, because Stripe is still trying", () => {
+    const claim = { identity_verified_at: "x", subscription_status: "past_due" };
+    expect(verifyStep({ community, claim, viewerId: "me" }).step).toBe("past-due");
+  });
+  it("waits on review once evidence is in", () => {
+    const group = { ...community, kind: "group" };
+    const claim = { manual_review_at: "2026-08-06T10:00:00Z" };
+    expect(verifyStep({ community: group, claim, viewerId: "me" }).step).toBe("pending-review");
+  });
+  it("prefers proven identity over a pending review, so an approved group can pay", () => {
+    const group = { ...community, kind: "group" };
+    const claim = { manual_review_at: "x", identity_verified_at: "y" };
+    expect(verifyStep({ community: group, claim, viewerId: "me" }).step).toBe("pay");
+  });
+});

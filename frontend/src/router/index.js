@@ -10,6 +10,9 @@ const localeChildren = [
   { path: "library",   name: "library",     component: () => import(/* webpackChunkName: "library" */     "@/components/Pages/App/Library.vue") },
   { path: 'community', name: 'community',   component: () => import(/* webpackChunkName: "community" */   '@/components/Pages/App/CommunityDirectory.vue') },
   { path: 'community/:slug', name: 'communityProfile', component: () => import(/* webpackChunkName: "community-profile" */ '@/components/Pages/App/CommunityProfile.vue') },
+  // Verification is its own route rather than a dialog because the flow leaves
+  // the origin twice, for Discord and for Stripe, and has to survive coming back.
+  { path: 'community/:slug/verify', name: 'communityVerify', component: () => import(/* webpackChunkName: "community-verify" */ '@/components/Pages/App/CommunityVerifyPage.vue') },
   { path: "trade",     name: "TradeCenter", component: () => import(/* webpackChunkName: "trade" */       "@/components/Pages/App/TradeCenter.vue") },
   { path: 'trader/:id', name: 'trader',     component: () => import(/* webpackChunkName: "trader" */      '@/components/Pages/App/TraderPage.vue') },
   { path: "account",   name: "account",     component: () => import(/* webpackChunkName: "account" */     "@/components/Pages/App/Account.vue") },

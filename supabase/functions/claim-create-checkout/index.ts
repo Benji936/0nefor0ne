@@ -47,19 +47,28 @@ Deno.serve(async (req) => {
     const { community_id } = await req.json();
     if (!community_id) return json({ error: "missing_community_id" }, 400);
 
-    // The store must be unclaimed and the caller must have verified identity.
+    // Two callers reach this. A claimer taking over a seeded store, where the
+    // store must still be unowned; and the owner of a community they created
+    // themselves, subscribing to verify it, where they are already the owner.
+    // Someone ELSE's community is refused in both cases.
     const { data: community } = await admin.from("community")
       .select("id, owner, slug, country_code").eq("id", community_id).maybeSingle();
     if (!community) return json({ error: "not_found" }, 404);
-    if (community.owner) return json({ error: "already_claimed" }, 409);
+    if (community.owner && community.owner !== user.id) {
+      return json({ error: "already_claimed" }, 409);
+    }
 
     const { data: claim } = await admin.from("community_claim")
-      .select("id, identity_verified_at, stripe_customer_id")
+      .select("id, identity_verified_at, stripe_customer_id, origin")
       .eq("community", community_id).eq("claimer", user.id).maybeSingle();
     if (!claim?.identity_verified_at) return json({ error: "not_verified" }, 403);
 
     const currency = currencyFor(community.country_code);
-    const returnBase = `${SITE}/en/community/${community.slug}`;
+    // Send each flow back where it came from: a claim resumes on the community
+    // page, self-verification resumes on the verify route that owns its state.
+    const returnBase = claim.origin === "self"
+      ? `${SITE}/en/community/${community.slug}/verify`
+      : `${SITE}/en/community/${community.slug}`;
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",

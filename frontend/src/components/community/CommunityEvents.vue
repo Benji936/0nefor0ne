@@ -5,6 +5,7 @@
 // caller (published-of-published for the public, everything for the owner).
 import { ref, computed, watch, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRoute } from "vue-router";
 import { fetchEvents, partitionEvents, deleteEvent, formatEventWhen, eventMapUrl, eventPlace } from "@/lib/communityEvents";
 import PlatformIcon from "@/components/community/PlatformIcon.vue";
 import CommunityEventDialog from "@/components/community/CommunityEventDialog.vue";
@@ -15,6 +16,13 @@ const props = defineProps({
 });
 const emit = defineEmits(["loaded"]);
 const { t, locale } = useI18n();
+const route = useRoute();
+
+// Posting events needs a verified community (RLS, 20260806). Without this the
+// owner would fill in the whole dialog and then be refused by the database,
+// which is the worst possible moment to learn about it.
+const canPost = computed(() => props.isOwner && !!props.community?.verified);
+const localeParam = computed(() => route.params.locale || "en");
 
 const events   = ref([]);
 const loading  = ref(true);
@@ -89,10 +97,20 @@ async function confirmDelete(e) {
   <section v-if="visible" class="cev">
     <header class="cev__head">
       <h2 class="cev__title">{{ t('community.eventsTitle') }}</h2>
-      <button v-if="isOwner" type="button" class="cev__add" @click="openCreate">
+      <button v-if="canPost" type="button" class="cev__add" @click="openCreate">
         <v-icon icon="mdi-plus" size="16" />
         {{ t('community.addEvent') }}
       </button>
+      <!-- Not a disabled Add button: a control that looks like the real one but
+           refuses is dishonest, and there is somewhere useful to send them. -->
+      <router-link
+        v-else-if="isOwner"
+        class="cev__locked"
+        :to="{ name: 'communityVerify', params: { locale: localeParam, slug: community.slug } }"
+      >
+        <v-icon icon="mdi-check-decagram-outline" size="15" />
+        {{ t('community.addEventLocked') }}
+      </router-link>
     </header>
 
     <!-- Upcoming -->
@@ -104,7 +122,10 @@ async function confirmDelete(e) {
 
         <!-- Owner icon controls (top-right) -->
         <div v-if="isOwner && confirmingId !== e.id" class="cev-item__ctrls">
-          <button type="button" class="cev-ctrl" :aria-label="t('community.editEvent')" @click="openEdit(e)">
+          <!-- Edit follows the RLS gate; delete deliberately does not, so an
+               owner whose verification lapsed can still take down an event
+               that is no longer happening. -->
+          <button v-if="canPost" type="button" class="cev-ctrl" :aria-label="t('community.editEvent')" @click="openEdit(e)">
             <v-icon icon="mdi-pencil-outline" size="16" />
           </button>
           <button type="button" class="cev-ctrl" :aria-label="t('community.deleteEvent')" @click="confirmingId = e.id">
@@ -158,7 +179,9 @@ async function confirmDelete(e) {
     </ul>
 
     <!-- Owner empty state -->
-    <p v-else-if="isOwner && !loading" class="cev-empty">{{ t('community.eventsEmptyOwner') }}</p>
+    <p v-else-if="isOwner && !loading" class="cev-empty">
+      {{ canPost ? t('community.eventsEmptyOwner') : t('community.eventsEmptyUnverified') }}
+    </p>
 
     <!-- Past (collapsed) -->
     <div v-if="past.length" class="cev-past">
@@ -169,7 +192,7 @@ async function confirmDelete(e) {
       <ul v-if="pastOpen" class="cev-list cev-list--past">
         <li v-for="e in past" :key="e.id" class="cev-item cev-item--past">
           <div v-if="isOwner && confirmingId !== e.id" class="cev-item__ctrls">
-            <button type="button" class="cev-ctrl" :aria-label="t('community.editEvent')" @click="openEdit(e)">
+            <button v-if="canPost" type="button" class="cev-ctrl" :aria-label="t('community.editEvent')" @click="openEdit(e)">
               <v-icon icon="mdi-pencil-outline" size="16" />
             </button>
             <button type="button" class="cev-ctrl" :aria-label="t('community.deleteEvent')" @click="confirmingId = e.id">
@@ -194,7 +217,7 @@ async function confirmDelete(e) {
     </div>
 
     <CommunityEventDialog
-      v-if="isOwner"
+      v-if="canPost"
       v-model="dialogOpen"
       :community="community"
       :event="editingEvent"
@@ -219,6 +242,23 @@ async function confirmDelete(e) {
   transition: background 0.15s ease;
 }
 .cev__add:hover { background: color-mix(in srgb, var(--c-trade) 24%, transparent); }
+.cev__add:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
+
+/* The route to earning the Add button. Quieter than it on purpose: it is a
+   detour, not the action the owner came here for. */
+.cev__locked {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 40px; padding: 0 12px; border-radius: 11px;
+  color: var(--c-muted); font-size: 12.5px; font-weight: 700; text-decoration: none;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.cev__locked:hover { color: var(--c-trade); background: var(--c-surface-2); }
+.cev__locked:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
+
+@media (pointer: coarse) { .cev__locked { min-height: 44px; } }
+@media (prefers-reduced-motion: reduce) {
+  .cev__add, .cev__locked { transition: none; }
+}
 
 /* Same grid geometry as the community directory, so an event card and a
    community card read as the same object at the same size. */

@@ -10,6 +10,19 @@ import { supabase, syncDiscordIdToTrader } from '@/lib/supabaseClient'
 const router = useRouter()
 const route  = useRoute()
 
+// Where to land afterwards. Community verification sends people through here
+// mid-flow and needs them back on the page they left, rather than at home with
+// their progress apparently lost.
+//
+// Only same-origin paths are honoured. A `next` beginning with `//` or a scheme
+// would be an open redirect: this page is reached straight from an OAuth
+// provider, which makes it exactly the kind of link worth pointing somewhere
+// else.
+function safeNext() {
+  const next = route.query.next
+  return typeof next === 'string' && /^\/[^/\\]/.test(next) ? next : null
+}
+
 onMounted(async () => {
   // Supabase JS v2 handles the hash fragment automatically on client load.
   // We wait up to 3 s for the session to be available, then sync + redirect.
@@ -21,13 +34,13 @@ onMounted(async () => {
       // Works for both new OAuth signups and linkIdentity flows.
       await syncDiscordIdToTrader()
       const locale = route.params.locale || 'en'
-      router.replace(`/${locale}/`)
+      router.replace(safeNext() ?? `/${locale}/`)
     } else if (attempts < 15) {
       attempts++
       setTimeout(check, 200)
     } else {
       // Timed out — redirect anyway
-      router.replace(`/${route.params.locale || 'en'}/`)
+      router.replace(safeNext() ?? `/${route.params.locale || 'en'}/`)
     }
   }
   await check()

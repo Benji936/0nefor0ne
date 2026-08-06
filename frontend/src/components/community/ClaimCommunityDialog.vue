@@ -9,6 +9,7 @@ import { requestClaimCode, verifyClaimCode, requestManualReview, startClaimCheck
 import { communityPricing } from "@/lib/communityPricing";
 import { isValidCode } from "@/lib/claimState";
 import { getCurrentSession, signInWithDiscord } from "@/lib/supabaseClient";
+import PlatformIcon from "@/components/community/PlatformIcon.vue";
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -202,7 +203,10 @@ async function sendManual() {
           <button v-if="step === 'intro'" class="btn-submit" :disabled="submitting" @click="sendCode">
             <template v-if="submitting"><v-progress-circular indeterminate size="16" width="2" color="white" /></template>
             <template v-else>
-              <v-icon :icon="signedIn ? 'mdi-email-fast-outline' : 'mdi-discord'" size="16" />
+              <!-- mdi has no discord glyph in the bundled font; it rendered as an
+                   empty 16px gap. PlatformIcon draws it inline instead. -->
+              <v-icon v-if="signedIn" icon="mdi-email-fast-outline" size="16" />
+              <PlatformIcon v-else platform="discord" :size="16" />
               {{ signedIn ? t('community.claimSendCode') : t('auth.signIn') }}
             </template>
           </button>
