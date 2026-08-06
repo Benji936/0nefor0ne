@@ -46,7 +46,21 @@ function cardDetail(entry) {
   return bits.join(' · ');
 }
 
-const trader = (name) => `**${escapeMd(truncate(name, 40))}**`;
+/**
+ * Link labels drop brackets and parens entirely rather than escaping them.
+ * Discord's markdown is not full CommonMark, so a backslash-escaped `]` inside
+ * a label is not reliably respected — a name like `x](https://evil) ` could
+ * otherwise close the label early and render an attacker-chosen link.
+ */
+function escapeLinkText(text) {
+  return escapeMd(String(text ?? '').replace(/[[\]()]/g, ''));
+}
+
+/** Trader name, linked to their profile when we know the uuid. */
+function trader(name, id, appUrl) {
+  const label = `**${escapeLinkText(truncate(name, 40))}**`;
+  return id ? `[${label}](${appUrl}/en/trader/${id})` : label;
+}
 
 /**
  * Builds the /search reply. `appUrl` is the marketplace origin.
@@ -74,7 +88,7 @@ function buildSearchEmbed({ query, trading = [], wanted = [], listings = [] }, a
   if (trading.length > 0) {
     const lines = trading.slice(0, MAX_LINES).map((t) => {
       const detail = cardDetail(t);
-      return `**${escapeMd(truncate(t.name))}**${detail ? ` — ${detail}` : ''}\n↳ ${trader(t.traderName)}`;
+      return `**${escapeMd(truncate(t.name))}**${detail ? ` — ${detail}` : ''}\n↳ ${trader(t.traderName, t.traderId, appUrl)}`;
     });
     sections.push(`## 🤝 Trading (${trading.length})\n${lines.join('\n')}`);
   }
@@ -84,7 +98,7 @@ function buildSearchEmbed({ query, trading = [], wanted = [], listings = [] }, a
       const qty = w.qty && w.qty > 1 ? ` ×${w.qty}` : '';
       const link =
         w.source === 'announce' ? ` · [View post](${appUrl}/en/announces/${w.id})` : '';
-      return `**${escapeMd(truncate(w.label))}**${qty}\n↳ ${trader(w.traderName)}${link}`;
+      return `**${escapeMd(truncate(w.label))}**${qty}\n↳ ${trader(w.traderName, w.traderId, appUrl)}${link}`;
     });
     sections.push(`## 🔎 Wanted (${wanted.length})\n${lines.join('\n')}`);
   }
@@ -93,7 +107,7 @@ function buildSearchEmbed({ query, trading = [], wanted = [], listings = [] }, a
     const lines = listings.slice(0, MAX_LINES).map((s) => {
       const name = escapeMd(truncate(s.card_name || s.title));
       const link = `${appUrl}/en/announces/${s.id}`;
-      return `**${name}** — ${formatPrice(s.price, s.currency)}\n↳ ${trader(s.traderName)} · [View listing](${link})`;
+      return `**${name}** — ${formatPrice(s.price, s.currency)}\n↳ ${trader(s.traderName, s.traderId, appUrl)} · [View listing](${link})`;
     });
     sections.push(`## 💰 Listings (${listings.length})\n${lines.join('\n')}`);
   }

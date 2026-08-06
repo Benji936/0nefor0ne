@@ -176,11 +176,14 @@ async function searchListings(supabase, rawQuery, { limit = 8 } = {}) {
   ]);
   const nameOf = (id) => names.get(id) ?? 'Unknown trader';
 
+  // `traderId` is the Trader uuid the /:locale/trader/:id profile route expects.
   return {
     query,
-    trading: trading.map((t) => ({ ...t, traderName: nameOf(t.trader) })),
-    wanted: wanted.slice(0, limit * 2).map((w) => ({ ...w, traderName: nameOf(w.seller) })),
-    listings: listings.map((l) => ({ ...l, traderName: nameOf(l.seller) })),
+    trading: trading.map((t) => ({ ...t, traderId: t.trader, traderName: nameOf(t.trader) })),
+    wanted: wanted
+      .slice(0, limit * 2)
+      .map((w) => ({ ...w, traderId: w.seller, traderName: nameOf(w.seller) })),
+    listings: listings.map((l) => ({ ...l, traderId: l.seller, traderName: nameOf(l.seller) })),
   };
 }
 
