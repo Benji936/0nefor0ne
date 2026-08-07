@@ -561,16 +561,32 @@ async function onStale() {
         </template>
 
         <div class="cp-id__fg">
-          <div class="cp-avatar" :class="{ 'cp-avatar--editing': editing }">
+          <!-- The whole icon opens the picker while editing; the badge is the
+               visible affordance and the keyboard target. -->
+          <div
+            class="cp-avatar"
+            :class="{ 'cp-avatar--editing': editing }"
+            @click="editing && !uploadingAvatar && avatarInput?.click()"
+          >
             <img v-if="displayAvatar" :src="displayAvatar" :alt="displayName" />
             <span v-else>{{ (displayName || '?')[0].toUpperCase() }}</span>
             <template v-if="editing">
-              <input ref="avatarInput" type="file" accept="image/*" class="cp-hide" @change="onPickImage('avatar', $event)" />
+              <!-- .stop matters: this input sits inside the clickable avatar,
+                   and input.click() bubbles, so without it opening the picker
+                   would re-enter the avatar handler and open it again. -->
+              <input
+                ref="avatarInput"
+                type="file"
+                accept="image/*"
+                class="cp-hide"
+                @click.stop
+                @change="onPickImage('avatar', $event)"
+              />
               <button
                 type="button"
                 class="cp-imgbtn cp-imgbtn--avatar"
                 :disabled="uploadingAvatar"
-                @click="avatarInput?.click()"
+                @click.stop="avatarInput?.click()"
                 :aria-label="t('community.changeAvatar')"
               >
                 <v-progress-circular v-if="uploadingAvatar" indeterminate size="14" width="2" color="white" />
@@ -996,15 +1012,26 @@ async function onStale() {
 }
 
 .cp-avatar {
+  /* Anchors the camera badge. Without this the badge escaped to the nearest
+     positioned ancestor and landed in the bottom-right corner of the whole
+     identity block, nowhere near the icon it changes. */
+  position: relative;
   width: 88px; height: 88px; border-radius: 22px;
-  overflow: hidden; flex-shrink: 0;
+  flex-shrink: 0;
   border: 3px solid var(--c-bg);
   background: var(--c-surface-2);
   display: flex; align-items: center; justify-content: center;
   font-size: 32px; font-weight: 800; color: var(--c-text);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 }
-.cp-avatar img { width: 100%; height: 100%; object-fit: cover; }
+/* The image is rounded by itself rather than by overflow: hidden on the
+   container, so the badge can sit on the corner instead of being clipped by
+   it. 19px is the 22px outer radius less the 3px border. */
+.cp-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 19px; }
+
+/* In edit mode the icon is the thing you click, so it should look like it. */
+.cp-avatar--editing { cursor: pointer; }
+.cp-avatar--editing:hover { border-color: color-mix(in srgb, var(--c-trade) 55%, var(--c-bg)); }
 
 .cp-id__text { min-width: 0; flex: 1; padding-bottom: 4px; }
 .cp-namerow { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
