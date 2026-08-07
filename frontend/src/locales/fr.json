@@ -1408,6 +1408,29 @@
     "loadFailed": "Impossible de charger cette communauté. Vérifiez votre connexion et réessayez.",
     "genericError": "Un problème est survenu de notre côté. Réessayez dans un instant.",
     "verifyPrompt": "Cette communauté n'est pas encore vérifiée.",
-    "verifyPromptAction": "La vérifier"
+    "verifyPromptAction": "La vérifier",
+    "titleDeclined": "Non vérifiée",
+    "declinedBody": "Quelqu'un a lu votre demande et n'a pas pu vérifier cette communauté.",
+    "declinedNext": "Corrigez ce qui est indiqué ci-dessus et redemandez, ou écrivez-nous si vous pensez que c'est une erreur."
+  },
+  "adminReview": {
+    "title": "File d'attente",
+    "loading": "Chargement…",
+    "signIn": "Connectez-vous pour voir cette page.",
+    "notAdmin": "Cette page n'est pas pour votre compte.",
+    "empty": "Rien en attente.",
+    "failed": "Cela n'a pas abouti. Rien n'a été modifié.",
+    "reviewsTitle": "Demandes de vérification",
+    "reportsTitle": "Signalements",
+    "originCreated": "L'a créée",
+    "originClaiming": "La revendique",
+    "approve": "Approuver",
+    "decline": "Refuser",
+    "declineNote": "Dites-lui pourquoi",
+    "declinePlaceholder": "Que faudrait-il pour que cela passe ?",
+    "confirmDecline": "Envoyer le refus",
+    "cancel": "Annuler",
+    "markReviewed": "Marquer comme traité",
+    "dismiss": "Écarter"
   }
 }

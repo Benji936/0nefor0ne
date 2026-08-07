@@ -144,16 +144,16 @@ export async function verifyClaimCode(communityId, code) {
   return data;
 }
 
-// Fallback when the store has no email on file: record a review reason on the
-// caller's own claim row (the column guard blocks writes to any other field).
+// Fallback when the store has no email on file. Goes through the Edge Function
+// rather than writing the claim row directly: the client may write
+// manual_review_reason but not manual_review_at, so the old direct write left
+// the request with no timestamp and therefore out of the review queue entirely.
 export async function requestManualReview(communityId, reason) {
-  const me = (await getClient().auth.getSession()).data?.session?.user?.id;
-  if (!me) throw new Error("Sign in to request a review.");
-  const { error } = await getClient().from("community_claim").upsert(
-    { community: communityId, claimer: me, manual_review_reason: reason },
-    { onConflict: "community,claimer" },
-  );
+  const { data, error } = await getClient().functions.invoke("community-verify-manual", {
+    body: { community_id: communityId, reason },
+  });
   if (error) { console.error("requestManualReview failed", error); throw error; }
+  return data;
 }
 
 // Start the paid claim: the claim-create-checkout Edge Function returns a Stripe

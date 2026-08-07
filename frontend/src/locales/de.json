@@ -1408,6 +1408,29 @@
     "loadFailed": "Diese Community konnte nicht geladen werden. Prüf deine Verbindung und versuch es erneut.",
     "genericError": "Bei uns ist etwas schiefgelaufen. Versuch es gleich noch einmal.",
     "verifyPrompt": "Diese Community ist noch nicht verifiziert.",
-    "verifyPromptAction": "Jetzt verifizieren"
+    "verifyPromptAction": "Jetzt verifizieren",
+    "titleDeclined": "Nicht verifiziert",
+    "declinedBody": "Jemand hat deine Anfrage gelesen und konnte diese Community nicht verifizieren.",
+    "declinedNext": "Behebe das oben Genannte und frag erneut, oder schreib uns, wenn du das für falsch hältst."
+  },
+  "adminReview": {
+    "title": "Warteschlange",
+    "loading": "Wird geladen…",
+    "signIn": "Melde dich an, um das zu sehen.",
+    "notAdmin": "Diese Seite ist nicht für dein Konto.",
+    "empty": "Nichts offen.",
+    "failed": "Das hat nicht geklappt. Es wurde nichts geändert.",
+    "reviewsTitle": "Verifizierungsanfragen",
+    "reportsTitle": "Meldungen",
+    "originCreated": "Hat sie erstellt",
+    "originClaiming": "Beansprucht sie",
+    "approve": "Annehmen",
+    "decline": "Ablehnen",
+    "declineNote": "Sag ihnen warum",
+    "declinePlaceholder": "Was würde dafür fehlen?",
+    "confirmDecline": "Ablehnung senden",
+    "cancel": "Abbrechen",
+    "markReviewed": "Als erledigt markieren",
+    "dismiss": "Verwerfen"
   }
 }

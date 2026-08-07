@@ -1408,6 +1408,29 @@
     "loadFailed": "Could not load this community. Check your connection and try again.",
     "genericError": "Something went wrong on our end. Try again in a moment.",
     "verifyPrompt": "This community is not verified yet.",
-    "verifyPromptAction": "Verify it"
+    "verifyPromptAction": "Verify it",
+    "titleDeclined": "Not verified",
+    "declinedBody": "Someone read your request and could not verify this community.",
+    "declinedNext": "Fix what is mentioned above and ask again, or write to us if you think this is wrong."
+  },
+  "adminReview": {
+    "title": "Review queue",
+    "loading": "Loading…",
+    "signIn": "Sign in to see this.",
+    "notAdmin": "This page is not for your account.",
+    "empty": "Nothing waiting.",
+    "failed": "That did not go through. Nothing changed.",
+    "reviewsTitle": "Verification requests",
+    "reportsTitle": "Reports",
+    "originCreated": "Created it",
+    "originClaiming": "Claiming it",
+    "approve": "Approve",
+    "decline": "Decline",
+    "declineNote": "Tell them why",
+    "declinePlaceholder": "What would make this pass?",
+    "confirmDecline": "Send the decline",
+    "cancel": "Cancel",
+    "markReviewed": "Mark reviewed",
+    "dismiss": "Dismiss"
   }
 }

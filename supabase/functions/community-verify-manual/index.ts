@@ -8,9 +8,13 @@
 // origin and manual_review_at are both frozen against client writes by the
 // column guard, and the webhook's lapse branch depends on origin being right.
 //
-// NOTE: nothing reads the resulting queue yet. The reviewing surface is a
-// separate piece of work, and the copy on the page must not promise a
-// turnaround that nobody is currently on the other end of.
+// It also serves the claim flow's fallback, a seeded shop with no email on
+// file. That path used to write manual_review_reason straight from the browser,
+// which the guard allows, while manual_review_at stayed NULL because the guard
+// does not. Those requests were invisible to any queue keyed on the timestamp,
+// which is to say invisible.
+//
+// admin-review reads what this writes.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const cors = {
@@ -44,15 +48,25 @@ Deno.serve(async (req) => {
     const { data: community } = await admin.from("community")
       .select("id, owner, verified").eq("id", community_id).maybeSingle();
     if (!community) return json({ error: "not_found" }, 404);
-    if (community.owner !== user.id) return json({ error: "not_owner" }, 403);
+    // Two callers, both legitimate: the owner of a community they made, and a
+    // claimer of a seeded shop with no email on file. Someone else's community
+    // is refused in both cases.
+    if (community.owner && community.owner !== user.id) return json({ error: "not_owner" }, 403);
     if (community.verified) return json({ error: "already_verified" }, 409);
+
+    // origin is frozen once set, so an existing row keeps whatever it was.
+    // Otherwise: owning it means you made it, not owning it means you are
+    // claiming it.
+    const { data: existing } = await admin.from("community_claim")
+      .select("origin").eq("community", community_id).eq("claimer", user.id).maybeSingle();
+    const origin = existing?.origin ?? (community.owner === user.id ? "self" : "claim");
 
     const { error: upErr } = await admin.from("community_claim").upsert({
       community: community_id,
       claimer: user.id,
       manual_review_reason: text,
       manual_review_at: new Date().toISOString(),
-      origin: "self",
+      origin,
       proof_method: "manual",
     }, { onConflict: "community,claimer" });
     if (upErr) return json({ error: "db_error", detail: upErr.message }, 500);

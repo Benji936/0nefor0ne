@@ -13,6 +13,10 @@ const localeChildren = [
   // Verification is its own route rather than a dialog because the flow leaves
   // the origin twice, for Discord and for Stripe, and has to survive coming back.
   { path: 'community/:slug/verify', name: 'communityVerify', component: () => import(/* webpackChunkName: "community-verify" */ '@/components/Pages/App/CommunityVerifyPage.vue') },
+  // Unlinked on purpose: who may open it is decided by the admin-review Edge
+  // Function's allowlist, not by hiding the URL, and there is nobody to show a
+  // nav entry to.
+  { path: 'admin/review', name: 'adminReview', component: () => import(/* webpackChunkName: "admin-review" */ '@/components/Pages/App/AdminReviewPage.vue') },
   { path: "trade",     name: "TradeCenter", component: () => import(/* webpackChunkName: "trade" */       "@/components/Pages/App/TradeCenter.vue") },
   { path: 'trader/:id', name: 'trader',     component: () => import(/* webpackChunkName: "trader" */      '@/components/Pages/App/TraderPage.vue') },
   { path: "account",   name: "account",     component: () => import(/* webpackChunkName: "account" */     "@/components/Pages/App/Account.vue") },

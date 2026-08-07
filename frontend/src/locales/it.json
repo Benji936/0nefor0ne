@@ -1408,6 +1408,29 @@
     "loadFailed": "Impossibile caricare questa community. Controlla la connessione e riprova.",
     "genericError": "Qualcosa è andato storto da parte nostra. Riprova tra un momento.",
     "verifyPrompt": "Questa community non è ancora verificata.",
-    "verifyPromptAction": "Verificala"
+    "verifyPromptAction": "Verificala",
+    "titleDeclined": "Non verificata",
+    "declinedBody": "Qualcuno ha letto la tua richiesta e non ha potuto verificare questa community.",
+    "declinedNext": "Sistema quanto indicato sopra e richiedila, oppure scrivici se pensi che sia un errore."
+  },
+  "adminReview": {
+    "title": "Coda di revisione",
+    "loading": "Caricamento…",
+    "signIn": "Accedi per vedere questa pagina.",
+    "notAdmin": "Questa pagina non è per il tuo account.",
+    "empty": "Niente in attesa.",
+    "failed": "Non è andata a buon fine. Non è stato modificato nulla.",
+    "reviewsTitle": "Richieste di verifica",
+    "reportsTitle": "Segnalazioni",
+    "originCreated": "L'ha creata",
+    "originClaiming": "La rivendica",
+    "approve": "Approva",
+    "decline": "Rifiuta",
+    "declineNote": "Digli perché",
+    "declinePlaceholder": "Cosa servirebbe per approvarla?",
+    "confirmDecline": "Invia il rifiuto",
+    "cancel": "Annulla",
+    "markReviewed": "Segna come gestita",
+    "dismiss": "Scarta"
   }
 }

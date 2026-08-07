@@ -145,4 +145,29 @@ describe("verifyStep", () => {
     const claim = { manual_review_at: "x", identity_verified_at: "y" };
     expect(verifyStep({ community: group, claim, viewerId: "me" }).step).toBe("pay");
   });
+
+  // A decision that never reaches the owner is the same as no decision.
+  it("shows a decline once a reviewer has answered", () => {
+    const group = { ...community, kind: "group" };
+    const claim = { manual_review_at: "x", reviewed_at: "y", review_note: "No sign of a group." };
+    const state = verifyStep({ community: group, claim, viewerId: "me" });
+    expect(state.step).toBe("declined");
+    expect(state.note).toBe("No sign of a group.");
+  });
+
+  it("carries a declined state with no note rather than hiding it", () => {
+    const group = { ...community, kind: "group" };
+    const claim = { manual_review_at: "x", reviewed_at: "y" };
+    const state = verifyStep({ community: group, claim, viewerId: "me" });
+    expect(state.step).toBe("declined");
+    expect(state.note).toBe(null);
+  });
+
+  // Approving stamps both, and the owner should land on checkout, not on a
+  // refusal: identity_verified_at is checked first for exactly this reason.
+  it("sends an approved review to payment, not to the declined state", () => {
+    const group = { ...community, kind: "group" };
+    const claim = { manual_review_at: "x", reviewed_at: "y", identity_verified_at: "z" };
+    expect(verifyStep({ community: group, claim, viewerId: "me" }).step).toBe("pay");
+  });
 });

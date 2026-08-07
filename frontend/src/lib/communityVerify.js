@@ -78,6 +78,11 @@ export function verifyStep({ community, claim, viewerId, justPaid = false } = {}
     return { step: "pay" };
   }
 
+  // Reviewed, and proof was not granted. Without this the owner would sit on
+  // "pending" for the rest of time, waiting for an answer that already came.
+  if (claim?.manual_review_at && claim?.reviewed_at) {
+    return { step: "declined", note: claim.review_note ?? null };
+  }
   if (claim?.manual_review_at) return { step: "pending-review" };
 
   return { step: "prove", proof: proofRoute(community) };
@@ -113,7 +118,8 @@ export async function fetchVerifyClaim(communityId) {
     .from("community_claim")
     .select(
       "identity_verified_at, subscription_status, current_period_end, manual_review_at, " +
-      "origin, proof_method, proof_email, discord_guild_id, code_expires_at",
+      "origin, proof_method, proof_email, discord_guild_id, code_expires_at, " +
+      "reviewed_at, review_note",
     )
     .eq("community", communityId).eq("claimer", me).maybeSingle();
   if (error) { console.error("fetchVerifyClaim failed", error); return null; }

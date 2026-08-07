@@ -75,6 +75,7 @@ const HEADINGS = {
   "past-due": "communityVerify.titleLapsed",
   processing: "communityVerify.titleProcessing",
   "pending-review": "communityVerify.titlePending",
+  declined: "communityVerify.titleDeclined",
 };
 const heading = computed(() => t(HEADINGS[state.value.step] ?? "communityVerify.title"));
 
@@ -363,6 +364,15 @@ function signIn() {
         <p class="cv__note">{{ t('communityVerify.pendingReviewNote') }}</p>
       </template>
 
+      <!-- ── A person read it and said no ───────────────────────────── -->
+      <template v-else-if="state.step === 'declined'">
+        <p class="cv__lede">{{ t('communityVerify.declinedBody') }}</p>
+        <!-- The reviewer's own words, not a paraphrase. A refusal you cannot
+             act on is worse than no answer. -->
+        <p v-if="state.note" class="cv__quote">{{ state.note }}</p>
+        <p class="cv__note">{{ t('communityVerify.declinedNext') }}</p>
+      </template>
+
       <!-- ── Pay ────────────────────────────────────────────────────── -->
       <template v-else-if="state.step === 'pay'">
         <p class="cv__lede">{{ t('communityVerify.payBody') }}</p>
@@ -565,6 +575,16 @@ function signIn() {
   display: inline-flex; align-items: center; gap: 7px; margin: 12px 0 0;
   font-size: 12.5px; color: var(--c-muted);
 }
+
+/* Somebody else's words. Quotation marks rather than a box or a stripe: the
+   punctuation already says "this is a quote" and costs no chrome. */
+.cv__quote {
+  margin: 0 0 16px;
+  font-size: 14px; line-height: 1.6; color: var(--c-text); max-width: 54ch;
+  white-space: pre-wrap;
+}
+.cv__quote::before { content: "\201C"; }
+.cv__quote::after  { content: "\201D"; }
 
 /* Facts about what verification does. Bordered rows would make four tiles of
    three sentences; a list is what this is. */
