@@ -1,9 +1,14 @@
 import { getClient } from "@/lib/supabaseClient";
 import { slugify, withSuffix } from "@/lib/communitySlug";
 import { sanitizeLinks } from "@/lib/communityLinks";
+import { normalizeKinds } from "@/lib/communityKinds";
 
 const PAGE_SIZE = 24;
-const MAX_UNVERIFIED_PER_OWNER = 5; // spam cap
+
+// Thrown by createCommunity and matched by the form so it can show the message
+// in the reader's language and link to the community they already have. A code
+// rather than a sentence, because this string is not the copy.
+export const ALREADY_OWN_ONE = "already_own_one";
 
 function assertHttp(url, label) {
   if (!url) return null;
@@ -25,10 +30,12 @@ async function uniqueSlug(name, city) {
 export async function fetchDirectory({ kind, country, region, remoteDuel, q, page = 0, pageSize = PAGE_SIZE } = {}) {
   let query = getClient()
     .from("community")
-    .select("id, kind, name, slug, city, country, region, avatar_url, banner_url, remote_duel, verified, owner, follower_count", { count: "exact" })
+    .select("id, kind, kinds, name, slug, city, country, region, avatar_url, banner_url, remote_duel, verified, owner, follower_count", { count: "exact" })
     .eq("status", "published");
 
-  if (kind)               query = query.eq("kind", kind);
+  // "Is store among your kinds", not "is store your kind": a shop that also
+  // runs a Discord belongs under both filters, which is the point of kinds.
+  if (kind)               query = query.contains("kinds", [kind]);
   if (country)            query = query.eq("country", country);
   if (region)             query = query.eq("region", region);
   if (remoteDuel === true) query = query.eq("remote_duel", true);
@@ -60,17 +67,18 @@ export async function createCommunity(input) {
   const me = (await getClient().auth.getSession()).data?.session?.user?.id;
   if (!me) throw new Error("Sign in to create a community.");
 
+  // One per account. The unique index is what actually enforces this; the check
+  // is here so the form can say so before asking for a name, a city and a logo.
   const { count } = await getClient()
-    .from("community").select("id", { count: "exact", head: true })
-    .eq("owner", me).eq("verified", false);
-  if ((count ?? 0) >= MAX_UNVERIFIED_PER_OWNER) {
-    throw new Error("You have reached the limit of unverified communities.");
-  }
+    .from("community").select("id", { count: "exact", head: true }).eq("owner", me);
+  if ((count ?? 0) > 0) throw new Error(ALREADY_OWN_ONE);
 
   const slug = await uniqueSlug(input.name, input.city);
   const row = {
     owner: me,
-    kind: input.kind,
+    // kinds only: the database derives kind from it, and sending both invites
+    // the two to disagree.
+    kinds: normalizeKinds(input.kinds ?? [input.kind]),
     name: input.name,
     slug,
     bio: input.bio ?? "",
@@ -108,6 +116,7 @@ export async function createCommunity(input) {
 
 export async function updateCommunity(id, patch) {
   const clean = { ...patch, updated_at: new Date().toISOString() };
+  if ("kinds" in clean)       clean.kinds = normalizeKinds(clean.kinds);
   if ("website" in clean)     clean.website = assertHttp(clean.website, "Website");
   if ("discord_url" in clean) clean.discord_url = assertHttp(clean.discord_url, "Discord link");
   if ("links" in clean)       clean.links = sanitizeLinks(clean.links);
@@ -135,16 +144,16 @@ export async function verifyClaimCode(communityId, code) {
   return data;
 }
 
-// Fallback when the store has no email on file: record a review reason on the
-// caller's own claim row (the column guard blocks writes to any other field).
+// Fallback when the store has no email on file. Goes through the Edge Function
+// rather than writing the claim row directly: the client may write
+// manual_review_reason but not manual_review_at, so the old direct write left
+// the request with no timestamp and therefore out of the review queue entirely.
 export async function requestManualReview(communityId, reason) {
-  const me = (await getClient().auth.getSession()).data?.session?.user?.id;
-  if (!me) throw new Error("Sign in to request a review.");
-  const { error } = await getClient().from("community_claim").upsert(
-    { community: communityId, claimer: me, manual_review_reason: reason },
-    { onConflict: "community,claimer" },
-  );
+  const { data, error } = await getClient().functions.invoke("community-verify-manual", {
+    body: { community_id: communityId, reason },
+  });
   if (error) { console.error("requestManualReview failed", error); throw error; }
+  return data;
 }
 
 // Start the paid claim: the claim-create-checkout Edge Function returns a Stripe
@@ -190,6 +199,23 @@ export async function reportCommunity(id, reason) {
   if (error && error.code !== "23505") { // 23505 = already reported, treat as success
     console.error("reportCommunity failed", error); throw error;
   }
+}
+
+// Which way out a community has. A row you created leaves with you; a seeded
+// directory entry you claimed is handed back and stays in the directory. The
+// server decides this too, from the same column, and refuses a mismatch: this
+// is here so the UI can say the right sentence, not so it can pick.
+export function giveUpMode(community, viewerId) {
+  if (!community || !viewerId || community.owner !== viewerId) return null;
+  return community.created_by === viewerId ? "delete" : "release";
+}
+
+export async function releaseCommunity(communityId, intent) {
+  const { data, error } = await getClient().functions.invoke("community-release", {
+    body: { community_id: communityId, intent },
+  });
+  if (error) { console.error("releaseCommunity failed", error); throw error; }
+  return data; // { ok: true, mode } or { error }
 }
 
 export async function fetchMyCommunities() {

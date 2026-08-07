@@ -8,7 +8,7 @@ import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from "vue"
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useHead } from "@unhead/vue";
-import { fetchDirectory } from "@/lib/community";
+import { fetchDirectory, fetchMyCommunities } from "@/lib/community";
 import { getCurrentSession, onAuthChange, signInWithDiscord } from "@/lib/supabaseClient";
 import { toQueryParams, fromQueryParams } from "@/lib/communityFilters";
 import { COUNTRIES } from "@/lib/countries";
@@ -137,6 +137,23 @@ useHead(computed(() => {
 const currentUserId = ref(null);
 let stopAuth = null;
 
+// An account can own one community. Once it does, "Add yours" is a button that
+// would open a form only to refuse at the end of it, so it becomes a way back
+// to the community they already have.
+const myCommunity = ref(null);
+
+async function loadMine() {
+  if (!currentUserId.value) { myCommunity.value = null; return; }
+  try { myCommunity.value = (await fetchMyCommunities())[0] ?? null; }
+  catch (e) { console.error("CommunityDirectory: fetchMyCommunities failed", e); }
+}
+watch(currentUserId, loadMine, { immediate: true });
+
+const mineRoute = computed(() => ({
+  name: "communityProfile",
+  params: { locale: route.params.locale || "en", slug: myCommunity.value?.slug },
+}));
+
 async function onFollowAuthRequired() {
   try { await signInWithDiscord(); }
   catch (e) { console.error("sign-in failed", e); }
@@ -160,7 +177,11 @@ onBeforeUnmount(() => { if (typeof stopAuth === "function") stopAuth(); });
         <h1 class="cd-title">{{ t('community.directoryTitle') }}</h1>
         <p class="cd-subtitle">{{ t('community.directorySubtitle') }}</p>
       </div>
-      <button type="button" class="btn-new" @click="openCreate">
+      <router-link v-if="myCommunity" class="btn-new" :to="mineRoute">
+        <v-icon icon="mdi-storefront-outline" size="18" />
+        {{ t('community.yoursAlready') }}
+      </router-link>
+      <button v-else type="button" class="btn-new" @click="openCreate">
         <v-icon icon="mdi-plus" size="18" />
         {{ t('community.addYours') }}
       </button>
@@ -221,7 +242,11 @@ onBeforeUnmount(() => { if (typeof stopAuth === "function") stopAuth(); });
         <v-icon icon="mdi-storefront-outline" size="44" style="color: var(--c-muted)" />
       </div>
       <p class="state-title">{{ t('community.empty') }}</p>
-      <button type="button" class="btn-new" @click="openCreate">
+      <router-link v-if="myCommunity" class="btn-new" :to="mineRoute">
+        <v-icon icon="mdi-storefront-outline" size="18" />
+        {{ t('community.yoursAlready') }}
+      </router-link>
+      <button v-else type="button" class="btn-new" @click="openCreate">
         <v-icon icon="mdi-plus" size="18" />
         {{ t('community.addYours') }}
       </button>
@@ -302,6 +327,7 @@ onBeforeUnmount(() => { if (typeof stopAuth === "function") stopAuth(); });
   flex-shrink: 0;
 }
 .btn-new:hover { opacity: 0.88; transform: translateY(-1px); }
+a.btn-new { text-decoration: none; }
 
 /* ── Toolbar ──────────────────────────────────────── */
 .toolbar {

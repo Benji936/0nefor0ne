@@ -1325,7 +1325,20 @@
     "followingEmpty": "Find communities to follow",
     "placeCredit": "Search powered by OpenStreetMap",
     "addEventLocked": "Verify to post events",
-    "eventsEmptyUnverified": "Verified communities can post events here. Yours is not verified yet."
+    "eventsEmptyUnverified": "Verified communities can post events here. Yours is not verified yet.",
+    "giveUpDelete": "Delete this community",
+    "giveUpRelease": "Give this community back",
+    "giveUpDeleteBody": "The page goes, and so do its events and everyone following it. None of it comes back.",
+    "giveUpReleaseBody": "The shop stays in the directory, unowned and unverified, and anyone can claim it next, including you. Its upcoming events are removed and any subscription on it is cancelled.",
+    "giveUpTypeName": "Type {name} to confirm",
+    "giveUpDeleteAction": "Delete for good",
+    "giveUpReleaseAction": "Hand it back",
+    "giveUpKeep": "Keep it",
+    "giveUpFailed": "That did not go through. Nothing changed.",
+    "yoursAlready": "Your community",
+    "alreadyOwnOne": "You already run a community. An account can have one, so give that one up first if you want to start again somewhere else.",
+    "claimBlocked": "You already run a community, and an account can have one.",
+    "fieldKindHint": "Pick every one that fits. The first is the one shown in the directory."
   },
   "communityVerify": {
     "metaTitle": "Verify {name}",
@@ -1395,6 +1408,29 @@
     "loadFailed": "Could not load this community. Check your connection and try again.",
     "genericError": "Something went wrong on our end. Try again in a moment.",
     "verifyPrompt": "This community is not verified yet.",
-    "verifyPromptAction": "Verify it"
+    "verifyPromptAction": "Verify it",
+    "titleDeclined": "Not verified",
+    "declinedBody": "Someone read your request and could not verify this community.",
+    "declinedNext": "Fix what is mentioned above and ask again, or write to us if you think this is wrong."
+  },
+  "adminReview": {
+    "title": "Review queue",
+    "loading": "Loading…",
+    "signIn": "Sign in to see this.",
+    "notAdmin": "This page is not for your account.",
+    "empty": "Nothing waiting.",
+    "failed": "That did not go through. Nothing changed.",
+    "reviewsTitle": "Verification requests",
+    "reportsTitle": "Reports",
+    "originCreated": "Created it",
+    "originClaiming": "Claiming it",
+    "approve": "Approve",
+    "decline": "Decline",
+    "declineNote": "Tell them why",
+    "declinePlaceholder": "What would make this pass?",
+    "confirmDecline": "Send the decline",
+    "cancel": "Cancel",
+    "markReviewed": "Mark reviewed",
+    "dismiss": "Dismiss"
   }
 }

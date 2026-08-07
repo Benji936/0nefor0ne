@@ -75,6 +75,21 @@ describe("proofRoute", () => {
   it("defaults an unknown kind to review rather than to a proof it cannot pass", () => {
     expect(proofRoute({ kind: "something-new" })).toBe("manual");
   });
+
+  // The whole reason multi-kind cannot be a shortcut: a shop with a Discord
+  // server must still prove the shop.
+  it("makes a store prove the store even when it also runs a discord", () => {
+    expect(proofRoute({ kinds: ["discord", "store"], website: "https://x.fr" })).toBe("domain");
+    expect(proofRoute({ kinds: ["discord", "store"], website: "" })).toBe("no-website");
+  });
+
+  it("sends a group that also runs a discord to review", () => {
+    expect(proofRoute({ kinds: ["discord", "group"] })).toBe("manual");
+  });
+
+  it("keeps the discord route when discord is the only claim", () => {
+    expect(proofRoute({ kinds: ["discord"] })).toBe("discord");
+  });
 });
 
 describe("verifyStep", () => {
@@ -128,6 +143,31 @@ describe("verifyStep", () => {
   it("prefers proven identity over a pending review, so an approved group can pay", () => {
     const group = { ...community, kind: "group" };
     const claim = { manual_review_at: "x", identity_verified_at: "y" };
+    expect(verifyStep({ community: group, claim, viewerId: "me" }).step).toBe("pay");
+  });
+
+  // A decision that never reaches the owner is the same as no decision.
+  it("shows a decline once a reviewer has answered", () => {
+    const group = { ...community, kind: "group" };
+    const claim = { manual_review_at: "x", reviewed_at: "y", review_note: "No sign of a group." };
+    const state = verifyStep({ community: group, claim, viewerId: "me" });
+    expect(state.step).toBe("declined");
+    expect(state.note).toBe("No sign of a group.");
+  });
+
+  it("carries a declined state with no note rather than hiding it", () => {
+    const group = { ...community, kind: "group" };
+    const claim = { manual_review_at: "x", reviewed_at: "y" };
+    const state = verifyStep({ community: group, claim, viewerId: "me" });
+    expect(state.step).toBe("declined");
+    expect(state.note).toBe(null);
+  });
+
+  // Approving stamps both, and the owner should land on checkout, not on a
+  // refusal: identity_verified_at is checked first for exactly this reason.
+  it("sends an approved review to payment, not to the declined state", () => {
+    const group = { ...community, kind: "group" };
+    const claim = { manual_review_at: "x", reviewed_at: "y", identity_verified_at: "z" };
     expect(verifyStep({ community: group, claim, viewerId: "me" }).step).toBe("pay");
   });
 });

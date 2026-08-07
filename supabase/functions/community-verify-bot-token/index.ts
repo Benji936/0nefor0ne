@@ -11,6 +11,22 @@
 // ~40 bits, one-time, and dead after 15 minutes. Only the hash is stored.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// Mirror of frontend/src/lib/communityKinds.js, kept by hand like currencyFor in
+// claim-create-checkout. Proof gets harder down this list and a community has to
+// pass the hardest one it claims: a shop that also runs a Discord server does
+// not get to prove the server instead of the shop.
+const STRICTNESS = ["store", "group", "discord"];
+
+function kindsOf(c: { kinds?: string[] | null; kind?: string | null }): string[] {
+  const list = Array.isArray(c?.kinds) ? c.kinds.filter((k) => STRICTNESS.includes(k)) : [];
+  return list.length ? list : (c?.kind ? [c.kind] : []);
+}
+
+function strictestKind(c: { kinds?: string[] | null; kind?: string | null }): string | null {
+  const list = kindsOf(c);
+  return STRICTNESS.find((k) => list.includes(k)) ?? null;
+}
+
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -50,11 +66,13 @@ Deno.serve(async (req) => {
     if (!community_id) return json({ error: "missing_community_id" }, 400);
 
     const { data: community } = await admin.from("community")
-      .select("id, owner, kind, verified").eq("id", community_id).maybeSingle();
+      .select("id, owner, kind, kinds, verified").eq("id", community_id).maybeSingle();
     if (!community) return json({ error: "not_found" }, 404);
     if (community.owner !== user.id) return json({ error: "not_owner" }, 403);
     if (community.verified) return json({ error: "already_verified" }, 409);
-    if (community.kind !== "discord") return json({ error: "wrong_kind" }, 400);
+    // Only when Discord is the whole story. A community that also calls itself
+    // a store or a group has a harder proof to pass first.
+    if (strictestKind(community) !== "discord") return json({ error: "wrong_kind" }, 400);
 
     const plain = newToken();
     const expiresAt = new Date(Date.now() + TOKEN_TTL_MS).toISOString();

@@ -3,10 +3,11 @@
 // renders a loading / not-found / profile state. The CTA row (claim, report,
 // edit) each opens its own dialog below.
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useHead } from "@unhead/vue";
-import { fetchBySlug, updateCommunity } from "@/lib/community";
+import { fetchBySlug, updateCommunity, fetchMyCommunities } from "@/lib/community";
+import { kindsOf, KINDS, TYPE_KEYS } from "@/lib/communityKinds";
 import { validateImageFile, uploadCommunityMedia } from "@/lib/communityMedia";
 import { COUNTRIES } from "@/lib/countries";
 import { getCurrentSession, onAuthChange, signInWithDiscord } from "@/lib/supabaseClient";
@@ -17,8 +18,10 @@ import PlatformIcon from "@/components/community/PlatformIcon.vue";
 import CommunityKindIcon from "@/components/community/CommunityKindIcon.vue";
 import FollowButton from "@/components/community/FollowButton.vue";
 import CommunityEvents from "@/components/community/CommunityEvents.vue";
+import CommunityGiveUp from "@/components/community/CommunityGiveUp.vue";
 
 const route = useRoute();
+const router = useRouter();
 const { t } = useI18n();
 
 const community      = ref(null);
@@ -27,9 +30,6 @@ const notFound       = ref(false);
 const currentUserId  = ref(null);
 
 const KIND_KEYS = { store: "kindStore", discord: "kindDiscord", group: "kindGroup" };
-// Singular type labels for the on-page identity line ("Store", not the plural
-// "Stores" the directory filter reuses). Meta/SEO copy keeps kindLabel.
-const TYPE_KEYS = { store: "typeStore", discord: "typeDiscord", group: "typeGroup" };
 
 // Stale-response guard: only the most recently issued load() may commit its
 // result, so a slower earlier fetch (e.g. after a rapid slug change) can't
@@ -54,6 +54,30 @@ async function load() {
   } finally {
     if (myId === reqId) loading.value = false;
   }
+}
+
+// The community this viewer already owns, if any. An account can own one, so
+// on an unclaimed profile this decides between offering the claim and
+// explaining why it is not on offer. Cleared on sign-out.
+const myOther = ref(null);
+
+async function loadMine() {
+  if (!currentUserId.value) { myOther.value = null; return; }
+  try {
+    const mine = await fetchMyCommunities();
+    myOther.value = mine.find((c) => c.slug !== route.params.slug) ?? null;
+  } catch (e) {
+    console.error("CommunityProfile: fetchMyCommunities failed", e);
+  }
+}
+watch(currentUserId, loadMine, { immediate: true });
+
+// Deleted, and there is no page left to stand on. Released, and the page is
+// still here as an unclaimed directory entry, so reloading shows it as the
+// public now sees it.
+function onGaveUp(mode) {
+  if (mode === "delete") router.push({ name: "community", params: localeParams.value });
+  else load();
 }
 
 let unsub = null;
@@ -99,11 +123,10 @@ const kindLabel = computed(() => {
   return key ? t(`community.${key}`) : (community.value?.kind ?? "");
 });
 
-// Display-only: singular type shown in the identity line.
-const typeLabel = computed(() => {
-  const key = TYPE_KEYS[community.value?.kind];
-  return key ? t(`community.${key}`) : (community.value?.kind ?? "");
-});
+// Everything this community is, in the owner's chosen order. The SEO title
+// above keeps the primary kind alone: "Store in Geneva" is a title, "Store,
+// Discord server and play group in Geneva" is a sentence.
+const profileKinds = computed(() => kindsOf(community.value));
 
 const cityCountry = computed(() => {
   const c = community.value;
@@ -262,10 +285,19 @@ const editErr = ref("");
 const uploadingAvatar = ref(false);   // used by the image upload task
 const uploadingBanner = ref(false);
 const edit = ref({
-  name: "", bio: "", links: [],
+  name: "", bio: "", links: [], kinds: [],
   city: "", country: "", avatar_url: null, banner_url: null,
   remote_duel: false,
 });
+
+// A place picks up a Discord server or starts a play group long after its page
+// exists, so the set of kinds has to be editable, not just chosen once at
+// creation. Same rule as the create form: you cannot be nothing.
+function toggleEditKind(k) {
+  const list = edit.value.kinds;
+  if (!list.includes(k)) edit.value.kinds = [...list, k];
+  else if (list.length > 1) edit.value.kinds = list.filter((x) => x !== k);
+}
 
 // Local key so v-for rows stay stable across reorder / add / remove (the stored
 // links carry no id). Never persisted; sanitizeLinks reads only platform/url/label.
@@ -279,6 +311,7 @@ function startEdit() {
     links: (c.links ?? []).map((l) => ({
       platform: l.platform, url: l.url ?? "", label: l.label ?? "", _k: ++linkKey,
     })),
+    kinds: kindsOf(c),
     city: c.city ?? "", country: c.country ?? "",
     avatar_url: c.avatar_url ?? null, banner_url: c.banner_url ?? null,
     remote_duel: !!c.remote_duel,
@@ -367,6 +400,7 @@ async function saveEdit() {
       bio:         edit.value.bio.trim(),
       // sanitizeLinks (in updateCommunity) drops the local _k and empty rows.
       links:       edit.value.links,
+      kinds:       edit.value.kinds,
       city:        edit.value.city.trim() || null,
       country:     edit.value.country || null,
       avatar_url:  edit.value.avatar_url || null,
@@ -527,16 +561,32 @@ async function onStale() {
         </template>
 
         <div class="cp-id__fg">
-          <div class="cp-avatar" :class="{ 'cp-avatar--editing': editing }">
+          <!-- The whole icon opens the picker while editing; the badge is the
+               visible affordance and the keyboard target. -->
+          <div
+            class="cp-avatar"
+            :class="{ 'cp-avatar--editing': editing }"
+            @click="editing && !uploadingAvatar && avatarInput?.click()"
+          >
             <img v-if="displayAvatar" :src="displayAvatar" :alt="displayName" />
             <span v-else>{{ (displayName || '?')[0].toUpperCase() }}</span>
             <template v-if="editing">
-              <input ref="avatarInput" type="file" accept="image/*" class="cp-hide" @change="onPickImage('avatar', $event)" />
+              <!-- .stop matters: this input sits inside the clickable avatar,
+                   and input.click() bubbles, so without it opening the picker
+                   would re-enter the avatar handler and open it again. -->
+              <input
+                ref="avatarInput"
+                type="file"
+                accept="image/*"
+                class="cp-hide"
+                @click.stop
+                @change="onPickImage('avatar', $event)"
+              />
               <button
                 type="button"
                 class="cp-imgbtn cp-imgbtn--avatar"
                 :disabled="uploadingAvatar"
-                @click="avatarInput?.click()"
+                @click.stop="avatarInput?.click()"
                 :aria-label="t('community.changeAvatar')"
               >
                 <v-progress-circular v-if="uploadingAvatar" indeterminate size="14" width="2" color="white" />
@@ -563,9 +613,34 @@ async function onStale() {
             </div>
 
             <div class="cp-meta">
-              <span class="cp-meta__type">
-                <CommunityKindIcon :kind="community.kind" :size="13" />
-                {{ typeLabel }}
+              <!-- Every kind, spelled out. The profile has the room the card
+                   does not, and this is the page that has to be exact about
+                   what the place actually is. -->
+              <template v-if="!editing">
+                <template v-for="(k, i) in profileKinds" :key="k">
+                  <span v-if="i > 0" class="cp-meta__sep" aria-hidden="true">·</span>
+                  <span class="cp-meta__type">
+                    <CommunityKindIcon :kind="k" :size="13" />
+                    {{ t(TYPE_KEYS[k] ?? TYPE_KEYS.group) }}
+                  </span>
+                </template>
+              </template>
+              <span v-else class="cp-kindset" role="group" :aria-label="t('community.fieldKind')">
+                <label
+                  v-for="k in KINDS"
+                  :key="k"
+                  class="cp-kindchip"
+                  :class="{ 'cp-kindchip--on': edit.kinds.includes(k) }"
+                >
+                  <input
+                    type="checkbox"
+                    class="cp-kindchip__box"
+                    :checked="edit.kinds.includes(k)"
+                    @change="toggleEditKind(k)"
+                  />
+                  <CommunityKindIcon :kind="k" :size="13" />
+                  {{ t(TYPE_KEYS[k]) }}
+                </label>
               </span>
               <template v-if="!editing">
                 <span v-if="community.remote_duel" class="cp-meta__sep" aria-hidden="true">·</span>
@@ -632,11 +707,26 @@ async function onStale() {
 
           <!-- Claim CTA (unclaimed only; edit + report live in the top bar) -->
           <div v-if="!editing && community.owner == null" class="cp-gov">
-            <button type="button" class="cp-claim" @click="openClaim">
-              <v-icon icon="mdi-storefront-check-outline" size="16" />
-              {{ t('community.claimThis') }}
-            </button>
-            <span class="cp-gov__notice">{{ t('community.unclaimedNotice') }}</span>
+            <!-- Offering a claim to someone who already runs a community would
+                 walk them through an email code and a checkout only to be
+                 refused at the grant. Say it here instead. -->
+            <template v-if="myOther">
+              <router-link
+                class="cp-claim"
+                :to="{ name: 'communityProfile', params: { ...localeParams, slug: myOther.slug } }"
+              >
+                <v-icon icon="mdi-storefront-outline" size="16" />
+                {{ myOther.name }}
+              </router-link>
+              <span class="cp-gov__notice">{{ t('community.claimBlocked') }}</span>
+            </template>
+            <template v-else>
+              <button type="button" class="cp-claim" @click="openClaim">
+                <v-icon icon="mdi-storefront-check-outline" size="16" />
+                {{ t('community.claimThis') }}
+              </button>
+              <span class="cp-gov__notice">{{ t('community.unclaimedNotice') }}</span>
+            </template>
           </div>
 
           <!-- Verify CTA: the owner's counterpart to the claim row above. Without
@@ -652,6 +742,15 @@ async function onStale() {
             </router-link>
             <span class="cp-gov__notice">{{ t('communityVerify.verifyPrompt') }}</span>
           </div>
+
+          <!-- Last thing in the column, under everything the owner might
+               actually want to do. -->
+          <CommunityGiveUp
+            v-if="!editing && isOwner"
+            :community="community"
+            :viewer-id="currentUserId"
+            @gone="onGaveUp"
+          />
 
           <div v-if="finalizing" class="cp-finalizing" role="status">
             <v-progress-circular indeterminate size="16" width="2" color="var(--c-trade)" />
@@ -913,15 +1012,26 @@ async function onStale() {
 }
 
 .cp-avatar {
+  /* Anchors the camera badge. Without this the badge escaped to the nearest
+     positioned ancestor and landed in the bottom-right corner of the whole
+     identity block, nowhere near the icon it changes. */
+  position: relative;
   width: 88px; height: 88px; border-radius: 22px;
-  overflow: hidden; flex-shrink: 0;
+  flex-shrink: 0;
   border: 3px solid var(--c-bg);
   background: var(--c-surface-2);
   display: flex; align-items: center; justify-content: center;
   font-size: 32px; font-weight: 800; color: var(--c-text);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 }
-.cp-avatar img { width: 100%; height: 100%; object-fit: cover; }
+/* The image is rounded by itself rather than by overflow: hidden on the
+   container, so the badge can sit on the corner instead of being clipped by
+   it. 19px is the 22px outer radius less the 3px border. */
+.cp-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 19px; }
+
+/* In edit mode the icon is the thing you click, so it should look like it. */
+.cp-avatar--editing { cursor: pointer; }
+.cp-avatar--editing:hover { border-color: color-mix(in srgb, var(--c-trade) 55%, var(--c-bg)); }
 
 .cp-id__text { min-width: 0; flex: 1; padding-bottom: 4px; }
 .cp-namerow { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
@@ -955,6 +1065,26 @@ async function onStale() {
 .cp-meta__sep { color: color-mix(in srgb, var(--c-text) 55%, transparent); }
 @media (max-width: 479px) { .cp-meta__sep { display: none; } }
 .cp-meta__loc, .cp-meta__remote { display: inline-flex; align-items: center; gap: 4px; }
+
+/* Editing the kinds: the same pills the identity line already shows, made
+   tickable, so the row does not change shape between reading and editing. */
+.cp-kindset { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.cp-kindchip {
+  display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+  text-transform: uppercase; letter-spacing: 0.06em; font-size: 11.5px;
+  color: color-mix(in srgb, var(--c-text) 62%, transparent);
+  background: color-mix(in srgb, var(--c-bg) 40%, transparent);
+  border: 1.5px solid transparent;
+  padding: 3px 9px; border-radius: 7px;
+}
+.cp-kindchip .v-icon, .cp-kindchip .cpi-svg { color: currentColor; }
+.cp-kindchip--on {
+  color: var(--c-text);
+  border-color: color-mix(in srgb, var(--c-trade) 55%, transparent);
+}
+.cp-kindchip--on .v-icon, .cp-kindchip--on .cpi-svg { color: var(--c-trade); }
+.cp-kindchip__box { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.cp-kindchip:focus-within { outline: 2px solid var(--c-trade); outline-offset: 2px; }
 .cp-meta__loc .v-icon, .cp-meta__remote .v-icon { color: var(--c-trade); }
 
 /* ── Remote-duel toggle (edit) ────────────────────── */

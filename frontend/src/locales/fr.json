@@ -1325,7 +1325,20 @@
     "followingEmpty": "Trouver des communautés à suivre",
     "placeCredit": "Recherche propulsée par OpenStreetMap",
     "addEventLocked": "Vérifiez pour publier des événements",
-    "eventsEmptyUnverified": "Les communautés vérifiées peuvent publier des événements ici. La vôtre ne l'est pas encore."
+    "eventsEmptyUnverified": "Les communautés vérifiées peuvent publier des événements ici. La vôtre ne l'est pas encore.",
+    "giveUpDelete": "Supprimer cette communauté",
+    "giveUpRelease": "Rendre cette communauté",
+    "giveUpDeleteBody": "La page disparaît, avec ses événements et toutes les personnes qui la suivent. Rien ne se récupère.",
+    "giveUpReleaseBody": "La boutique reste dans l'annuaire, sans propriétaire et non vérifiée, et n'importe qui pourra la revendiquer ensuite, vous compris. Ses événements à venir sont supprimés et tout abonnement en cours est annulé.",
+    "giveUpTypeName": "Tapez {name} pour confirmer",
+    "giveUpDeleteAction": "Supprimer définitivement",
+    "giveUpReleaseAction": "La rendre",
+    "giveUpKeep": "La garder",
+    "giveUpFailed": "Cela n'a pas abouti. Rien n'a été modifié.",
+    "yoursAlready": "Votre communauté",
+    "alreadyOwnOne": "Vous gérez déjà une communauté. Un compte n'en a qu'une, alors rendez celle-ci d'abord si vous voulez repartir ailleurs.",
+    "claimBlocked": "Vous gérez déjà une communauté, et un compte n'en a qu'une.",
+    "fieldKindHint": "Cochez tout ce qui correspond. Le premier est celui affiché dans l'annuaire."
   },
   "communityVerify": {
     "metaTitle": "Vérifier {name}",
@@ -1395,6 +1408,29 @@
     "loadFailed": "Impossible de charger cette communauté. Vérifiez votre connexion et réessayez.",
     "genericError": "Un problème est survenu de notre côté. Réessayez dans un instant.",
     "verifyPrompt": "Cette communauté n'est pas encore vérifiée.",
-    "verifyPromptAction": "La vérifier"
+    "verifyPromptAction": "La vérifier",
+    "titleDeclined": "Non vérifiée",
+    "declinedBody": "Quelqu'un a lu votre demande et n'a pas pu vérifier cette communauté.",
+    "declinedNext": "Corrigez ce qui est indiqué ci-dessus et redemandez, ou écrivez-nous si vous pensez que c'est une erreur."
+  },
+  "adminReview": {
+    "title": "File d'attente",
+    "loading": "Chargement…",
+    "signIn": "Connectez-vous pour voir cette page.",
+    "notAdmin": "Cette page n'est pas pour votre compte.",
+    "empty": "Rien en attente.",
+    "failed": "Cela n'a pas abouti. Rien n'a été modifié.",
+    "reviewsTitle": "Demandes de vérification",
+    "reportsTitle": "Signalements",
+    "originCreated": "L'a créée",
+    "originClaiming": "La revendique",
+    "approve": "Approuver",
+    "decline": "Refuser",
+    "declineNote": "Dites-lui pourquoi",
+    "declinePlaceholder": "Que faudrait-il pour que cela passe ?",
+    "confirmDecline": "Envoyer le refus",
+    "cancel": "Annuler",
+    "markReviewed": "Marquer comme traité",
+    "dismiss": "Écarter"
   }
 }

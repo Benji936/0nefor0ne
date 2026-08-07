@@ -11,6 +11,17 @@
 // It is not proof of incorporation, and it is not meant to be.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// Mirror of frontend/src/lib/communityKinds.js, kept by hand like currencyFor in
+// claim-create-checkout. Proof gets harder down this list and a community has to
+// pass the hardest one it claims: a shop that also runs a Discord server does
+// not get to prove the server instead of the shop.
+const STRICTNESS = ["store", "group", "discord"];
+
+function kindsOf(c: { kinds?: string[] | null; kind?: string | null }): string[] {
+  const list = Array.isArray(c?.kinds) ? c.kinds.filter((k) => STRICTNESS.includes(k)) : [];
+  return list.length ? list : (c?.kind ? [c.kind] : []);
+}
+
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -76,11 +87,13 @@ Deno.serve(async (req) => {
     if (typeof email !== "string" || !email.trim()) return json({ error: "missing_email" }, 400);
 
     const { data: community } = await admin.from("community")
-      .select("id, owner, kind, website, verified").eq("id", community_id).maybeSingle();
+      .select("id, owner, kind, kinds, website, verified").eq("id", community_id).maybeSingle();
     if (!community) return json({ error: "not_found" }, 404);
     if (community.owner !== user.id) return json({ error: "not_owner" }, 403);
     if (community.verified) return json({ error: "already_verified" }, 409);
-    if (community.kind !== "store") return json({ error: "wrong_kind" }, 400);
+    // Store proof is the hardest one, so it is right for anyone claiming to be
+    // a store, whatever else they also are.
+    if (!kindsOf(community).includes("store")) return json({ error: "wrong_kind" }, 400);
     if (!community.website) return json({ status: "needs_website" });
 
     const address = email.trim();
