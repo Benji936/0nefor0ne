@@ -1266,11 +1266,10 @@
     "claimVerify": "Bestätigen",
     "claimResend": "Code erneut senden",
     "claimTryManual": "Code nicht erhalten oder falsche E-Mail? Manuelle Prüfung anfordern",
-    "claimSubscribeTitle": "Starten Sie Ihr kostenloses Jahr",
-    "claimSubscribeBody": "Sie sind verifiziert. Richten Sie Ihren Eintrag im ersten Jahr kostenlos ein, danach {price} pro Jahr. Karte jetzt hinterlegen, keine Abbuchung bis nächstes Jahr, jederzeit kündbar.",
-    "claimStartFreeYear": "Kostenloses Jahr starten",
+    "claimSubscribeTitle": "Zahlungsweise wählen",
+    "claimSubscribeBody": "Sie sind verifiziert. Wählen Sie einen Tarif. Ihre Karte wird jetzt hinterlegt, abgebucht wird erst nach Ablauf der kostenlosen Zeit.",
     "claimFinalizing": "Einrichtung wird abgeschlossen, dies kann einige Sekunden dauern…",
-    "claimSubscribeCancelled": "Bezahlung abgebrochen. Sie können Ihr kostenloses Jahr jederzeit starten.",
+    "claimSubscribeCancelled": "Bezahlung abgebrochen. Sie können jederzeit neu starten.",
     "manageSubscription": "Abonnement verwalten",
     "manageSubBillingError": "Abrechnung konnte nicht geöffnet werden. Bitte erneut versuchen.",
     "claimInvalidCode": "Dieser Code ist nicht richtig. {count} Versuche übrig.",
@@ -1388,10 +1387,25 @@
     "pendingReviewBody": "Deine Anfrage ist da. Hier gibt es vorerst nichts mehr zu tun.",
     "pendingReviewNote": "Anfragen werden von Hand gelesen, das geht nicht sofort.",
     "payBody": "Deine Identität ist nachgewiesen. Ein Schritt fehlt noch.",
-    "payFreeYear": "Das erste Jahr ist kostenlos",
-    "payThen": "Danach {price} pro Jahr",
     "payCancel": "Jederzeit kündbar, die Community bleibt in jedem Fall deine",
-    "payAction": "Gratisjahr starten",
+    "plansLegend": "Zahlungsweise",
+    "plansWhy": "Jährlich ist doppelt so lange kostenlos und über das Jahr günstiger. Monatlich gibt es für alle, die nicht ein ganzes Jahr auf einmal zahlen möchten.",
+    "costUpfront": "Das erste Jahr ist kostenlos, danach {year} pro Jahr. Es gibt auch einen Monatstarif für {month} mit sechs Gratismonaten. Jederzeit kündbar.",
+    "intervalUnavailable": "Der Monatstarif ist noch nicht verfügbar. Bitte jährlich wählen oder später erneut versuchen.",
+    "plans": {
+      "year": {
+        "name": "Jährlich",
+        "free": "Ein Jahr kostenlos",
+        "then": "danach {price} pro Jahr",
+        "action": "Gratisjahr starten"
+      },
+      "month": {
+        "name": "Monatlich",
+        "free": "Sechs Monate kostenlos",
+        "then": "danach {price} pro Monat",
+        "action": "Sechs Gratismonate starten"
+      }
+    },
     "processingBody": "Zahlung erhalten. Die Verifizierung wird gerade eingerichtet.",
     "processingNote": "Das dauert meist ein paar Sekunden",
     "doneBody": "Das Zeichen ist auf deinem Profil und im Verzeichnis sichtbar. Karte ändern oder kündigen kannst du jederzeit in deinem Konto.",

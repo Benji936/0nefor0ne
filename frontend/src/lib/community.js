@@ -2,6 +2,8 @@ import { getClient } from "@/lib/supabaseClient";
 import { slugify, withSuffix } from "@/lib/communitySlug";
 import { sanitizeLinks } from "@/lib/communityLinks";
 import { normalizeKinds } from "@/lib/communityKinds";
+import { normalizeInterval } from "@/lib/communityPricing";
+import { codeForCountry } from "@/lib/countries";
 
 const PAGE_SIZE = 24;
 
@@ -94,7 +96,12 @@ export async function createCommunity(input) {
     banner_url: input.banner_url ?? null,
     city: input.city ?? null,
     country: input.country ?? null,
-    country_code: input.country_code ?? null,
+    // Derived rather than asked for. The form stores a country NAME because
+    // that is what the directory filter matches on, and country_code was only
+    // ever populated by the store seeder, so every community anyone created
+    // themselves had none and was priced in the USD fallback no matter where
+    // it was. An explicit country_code still wins, for the seeder.
+    country_code: input.country_code ?? codeForCountry(input.country),
     region: input.region ?? null,
     remote_duel: !!input.remote_duel,
     tags: input.tags ?? [],
@@ -120,6 +127,9 @@ export async function updateCommunity(id, patch) {
   if ("website" in clean)     clean.website = assertHttp(clean.website, "Website");
   if ("discord_url" in clean) clean.discord_url = assertHttp(clean.discord_url, "Discord link");
   if ("links" in clean)       clean.links = sanitizeLinks(clean.links);
+  // Keep the code with the name it came from, including when the name is
+  // cleared. A stale code would price a community by a country it left.
+  if ("country" in clean && !("country_code" in clean)) clean.country_code = codeForCountry(clean.country);
   const { data, error } = await getClient().from("community").update(clean).eq("id", id).select().single();
   if (error) { console.error("updateCommunity failed", error); throw error; }
   return data;
@@ -157,11 +167,13 @@ export async function requestManualReview(communityId, reason) {
 }
 
 // Start the paid claim: the claim-create-checkout Edge Function returns a Stripe
-// Checkout URL (subscription mode, 365-day trial, local currency). The caller
+// Checkout URL (subscription mode, free trial, local currency). The caller
 // redirects the browser to it. Requires identity_verified_at server-side.
-export async function startClaimCheckout(communityId) {
+// `interval` is 'year' or 'month'; normalizeInterval keeps a stray value from
+// reaching the server, which rejects anything it does not recognise.
+export async function startClaimCheckout(communityId, interval = "year") {
   const { data, error } = await getClient().functions.invoke("claim-create-checkout", {
-    body: { community_id: communityId },
+    body: { community_id: communityId, interval: normalizeInterval(interval) },
   });
   if (error) { console.error("startClaimCheckout failed", error); throw error; }
   return data; // { url } on success, or { error }

@@ -1266,11 +1266,10 @@
     "claimVerify": "Verifica",
     "claimResend": "Invia di nuovo il codice",
     "claimTryManual": "Non hai ricevuto il codice o l'email è sbagliata? Richiedi una verifica manuale",
-    "claimSubscribeTitle": "Inizia il tuo anno gratuito",
-    "claimSubscribeBody": "Sei verificato. Configura la tua scheda gratis il primo anno, poi {price} all'anno. Aggiungi una carta ora, nessun addebito fino al prossimo anno, disdici quando vuoi.",
-    "claimStartFreeYear": "Inizia l'anno gratuito",
+    "claimSubscribeTitle": "Scegli come pagare",
+    "claimSubscribeBody": "Sei verificato. Scegli un piano. La carta viene aggiunta ora e non ti addebitiamo nulla fino alla fine del periodo gratuito.",
     "claimFinalizing": "Completamento in corso, può richiedere alcuni secondi…",
-    "claimSubscribeCancelled": "Pagamento annullato. Puoi iniziare il tuo anno gratuito quando vuoi.",
+    "claimSubscribeCancelled": "Pagamento annullato. Puoi iniziare quando vuoi.",
     "manageSubscription": "Gestisci abbonamento",
     "manageSubBillingError": "Impossibile aprire la fatturazione. Riprova.",
     "claimInvalidCode": "Il codice non è corretto. {count} tentativi rimasti.",
@@ -1388,10 +1387,25 @@
     "pendingReviewBody": "La tua richiesta è arrivata. Per ora qui non c'è altro da fare.",
     "pendingReviewNote": "Le richieste vengono lette a mano, quindi non è immediato.",
     "payBody": "La tua identità è dimostrata. Manca un passaggio.",
-    "payFreeYear": "Il primo anno è gratuito",
-    "payThen": "Poi {price} all'anno",
     "payCancel": "Disdici quando vuoi, la community resta tua in ogni caso",
-    "payAction": "Inizia l'anno gratuito",
+    "plansLegend": "Come vuoi pagare",
+    "plansWhy": "L'annuale è gratuito per il doppio del tempo e costa meno sull'anno. Il mensile c'è per chi preferisce non pagare un anno in una volta.",
+    "costUpfront": "Il primo anno è gratuito, poi {year} all'anno. C'è anche un piano mensile a {month} con sei mesi gratuiti. Disdici quando vuoi.",
+    "intervalUnavailable": "Il piano mensile non è ancora disponibile. Scegli l'annuale, o riprova più tardi.",
+    "plans": {
+      "year": {
+        "name": "Annuale",
+        "free": "Gratis per un anno",
+        "then": "poi {price} all'anno",
+        "action": "Inizia l'anno gratuito"
+      },
+      "month": {
+        "name": "Mensile",
+        "free": "Gratis per sei mesi",
+        "then": "poi {price} al mese",
+        "action": "Inizia i sei mesi gratuiti"
+      }
+    },
     "processingBody": "Pagamento ricevuto. Stiamo attivando la verifica.",
     "processingNote": "Di solito richiede pochi secondi",
     "doneBody": "Il segno è visibile sul tuo profilo e nell'elenco. Puoi cambiare carta o disdire dal tuo account quando vuoi.",

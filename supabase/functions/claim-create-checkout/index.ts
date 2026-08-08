@@ -1,7 +1,8 @@
 // claim-create-checkout: create a subscription-mode Stripe Checkout Session for
-// an already identity-verified claimer. First year free (365-day trial, card on
-// file), billed yearly in the store's local currency. Ownership is granted later
-// by stripe-webhook, not here. Success/cancel return to the community profile.
+// an already identity-verified claimer. Two plans: yearly with the first year
+// free, or monthly with the first six months free, both with a card on file and
+// both billed in the store's local currency. Ownership is granted later by
+// stripe-webhook, not here. Success/cancel return to the community profile.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@17.7.0?target=deno";
 
@@ -15,6 +16,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY")!;
 const STRIPE_PRICE_ID = Deno.env.get("STRIPE_PRICE_ID")!;
+const STRIPE_PRICE_ID_MONTHLY = Deno.env.get("STRIPE_PRICE_ID_MONTHLY") ?? "";
 const SITE = "https://0nefor.one";
 
 const stripe = new Stripe(STRIPE_SECRET_KEY, { httpClient: Stripe.createFetchHttpClient() });
@@ -25,12 +27,20 @@ const EUROZONE = new Set([
   "AT", "BE", "HR", "CY", "EE", "FI", "FR", "DE", "GR", "IE", "IT", "LV",
   "LT", "LU", "MT", "NL", "PT", "SK", "SI", "ES",
 ]);
+const SWISS = new Set(["CH", "LI"]);
 function currencyFor(countryCode: string | null): string {
   const cc = (countryCode || "").trim().toUpperCase();
+  if (SWISS.has(cc)) return "chf";
   if (cc === "GB") return "gbp";
   if (EUROZONE.has(cc)) return "eur";
   return "usd";
 }
+
+// Mirror of FREE_DAYS. 182 is six months to the nearest day. A Map rather than
+// an object literal so that membership is membership: `"constructor" in {}` is
+// true, and that is not the kind of thing to leave in the path that decides how
+// long somebody goes unbilled.
+const TRIAL_DAYS = new Map<string, number>([["year", 365], ["month", 182]]);
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -44,8 +54,21 @@ Deno.serve(async (req) => {
     const { data: { user } } = await admin.auth.getUser(token);
     if (!user) return json({ error: "not_authenticated" }, 401);
 
-    const { community_id } = await req.json();
+    const { community_id, interval: rawInterval } = await req.json();
     if (!community_id) return json({ error: "missing_community_id" }, 400);
+
+    // Absent means yearly: a client cached from before monthly existed sends no
+    // interval at all, and it should still get the plan it was built to buy.
+    // A value we do not recognise is a different thing entirely, and defaulting
+    // it would charge someone on a plan they did not pick.
+    const interval = rawInterval === undefined || rawInterval === null ? "year" : String(rawInterval);
+    if (!TRIAL_DAYS.has(interval)) return json({ error: "bad_interval" }, 400);
+
+    const priceId = interval === "month" ? STRIPE_PRICE_ID_MONTHLY : STRIPE_PRICE_ID;
+    // Monthly is configured in Stripe separately from this deploy. Say so rather
+    // than quietly falling back to yearly, which would take a card for a plan
+    // the owner did not choose.
+    if (!priceId) return json({ error: "interval_unavailable" }, 503);
 
     // Two callers reach this. A claimer taking over a seeded store, where the
     // store must still be unowned; and the owner of a community they created
@@ -81,10 +104,12 @@ Deno.serve(async (req) => {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       currency,
-      line_items: [{ price: STRIPE_PRICE_ID, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
-        trial_period_days: 365,
-        metadata: { community_id: String(community_id), claimer: user.id },
+        trial_period_days: TRIAL_DAYS.get(interval),
+        // interval is what was asked for. stripe-webhook records what was
+        // actually billed, read off the subscription itself.
+        metadata: { community_id: String(community_id), claimer: user.id, interval },
       },
       // Reuse the caller's Stripe customer if we already have one; else prefill
       // their email so Checkout creates one.
