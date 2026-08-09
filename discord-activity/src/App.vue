@@ -1,11 +1,12 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { setupDiscord } from './discord.js';
+import { setupDiscord, requestTournament } from './discord.js';
 import { createRoom } from './realtime.js';
 import PlayerLife from './components/PlayerLife.vue';
 import ToolsBar from './components/ToolsBar.vue';
 import DuelTimer from './components/DuelTimer.vue';
 import SidePanel from './components/SidePanel.vue';
+import MatchPanel from './components/MatchPanel.vue';
 
 const status = ref('connecting'); // connecting | ready | error
 const errorMsg = ref('');
@@ -28,9 +29,15 @@ onMounted(async () => {
   try {
     const ctx = await setupDiscord();
     me.value = ctx.user.id;
+
+    // Never fatal. A duel that cannot get a grant is still a duel; it just has
+    // no match tracking, which is exactly what a free server gets.
+    const { grant } = await requestTournament({ guildId: ctx.guildId, room: ctx.instanceId });
+
     room = createRoom({
       instanceId: ctx.instanceId,
       user: ctx.user,
+      grant,
       onState: (next) => {
         state.value = next;
         if (status.value !== 'ready') status.value = 'ready';
@@ -53,7 +60,7 @@ onUnmounted(() => {
     <header class="topbar">
       <div class="brand">
         <span class="mark">Remote Duel</span>
-        <span class="sub">0nefor.one</span>
+        <span class="sub">{{ state?.host?.name || '0nefor.one' }}</span>
       </div>
     </header>
 
@@ -80,6 +87,18 @@ onUnmounted(() => {
             Waiting for your opponent to open the activity…
           </p>
         </section>
+
+        <!-- Only in a verified store's server. Absent, not disabled: a free
+             duel should look complete, not like a trial of something else. -->
+        <MatchPanel
+          v-if="state.tournament"
+          :match="state.match"
+          :players="players"
+          @start="(bestOf) => send({ t: 'match:start', bestOf })"
+          @round="(winner) => send({ t: 'match:round', winner })"
+          @undo="send({ t: 'match:undo' })"
+          @clear="send({ t: 'match:reset' })"
+        />
 
         <ToolsBar
           :coin="state.coin"

@@ -64,6 +64,28 @@ export async function setupDiscord() {
   };
 }
 
+/**
+ * Ask the Worker whether this duel gets tournament mode.
+ *
+ * Returns a grant, not a boolean the caller acts on: the grant is what the
+ * socket accepts. A plain `false` here is the normal answer — the duel is free
+ * and complete without it — so a failure is treated the same as a no.
+ */
+export async function requestTournament({ guildId, room }) {
+  if (!isEmbedded || !guildId || !auth?.access_token) return { tournament: false };
+  try {
+    const res = await fetch('/.proxy/api/tournament', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ access_token: auth.access_token, guildId, room }),
+    });
+    if (!res.ok) return { tournament: false };
+    return await res.json();
+  } catch {
+    return { tournament: false };
+  }
+}
+
 export function getSdk() {
   return discordSdk;
 }

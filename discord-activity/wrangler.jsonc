@@ -14,7 +14,12 @@
   // SQLite-backed classes are the only kind available on the Workers Free plan.
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DuelRoom"] }],
   "vars": {
-    "DISCORD_CLIENT_ID": "1523756849051205692"
+    "DISCORD_CLIENT_ID": "1523756849051205692",
+    // Both public, and already committed in frontend/src/lib/supabaseClient.js.
+    // The Worker asks exactly one question with them — community_for_guild —
+    // and deliberately holds no service-role key.
+    "SUPABASE_URL": "https://sxteuctysfiwripnaozi.supabase.co",
+    "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4dGV1Y3R5c2Zpd3JpcG5hb3ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTczNTA1OTAsImV4cCI6MjA3MjkyNjU5MH0.nrRXz20dGkNH3wDIkHTxlrVMC-uvEiukWsq9-Pu4Lcw"
   },
   "observability": { "enabled": true }
 }

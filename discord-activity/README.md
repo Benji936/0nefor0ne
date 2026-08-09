@@ -95,8 +95,58 @@ Logs: `npm run tail`.
 Players open the activity from the voice-channel toolbar (the rocket /
 Activities button). The bot's `!duel` command explains the same thing.
 
-## Premium gating (deferred)
+## Tournament mode (verified stores)
 
-Shipping open for now. When ready, gate launches behind the guild-subscription
-entitlement the bot already tracks (reuse the premium-guild `Set`), so only
-premium communities can start a duel.
+The duel is free and stays free: life points, coin, dice, first turn, timer,
+chat. Nobody is refused, and a free server's activity is complete rather than a
+trial of something else.
+
+What a **verified** community's server adds is match tracking — best of 1/3/5, a
+round record holding the life totals as they stood, a running score, undo — and
+the store's name in the header.
+
+This replaces the earlier plan to gate *launches* behind the guild-subscription
+entitlement. A locked door is a bad first impression and gets a bot removed; a
+shop paying for the thing only a shop needs is the same trade the rest of the
+subscription makes.
+
+### How it is gated
+
+`guildId` comes from the Discord frame and a client can put anything there, so
+none of it is trusted:
+
+1. The client posts `/api/tournament` with its OAuth access token, guild id and
+   room.
+2. The Worker calls `GET /users/@me/guilds` with that token. Anyone can name a
+   guild; only a member's token lists it.
+3. The Worker asks Supabase `community_for_guild(guild_id)`, which answers with a
+   row only for a **verified** community whose current owner linked that server
+   with `/verify`.
+4. On both passing, the Worker returns a **grant**: an HMAC-signed payload bound
+   to that room and valid two minutes.
+5. `/ws` verifies the signature, strips anything the client put in the URL, and
+   sets the verified flag on the request it hands the Durable Object.
+
+`tournament:enable` is absent from `CLIENT_ACTIONS`, so a socket message asking
+for it is dropped before it reaches the reducer.
+
+The signing key is derived from `DISCORD_CLIENT_SECRET`, so there is no second
+secret to configure. `SUPABASE_URL` and `SUPABASE_ANON_KEY` are plain vars in
+`wrangler.jsonc` — both public, and the Worker holds no service-role key.
+
+**The honest limit**: this proves the caller is a member of the store's server,
+not that the activity is running in it. Someone who has joined a verified
+store's Discord could open a duel elsewhere with match tracking on. They are the
+store's own member, which is who the feature is for, and Discord gives the frame
+no signed guild context to do better.
+
+Apply `supabase/migrations/20260809_community_for_guild.sql` before deploying.
+
+## Tests
+
+```bash
+npm test
+```
+
+28 tests, no network: the reducer's match rules, and the grant's signing and
+every one of its rejection paths.
