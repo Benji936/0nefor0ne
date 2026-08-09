@@ -42,6 +42,23 @@ function currencyFor(countryCode: string | null): string {
 // long somebody goes unbilled.
 const TRIAL_DAYS = new Map<string, number>([["year", 365], ["month", 182]]);
 
+/**
+ * The stored customer id, but only if Stripe still has it. Returns null when
+ * the id is absent, unknown to Stripe, or names a deleted customer, so the
+ * caller can let Checkout create a fresh one instead of failing.
+ */
+async function usableCustomer(id: string | null | undefined): Promise<string | null> {
+  if (!id) return null;
+  try {
+    const customer = await stripe.customers.retrieve(id);
+    // A deleted customer still retrieves, as { id, deleted: true }.
+    return (customer as { deleted?: boolean })?.deleted ? null : id;
+  } catch (e) {
+    if ((e as { code?: string })?.code === "resource_missing") return null;
+    throw e; // a network or auth failure is not "no customer"
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   const json = (body: unknown, status = 200) =>
@@ -101,6 +118,13 @@ Deno.serve(async (req) => {
       ? `${SITE}/en/community/${community.slug}/verify`
       : `${SITE}/en/community/${community.slug}`;
 
+    // Reuse the caller's Stripe customer if we still have a real one. The id on
+    // the claim row can outlive the customer it names: deleting a customer in
+    // the dashboard, or clearing out test data, leaves the row pointing at
+    // nothing and Checkout answers "No such customer" for a person who did
+    // nothing wrong. Confirm it exists, and fall back to their email if not.
+    const customer = await usableCustomer(claim.stripe_customer_id);
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       currency,
@@ -111,11 +135,7 @@ Deno.serve(async (req) => {
         // actually billed, read off the subscription itself.
         metadata: { community_id: String(community_id), claimer: user.id, interval },
       },
-      // Reuse the caller's Stripe customer if we already have one; else prefill
-      // their email so Checkout creates one.
-      ...(claim.stripe_customer_id
-        ? { customer: claim.stripe_customer_id }
-        : { customer_email: user.email ?? undefined }),
+      ...(customer ? { customer } : { customer_email: user.email ?? undefined }),
       client_reference_id: String(claim.id),
       success_url: `${returnBase}?claim=success`,
       cancel_url: `${returnBase}?claim=cancel`,
@@ -124,6 +144,14 @@ Deno.serve(async (req) => {
     if (!session.url) return json({ error: "no_session_url" }, 502);
     return json({ url: session.url });
   } catch (e) {
+    // A 500 nobody can read is a 500 nobody can fix. The message and the inputs
+    // that produced it go to the logs; the caller gets the same body as before.
+    const err = e as { message?: string; code?: string; param?: string };
+    console.error("claim-create-checkout failed", JSON.stringify({
+      message: err?.message ?? String(e),
+      code: err?.code ?? null,
+      param: err?.param ?? null,
+    }));
     return json({ error: "unexpected", detail: String(e) }, 500);
   }
 });
