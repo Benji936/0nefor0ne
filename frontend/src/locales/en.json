@@ -1337,7 +1337,20 @@
     "yoursAlready": "Your community",
     "alreadyOwnOne": "You already run a community. An account can have one, so give that one up first if you want to start again somewhere else.",
     "claimBlocked": "You already run a community, and an account can have one.",
-    "fieldKindHint": "Pick every one that fits. The first is the one shown in the directory."
+    "fieldKindHint": "Pick every one that fits. The first is the one shown in the directory.",
+    "nearMe": "Near me",
+    "nearRadius": "Within",
+    "nearKm": "{km} km",
+    "nearOnlyVerified": "Only verified places appear in this search.",
+    "nearEmpty": "No verified store or community within {km} km yet.",
+    "nearEventsTitle": "Happening near you",
+    "nearUnclaimedTitle": "Is one of these yours?",
+    "nearUnclaimedBody": "These are nearby and nobody has claimed them. Claim yours, verify it, and it shows up in this search.",
+    "nearDenied": "Location is blocked for this site. Allow it in your browser to search around you.",
+    "nearUnavailable": "Your device could not work out where you are. Try again in a moment.",
+    "nearUnsupported": "This browser cannot share a location.",
+    "nearFailed": "That search did not go through. Try again.",
+    "nearShowAll": "Show the full list instead"
   },
   "communityVerify": {
     "metaTitle": "Verify {name}",
