@@ -212,6 +212,32 @@ export function releaseCommunity(communityId, intent) {
   return invokeFunction("community-release", { community_id: communityId, intent }); // { ok, mode } or { error }
 }
 
+/**
+ * How each of my communities is being paid for, keyed by community id.
+ *
+ * The account page offers a Stripe billing portal, which is a dead button for
+ * somebody whose community is verified by a Discord Guild Subscription: there
+ * is no Stripe customer behind it to manage. One extra read is cheaper than a
+ * button that fails.
+ */
+export async function fetchMyClaimSources() {
+  const me = (await getClient().auth.getSession()).data?.session?.user?.id;
+  if (!me) return {};
+  const { data, error } = await getClient()
+    .from("community_claim")
+    .select("community, stripe_subscription_id, discord_entitlement_at")
+    .eq("claimer", me);
+  if (error) { console.error("fetchMyClaimSources failed", error); return {}; }
+  const out = {};
+  for (const row of data ?? []) {
+    out[row.community] = {
+      stripe: !!row.stripe_subscription_id,
+      discord: !!row.discord_entitlement_at,
+    };
+  }
+  return out;
+}
+
 export async function fetchMyCommunities() {
   const me = (await getClient().auth.getSession()).data?.session?.user?.id;
   if (!me) return [];

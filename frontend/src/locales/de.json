@@ -1350,7 +1350,8 @@
     "nearUnavailable": "Dein Gerät konnte deinen Standort nicht bestimmen. Versuche es gleich noch einmal.",
     "nearUnsupported": "Dieser Browser kann keinen Standort teilen.",
     "nearFailed": "Die Suche hat nicht geklappt. Versuche es noch einmal.",
-    "nearShowAll": "Stattdessen die ganze Liste anzeigen"
+    "nearShowAll": "Stattdessen die ganze Liste anzeigen",
+    "billedViaDiscord": "Abrechnung über Discord"
   },
   "communityVerify": {
     "metaTitle": "{name} verifizieren",

@@ -1350,7 +1350,8 @@
     "nearUnavailable": "Your device could not work out where you are. Try again in a moment.",
     "nearUnsupported": "This browser cannot share a location.",
     "nearFailed": "That search did not go through. Try again.",
-    "nearShowAll": "Show the full list instead"
+    "nearShowAll": "Show the full list instead",
+    "billedViaDiscord": "Billed through Discord"
   },
   "communityVerify": {
     "metaTitle": "Verify {name}",

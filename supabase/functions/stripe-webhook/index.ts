@@ -1,8 +1,8 @@
 // stripe-webhook: the ONLY place community ownership is granted or revoked.
 // Verifies the Stripe signature (async, Deno crypto), dedupes on event id, then
 // maps subscription status to community state:
-//   trialing | active  -> owner = claimer, verified = true, status = published
-//   canceled | unpaid  -> drop verified; whether ownership also goes back depends
+//   trialing | active  -> owner = claimer, status = published
+//   canceled | unpaid  -> whether ownership goes back depends
 //                         on claim.origin (see below). Content is kept either way.
 //   past_due           -> keep ownership (Stripe is dunning), just record status
 //
@@ -11,6 +11,10 @@
 // again. A self-created community was owned before any subscription existed, so
 // reverting would delete somebody's ownership of a place they made over a failed
 // card. Those keep the owner and lose only the badge.
+// `verified` itself is set by neither branch. It is derived from Stripe and a
+// Discord Guild Subscription together, via recompute_community_verified, so a
+// cancellation here cannot strip the badge from somebody who is paying through
+// Discord for the bot. See 20260809_discord_entitlement_verifies.sql.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@17.7.0?target=deno";
 
@@ -89,7 +93,7 @@ Deno.serve(async (req) => {
         // Grant ownership. WHERE guard: only if unclaimed, or already owned by this
         // same claimer (re-subscribe). First active subscription wins a race.
         const { error: grantErr } = await admin.from("community")
-          .update({ owner: claimer, verified: true, status: "published", updated_at: new Date().toISOString() })
+          .update({ owner: claimer, status: "published", updated_at: new Date().toISOString() })
           .eq("id", communityId).or(`owner.is.null,owner.eq.${claimer}`);
         if (grantErr?.code === "23505") {
           // community_one_per_owner. claim-create-checkout refuses this up
@@ -106,14 +110,26 @@ Deno.serve(async (req) => {
       } else if (status === "canceled" || status === "unpaid") {
         // Lapse. Either way keep the content, and either way only touch the row
         // if THIS claimer still owns it, so a later owner is never clobbered.
+        // `verified` is no longer set here either way. It is derived from
+        // Stripe and Discord together, so a cancellation on this side must not
+        // strip the badge from somebody paying through a Guild Subscription.
         const lapsed = selfCreated
-          ? { verified: false }                 // they built it; it stays theirs
-          : { owner: null, verified: false };   // granted by the subscription, so it goes back
+          ? {}                       // they built it; it stays theirs
+          : { owner: null };         // granted by the subscription, so it goes back
         const { error: revertErr } = await admin.from("community")
           .update({ ...lapsed, status: "published", updated_at: new Date().toISOString() })
           .eq("id", communityId).eq("owner", claimer);
         if (revertErr) throw new Error(`revert: ${revertErr.message}`);
       }
+
+      // The one place that decides `verified`, now that two subscriptions can
+      // pay for it. Called after ownership settles, because the rule is
+      // "the current owner has an active subscription somewhere" and a
+      // half-applied grant would compute false.
+      const { error: recErr } = await admin.rpc("recompute_community_verified", {
+        p_community: communityId,
+      });
+      if (recErr) throw new Error(`recompute: ${recErr.message}`);
       // past_due / incomplete: status recorded above; ownership untouched.
     } catch (e) {
       // Un-claim the ledger row so Stripe's retry is not deduped away, and

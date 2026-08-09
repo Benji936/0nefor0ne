@@ -64,15 +64,26 @@ export function verifyStep({ community, claim, viewerId, justPaid = false } = {}
   if (!viewerId) return { step: "signed-out" };
   if (community.owner !== viewerId) return { step: "not-owner" };
 
-  const subscribed = LIVE_SUBSCRIPTION.has(claim?.subscription_status);
-  if (community.verified && subscribed) return { step: "done" };
+  // A Guild Subscription bought inside Discord pays for the same thing. It is
+  // checked before subscription_status, not after: One for One holds a
+  // cancelled Stripe row and a live Discord entitlement, and reading the Stripe
+  // column first would show "your subscription ended" to somebody who is paying
+  // right now, then ask them to pay twice.
+  const viaDiscord = !!claim?.discord_entitlement_at;
+  const subscribed = LIVE_SUBSCRIPTION.has(claim?.subscription_status) || viaDiscord;
+  if (community.verified && subscribed) {
+    return { step: "done", via: viaDiscord ? "discord" : "stripe" };
+  }
 
   // Verified but the subscription is gone: they built this, so they still own
-  // it, and the way back is the same flow rather than a support ticket.
-  if (claim?.subscription_status === "canceled" || claim?.subscription_status === "unpaid") {
-    return { step: "lapsed" };
+  // it, and the way back is the same flow rather than a support ticket. Skipped
+  // entirely while Discord is covering it, since nothing has lapsed.
+  if (!viaDiscord) {
+    if (claim?.subscription_status === "canceled" || claim?.subscription_status === "unpaid") {
+      return { step: "lapsed" };
+    }
+    if (claim?.subscription_status === "past_due") return { step: "past-due" };
   }
-  if (claim?.subscription_status === "past_due") return { step: "past-due" };
 
   if (claim?.identity_verified_at) {
     if (justPaid || community.verified) return { step: "processing" };
@@ -120,7 +131,7 @@ export async function fetchVerifyClaim(communityId) {
     .select(
       "identity_verified_at, subscription_status, current_period_end, manual_review_at, " +
       "origin, proof_method, proof_email, discord_guild_id, code_expires_at, " +
-      "reviewed_at, review_note",
+      "reviewed_at, review_note, discord_entitlement_at",
     )
     .eq("community", communityId).eq("claimer", me).maybeSingle();
   if (error) { console.error("fetchVerifyClaim failed", error); return null; }

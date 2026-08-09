@@ -1350,7 +1350,8 @@
     "nearUnavailable": "Votre appareil n'a pas réussi à vous localiser. Réessayez dans un instant.",
     "nearUnsupported": "Ce navigateur ne peut pas partager de position.",
     "nearFailed": "La recherche n'a pas abouti. Réessayez.",
-    "nearShowAll": "Afficher la liste complète à la place"
+    "nearShowAll": "Afficher la liste complète à la place",
+    "billedViaDiscord": "Facturé via Discord"
   },
   "communityVerify": {
     "metaTitle": "Vérifier {name}",

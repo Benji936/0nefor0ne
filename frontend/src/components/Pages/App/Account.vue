@@ -5,7 +5,7 @@ import { useRoute } from "vue-router";
 import { getClient, updateTraderProfile, linkDiscordAccount, syncDiscordIdToTrader } from "@/lib/supabaseClient";
 import { COUNTRIES } from "@/lib/countries";
 import { countryByCode } from "@/lib/countries";
-import { fetchMyCommunities, openBillingPortal } from "@/lib/community";
+import { fetchMyCommunities, fetchMyClaimSources, openBillingPortal } from "@/lib/community";
 import { fetchFollowing, unfollow } from "@/lib/communityFollow";
 import CommunityKindIcon from "@/components/community/CommunityKindIcon.vue";
 
@@ -164,6 +164,8 @@ async function resyncDiscord() {
 
 // ── My communities ───────────────────────────────────────────────────────
 const communities        = ref([]);
+// communityId -> { stripe, discord }: which subscription is paying for each.
+const claimSources       = ref({});
 const loadingCommunities = ref(false);
 
 const KIND_LABELS = computed(() => ({
@@ -177,6 +179,9 @@ async function loadCommunities() {
   loadingCommunities.value = true;
   try {
     communities.value = await fetchMyCommunities();
+    // Which door each one is paid through. A Discord Guild Subscription has no
+    // Stripe customer behind it, so the billing-portal button must not appear.
+    claimSources.value = await fetchMyClaimSources();
   } finally {
     loadingCommunities.value = false;
   }
@@ -377,9 +382,19 @@ async function manageSubscription(row) {
                 :style="{ textTransform: 'capitalize', ...statusStyle(row.status) }"
               >{{ row.status }}</span>
 
-              <button v-if="row.verified" type="button" class="acct-linkbtn" :disabled="billingBusy" @click="manageSubscription(row)">
+              <button
+                v-if="row.verified && claimSources[row.id]?.stripe"
+                type="button" class="acct-linkbtn" :disabled="billingBusy"
+                @click="manageSubscription(row)"
+              >
                 {{ t('community.manageSubscription') }}
               </button>
+              <!-- Paid inside Discord: there is nothing for us to open, and the
+                   place to cancel it is Discord's own subscription settings. -->
+              <span
+                v-else-if="row.verified && claimSources[row.id]?.discord"
+                class="acct-linkbtn" style="cursor: default"
+              >{{ t('community.billedViaDiscord') }}</span>
 
               <router-link :to="{ name: 'communityProfile', params: { locale, slug: row.slug } }" class="acct-linkbtn" style="color: var(--c-trade)">
                 {{ t('community.manage') }}
