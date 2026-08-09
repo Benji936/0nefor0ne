@@ -120,7 +120,11 @@ async function sendManual() {
   if (!manualReason.value.trim() || submitting.value) return;
   submitting.value = true; errorMsg.value = "";
   try {
-    await requestManualReview(props.community.id, manualReason.value.trim());
+    // A failure comes back as a body now rather than as a throw, so "did not
+    // throw" is no longer the same as "sent". Saying a request landed when it
+    // did not is the one outcome this screen must never produce.
+    const res = await requestManualReview(props.community.id, manualReason.value.trim());
+    if (res?.error) { errorMsg.value = res.error; return; }
     doneMessage.value = t("community.claimManualSent");
     step.value = "done";
   } catch (e) { errorMsg.value = e.message ?? "Failed to send request."; }

@@ -281,7 +281,11 @@ async function startCheckout() {
     // it can be missing while the yearly one works. Naming that beats a raw
     // error string on the one screen that is asking for a card.
     if (res?.error === "interval_unavailable") { errorMsg.value = t("communityVerify.intervalUnavailable"); return; }
-    errorMsg.value = res?.error ?? t("communityVerify.genericError");
+    if (res?.error === "already_own_one") { errorMsg.value = t("community.alreadyOwnOne"); return; }
+    // Anything else is a code meant for us, not a sentence meant for them.
+    // It goes to the console; they get the sentence.
+    console.error("startCheckout refused", res);
+    errorMsg.value = t("communityVerify.genericError");
   } catch (e) { errorMsg.value = e.message ?? t("communityVerify.genericError"); }
   finally { submitting.value = false; }
 }

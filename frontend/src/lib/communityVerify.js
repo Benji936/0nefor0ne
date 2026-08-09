@@ -5,6 +5,7 @@
 // single answer to "what do I render", derived entirely from server data, which
 // is what makes a cold load of the URL resume correctly.
 import { getClient } from "@/lib/supabaseClient";
+import { invokeFunction } from "@/lib/edgeFunction";
 import { strictestKind } from "@/lib/communityKinds";
 
 // ── Domain matching ─────────────────────────────────────────────────────────
@@ -126,11 +127,9 @@ export async function fetchVerifyClaim(communityId) {
   return data ?? null;
 }
 
-async function invoke(name, body) {
-  const { data, error } = await getClient().functions.invoke(name, { body });
-  if (error) { console.error(`${name} failed`, error); throw error; }
-  return data;
-}
+// Shared with the rest of the app: the body of a failed call is what the
+// function meant to say, and supabase-js leaves it unread. See edgeFunction.js.
+const invoke = invokeFunction;
 
 /** Send a 6-digit code to an address on the store's own domain. */
 export function requestDomainCode(communityId, email) {
