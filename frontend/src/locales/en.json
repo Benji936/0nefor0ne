@@ -1445,6 +1445,12 @@
     "confirmDecline": "Send the decline",
     "cancel": "Cancel",
     "markReviewed": "Mark reviewed",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "billingTitle": "Billing",
+    "billingNotSet": "Not configured on the server",
+    "billingArchived": "Archived in Stripe",
+    "billingMissing": "No price set for {list}",
+    "billingLive": "Live mode",
+    "billingTest": "Test mode"
   }
 }

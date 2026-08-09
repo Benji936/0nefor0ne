@@ -38,3 +38,13 @@ export function decideClaim(claimId, decision, note = "") {
 export function resolveReport(reportId, status) {
   return call({ action: "resolve", report_id: reportId, status });
 }
+
+/**
+ * What Stripe configuration the server actually sees. Read-only.
+ * The dashboard shows what was created; this shows what the functions resolve
+ * the secrets to, which is where a test-mode price or a mistyped secret name
+ * becomes visible without waiting for someone to fail at Checkout.
+ */
+export function fetchBillingConfig() {
+  return call({ action: "config" });
+}

@@ -1445,6 +1445,12 @@
     "confirmDecline": "Ablehnung senden",
     "cancel": "Abbrechen",
     "markReviewed": "Als erledigt markieren",
-    "dismiss": "Verwerfen"
+    "dismiss": "Verwerfen",
+    "billingTitle": "Abrechnung",
+    "billingNotSet": "Auf dem Server nicht konfiguriert",
+    "billingArchived": "In Stripe archiviert",
+    "billingMissing": "Kein Preis für {list} hinterlegt",
+    "billingLive": "Live-Modus",
+    "billingTest": "Testmodus"
   }
 }

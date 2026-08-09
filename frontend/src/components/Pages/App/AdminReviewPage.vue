@@ -18,7 +18,7 @@ import { ref, computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import { useHead } from "@unhead/vue";
-import { fetchQueue, decideClaim, resolveReport } from "@/lib/adminReview";
+import { fetchQueue, decideClaim, resolveReport, fetchBillingConfig } from "@/lib/adminReview";
 import { getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
 import { kindsOf, TYPE_KEYS } from "@/lib/communityKinds";
 import CommunityKindIcon from "@/components/community/CommunityKindIcon.vue";
@@ -39,6 +39,34 @@ const decliningId = ref(null);
 const noteText = ref("");
 const busyId = ref(null);
 
+// What the server resolves the Stripe secrets to. Diagnostic, not queue work,
+// so it sits at the bottom and never blocks the queue from rendering: a price
+// lookup that fails should cost the reviewer nothing.
+const billing = ref(null);
+
+/** Minor units to something readable. Stripe stores 6000, people read 60. */
+function money(currency, minor) {
+  if (minor == null) return `${currency.toUpperCase()} ?`;
+  const major = minor / 100;
+  return `${currency.toUpperCase()} ${Number.isInteger(major) ? major : major.toFixed(2)}`;
+}
+
+/** Everything wrong with one price, in the order it would bite. */
+function priceProblems(p) {
+  if (!p) return [];
+  if (!p.set) return [t("adminReview.billingNotSet")];
+  if (p.error) return [p.error];
+  const out = [];
+  if (!p.active) out.push(t("adminReview.billingArchived"));
+  if (p.missing?.length) out.push(t("adminReview.billingMissing", { list: p.missing.join(", ") }));
+  return out;
+}
+
+function priceCurrencies(p) {
+  if (!p?.amounts) return [];
+  return Object.entries(p.amounts).map(([cur, minor]) => money(cur, minor));
+}
+
 useHead({ title: "Review queue", meta: [{ name: "robots", content: "noindex" }] });
 
 async function load() {
@@ -50,6 +78,10 @@ async function load() {
     denied.value = null;
     claims.value = res?.claims ?? [];
     reports.value = res?.reports ?? [];
+    // Deliberately not awaited: the queue is the page, billing is a footnote.
+    fetchBillingConfig()
+      .then((cfg) => { if (!cfg?.error) billing.value = cfg; })
+      .catch((e) => console.error("AdminReviewPage: billing config failed", e));
   } catch (e) {
     console.error("AdminReviewPage: load failed", e);
     failed.value = true;
@@ -217,6 +249,30 @@ const isEmpty = computed(() => claims.value.length === 0 && reports.value.length
           </div>
         </article>
       </section>
+
+      <!-- ── Billing configuration ──────────────────────────────────────
+           Not queue work. It is here because it is the only place in the
+           product that can answer "are the Stripe prices actually wired up",
+           and the alternative is finding out when a shop fails at Checkout. -->
+      <section v-if="billing" class="ar__section ar__section--quiet">
+        <h2 class="ar__h2">{{ t('adminReview.billingTitle') }}</h2>
+
+        <div v-for="key in ['year', 'month']" :key="key" class="ar__row ar__bill">
+          <div class="ar__billHead">
+            <span class="ar__billName">{{ t(`communityVerify.plans.${key}.name`) }}</span>
+            <span class="ar__mono">{{ billing[key].id ?? '—' }}</span>
+            <span v-if="billing[key].livemode != null" class="ar__meta">
+              {{ billing[key].livemode ? t('adminReview.billingLive') : t('adminReview.billingTest') }}
+            </span>
+          </div>
+          <p v-if="priceCurrencies(billing[key]).length" class="ar__billPrices">
+            {{ priceCurrencies(billing[key]).join(' · ') }}
+          </p>
+          <p v-for="problem in priceProblems(billing[key])" :key="problem" class="ar__failed">
+            {{ problem }}
+          </p>
+        </div>
+      </section>
     </template>
   </div>
 </template>
@@ -246,6 +302,20 @@ const isEmpty = computed(() => claims.value.length === 0 && reports.value.length
 }
 .ar__kind .v-icon, .ar__kind .cpi-svg { color: var(--c-trade); }
 .ar__meta { font-size: 12px; color: var(--c-muted); margin-left: auto; }
+
+/* ── Billing configuration ────────────────────────────────────────────────
+   A footnote, set quieter than the queue it sits under. */
+.ar__section--quiet { margin-top: 8px; }
+.ar__bill { padding: 14px 0; }
+.ar__billHead { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 10px; }
+.ar__billName { font-size: 13.5px; font-weight: 700; color: var(--c-text); }
+/* A Stripe price id is an identifier, so it reads in mono like every other
+   one on the site. */
+.ar__mono {
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 12px; color: var(--c-muted); word-break: break-all;
+}
+.ar__billPrices { margin: 6px 0 0; font-size: 12.5px; color: var(--c-muted); }
 
 /* What the applicant wrote, in their words. */
 .ar__said {

@@ -1445,6 +1445,12 @@
     "confirmDecline": "Envoyer le refus",
     "cancel": "Annuler",
     "markReviewed": "Marquer comme traité",
-    "dismiss": "Écarter"
+    "dismiss": "Écarter",
+    "billingTitle": "Facturation",
+    "billingNotSet": "Non configuré sur le serveur",
+    "billingArchived": "Archivé dans Stripe",
+    "billingMissing": "Aucun prix défini pour {list}",
+    "billingLive": "Mode réel",
+    "billingTest": "Mode test"
   }
 }

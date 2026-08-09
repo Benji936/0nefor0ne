@@ -1445,6 +1445,12 @@
     "confirmDecline": "Invia il rifiuto",
     "cancel": "Annulla",
     "markReviewed": "Segna come gestita",
-    "dismiss": "Scarta"
+    "dismiss": "Scarta",
+    "billingTitle": "Fatturazione",
+    "billingNotSet": "Non configurato sul server",
+    "billingArchived": "Archiviato su Stripe",
+    "billingMissing": "Nessun prezzo impostato per {list}",
+    "billingLive": "Modalità live",
+    "billingTest": "Modalità test"
   }
 }
