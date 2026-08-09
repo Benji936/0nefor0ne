@@ -622,12 +622,14 @@ function signIn() {
         <template v-if="state.step === 'prove'">
           <h2 class="cv__railTitle">{{ t('communityVerify.unlocksTitle') }}</h2>
           <ul class="cv__unlocks">
-            <!-- Events first: it is the one line that names a capability the
-                 community does not have until this is done. -->
+            <!-- Near me leads: it is the only line that ends with a stranger
+                 walking in. The Near me search filters on verified, so an
+                 unverified shop is absent from it rather than ranked lower,
+                 and its events with it. -->
+            <li><v-icon icon="mdi-map-marker-radius" size="15" />{{ t('communityVerify.unlockNear') }}</li>
             <li><v-icon icon="mdi-calendar-plus" size="15" />{{ t('communityVerify.unlockEvents') }}</li>
             <li><v-icon icon="mdi-check-decagram" size="15" />{{ t('communityVerify.unlockBadge') }}</li>
             <li><v-icon icon="mdi-sort-variant" size="15" />{{ t('communityVerify.unlockRanking') }}</li>
-            <li><v-icon icon="mdi-shield-account-outline" size="15" />{{ t('communityVerify.unlockTrust') }}</li>
           </ul>
           <!-- What it costs, before the work rather than after it. Proving a
                domain is ten minutes of somebody's evening, and finding out the
