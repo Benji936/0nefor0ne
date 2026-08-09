@@ -1337,7 +1337,20 @@
     "yoursAlready": "Deine Community",
     "alreadyOwnOne": "Du betreibst schon eine Community. Ein Konto hat genau eine, gib diese also zuerst ab, wenn du woanders neu anfangen willst.",
     "claimBlocked": "Du betreibst schon eine Community, und ein Konto hat genau eine.",
-    "fieldKindHint": "Wähle alles aus, was zutrifft. Das erste erscheint im Verzeichnis."
+    "fieldKindHint": "Wähle alles aus, was zutrifft. Das erste erscheint im Verzeichnis.",
+    "nearMe": "In meiner Nähe",
+    "nearRadius": "Im Umkreis von",
+    "nearKm": "{km} km",
+    "nearOnlyVerified": "In dieser Suche erscheinen nur verifizierte Orte.",
+    "nearEmpty": "Noch kein verifizierter Laden und keine verifizierte Community im Umkreis von {km} km.",
+    "nearEventsTitle": "Bei dir in der Nähe",
+    "nearUnclaimedTitle": "Gehört dir einer davon?",
+    "nearUnclaimedBody": "Diese sind in deiner Nähe und niemand hat sie beansprucht. Beanspruche deinen, verifiziere ihn, und er erscheint in dieser Suche.",
+    "nearDenied": "Der Standort ist für diese Seite blockiert. Erlaube ihn im Browser, um in deiner Umgebung zu suchen.",
+    "nearUnavailable": "Dein Gerät konnte deinen Standort nicht bestimmen. Versuche es gleich noch einmal.",
+    "nearUnsupported": "Dieser Browser kann keinen Standort teilen.",
+    "nearFailed": "Die Suche hat nicht geklappt. Versuche es noch einmal.",
+    "nearShowAll": "Stattdessen die ganze Liste anzeigen"
   },
   "communityVerify": {
     "metaTitle": "{name} verifizieren",

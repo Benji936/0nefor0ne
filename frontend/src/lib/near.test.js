@@ -4,7 +4,7 @@ const rpc = vi.fn();
 vi.mock("@/lib/supabaseClient", () => ({ getClient: () => ({ rpc }) }));
 
 const {
-  communitiesNear, eventsNear, unclaimedNear, requestPosition, formatDistance,
+  communitiesNear, eventsNear, unclaimedNear, requestPosition, formatDistance, filterNear,
   GEO_UNSUPPORTED, GEO_DENIED, GEO_UNAVAILABLE, RADII, DEFAULT_RADIUS,
 } = await import("./near");
 
@@ -102,6 +102,36 @@ describe("requestPosition", () => {
     expect(opts.enableHighAccuracy).toBe(false);
     expect(opts.maximumAge).toBeGreaterThan(0);
     restore();
+  });
+});
+
+describe("filterNear", () => {
+  const shop = { name: "Otaku Store", kinds: ["store", "discord"], remote_duel: true };
+  const club = { name: "Geneva Duel Club", kinds: ["group"], remote_duel: false };
+  const rows = [shop, club];
+
+  it("passes everything through when nothing is filtered", () => {
+    expect(filterNear(rows, {})).toEqual(rows);
+    expect(filterNear(rows)).toEqual(rows);
+  });
+  it("matches a kind anywhere in kinds, the way the directory does", () => {
+    expect(filterNear(rows, { kind: "discord" })).toEqual([shop]);
+    expect(filterNear(rows, { kind: "group" })).toEqual([club]);
+  });
+  it("falls back to the legacy kind column for a row without kinds", () => {
+    const old = { name: "Old Row", kind: "store" };
+    expect(filterNear([old], { kind: "store" })).toEqual([old]);
+  });
+  it("searches names case-insensitively, on a substring", () => {
+    expect(filterNear(rows, { q: "  duel " })).toEqual([club]);
+    expect(filterNear(rows, { q: "OTAKU" })).toEqual([shop]);
+  });
+  it("keeps only remote-duel rows when asked, and never on a missing flag", () => {
+    expect(filterNear(rows, { remoteDuel: true })).toEqual([shop]);
+    expect(filterNear([{ name: "x" }], { remoteDuel: true })).toEqual([]);
+  });
+  it("survives a null list rather than throwing at the template", () => {
+    expect(filterNear(null, { kind: "store" })).toEqual([]);
   });
 });
 

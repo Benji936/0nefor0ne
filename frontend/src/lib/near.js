@@ -9,6 +9,7 @@
 // discovery is what a shop is paying for. It also means the answer is empty
 // until somebody subscribes, which is why unclaimedNear exists next to it.
 import { getClient } from "@/lib/supabaseClient";
+import { kindsOf } from "@/lib/communityKinds";
 
 /** How far out to look, in km. The first is the default. */
 export const RADII = [10, 25, 50, 100];
@@ -69,6 +70,26 @@ export function eventsNear(opts) { return callNear("events_near", opts); }
  * while no one is verified yet.
  */
 export function unclaimedNear(opts) { return callNear("unclaimed_near", { limit: 6, ...opts }); }
+
+/**
+ * The directory's other filters, applied in the browser.
+ *
+ * The near functions take a position and a radius and nothing else. Pushing
+ * kind, name and remote-duel into SQL would mean three more arguments on three
+ * functions to narrow a list that is already capped at a hundred rows. What
+ * does matter is that the answers match: `contains(kinds, [kind])` and
+ * `ilike('%q%')` from fetchDirectory are reproduced here, so turning Near me on
+ * cannot silently change what "Stores" means.
+ */
+export function filterNear(rows, { kind = "", q = "", remoteDuel = false } = {}) {
+  const needle = String(q ?? "").trim().toLowerCase();
+  return (rows ?? []).filter((row) => {
+    if (kind && !kindsOf(row).includes(kind)) return false;
+    if (remoteDuel && row.remote_duel !== true) return false;
+    if (needle && !String(row.name ?? "").toLowerCase().includes(needle)) return false;
+    return true;
+  });
+}
 
 /**
  * A distance a person would say out loud. Under 10km keeps one decimal because

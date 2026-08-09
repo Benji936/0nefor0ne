@@ -12,8 +12,14 @@ import { fetchDirectory, fetchMyCommunities } from "@/lib/community";
 import { getCurrentSession, onAuthChange, signInWithDiscord } from "@/lib/supabaseClient";
 import { toQueryParams, fromQueryParams } from "@/lib/communityFilters";
 import { COUNTRIES } from "@/lib/countries";
+import {
+  communitiesNear, eventsNear, unclaimedNear, requestPosition, filterNear,
+  RADII, DEFAULT_RADIUS, GEO_DENIED, GEO_UNAVAILABLE, GEO_UNSUPPORTED,
+} from "@/lib/near";
 import CommunityCard from "@/components/community/CommunityCard.vue";
 import CommunityEditDialog from "@/components/community/CommunityEditDialog.vue";
+import NearbyEvents from "@/components/community/NearbyEvents.vue";
+import UnclaimedNearby from "@/components/community/UnclaimedNearby.vue";
 
 const PAGE_SIZE = 24;
 
@@ -109,6 +115,106 @@ onBeforeUnmount(() => clearTimeout(searchTimer));
 function toggleRemote() {
   filters.remoteDuel = !filters.remoteDuel;
 }
+
+/* ── Near me ────────────────────────────────────────────────────────────────
+ * A mode rather than a filter, and deliberately absent from the URL. The query
+ * string is what someone shares; a position is not something to put in a link,
+ * and restoring the mode from a URL would fire a location prompt at page load
+ * for a reader who never asked for one.
+ *
+ * The results come from three RPCs rather than the directory query, because
+ * distance is not something PostgREST can order by. See lib/near.js.
+ */
+const nearOn = ref(false);
+const nearPos = ref(null);
+const nearRadius = ref(DEFAULT_RADIUS);
+const nearRows = ref([]);
+const nearEvents = ref([]);
+const nearUnclaimed = ref([]);
+const nearLoading = ref(false);
+const nearError = ref("");
+
+const GEO_MESSAGES = {
+  [GEO_DENIED]: "community.nearDenied",
+  [GEO_UNAVAILABLE]: "community.nearUnavailable",
+  [GEO_UNSUPPORTED]: "community.nearUnsupported",
+};
+const nearErrorText = computed(() =>
+  nearError.value ? t(GEO_MESSAGES[nearError.value] || "community.nearFailed") : "");
+
+// The kind, search and remote-duel filters still apply in near mode; country
+// does not, because a position already answers where. Rather than leave a set
+// country quietly doing nothing, turning the mode on clears it.
+const nearVisible = computed(() => filterNear(nearRows.value, filters));
+const anyFilter = computed(() => Boolean(filters.kind || filters.q || filters.remoteDuel));
+
+// Events belong to the communities shown below them. Unfiltered they answer
+// "what is happening near me"; once a filter narrows the grid, an event whose
+// host is no longer on screen would contradict it. Only narrowed when a filter
+// is actually set, since the two queries cap separately and a host past the
+// limit would otherwise cost its event for no reason.
+const nearVisibleEvents = computed(() => {
+  if (!anyFilter.value) return nearEvents.value;
+  const hosts = new Set(nearVisible.value.map((r) => r.id));
+  return nearEvents.value.filter((e) => hosts.has(e.community_id));
+});
+
+let nearRequestId = 0;
+async function loadNear() {
+  if (!nearPos.value) return;
+  const myRequest = ++nearRequestId;
+  nearLoading.value = true;
+  nearError.value = "";
+  const opts = { ...nearPos.value, km: nearRadius.value };
+  try {
+    // The unclaimed list is only shown when the first query comes back empty,
+    // but fetching it afterwards would make the empty state arrive in two
+    // stages: a blank, then an offer.
+    const [rows, events, unclaimed] = await Promise.all([
+      communitiesNear(opts),
+      eventsNear(opts),
+      unclaimedNear(opts),
+    ]);
+    if (myRequest !== nearRequestId) return;
+    nearRows.value = rows;
+    nearEvents.value = events;
+    nearUnclaimed.value = unclaimed;
+  } catch (e) {
+    if (myRequest !== nearRequestId) return;
+    console.error("CommunityDirectory: near search failed", e);
+    nearRows.value = [];
+    nearEvents.value = [];
+    nearUnclaimed.value = [];
+    nearError.value = "failed";
+  } finally {
+    if (myRequest === nearRequestId) nearLoading.value = false;
+  }
+}
+
+async function toggleNear() {
+  if (nearOn.value) { nearOn.value = false; return; }
+
+  nearOn.value = true;
+  nearError.value = "";
+  filters.country = "";
+
+  // The position is asked for once and kept for the session: changing the
+  // radius should not re-prompt, and neither should turning the mode off and
+  // on again while comparing it against the full list.
+  if (nearPos.value) { loadNear(); return; }
+
+  nearLoading.value = true;
+  try {
+    nearPos.value = await requestPosition();
+  } catch (e) {
+    nearError.value = e?.message || "failed";
+    nearLoading.value = false;
+    return;
+  }
+  loadNear();
+}
+
+watch(nearRadius, () => { if (nearOn.value) loadNear(); });
 
 function goToPage(p) {
   if (p < 0 || p >= totalPages.value) return;
@@ -211,13 +317,33 @@ onBeforeUnmount(() => { if (typeof stopAuth === "function") stopAuth(); });
         >{{ opt.label }}</button>
       </div>
 
-      <label class="cd-select">
+      <!-- One slot, two questions. A country and a position both answer
+           "where", so the radius takes the country's place rather than sitting
+           beside it contradicting it. -->
+      <label v-if="nearOn" class="cd-select">
+        <span class="cd-select__label">{{ t('community.nearRadius') }}</span>
+        <select v-model.number="nearRadius" class="cd-select__field">
+          <option v-for="km in RADII" :key="km" :value="km">{{ t('community.nearKm', { km }) }}</option>
+        </select>
+      </label>
+      <label v-else class="cd-select">
         <span class="cd-select__label">{{ t('community.filterCountry') }}</span>
         <select v-model="filters.country" class="cd-select__field">
           <option value="">{{ t('community.kindAll') }}</option>
           <option v-for="c in COUNTRIES" :key="c.code" :value="c.name">{{ c.flag }} {{ c.name }}</option>
         </select>
       </label>
+
+      <button
+        type="button"
+        class="remote-toggle near-toggle"
+        :class="{ 'remote-toggle--active': nearOn }"
+        :aria-pressed="nearOn"
+        @click="toggleNear"
+      >
+        <v-icon :icon="nearLoading && nearOn ? 'mdi-crosshairs' : 'mdi-crosshairs-gps'" size="15" />
+        {{ t('community.nearMe') }}
+      </button>
 
       <button
         type="button"
@@ -230,6 +356,67 @@ onBeforeUnmount(() => { if (typeof stopAuth === "function") stopAuth(); });
         {{ t('community.remoteDuel') }}
       </button>
     </div>
+
+    <!-- Said once, in the mode it applies to. A reader who knows their town has
+         forty shops and sees three deserves to know why, and it is the same
+         sentence that explains what a subscription buys. -->
+    <p v-if="nearOn && !nearErrorText" class="near-note">
+      <v-icon icon="mdi-check-decagram" size="13" />
+      {{ t('community.nearOnlyVerified') }}
+    </p>
+
+    <!-- ── Near me ──────────────────────────────────────
+         A separate branch rather than the same list fed differently: the
+         results are ordered by distance, capped rather than paged, and carry
+         events above them. Bending the paged branch into that shape would
+         leave both harder to read than either. -->
+    <template v-if="nearOn">
+      <div v-if="nearErrorText" class="state-center">
+        <div class="state-icon">
+          <v-icon icon="mdi-crosshairs-off" size="40" style="color: var(--c-muted)" />
+        </div>
+        <p class="state-title">{{ nearErrorText }}</p>
+        <!-- The mode produced nothing, and the only other way out is noticing
+             the toggle is still lit. Say the way back instead. -->
+        <button type="button" class="state-btn" @click="toggleNear">
+          {{ t('community.nearShowAll') }}
+        </button>
+      </div>
+
+      <div v-else-if="nearLoading" class="cd-grid">
+        <div v-for="i in 4" :key="i" class="skeleton-card" />
+      </div>
+
+      <template v-else>
+        <NearbyEvents :events="nearVisibleEvents" />
+
+        <div v-if="nearVisible.length" class="cd-grid">
+          <CommunityCard
+            v-for="c in nearVisible"
+            :key="c.id"
+            :community="c"
+            :km="c.km"
+            :current-user-id="currentUserId"
+            @auth-required="onFollowAuthRequired"
+          />
+        </div>
+
+        <!-- Nothing verified within the radius. The unclaimed shops nearby are
+             the only thing worth putting here: the reader standing next to one
+             is the likeliest person to own it. -->
+        <div v-else-if="nearRows.length === 0" class="state-center">
+          <p class="state-title">{{ t('community.nearEmpty', { km: nearRadius }) }}</p>
+          <UnclaimedNearby :rows="nearUnclaimed" />
+        </div>
+
+        <!-- Rows exist, the filters excluded them. Same words as the paged list. -->
+        <div v-else class="state-center">
+          <p class="state-title">{{ t('community.empty') }}</p>
+        </div>
+      </template>
+    </template>
+
+    <template v-else>
 
     <!-- Loading skeleton -->
     <div v-if="loading" class="cd-grid">
@@ -273,6 +460,8 @@ onBeforeUnmount(() => { if (typeof stopAuth === "function") stopAuth(); });
         <v-icon icon="mdi-chevron-right" size="20" />
       </button>
     </div>
+
+    </template>
 
     <CommunityEditDialog v-model="createOpen" @saved="onCreated" />
 
@@ -454,6 +643,25 @@ a.btn-new { text-decoration: none; }
   color: var(--c-mutual);
 }
 
+/* Near me lights amethyst, not teal. Teal is the mutual-match colour, and this
+   toggle is an action the reader took, not a match the app found. */
+.near-toggle.remote-toggle--active {
+  background: color-mix(in srgb, var(--c-trade) 15%, transparent);
+  border-color: var(--c-trade);
+  color: var(--c-trade);
+}
+
+.near-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: -8px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-muted);
+}
+.near-note .v-icon { color: var(--c-mutual); flex-shrink: 0; }
+
 /* ── Grid ─────────────────────────────────────────── */
 .cd-grid {
   display: grid;
@@ -497,6 +705,19 @@ a.btn-new { text-decoration: none; }
   color: var(--c-text);
   margin: 0;
 }
+.state-btn {
+  min-height: 36px;
+  padding: 0 15px;
+  border-radius: 10px;
+  border: 1.5px solid var(--c-border);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.state-btn:hover { border-color: var(--c-trade); background: var(--c-surface-2); }
 
 /* ── Pagination ───────────────────────────────────── */
 .cd-pagination {
