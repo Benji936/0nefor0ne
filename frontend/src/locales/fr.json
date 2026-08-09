@@ -1266,11 +1266,10 @@
     "claimVerify": "Vérifier",
     "claimResend": "Renvoyer le code",
     "claimTryManual": "Vous n'avez pas reçu le code, ou mauvais email ? Demander une vérification manuelle",
-    "claimSubscribeTitle": "Commencez votre année gratuite",
-    "claimSubscribeBody": "Vous êtes vérifié. Configurez votre fiche gratuitement la première année, puis {price} par an. Ajoutez une carte maintenant, aucun débit avant l'année prochaine, et annulez à tout moment.",
-    "claimStartFreeYear": "Commencer l'année gratuite",
+    "claimSubscribeTitle": "Choisissez comment payer",
+    "claimSubscribeBody": "Vous êtes vérifié. Choisissez une formule. Votre carte est enregistrée maintenant et rien n'est débité avant la fin de la période gratuite.",
     "claimFinalizing": "Finalisation en cours, cela peut prendre quelques secondes…",
-    "claimSubscribeCancelled": "Paiement annulé. Vous pouvez commencer votre année gratuite quand vous voulez.",
+    "claimSubscribeCancelled": "Paiement annulé. Vous pourrez commencer quand vous voudrez.",
     "manageSubscription": "Gérer l'abonnement",
     "manageSubBillingError": "Impossible d'ouvrir la facturation. Veuillez réessayer.",
     "claimInvalidCode": "Ce code n'est pas correct. {count} tentatives restantes.",
@@ -1388,10 +1387,25 @@
     "pendingReviewBody": "Votre demande est enregistrée. Il n'y a plus rien à faire ici pour l'instant.",
     "pendingReviewNote": "Les demandes sont lues à la main : ce n'est donc pas instantané.",
     "payBody": "Votre identité est prouvée. Il reste une étape.",
-    "payFreeYear": "La première année est gratuite",
-    "payThen": "Puis {price} par an",
     "payCancel": "Annulable à tout moment, la communauté reste la vôtre dans tous les cas",
-    "payAction": "Commencer l'année gratuite",
+    "plansLegend": "Comment vous voulez payer",
+    "plansWhy": "L'annuel est gratuit deux fois plus longtemps et revient moins cher sur l'année. Le mensuel existe pour ceux qui préfèrent ne pas payer un an d'un coup.",
+    "costUpfront": "La première année est gratuite, puis {year} par an. Il existe aussi un abonnement mensuel à {month} avec six mois gratuits. Annulable à tout moment.",
+    "intervalUnavailable": "L'abonnement mensuel n'est pas encore disponible. Choisissez l'annuel, ou réessayez plus tard.",
+    "plans": {
+      "year": {
+        "name": "Annuel",
+        "free": "Gratuit pendant un an",
+        "then": "puis {price} par an",
+        "action": "Commencer l'année gratuite"
+      },
+      "month": {
+        "name": "Mensuel",
+        "free": "Gratuit pendant six mois",
+        "then": "puis {price} par mois",
+        "action": "Commencer les six mois gratuits"
+      }
+    },
     "processingBody": "Paiement reçu. Configuration de votre vérification en cours.",
     "processingNote": "Cela prend généralement quelques secondes",
     "doneBody": "La marque est visible sur votre profil et dans l'annuaire. Vous pouvez changer de carte ou annuler depuis votre compte à tout moment.",
@@ -1431,6 +1445,12 @@
     "confirmDecline": "Envoyer le refus",
     "cancel": "Annuler",
     "markReviewed": "Marquer comme traité",
-    "dismiss": "Écarter"
+    "dismiss": "Écarter",
+    "billingTitle": "Facturation",
+    "billingNotSet": "Non configuré sur le serveur",
+    "billingArchived": "Archivé dans Stripe",
+    "billingMissing": "Aucun prix défini pour {list}",
+    "billingLive": "Mode réel",
+    "billingTest": "Mode test"
   }
 }

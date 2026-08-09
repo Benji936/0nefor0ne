@@ -6,7 +6,7 @@
 import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { requestClaimCode, verifyClaimCode, requestManualReview, startClaimCheckout, fetchMyClaim } from "@/lib/community";
-import { communityPricing } from "@/lib/communityPricing";
+import { communityPricing, INTERVALS } from "@/lib/communityPricing";
 import { isValidCode } from "@/lib/claimState";
 import { getCurrentSession, signInWithDiscord } from "@/lib/supabaseClient";
 import PlatformIcon from "@/components/community/PlatformIcon.vue";
@@ -28,6 +28,17 @@ const doneMessage = ref("");
 
 const canVerify = computed(() => isValidCode(code.value) && !submitting.value);
 const price = computed(() => communityPricing(props.community));
+
+// Same offer as the self-verification route, same words. A claimed store and a
+// created one are buying the identical thing, and two descriptions of one price
+// is how a price stops being believed.
+const interval = ref("year");
+const plans = computed(() => INTERVALS.map((i) => ({
+  interval: i,
+  name: t(`communityVerify.plans.${i}.name`),
+  free: t(`communityVerify.plans.${i}.free`),
+  then: t(`communityVerify.plans.${i}.then`, { price: price.value[i].display }),
+})));
 
 watch(() => props.modelValue, async (open) => {
   if (!open) return;
@@ -95,9 +106,10 @@ async function startCheckout() {
   if (submitting.value) return;
   submitting.value = true; errorMsg.value = "";
   try {
-    const res = await startClaimCheckout(props.community.id);
+    const res = await startClaimCheckout(props.community.id, interval.value);
     if (res?.url) { window.location.href = res.url; return; } // leaves the page
-    if (res?.error === "already_claimed") { errorMsg.value = t("community.claimExpiredCode"); emit("stale"); }
+    if (res?.error === "interval_unavailable") { errorMsg.value = t("communityVerify.intervalUnavailable"); }
+    else if (res?.error === "already_claimed") { errorMsg.value = t("community.claimExpiredCode"); emit("stale"); }
     else if (res?.error === "not_verified") { step.value = "code"; errorMsg.value = t("community.claimExpiredCode"); }
     else errorMsg.value = res?.error ?? "Could not start checkout.";
   } catch (e) { errorMsg.value = e.message ?? "Could not start checkout."; }
@@ -108,7 +120,11 @@ async function sendManual() {
   if (!manualReason.value.trim() || submitting.value) return;
   submitting.value = true; errorMsg.value = "";
   try {
-    await requestManualReview(props.community.id, manualReason.value.trim());
+    // A failure comes back as a body now rather than as a throw, so "did not
+    // throw" is no longer the same as "sent". Saying a request landed when it
+    // did not is the one outcome this screen must never produce.
+    const res = await requestManualReview(props.community.id, manualReason.value.trim());
+    if (res?.error) { errorMsg.value = res.error; return; }
     doneMessage.value = t("community.claimManualSent");
     step.value = "done";
   } catch (e) { errorMsg.value = e.message ?? "Failed to send request."; }
@@ -140,7 +156,16 @@ async function sendManual() {
       <!-- Body -->
       <div class="dlg-body">
         <!-- Intro -->
-        <p v-if="step === 'intro'" class="claim-body">{{ t('community.claimIntro') }}</p>
+        <template v-if="step === 'intro'">
+          <p class="claim-body">{{ t('community.claimIntro') }}</p>
+          <!-- The price, before the code is sent rather than after it is
+               entered. Someone deciding whether to bother deserves to know the
+               first year costs nothing while they are still deciding. -->
+          <p class="claim-cost">
+            <v-icon icon="mdi-gift-outline" size="15" />
+            <span>{{ t('communityVerify.costUpfront', { year: price.year.display, month: price.month.display }) }}</span>
+          </p>
+        </template>
 
         <!-- Code entry -->
         <template v-else-if="step === 'code'">
@@ -162,9 +187,25 @@ async function sendManual() {
           </div>
         </template>
 
-        <!-- Subscribe (first year free) -->
+        <!-- Subscribe: pick a plan, both of which start free -->
         <template v-else-if="step === 'subscribe'">
-          <p class="claim-body">{{ t('community.claimSubscribeBody', { price: price.display }) }}</p>
+          <p class="claim-body">{{ t('community.claimSubscribeBody') }}</p>
+          <fieldset class="claim-plans">
+            <label
+              v-for="p in plans"
+              :key="p.interval"
+              class="claim-plan"
+              :class="{ 'claim-plan--on': interval === p.interval }"
+            >
+              <input v-model="interval" class="claim-planRadio" type="radio" name="claim-plan" :value="p.interval" />
+              <span class="claim-planBody">
+                <span class="claim-planName">{{ p.name }}</span>
+                <span class="claim-planFree">{{ p.free }}</span>
+              </span>
+              <span class="claim-planThen">{{ p.then }}</span>
+            </label>
+          </fieldset>
+          <p class="claim-note">{{ t('communityVerify.plansWhy') }}</p>
         </template>
 
         <!-- Manual review -->
@@ -218,7 +259,7 @@ async function sendManual() {
 
           <button v-else-if="step === 'subscribe'" class="btn-submit" :disabled="submitting" @click="startCheckout">
             <template v-if="submitting"><v-progress-circular indeterminate size="16" width="2" color="white" /></template>
-            <template v-else><v-icon icon="mdi-credit-card-outline" size="16" />{{ t('community.claimStartFreeYear') }}</template>
+            <template v-else><v-icon icon="mdi-credit-card-outline" size="16" />{{ t(`communityVerify.plans.${interval}.action`) }}</template>
           </button>
 
           <button v-else-if="step === 'manual'" class="btn-submit" :disabled="submitting || !manualReason.trim()" @click="sendManual">
@@ -247,6 +288,36 @@ async function sendManual() {
 .dlg-body::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 99px; }
 
 .claim-body { font-size: 13.5px; color: var(--c-muted); line-height: 1.6; margin: 0; }
+.claim-note { font-size: 12.5px; color: var(--c-muted); line-height: 1.55; margin: 0; }
+
+/* The price, on the step where the decision is still open. Full text colour
+   rather than muted: it is the answer to the question being asked. */
+.claim-cost {
+  display: flex; align-items: flex-start; gap: 8px; margin: 0;
+  font-size: 13px; line-height: 1.5; color: var(--c-text);
+}
+.claim-cost .v-icon { color: var(--c-trade); flex-shrink: 0; margin-top: 1px; }
+
+/* ── The two plans ─────────────────────────────────────────────────────────
+   Rows on rules, matching the verify route. A dialog is the last place to put
+   two pricing cards side by side. */
+.claim-plans { border: none; padding: 0; margin: 0; }
+.claim-plan {
+  display: flex; align-items: center; gap: 11px;
+  padding: 13px 10px 13px 2px;
+  border-top: 1px solid var(--c-border);
+  cursor: pointer;
+  transition: background-color .15s ease;
+}
+.claim-plan:last-of-type { border-bottom: 1px solid var(--c-border); }
+.claim-plan--on { background: var(--c-surface-2); }
+.claim-plan:hover:not(.claim-plan--on) { background: var(--c-surface-2); }
+.claim-plan:focus-within { outline: 2px solid var(--c-trade); outline-offset: -2px; }
+.claim-planRadio { accent-color: var(--c-trade); width: 16px; height: 16px; flex-shrink: 0; margin: 0 0 0 8px; cursor: pointer; }
+.claim-planBody { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.claim-planName { font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-muted); }
+.claim-planFree { font-size: 14.5px; font-weight: 700; line-height: 1.25; color: var(--c-text); }
+.claim-planThen { font-size: 12.5px; color: var(--c-muted); text-align: right; flex-shrink: 0; }
 
 .field-block { display: flex; flex-direction: column; gap: 6px; }
 .field-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-muted); }

@@ -1266,11 +1266,10 @@
     "claimVerify": "Verify",
     "claimResend": "Resend code",
     "claimTryManual": "Didn't get the code, or wrong email? Request manual review",
-    "claimSubscribeTitle": "Start your free year",
-    "claimSubscribeBody": "You're verified. Set up your listing free for the first year, then {price}/year. Add a card now, you won't be charged until next year, and you can cancel anytime.",
-    "claimStartFreeYear": "Start free year",
+    "claimSubscribeTitle": "Choose how to pay",
+    "claimSubscribeBody": "You're verified. Pick a plan. Your card is added now and nothing is charged until the free time ends.",
     "claimFinalizing": "Finishing setup, this can take a few seconds...",
-    "claimSubscribeCancelled": "Checkout cancelled. You can start your free year whenever you're ready.",
+    "claimSubscribeCancelled": "Checkout cancelled. You can start whenever you are ready.",
     "manageSubscription": "Manage subscription",
     "manageSubBillingError": "Could not open billing. Please try again.",
     "claimInvalidCode": "That code is not right. {count} attempts left.",
@@ -1388,10 +1387,25 @@
     "pendingReviewBody": "Your request is in. There is nothing more to do here for now.",
     "pendingReviewNote": "Reviews are read by hand, so this is not instant.",
     "payBody": "Your identity is proved. One step left.",
-    "payFreeYear": "The first year is free",
-    "payThen": "Then {price} a year",
     "payCancel": "Cancel any time, and the community stays yours either way",
-    "payAction": "Start the free year",
+    "plansLegend": "How you want to pay",
+    "plansWhy": "Yearly is free for twice as long and costs less over a year. Monthly is there if you would rather not pay a year at a time.",
+    "costUpfront": "The first year is free, then {year} a year. There is a monthly plan at {month} with six months free. Cancel any time.",
+    "intervalUnavailable": "The monthly plan is not available yet. Choose yearly, or try again later.",
+    "plans": {
+      "year": {
+        "name": "Yearly",
+        "free": "Free for a year",
+        "then": "then {price} a year",
+        "action": "Start the free year"
+      },
+      "month": {
+        "name": "Monthly",
+        "free": "Free for six months",
+        "then": "then {price} a month",
+        "action": "Start the six free months"
+      }
+    },
     "processingBody": "Payment received. Setting up your verification now.",
     "processingNote": "This usually takes a few seconds",
     "doneBody": "The mark is live on your profile and in the directory. You can change the card or cancel from your account at any time.",
@@ -1431,6 +1445,12 @@
     "confirmDecline": "Send the decline",
     "cancel": "Cancel",
     "markReviewed": "Mark reviewed",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "billingTitle": "Billing",
+    "billingNotSet": "Not configured on the server",
+    "billingArchived": "Archived in Stripe",
+    "billingMissing": "No price set for {list}",
+    "billingLive": "Live mode",
+    "billingTest": "Test mode"
   }
 }

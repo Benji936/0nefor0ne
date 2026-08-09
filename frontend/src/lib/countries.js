@@ -218,3 +218,13 @@ export const DIAL_CODE_ITEMS = COUNTRIES.map(c => ({
   subtitle: c.name,
   value: c.dialCode,
 }));
+
+/** Name to ISO code, for the forms that store a country by name.
+ *  The community form's select carries `name` as its value (that is what the
+ *  directory filters on), but pricing and currency read country_code, so the
+ *  code has to be derived at write time or it is never set at all. */
+const CODE_BY_NAME = new Map(COUNTRIES.map(c => [c.name.toLowerCase(), c.code]));
+export function codeForCountry(name) {
+  if (!name) return null;
+  return CODE_BY_NAME.get(String(name).trim().toLowerCase()) ?? null;
+}

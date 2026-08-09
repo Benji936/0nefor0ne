@@ -60,6 +60,14 @@ Deno.serve(async (req) => {
       ? new Date(sub.current_period_end * 1000).toISOString()
       : null;
 
+    // Which plan they are actually on, read off the subscription's own price
+    // rather than the interval claim-create-checkout asked for. The two can
+    // differ: switching plan in the customer portal changes the price and sends
+    // an update event, and it is the price that decides what gets charged.
+    // Metadata is the fallback for the same reason it is not the source.
+    const billedInterval = sub.items?.data?.[0]?.price?.recurring?.interval ?? sub.metadata?.interval ?? null;
+    const billingInterval = billedInterval === "month" || billedInterval === "year" ? billedInterval : null;
+
     try {
       // Mirror subscription state onto the claim row (service role bypasses guard).
       // Read origin back from the same write rather than a second round trip.
@@ -70,6 +78,9 @@ Deno.serve(async (req) => {
         stripe_subscription_id: sub.id,
         subscription_status: status,
         current_period_end: periodEnd,
+        // Omitted rather than nulled when unreadable, so an event that arrives
+        // without a price cannot erase a plan we already recorded correctly.
+        ...(billingInterval ? { billing_interval: billingInterval } : {}),
       }).eq("community", communityId).eq("claimer", claimer).select("origin").maybeSingle();
       if (mirrorErr) throw new Error(`mirror: ${mirrorErr.message}`);
       const selfCreated = claimRow?.origin === "self";

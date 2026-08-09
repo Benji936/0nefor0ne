@@ -2,6 +2,9 @@ import { getClient } from "@/lib/supabaseClient";
 import { slugify, withSuffix } from "@/lib/communitySlug";
 import { sanitizeLinks } from "@/lib/communityLinks";
 import { normalizeKinds } from "@/lib/communityKinds";
+import { normalizeInterval } from "@/lib/communityPricing";
+import { codeForCountry } from "@/lib/countries";
+import { invokeFunction } from "@/lib/edgeFunction";
 
 const PAGE_SIZE = 24;
 
@@ -94,7 +97,12 @@ export async function createCommunity(input) {
     banner_url: input.banner_url ?? null,
     city: input.city ?? null,
     country: input.country ?? null,
-    country_code: input.country_code ?? null,
+    // Derived rather than asked for. The form stores a country NAME because
+    // that is what the directory filter matches on, and country_code was only
+    // ever populated by the store seeder, so every community anyone created
+    // themselves had none and was priced in the USD fallback no matter where
+    // it was. An explicit country_code still wins, for the seeder.
+    country_code: input.country_code ?? codeForCountry(input.country),
     region: input.region ?? null,
     remote_duel: !!input.remote_duel,
     tags: input.tags ?? [],
@@ -120,6 +128,9 @@ export async function updateCommunity(id, patch) {
   if ("website" in clean)     clean.website = assertHttp(clean.website, "Website");
   if ("discord_url" in clean) clean.discord_url = assertHttp(clean.discord_url, "Discord link");
   if ("links" in clean)       clean.links = sanitizeLinks(clean.links);
+  // Keep the code with the name it came from, including when the name is
+  // cleared. A stale code would price a community by a country it left.
+  if ("country" in clean && !("country_code" in clean)) clean.country_code = codeForCountry(clean.country);
   const { data, error } = await getClient().from("community").update(clean).eq("id", id).select().single();
   if (error) { console.error("updateCommunity failed", error); throw error; }
   return data;
@@ -128,53 +139,40 @@ export async function updateCommunity(id, patch) {
 // Claiming is now a verified flow (Plan 1): request a code emailed to the store's
 // on-file address, then verify it. Ownership is granted server-side by the
 // claim-verify-code Edge Function; there is no more instant free claim RPC.
-export async function requestClaimCode(communityId) {
-  const { data, error } = await getClient().functions.invoke("claim-request-code", {
-    body: { community_id: communityId },
-  });
-  if (error) { console.error("requestClaimCode failed", error); throw error; }
-  return data;
+export function requestClaimCode(communityId) {
+  return invokeFunction("claim-request-code", { community_id: communityId });
 }
 
-export async function verifyClaimCode(communityId, code) {
-  const { data, error } = await getClient().functions.invoke("claim-verify-code", {
-    body: { community_id: communityId, code },
-  });
-  if (error) { console.error("verifyClaimCode failed", error); throw error; }
-  return data;
+export function verifyClaimCode(communityId, code) {
+  return invokeFunction("claim-verify-code", { community_id: communityId, code });
 }
 
 // Fallback when the store has no email on file. Goes through the Edge Function
 // rather than writing the claim row directly: the client may write
 // manual_review_reason but not manual_review_at, so the old direct write left
 // the request with no timestamp and therefore out of the review queue entirely.
-export async function requestManualReview(communityId, reason) {
-  const { data, error } = await getClient().functions.invoke("community-verify-manual", {
-    body: { community_id: communityId, reason },
-  });
-  if (error) { console.error("requestManualReview failed", error); throw error; }
-  return data;
+export function requestManualReview(communityId, reason) {
+  return invokeFunction("community-verify-manual", { community_id: communityId, reason });
 }
 
 // Start the paid claim: the claim-create-checkout Edge Function returns a Stripe
-// Checkout URL (subscription mode, 365-day trial, local currency). The caller
+// Checkout URL (subscription mode, free trial, local currency). The caller
 // redirects the browser to it. Requires identity_verified_at server-side.
-export async function startClaimCheckout(communityId) {
-  const { data, error } = await getClient().functions.invoke("claim-create-checkout", {
-    body: { community_id: communityId },
+// `interval` is 'year' or 'month'; normalizeInterval keeps a stray value from
+// reaching the server, which rejects anything it does not recognise.
+export function startClaimCheckout(communityId, interval = "year") {
+  // { url }, or { error } with the code the function chose: already_own_one,
+  // interval_unavailable, not_verified.
+  return invokeFunction("claim-create-checkout", {
+    community_id: communityId,
+    interval: normalizeInterval(interval),
   });
-  if (error) { console.error("startClaimCheckout failed", error); throw error; }
-  return data; // { url } on success, or { error }
 }
 
 // Open the Stripe Customer Portal for an owned community so the owner can update
 // the card or cancel. Returns a portal URL to redirect to.
-export async function openBillingPortal(communityId) {
-  const { data, error } = await getClient().functions.invoke("claim-portal", {
-    body: { community_id: communityId },
-  });
-  if (error) { console.error("openBillingPortal failed", error); throw error; }
-  return data; // { url } on success, or { error }
+export function openBillingPortal(communityId) {
+  return invokeFunction("claim-portal", { community_id: communityId }); // { url } or { error }
 }
 
 // The caller's own claim row for a community (RLS returns only their own).
@@ -210,12 +208,8 @@ export function giveUpMode(community, viewerId) {
   return community.created_by === viewerId ? "delete" : "release";
 }
 
-export async function releaseCommunity(communityId, intent) {
-  const { data, error } = await getClient().functions.invoke("community-release", {
-    body: { community_id: communityId, intent },
-  });
-  if (error) { console.error("releaseCommunity failed", error); throw error; }
-  return data; // { ok: true, mode } or { error }
+export function releaseCommunity(communityId, intent) {
+  return invokeFunction("community-release", { community_id: communityId, intent }); // { ok, mode } or { error }
 }
 
 export async function fetchMyCommunities() {

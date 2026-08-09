@@ -15,7 +15,7 @@ import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { useHead } from "@unhead/vue";
 import { fetchBySlug, verifyClaimCode, startClaimCheckout } from "@/lib/community";
-import { communityPricing } from "@/lib/communityPricing";
+import { communityPricing, INTERVALS } from "@/lib/communityPricing";
 import { isValidCode } from "@/lib/claimState";
 import {
   verifyStep, domainMatches, siteHost, fetchVerifyClaim,
@@ -57,6 +57,16 @@ const sentToAddress = ref(null);
 const justPaid = ref(route.query.verify === "success");
 
 const price = computed(() => communityPricing(community.value));
+
+// Yearly is preselected because it is the one being recommended, and the reason
+// is on screen next to it rather than implied by the order.
+const interval = ref("year");
+const plans = computed(() => INTERVALS.map((i) => ({
+  interval: i,
+  name: t(`communityVerify.plans.${i}.name`),
+  free: t(`communityVerify.plans.${i}.free`),
+  then: t(`communityVerify.plans.${i}.then`, { price: price.value[i].display }),
+})));
 const state = computed(() => verifyStep({
   community: community.value,
   claim: claim.value,
@@ -264,10 +274,18 @@ async function startCheckout() {
   if (submitting.value) return;
   submitting.value = true; errorMsg.value = "";
   try {
-    const res = await startClaimCheckout(community.value.id);
+    const res = await startClaimCheckout(community.value.id, interval.value);
     if (res?.url) { window.location.href = res.url; return; } // leaves the page
     if (res?.error === "not_verified") { claim.value = await fetchVerifyClaim(community.value.id); }
-    errorMsg.value = res?.error ?? t("communityVerify.genericError");
+    // The monthly price is configured in Stripe, not deployed with this code, so
+    // it can be missing while the yearly one works. Naming that beats a raw
+    // error string on the one screen that is asking for a card.
+    if (res?.error === "interval_unavailable") { errorMsg.value = t("communityVerify.intervalUnavailable"); return; }
+    if (res?.error === "already_own_one") { errorMsg.value = t("community.alreadyOwnOne"); return; }
+    // Anything else is a code meant for us, not a sentence meant for them.
+    // It goes to the console; they get the sentence.
+    console.error("startCheckout refused", res);
+    errorMsg.value = t("communityVerify.genericError");
   } catch (e) { errorMsg.value = e.message ?? t("communityVerify.genericError"); }
   finally { submitting.value = false; }
 }
@@ -376,20 +394,47 @@ function signIn() {
       <!-- ── Pay ────────────────────────────────────────────────────── -->
       <template v-else-if="state.step === 'pay'">
         <p class="cv__lede">{{ t('communityVerify.payBody') }}</p>
-        <!-- Same list treatment as the unlocks above: one page, one way of
-             writing down a short list of facts. -->
-        <ul class="cv__unlocks">
-          <li><v-icon icon="mdi-gift-outline" size="15" />{{ t('communityVerify.payFreeYear') }}</li>
-          <li><v-icon icon="mdi-calendar-refresh-outline" size="15" />{{ t('communityVerify.payThen', { price: price.display }) }}</li>
-          <li><v-icon icon="mdi-close-circle-outline" size="15" />{{ t('communityVerify.payCancel') }}</li>
-        </ul>
+
+        <!-- Two plans, as rows divided by rules. Not two pricing cards: there
+             are two of them and they differ in two numbers, which a table-like
+             list says faster than any amount of chrome. The radio is a real
+             radio, so the keyboard and the screen reader get the grouping for
+             free. -->
+        <fieldset class="cv__plans">
+          <legend class="cv__plansLegend">{{ t('communityVerify.plansLegend') }}</legend>
+          <label
+            v-for="p in plans"
+            :key="p.interval"
+            class="cv__plan"
+            :class="{ 'cv__plan--on': interval === p.interval }"
+          >
+            <input v-model="interval" class="cv__planRadio" type="radio" name="cv-plan" :value="p.interval" />
+            <span class="cv__planBody">
+              <span class="cv__planName">{{ p.name }}</span>
+              <!-- The free period is the headline of this screen, so it is the
+                   line set largest inside the row rather than a bullet below. -->
+              <span class="cv__planFree">{{ p.free }}</span>
+            </span>
+            <span class="cv__planThen">{{ p.then }}</span>
+          </label>
+        </fieldset>
+
+        <!-- Monthly is dearer over a year AND gets half the free time. Both are
+             deliberate, so both are said out loud: an advantage the reader has
+             to discover later reads as a trick. -->
+        <p class="cv__body cv__plansWhy">{{ t('communityVerify.plansWhy') }}</p>
+
         <button type="button" class="cv__primary" :disabled="submitting" @click="startCheckout">
           <v-progress-circular v-if="submitting" indeterminate size="16" width="2" color="white" />
           <template v-else>
             <v-icon icon="mdi-credit-card-outline" size="17" />
-            {{ t('communityVerify.payAction') }}
+            {{ t(`communityVerify.plans.${interval}.action`) }}
           </template>
         </button>
+        <p class="cv__note">
+          <v-icon icon="mdi-close-circle-outline" size="14" />
+          {{ t('communityVerify.payCancel') }}
+        </p>
       </template>
 
       <!-- ── Prove ──────────────────────────────────────────────────── -->
@@ -405,6 +450,15 @@ function signIn() {
           <li><v-icon icon="mdi-sort-variant" size="15" />{{ t('communityVerify.unlockRanking') }}</li>
           <li><v-icon icon="mdi-shield-account-outline" size="15" />{{ t('communityVerify.unlockTrust') }}</li>
         </ul>
+
+        <!-- What it costs, before the work rather than after it. Proving a
+             domain or linking a server is ten minutes of somebody's evening,
+             and finding out the price only once it is done is the wrong order.
+             The first year being free is the part worth reading, so it leads. -->
+        <p class="cv__cost">
+          <v-icon icon="mdi-gift-outline" size="15" />
+          <span>{{ t('communityVerify.costUpfront', { year: price.year.display, month: price.month.display }) }}</span>
+        </p>
 
         <!-- Store with no website: fix that first -->
         <section v-if="state.proof === 'no-website'" class="cv__step">
@@ -594,6 +648,53 @@ function signIn() {
   font-size: 13.5px; line-height: 1.5; color: var(--c-text); max-width: 58ch;
 }
 .cv__unlocks .v-icon { color: var(--c-trade); flex-shrink: 0; margin-top: 2px; }
+
+/* What it costs, said before the proving starts. Sits with the unlocks as one
+   more fact about verification, because that is what it is. */
+.cv__cost {
+  display: flex; align-items: flex-start; gap: 9px;
+  margin: 0 0 30px;
+  font-size: 13.5px; line-height: 1.5; color: var(--c-text); max-width: 58ch;
+}
+/* It belongs to the list above it, so it sits at list spacing rather than at
+   the 30px the list uses to separate itself from the proof step. */
+.cv__unlocks:has(+ .cv__cost) { margin-bottom: 12px; }
+.cv__cost .v-icon { color: var(--c-trade); flex-shrink: 0; margin-top: 2px; }
+
+/* ── The two plans ─────────────────────────────────────────────────────────
+   Rows divided by rules, not cards. Two options differing in two numbers is a
+   comparison, and a comparison wants alignment more than it wants containers. */
+.cv__plans { border: none; padding: 0; margin: 0 0 14px; max-width: 460px; width: 100%; }
+.cv__plansLegend {
+  padding: 0; margin: 0 0 10px;
+  font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--c-muted);
+}
+.cv__plan {
+  display: flex; align-items: center; gap: 12px;
+  padding: 15px 12px 15px 2px;
+  border-top: 1px solid var(--c-border);
+  cursor: pointer;
+  transition: background-color .15s ease;
+}
+.cv__plan:last-of-type { border-bottom: 1px solid var(--c-border); }
+/* Selection is a tint plus the radio itself. Nothing louder is needed: there
+   are two rows and one of them is filled in. */
+.cv__plan--on { background: var(--c-surface-2); }
+.cv__plan:hover:not(.cv__plan--on) { background: var(--c-surface-2); }
+.cv__plan:focus-within { outline: 2px solid var(--c-trade); outline-offset: -2px; }
+
+.cv__planRadio { accent-color: var(--c-trade); width: 17px; height: 17px; flex-shrink: 0; margin: 0 0 0 10px; cursor: pointer; }
+.cv__planBody { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.cv__planName {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--c-muted);
+}
+/* The free period is what this screen is selling, so it takes the scale step. */
+.cv__planFree { font-size: 15.5px; font-weight: 700; line-height: 1.25; color: var(--c-text); }
+.cv__planThen { font-size: 13px; color: var(--c-muted); text-align: right; flex-shrink: 0; }
+
+.cv__plansWhy { margin: 0 0 24px; }
 
 /* The proof step sits above a rule rather than inside a box: it is the next
    thing on the page, not a different kind of thing. */
