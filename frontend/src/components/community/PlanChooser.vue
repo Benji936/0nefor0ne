@@ -74,7 +74,10 @@ const plans = computed(() => INTERVALS.map((i) => ({
 </template>
 
 <style scoped>
-.pc { max-width: 460px; width: 100%; }
+/* A container query, not a media query: the chooser sits in a page column on
+   the verify route and in a 440px dialog on the claim flow, and it should pick
+   its own shape from the room it is given rather than from the window. */
+.pc { width: 100%; max-width: 620px; container-type: inline-size; }
 .pc__set { border: none; padding: 0; margin: 0; }
 .pc__legend {
   padding: 0; margin: 0 0 10px;
@@ -87,9 +90,10 @@ const plans = computed(() => INTERVALS.map((i) => ({
   padding: 15px 12px 15px 2px;
   border-top: 1px solid var(--c-border);
   cursor: pointer;
-  transition: background-color .15s ease;
+  transition: background-color .15s ease, border-color .15s ease;
 }
 .pc__plan:last-of-type { border-bottom: 1px solid var(--c-border); }
+
 /* Selection is a tint plus the radio itself. Nothing louder is needed: there
    are two rows and one of them is filled in. */
 .pc__plan--on { background: var(--c-surface-2); }
@@ -118,4 +122,31 @@ const plans = computed(() => INTERVALS.map((i) => ({
 .pc--compact .pc__free { font-size: 14.5px; }
 .pc--compact .pc__then { font-size: 12.5px; }
 .pc--compact .pc__why { margin-top: 12px; font-size: 12.5px; line-height: 1.55; }
+
+/* ── Wide: one column per plan ────────────────────────────────────────────
+   Panels, not pricing cards. No icon, no feature list, no "most popular"
+   ribbon: the two plans differ in a free period and a price, and those two
+   lines are the entire comparison. Anything else on them would be scaffolding
+   built to make two options look like a tier table. */
+@container (min-width: 430px) {
+  .pc__set { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .pc__legend { grid-column: 1 / -1; }
+  .pc__plan {
+    flex-direction: column; align-items: flex-start; gap: 0;
+    padding: 16px 16px 18px;
+    border: 1px solid var(--c-border); border-radius: 14px;
+  }
+  .pc__plan:last-of-type { border-bottom: 1px solid var(--c-border); }
+  .pc__plan--on { border-color: color-mix(in srgb, var(--c-trade) 55%, var(--c-border)); }
+
+  /* Grid rather than a column flex, so the radio can sit on the name's line
+     without the name having to leave the group it belongs to in the DOM. The
+     wrapper stops being a box and lets its two lines land as grid items. */
+  .pc__plan { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; }
+  .pc__body { display: contents; }
+  .pc__radio { margin: 0; grid-column: 1; grid-row: 1; align-self: center; }
+  .pc__name { grid-column: 2; grid-row: 1; align-self: center; }
+  .pc__free { grid-column: 2; grid-row: 2; font-size: 17px; margin-top: 7px; }
+  .pc__then { grid-column: 2; grid-row: 3; text-align: left; margin-top: 8px; }
+}
 </style>
