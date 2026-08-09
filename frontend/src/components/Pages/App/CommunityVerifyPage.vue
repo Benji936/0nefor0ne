@@ -15,7 +15,7 @@ import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { useHead } from "@unhead/vue";
 import { fetchBySlug, verifyClaimCode, startClaimCheckout } from "@/lib/community";
-import { communityPricing, INTERVALS } from "@/lib/communityPricing";
+import { communityPricing } from "@/lib/communityPricing";
 import { isValidCode } from "@/lib/claimState";
 import {
   verifyStep, domainMatches, siteHost, fetchVerifyClaim,
@@ -26,6 +26,7 @@ import CommunityKindIcon from "@/components/community/CommunityKindIcon.vue";
 // Not mdi-discord: that glyph is absent from the bundled webfont and renders as
 // an empty 16px box. PlatformIcon draws it inline and inherits currentColor.
 import PlatformIcon from "@/components/community/PlatformIcon.vue";
+import PlanChooser from "@/components/community/PlanChooser.vue";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -61,12 +62,6 @@ const price = computed(() => communityPricing(community.value));
 // Yearly is preselected because it is the one being recommended, and the reason
 // is on screen next to it rather than implied by the order.
 const interval = ref("year");
-const plans = computed(() => INTERVALS.map((i) => ({
-  interval: i,
-  name: t(`communityVerify.plans.${i}.name`),
-  free: t(`communityVerify.plans.${i}.free`),
-  then: t(`communityVerify.plans.${i}.then`, { price: price.value[i].display }),
-})));
 const state = computed(() => verifyStep({
   community: community.value,
   claim: claim.value,
@@ -367,6 +362,12 @@ function signIn() {
             ? t('communityVerify.lapsedBody')
             : t('communityVerify.pastDueBody') }}
         </p>
+        <!-- Restarting IS a checkout, so it asks the same question the pay step
+             asks. Without this the button quietly bought a year from someone
+             who had never been offered the choice. Past-due is different: that
+             subscription still exists and Stripe is dunning it, so there is no
+             new plan to pick, only a card to fix. -->
+        <PlanChooser v-if="state.step === 'lapsed'" v-model="interval" :pricing="price" />
         <button type="button" class="cv__primary" :disabled="submitting" @click="startCheckout">
           <v-progress-circular v-if="submitting" indeterminate size="16" width="2" color="white" />
           <template v-else>
@@ -400,29 +401,7 @@ function signIn() {
              list says faster than any amount of chrome. The radio is a real
              radio, so the keyboard and the screen reader get the grouping for
              free. -->
-        <fieldset class="cv__plans">
-          <legend class="cv__plansLegend">{{ t('communityVerify.plansLegend') }}</legend>
-          <label
-            v-for="p in plans"
-            :key="p.interval"
-            class="cv__plan"
-            :class="{ 'cv__plan--on': interval === p.interval }"
-          >
-            <input v-model="interval" class="cv__planRadio" type="radio" name="cv-plan" :value="p.interval" />
-            <span class="cv__planBody">
-              <span class="cv__planName">{{ p.name }}</span>
-              <!-- The free period is the headline of this screen, so it is the
-                   line set largest inside the row rather than a bullet below. -->
-              <span class="cv__planFree">{{ p.free }}</span>
-            </span>
-            <span class="cv__planThen">{{ p.then }}</span>
-          </label>
-        </fieldset>
-
-        <!-- Monthly is dearer over a year AND gets half the free time. Both are
-             deliberate, so both are said out loud: an advantage the reader has
-             to discover later reads as a trick. -->
-        <p class="cv__body cv__plansWhy">{{ t('communityVerify.plansWhy') }}</p>
+        <PlanChooser v-model="interval" :pricing="price" class="cv__chooser" />
 
         <button type="button" class="cv__primary" :disabled="submitting" @click="startCheckout">
           <v-progress-circular v-if="submitting" indeterminate size="16" width="2" color="white" />
@@ -661,40 +640,8 @@ function signIn() {
 .cv__unlocks:has(+ .cv__cost) { margin-bottom: 12px; }
 .cv__cost .v-icon { color: var(--c-trade); flex-shrink: 0; margin-top: 2px; }
 
-/* ── The two plans ─────────────────────────────────────────────────────────
-   Rows divided by rules, not cards. Two options differing in two numbers is a
-   comparison, and a comparison wants alignment more than it wants containers. */
-.cv__plans { border: none; padding: 0; margin: 0 0 14px; max-width: 460px; width: 100%; }
-.cv__plansLegend {
-  padding: 0; margin: 0 0 10px;
-  font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.08em; color: var(--c-muted);
-}
-.cv__plan {
-  display: flex; align-items: center; gap: 12px;
-  padding: 15px 12px 15px 2px;
-  border-top: 1px solid var(--c-border);
-  cursor: pointer;
-  transition: background-color .15s ease;
-}
-.cv__plan:last-of-type { border-bottom: 1px solid var(--c-border); }
-/* Selection is a tint plus the radio itself. Nothing louder is needed: there
-   are two rows and one of them is filled in. */
-.cv__plan--on { background: var(--c-surface-2); }
-.cv__plan:hover:not(.cv__plan--on) { background: var(--c-surface-2); }
-.cv__plan:focus-within { outline: 2px solid var(--c-trade); outline-offset: -2px; }
+.cv__chooser { margin-bottom: 24px; }
 
-.cv__planRadio { accent-color: var(--c-trade); width: 17px; height: 17px; flex-shrink: 0; margin: 0 0 0 10px; cursor: pointer; }
-.cv__planBody { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
-.cv__planName {
-  font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
-  text-transform: uppercase; color: var(--c-muted);
-}
-/* The free period is what this screen is selling, so it takes the scale step. */
-.cv__planFree { font-size: 15.5px; font-weight: 700; line-height: 1.25; color: var(--c-text); }
-.cv__planThen { font-size: 13px; color: var(--c-muted); text-align: right; flex-shrink: 0; }
-
-.cv__plansWhy { margin: 0 0 24px; }
 
 /* The proof step sits above a rule rather than inside a box: it is the next
    thing on the page, not a different kind of thing. */
