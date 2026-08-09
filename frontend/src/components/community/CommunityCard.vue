@@ -5,9 +5,12 @@ import { useI18n } from "vue-i18n";
 import { kindsOf, TYPE_KEYS } from "@/lib/communityKinds";
 import CommunityKindIcon from "@/components/community/CommunityKindIcon.vue";
 import FollowButton from "@/components/community/FollowButton.vue";
+import { formatDistance } from "@/lib/near";
 const props = defineProps({
   community: { type: Object, required: true },
   currentUserId: { type: String, default: null },
+  /** Distance from the reader, in km. Only the Near me search has one. */
+  km: { type: Number, default: null },
 });
 defineEmits(["auth-required"]);
 const route = useRoute();
@@ -22,6 +25,12 @@ const primary = computed(() => kinds.value[0] ?? "group");
 const extras = computed(() => kinds.value.slice(1));
 const kindsLabel = computed(() =>
   kinds.value.map((k) => t(TYPE_KEYS[k] ?? TYPE_KEYS.group)).join(", "));
+
+// Distance sits on the banner rather than in the meta line: in a Near me
+// search it is the sort key, and reading it down the column is how you tell
+// the grid is ordered at all. In the meta line it would be a fourth clause
+// after kind, city and country, and disappear.
+const distance = computed(() => formatDistance(props.km));
 </script>
 <template>
   <router-link
@@ -33,6 +42,9 @@ const kindsLabel = computed(() =>
       <img v-if="community.banner_url" :src="community.banner_url" alt="" />
       <span v-else class="cc__banner-mark" aria-hidden="true">
         <CommunityKindIcon :kind="primary" :size="34" />
+      </span>
+      <span v-if="distance" class="cc__km">
+        <v-icon icon="mdi-map-marker" size="12" />{{ distance }}
       </span>
     </div>
 
@@ -96,6 +108,21 @@ const kindsLabel = computed(() =>
   display: flex; align-items: center; justify-content: center;
   color: color-mix(in srgb, var(--c-trade) 60%, transparent);
 }
+
+/* Distance pill. Tokens rather than the white-on-scrim the follow button
+   opposite it uses: that one sits over photography, this one has to stay
+   readable over a tinted banner in light mode too. */
+.cc__km {
+  position: absolute; top: 10px; left: 10px; z-index: 2;
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 3px 8px; border-radius: 99px;
+  background: color-mix(in srgb, var(--c-surface) 88%, transparent);
+  border: 1.5px solid var(--c-border);
+  backdrop-filter: blur(6px);
+  color: var(--c-text); font-size: 11px; font-weight: 800; letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.cc__km .v-icon { color: var(--c-trade); }
 
 /* Avatar overlaps the banner's bottom edge */
 .cc__avatar {

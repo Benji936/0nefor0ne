@@ -27,6 +27,8 @@ import CommunityKindIcon from "@/components/community/CommunityKindIcon.vue";
 // an empty 16px box. PlatformIcon draws it inline and inherits currentColor.
 import PlatformIcon from "@/components/community/PlatformIcon.vue";
 import PlanChooser from "@/components/community/PlanChooser.vue";
+import VerifyBeats from "@/components/community/VerifyBeats.vue";
+import VerifiedPreview from "@/components/community/VerifiedPreview.vue";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -88,6 +90,41 @@ const HEADINGS = {
   declined: "communityVerify.titleDeclined",
 };
 const heading = computed(() => t(HEADINGS[state.value.step] ?? "communityVerify.title"));
+
+// Where each state sits in the three-beat shape of verification, and whether it
+// is moving. Waiting means a machine or a person owes us an answer; blocked
+// means the beat did not complete and no amount of waiting will finish it.
+const BEATS = {
+  "signed-out":     { current: "prove",    status: "normal" },
+  prove:            { current: "prove",    status: "normal" },
+  "pending-review": { current: "prove",    status: "waiting" },
+  declined:         { current: "prove",    status: "blocked" },
+  pay:              { current: "choose",   status: "normal" },
+  lapsed:           { current: "choose",   status: "blocked" },
+  "past-due":       { current: "choose",   status: "blocked" },
+  processing:       { current: "verified", status: "waiting" },
+  done:             { current: "verified", status: "normal" },
+};
+// not-owner is the one state that is not part of anyone's verification, so it
+// gets no marker. Showing a progress spine to someone who cannot progress is
+// worse than showing nothing.
+const beat = computed(() => BEATS[state.value.step] ?? null);
+
+// The same preview object, four meanings. Which caption it carries is the only
+// thing that changes besides the mark itself.
+const PREVIEW = {
+  prove:      { verified: false, caption: "communityVerify.previewPromise" },
+  pay:        { verified: false, caption: "communityVerify.previewPay" },
+  done:       { verified: true,  caption: "communityVerify.previewLive" },
+  lapsed:     { verified: false, caption: "communityVerify.previewLapsed" },
+  "past-due": { verified: true,  caption: "communityVerify.previewPastDue" },
+};
+const preview = computed(() => PREVIEW[state.value.step] ?? null);
+
+// A second column only where there is something to put in it. The states that
+// are one short message and a link keep the single narrow measure: a 300px rail
+// of empty space beside four words is worse than no rail.
+const hasRail = computed(() => !!preview.value || state.value.step === "prove");
 
 // A code is outstanding when the server says one is, so refreshing mid-flow
 // keeps the entry field rather than silently dropping back to the email step.
@@ -326,6 +363,17 @@ function signIn() {
       </p>
       <h1 class="cv__title">{{ heading }}</h1>
 
+      <!-- The one element on every screen of the flow. It is what makes eleven
+           states read as one surface rather than eleven messages. -->
+      <VerifyBeats v-if="beat" :current="beat.current" :status="beat.status" />
+
+      <!-- Steps cross-fade rather than snap. mode="out-in" so the two never
+           overlap: these screens differ in height by a lot, and a crossfade
+           between a form and a receipt reads as a glitch. -->
+      <Transition name="cv-step" mode="out-in">
+      <div :key="state.step" class="cv__cols" :class="{ 'cv__cols--rail': hasRail }">
+      <div class="cv__stage">
+
       <!-- ── Signed out ─────────────────────────────────────────────── -->
       <template v-if="state.step === 'signed-out'">
         <p class="cv__body">{{ t('communityVerify.signedOutBody') }}</p>
@@ -402,6 +450,7 @@ function signIn() {
       <template v-else-if="state.step === 'pay'">
         <p class="cv__lede">{{ t('communityVerify.payBody') }}</p>
 
+
         <!-- Two plans, as rows divided by rules. Not two pricing cards: there
              are two of them and they differ in two numbers, which a table-like
              list says faster than any amount of chrome. The radio is a real
@@ -426,24 +475,6 @@ function signIn() {
       <template v-else>
         <p class="cv__lede">{{ t('communityVerify.lede') }}</p>
 
-        <!-- What it does. A plain list: these are facts, not four cards. -->
-        <ul class="cv__unlocks">
-          <!-- Events first: it is the one line that names a capability the
-               community does not have until this is done. -->
-          <li><v-icon icon="mdi-calendar-plus" size="15" />{{ t('communityVerify.unlockEvents') }}</li>
-          <li><v-icon icon="mdi-check-decagram" size="15" />{{ t('communityVerify.unlockBadge') }}</li>
-          <li><v-icon icon="mdi-sort-variant" size="15" />{{ t('communityVerify.unlockRanking') }}</li>
-          <li><v-icon icon="mdi-shield-account-outline" size="15" />{{ t('communityVerify.unlockTrust') }}</li>
-        </ul>
-
-        <!-- What it costs, before the work rather than after it. Proving a
-             domain or linking a server is ten minutes of somebody's evening,
-             and finding out the price only once it is done is the wrong order.
-             The first year being free is the part worth reading, so it leads. -->
-        <p class="cv__cost">
-          <v-icon icon="mdi-gift-outline" size="15" />
-          <span>{{ t('communityVerify.costUpfront', { year: price.year.display, month: price.month.display }) }}</span>
-        </p>
 
         <!-- Store with no website: fix that first -->
         <section v-if="state.proof === 'no-website'" class="cv__step">
@@ -574,6 +605,41 @@ function signIn() {
         </section>
       </template>
 
+      </div>
+
+      <!-- The rail is context, never work: what the thing looks like, what it
+           unlocks, what it costs. The column on the left is the only place
+           anything is asked of anyone, which is what keeps a two-column layout
+           from turning into two places to look for the next action. -->
+      <aside v-if="hasRail" class="cv__rail">
+        <VerifiedPreview
+          v-if="preview"
+          :community="community"
+          :verified="preview.verified"
+          :caption="t(preview.caption)"
+        />
+
+        <template v-if="state.step === 'prove'">
+          <h2 class="cv__railTitle">{{ t('communityVerify.unlocksTitle') }}</h2>
+          <ul class="cv__unlocks">
+            <!-- Events first: it is the one line that names a capability the
+                 community does not have until this is done. -->
+            <li><v-icon icon="mdi-calendar-plus" size="15" />{{ t('communityVerify.unlockEvents') }}</li>
+            <li><v-icon icon="mdi-check-decagram" size="15" />{{ t('communityVerify.unlockBadge') }}</li>
+            <li><v-icon icon="mdi-sort-variant" size="15" />{{ t('communityVerify.unlockRanking') }}</li>
+            <li><v-icon icon="mdi-shield-account-outline" size="15" />{{ t('communityVerify.unlockTrust') }}</li>
+          </ul>
+          <!-- What it costs, before the work rather than after it. Proving a
+               domain is ten minutes of somebody's evening, and finding out the
+               price once it is done is the wrong order. -->
+          <p class="cv__cost">
+            {{ t('communityVerify.costUpfront', { year: price.year.display, month: price.month.display }) }}
+          </p>
+        </template>
+      </aside>
+      </div>
+      </Transition>
+
       <p v-if="errorMsg" class="cv__error" role="alert">
         <v-icon icon="mdi-alert-circle-outline" size="16" />
         {{ errorMsg }}
@@ -586,8 +652,83 @@ function signIn() {
 /* The page is the container. No card wrapping the whole thing: a border drawn
    around a page's entire contents is a border around nothing. */
 .cv {
+  position: relative; isolation: isolate;
+  /* The route asks its own width, not the window's. A viewport breakpoint gets
+     this wrong the moment the app's side nav collapses: the same 1024px window
+     is a 792px column with the nav open and a 976px one without it. */
+  container-type: inline-size;
   display: flex; flex-direction: column; align-items: flex-start;
-  padding: 24px 24px 64px; max-width: 660px; margin: 0 auto; width: 100%;
+  padding: 24px 24px 64px; max-width: 1040px; margin: 0 auto; width: 100%;
+}
+
+/* One light source, over the top of the page. The strip light left on above
+   the back table after the shutters come down.
+   Static, not animated: this is a route where people read and type, and a
+   moving background would be decoration pretending to be atmosphere. It is the
+   only ornamental mark on the surface, which is what lets it be here at all.
+
+   One alpha serves both themes because --c-trade is already two colours: a
+   light amethyst on the dark canvas, a deep one on the near-white. The token
+   does the theme adaptation, so a second rule would only be a way to get the
+   two out of step. */
+.cv::before {
+  content: ""; position: absolute; z-index: -1; pointer-events: none;
+  top: -110px; left: 50%; transform: translateX(-50%);
+  /* Never wider than the column it lights. At 150% it was narrower than the
+     page only while .cv was 660px; widening the route to 1040 turned the
+     overhang into a horizontal scrollbar at 1024. The gradient fades to
+     transparent at 72% anyway, so the edges were never carrying anything. */
+  width: min(880px, 100%); height: 460px;
+  background: radial-gradient(
+    ellipse 58% 52% at 50% 0%,
+    color-mix(in srgb, var(--c-trade) 24%, transparent) 0%,
+    transparent 72%
+  );
+}
+/* ── The two columns ──────────────────────────────────────────────────────
+   Work on the left, context on the right. The split only exists where there is
+   context to show, and it collapses to one column early: a 300px rail beside a
+   380px form is two cramped columns rather than one comfortable one. */
+.cv__cols { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr); gap: 34px; }
+
+/* 860 rather than something lower: below it the work column drops under ~510px
+   and the split stops being one comfortable column plus a margin note. It
+   becomes two narrow columns, which is worse than the single column it
+   replaced. */
+@container (min-width: 860px) {
+  .cv__cols--rail {
+    grid-template-columns: minmax(0, 1fr) 296px;
+    gap: 56px;
+    align-items: start;
+  }
+}
+
+/* Stacked, the rail leads. Every one of its meanings is something you want
+   before you act: the promise before the proving, what the card buys before the
+   card. Source order puts the work first for the keyboard and the screen
+   reader; only the visual order changes. */
+@container (max-width: 859px) {
+  .cv__rail { order: -1; }
+}
+
+/* Steps replace each other rather than jumping. Short, because the reader is
+   mid-task and choreography between a form and a receipt is not a reward. */
+.cv__stage { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
+
+.cv__rail { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
+.cv__railTitle {
+  margin: 0 0 12px;
+  font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--c-muted);
+}
+.cv-step-enter-active { transition: opacity .2s cubic-bezier(0.25, 1, 0.5, 1), transform .2s cubic-bezier(0.25, 1, 0.5, 1); }
+.cv-step-leave-active { transition: opacity .12s ease-in; }
+.cv-step-enter-from { opacity: 0; transform: translateY(6px); }
+.cv-step-leave-to { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cv-step-enter-from { transform: none; }
+  .cv-step-enter-active, .cv-step-leave-active { transition-duration: .01ms; }
 }
 
 .cv__back {
@@ -627,26 +768,29 @@ function signIn() {
 
 /* Facts about what verification does. Bordered rows would make four tiles of
    three sentences; a list is what this is. */
-.cv__unlocks { list-style: none; margin: 0 0 30px; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.cv__unlocks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .cv__unlocks li {
   display: flex; align-items: flex-start; gap: 9px;
-  font-size: 13.5px; line-height: 1.5; color: var(--c-text); max-width: 58ch;
+  font-size: 13px; line-height: 1.5; color: var(--c-text); max-width: 44ch;
 }
 .cv__unlocks .v-icon { color: var(--c-trade); flex-shrink: 0; margin-top: 2px; }
 
 /* What it costs, said before the proving starts. Sits with the unlocks as one
    more fact about verification, because that is what it is. */
+/* The price is not a fifth unlock. It lost its leading icon and gained the
+   space above it that says so: the list is what verification does, this is what
+   it costs, and they are different kinds of sentence. */
 .cv__cost {
-  display: flex; align-items: flex-start; gap: 9px;
-  margin: 0 0 30px;
-  font-size: 13.5px; line-height: 1.5; color: var(--c-text); max-width: 58ch;
+  margin: 20px 0 0;
+  font-size: 12.5px; line-height: 1.6; color: var(--c-muted); max-width: 44ch;
 }
-/* It belongs to the list above it, so it sits at list spacing rather than at
-   the 30px the list uses to separate itself from the proof step. */
-.cv__unlocks:has(+ .cv__cost) { margin-bottom: 12px; }
-.cv__cost .v-icon { color: var(--c-trade); flex-shrink: 0; margin-top: 2px; }
 
-.cv__chooser { margin-bottom: 24px; }
+.cv__chooser { margin-bottom: 26px; }
+
+/* In the rail the preview is a block among blocks, so the gap below it belongs
+   to whatever follows rather than to the preview itself. */
+.cv__rail .vp { margin-bottom: 30px; }
+.cv__rail > .vp:last-child { margin-bottom: 0; }
 
 
 /* The proof step sits above a rule rather than inside a box: it is the next
