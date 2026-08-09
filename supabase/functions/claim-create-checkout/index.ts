@@ -111,7 +111,18 @@ Deno.serve(async (req) => {
       .eq("community", community_id).eq("claimer", user.id).maybeSingle();
     if (!claim?.identity_verified_at) return json({ error: "not_verified" }, 403);
 
-    const currency = currencyFor(community.country_code);
+    // A community's country is optional and easy to skip, and skipping it used
+    // to mean the USD default no matter where anyone involved actually was.
+    // Fall back to the buyer's own country, which is whose card this is. The
+    // community's own country still wins, and communityPricing applies the same
+    // rule so the figure on screen is the figure Checkout charges.
+    let countryCode = community.country_code;
+    if (!countryCode) {
+      const { data: trader } = await admin.from("Trader")
+        .select("country_code").eq("id", user.id).maybeSingle();
+      countryCode = trader?.country_code ?? null;
+    }
+    const currency = currencyFor(countryCode);
     // Send each flow back where it came from: a claim resumes on the community
     // page, self-verification resumes on the verify route that owns its state.
     const returnBase = claim.origin === "self"

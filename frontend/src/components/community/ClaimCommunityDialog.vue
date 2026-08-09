@@ -5,7 +5,7 @@
 // branch to a manual-review request.
 import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { requestClaimCode, verifyClaimCode, requestManualReview, startClaimCheckout, fetchMyClaim } from "@/lib/community";
+import { requestClaimCode, verifyClaimCode, requestManualReview, startClaimCheckout, fetchMyClaim, fetchMyCountryCode } from "@/lib/community";
 import { communityPricing } from "@/lib/communityPricing";
 import { isValidCode } from "@/lib/claimState";
 import { getCurrentSession, signInWithDiscord } from "@/lib/supabaseClient";
@@ -28,7 +28,8 @@ const manualReason = ref("");
 const doneMessage = ref("");
 
 const canVerify = computed(() => isValidCode(code.value) && !submitting.value);
-const price = computed(() => communityPricing(props.community));
+const myCountryCode = ref(null);
+const price = computed(() => communityPricing(props.community, myCountryCode.value));
 
 // Same offer as the self-verification route, same component, same words. A
 // claimed store and a created one are buying the identical thing, and two
@@ -41,6 +42,7 @@ watch(() => props.modelValue, async (open) => {
   manualReason.value = ""; doneMessage.value = ""; submitting.value = false;
   const session = await getCurrentSession();
   signedIn.value = !!session?.user;
+  if (signedIn.value) myCountryCode.value = await fetchMyCountryCode();
   if (signedIn.value && props.community?.id && props.community.owner == null) {
     try {
       const mine = await fetchMyClaim(props.community.id);

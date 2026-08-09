@@ -14,7 +14,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { useHead } from "@unhead/vue";
-import { fetchBySlug, verifyClaimCode, startClaimCheckout } from "@/lib/community";
+import { fetchBySlug, verifyClaimCode, startClaimCheckout, fetchMyCountryCode } from "@/lib/community";
 import { communityPricing } from "@/lib/communityPricing";
 import { isValidCode } from "@/lib/claimState";
 import {
@@ -57,7 +57,12 @@ const sentToAddress = ref(null);
 // page that just took their card and be asked for it again.
 const justPaid = ref(route.query.verify === "success");
 
-const price = computed(() => communityPricing(community.value));
+// The buyer's own country, used only if the community has none. Fetched once
+// so the price on screen is the price Checkout will charge: the Edge Function
+// applies the same fallback, and the two disagreeing would be worse than the
+// USD default this replaces.
+const myCountryCode = ref(null);
+const price = computed(() => communityPricing(community.value, myCountryCode.value));
 
 // Yearly is preselected because it is the one being recommended, and the reason
 // is on screen next to it rather than implied by the order.
@@ -120,6 +125,7 @@ async function load() {
 let stopAuth = null;
 onMounted(async () => {
   viewerId.value = (await getCurrentSession())?.user?.id ?? null;
+  if (viewerId.value) myCountryCode.value = await fetchMyCountryCode();
   stopAuth = onAuthChange((s) => { viewerId.value = s?.user?.id ?? null; });
   await load();
   // Coming back from Discord with the guilds scope: the provider token only

@@ -33,8 +33,17 @@ export const INTERVALS = ["year", "month"];
  *  trial_period_days. 182 is six months to the nearest day. */
 export const FREE_DAYS = { year: 365, month: 182 };
 
-export function communityPricing(community) {
-  const cc = (community?.country_code || "").trim().toUpperCase();
+/**
+ * @param community          the row being priced
+ * @param fallbackCountryCode the buyer's own country, used only when the
+ *   community has none of its own. A community's country is optional and easy
+ *   to skip, and skipping it used to mean the USD default no matter where
+ *   everyone involved actually was. The community's own country still wins, so
+ *   a Swiss owner running a shop in Lyon is billed in euros.
+ */
+export function communityPricing(community, fallbackCountryCode = null) {
+  const own = (community?.country_code || "").trim().toUpperCase();
+  const cc = own || (fallbackCountryCode || "").trim().toUpperCase();
   if (SWISS.has(cc)) return structuredClone(CHF);
   if (cc === "GB") return structuredClone(GBP);
   if (EUROZONE.has(cc)) return structuredClone(EUR);

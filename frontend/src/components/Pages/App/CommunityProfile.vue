@@ -656,7 +656,7 @@ async function onStale() {
                 <span class="cp-meta__sep" aria-hidden="true">·</span>
                 <input v-model="edit.city" class="cp-inline-input" :placeholder="t('community.fieldCity')" :aria-label="t('community.fieldCity')" />
                 <select v-model="edit.country" class="cp-inline-input cp-inline-select" :aria-label="t('community.fieldCountry')">
-                  <option value="">{{ t('community.kindAll') }}</option>
+                  <option value="">{{ t('community.fieldCountry') }}</option>
                   <option v-for="c in COUNTRIES" :key="c.code" :value="c.name">{{ c.flag }} {{ c.name }}</option>
                 </select>
               </template>
@@ -1290,7 +1290,16 @@ a.cp-claim { text-decoration: none; }
   outline: none; transition: border-color 0.15s ease; min-width: 0;
 }
 .cp-inline-input:focus { border-color: var(--c-trade); }
-.cp-inline-select { cursor: pointer; appearance: none; }
+/* appearance:none strips the native arrow, and nothing was drawn in its place,
+   so a select read as a flat box with a word in it. The country picker sat next
+   to the city field saying "Country" and nobody could tell it opened. */
+.cp-inline-select {
+  cursor: pointer; appearance: none;
+  padding-right: 28px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
 
 .cp-bio-input {
   width: 100%; box-sizing: border-box;

@@ -172,7 +172,7 @@ async function submit() {
             <div class="field-block" style="flex:1">
               <label class="field-label">{{ t('community.fieldCountry') }}</label>
               <select v-model="country" class="field-input field-select">
-                <option value="">{{ t('community.kindAll') }}</option>
+                <option value="">{{ t('community.fieldCountry') }}</option>
                 <option v-for="c in COUNTRIES" :key="c.code" :value="c.name">{{ c.flag }} {{ c.name }}</option>
               </select>
             </div>
@@ -316,7 +316,16 @@ async function submit() {
 .field-input:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .field-textarea { resize: none; line-height: 1.5; }
-.field-select   { cursor: pointer; appearance: none; padding-right: 10px; }
+/* appearance:none strips the native arrow, and nothing was drawn in its place,
+   so a select read as a flat box with a word in it. The country picker sat next
+   to the city field saying "Country" and nobody could tell it opened. */
+.field-select {
+  cursor: pointer; appearance: none;
+  padding-right: 28px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
 
 /* ── Remote-duel toggle ───────────────────────────── */
 .remote-toggle {

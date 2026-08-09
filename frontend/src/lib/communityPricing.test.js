@@ -53,6 +53,26 @@ describe("communityPricing", () => {
   });
 });
 
+describe("the buyer-country fallback", () => {
+  it("uses the buyer's country when the community has none", () => {
+    expect(communityPricing({ country_code: null }, "CH").currency).toBe("chf");
+    expect(communityPricing({}, "GB").currency).toBe("gbp");
+    expect(communityPricing(null, "FR").currency).toBe("eur");
+  });
+  it("lets the community's own country win over the buyer's", () => {
+    // A Swiss owner running a shop in Lyon is billed in euros.
+    expect(communityPricing({ country_code: "FR" }, "CH").currency).toBe("eur");
+  });
+  it("still falls back to USD when neither is known", () => {
+    expect(communityPricing({ country_code: null }, null).currency).toBe("usd");
+    expect(communityPricing({}, "").currency).toBe("usd");
+    expect(communityPricing({}, "ZZ").currency).toBe("usd");
+  });
+  it("is case-insensitive on the fallback too", () => {
+    expect(communityPricing({}, "ch").currency).toBe("chf");
+  });
+});
+
 describe("normalizeInterval", () => {
   it("passes through the two real intervals", () => {
     expect(normalizeInterval("year")).toBe("year");
