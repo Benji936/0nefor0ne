@@ -220,3 +220,16 @@ export async function fetchMyCommunities() {
   if (error) { console.error("fetchMyCommunities failed", error); throw error; }
   return data ?? [];
 }
+
+/** The signed-in trader's own country code, or null. Used as the pricing
+ *  fallback for a community that has no country of its own: the buyer's
+ *  location is a better guess than the USD default, and it is the only one
+ *  available when the community's field was left blank. */
+export async function fetchMyCountryCode() {
+  const me = (await getClient().auth.getSession()).data?.session?.user?.id;
+  if (!me) return null;
+  const { data, error } = await getClient()
+    .from("Trader").select("country_code").eq("id", me).maybeSingle();
+  if (error) { console.error("fetchMyCountryCode failed", error); return null; }
+  return data?.country_code ?? null;
+}
