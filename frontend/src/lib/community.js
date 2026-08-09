@@ -3,7 +3,8 @@ import { slugify, withSuffix } from "@/lib/communitySlug";
 import { sanitizeLinks } from "@/lib/communityLinks";
 import { normalizeKinds } from "@/lib/communityKinds";
 import { normalizeInterval } from "@/lib/communityPricing";
-import { codeForCountry } from "@/lib/countries";
+import { codeForCountry, countryByCode } from "@/lib/countries";
+import { geocodePlace } from "@/lib/geocode";
 import { invokeFunction } from "@/lib/edgeFunction";
 
 const PAGE_SIZE = 24;
@@ -28,6 +29,64 @@ async function uniqueSlug(name, city) {
     if (!data) return slug;
   }
   return withSuffix(base, Date.now() % 100000); // pathological fallback
+}
+
+/**
+ * Where a community actually is, resolved once, at write time.
+ *
+ * Near me is the whole reason a community pays to be verified, and it reads
+ * lat/lng — a column no form ever wrote. Every community anybody created
+ * themselves was therefore invisible to it, permanently and silently, while the
+ * seeded directory rows had coordinates from the importer and looked fine.
+ *
+ * This is the one place that fixes it, rather than each form remembering to,
+ * because a community's location is written from three places already (create,
+ * the profile's inline editor, and anything added later) and a pin that only
+ * some of them set is the same bug with a longer fuse.
+ *
+ * Rules, in order:
+ *  - lat/lng handed in win: the caller picked a real suggestion and we already
+ *    have the geocoder's own answer. No second lookup.
+ *  - No city means no pin. A country on its own would resolve to its centroid,
+ *    which is not where the shop is; it would put a store in Kuala Lumpur "12km
+ *    away" from somebody in Penang. Null is honest, a centroid is not.
+ *  - The geocoder's country wins over a blank one, mapped back through our own
+ *    list so the value still matches what the directory filter compares against
+ *    ("Indonesia", not "Republic of Indonesia").
+ *
+ * Never throws. A dead or slow geocoder must not stop somebody saving their own
+ * profile; it costs them the pin, which the next save resolves.
+ */
+export async function resolveLocation({ city, country, lat, lng } = {}) {
+  const known = Number.isFinite(lat) && Number.isFinite(lng);
+  const cityText = String(city ?? "").trim();
+  const countryText = String(country ?? "").trim();
+
+  if (known) return { lat, lng, country: country ?? null, country_code: codeForCountry(country) };
+  if (!cityText) return { lat: null, lng: null, country: country ?? null, country_code: codeForCountry(country) };
+
+  let place = null;
+  try {
+    place = await geocodePlace([cityText, countryText].filter(Boolean).join(", "), {
+      featureType: "settlement",
+    });
+  } catch (e) {
+    console.error("resolveLocation failed", e);
+  }
+  if (!place || !Number.isFinite(place.lat) || !Number.isFinite(place.lon)) {
+    return { lat: null, lng: null, country: country ?? null, country_code: codeForCountry(country) };
+  }
+
+  // Only fill a country in, never overwrite one: the owner picked theirs from a
+  // list, and a geocoder that resolved the wrong Springfield should not get to
+  // move their listing to another country's filter.
+  const resolved = countryText ? null : countryByCode(place.countryCode);
+  return {
+    lat: place.lat,
+    lng: place.lon,
+    country: countryText || resolved?.name || null,
+    country_code: codeForCountry(countryText) || resolved?.code || null,
+  };
 }
 
 export async function fetchDirectory({ kind, country, region, remoteDuel, q, page = 0, pageSize = PAGE_SIZE } = {}) {
@@ -77,6 +136,9 @@ export async function createCommunity(input) {
   if ((count ?? 0) > 0) throw new Error(ALREADY_OWN_ONE);
 
   const slug = await uniqueSlug(input.name, input.city);
+  // Before the insert, not after: a community with no pin is invisible to near
+  // me, and there is no later moment that would come back to fix it.
+  const place = await resolveLocation(input);
   const row = {
     owner: me,
     // kinds only: the database derives kind from it, and sending both invites
@@ -96,13 +158,15 @@ export async function createCommunity(input) {
     avatar_url: input.avatar_url ?? null,
     banner_url: input.banner_url ?? null,
     city: input.city ?? null,
-    country: input.country ?? null,
+    country: place.country,
     // Derived rather than asked for. The form stores a country NAME because
     // that is what the directory filter matches on, and country_code was only
     // ever populated by the store seeder, so every community anyone created
     // themselves had none and was priced in the USD fallback no matter where
     // it was. An explicit country_code still wins, for the seeder.
-    country_code: input.country_code ?? codeForCountry(input.country),
+    country_code: input.country_code ?? place.country_code,
+    lat: place.lat,
+    lng: place.lng,
     region: input.region ?? null,
     remote_duel: !!input.remote_duel,
     tags: input.tags ?? [],
@@ -131,6 +195,20 @@ export async function updateCommunity(id, patch) {
   // Keep the code with the name it came from, including when the name is
   // cleared. A stale code would price a community by a country it left.
   if ("country" in clean && !("country_code" in clean)) clean.country_code = codeForCountry(clean.country);
+
+  // Re-pin whenever the address is part of the write. Callers that already know
+  // the coordinates (unchanged city, or a picked suggestion) pass lat/lng and
+  // resolveLocation hands them straight back, so an ordinary save of a bio or a
+  // link costs no geocoder call. The corollary is the useful half: a community
+  // saved with a city and no pin — every one created before this existed — gets
+  // one the next time its owner touches the profile.
+  if ("city" in clean) {
+    const place = await resolveLocation(clean);
+    clean.lat = place.lat;
+    clean.lng = place.lng;
+    clean.country = place.country;
+    clean.country_code = place.country_code;
+  }
   const { data, error } = await getClient().from("community").update(clean).eq("id", id).select().single();
   if (error) { console.error("updateCommunity failed", error); throw error; }
   return data;

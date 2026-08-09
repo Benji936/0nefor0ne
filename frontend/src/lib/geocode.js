@@ -27,6 +27,7 @@ export const MIN_QUERY = 3;
 export function formatPlace(row) {
   const parts = String(row?.display_name ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   if (!parts.length) return null;
+  const address = row.address ?? {};
   return {
     id: row.place_id,
     // The full string is what we store — it is unambiguous.
@@ -35,6 +36,11 @@ export function formatPlace(row) {
     secondary: parts.slice(1).join(", "),
     lat: row.lat != null ? Number(row.lat) : null,
     lon: row.lon != null ? Number(row.lon) : null,
+    // What country the pin is actually in, straight from the geocoder. A
+    // community's country used to be typed independently of its address, which
+    // is how a shop ended up filed under one country and pinned in another.
+    country: address.country ?? null,
+    countryCode: address.country_code ? String(address.country_code).toUpperCase() : null,
   };
 }
 
@@ -46,7 +52,7 @@ export function formatPlace(row) {
  * someone from typing an address by hand. Aborts propagate so the caller can
  * distinguish "superseded" from "no results".
  */
-export async function searchPlaces(query, { signal, locale = "en" } = {}) {
+export async function searchPlaces(query, { signal, locale = "en", featureType, limit = MAX_RESULTS } = {}) {
   const q = String(query ?? "").trim();
   if (q.length < MIN_QUERY) return [];
 
@@ -54,8 +60,12 @@ export async function searchPlaces(query, { signal, locale = "en" } = {}) {
     q,
     format: "jsonv2",
     addressdetails: "1",
-    limit: String(MAX_RESULTS),
+    limit: String(limit),
     "accept-language": locale,
+    // Nominatim's own spelling is lowercase. "settlement" keeps a city field
+    // answering with cities: without it "Geneva" also offers the canton, the
+    // lake and a street, and the first row is a coin toss.
+    ...(featureType ? { featuretype: featureType } : {}),
   })}`;
 
   let res;
@@ -78,6 +88,19 @@ export async function searchPlaces(query, { signal, locale = "en" } = {}) {
   // Nominatim commonly returns the same street as several rows (one per way
   // segment). They render identically, so collapse them by display string.
   return dedupe((Array.isArray(rows) ? rows : []).map(formatPlace).filter(Boolean));
+}
+
+/**
+ * The single best match for a place, or null.
+ *
+ * For code that needs an answer rather than a menu: resolving a community's
+ * city to coordinates at save time. Same failure contract as searchPlaces —
+ * null on a dead geocoder, never a throw, because a missing pin must not stop
+ * somebody saving their profile.
+ */
+export async function geocodePlace(query, { signal, locale = "en", featureType } = {}) {
+  const rows = await searchPlaces(query, { signal, locale, featureType, limit: 1 });
+  return rows[0] ?? null;
 }
 
 /** Keep the first of each identical `value`, preserving relevance order. */
