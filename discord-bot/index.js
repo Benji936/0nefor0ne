@@ -34,6 +34,7 @@ const { parseAnnounce, ANNOUNCE_KIND } = require('./lib/parseAnnounce');
 const { parseWantList, buildWantRows, wantListTitle } = require('./lib/wantList');
 const { searchListings } = require('./lib/marketplace');
 const { commandDefinitions, buildSearchEmbed, escapeMd } = require('./lib/slashCommands');
+const { buildEventEmbed, eventAnnouncement } = require('./lib/eventPost');
 
 // ── Validate env ──────────────────────────────────────────────────────────────
 const {
@@ -59,7 +60,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 });
 
 // ── Per-guild config ───────────────────────────────────────────────────────────
-// Shape: Map<guildId, { channelId, threadMessage, communityUrl }>
+// Shape: Map<guildId, { channelId, threadMessage, communityUrl, eventsChannelId }>
 const DEFAULT_THREAD_MESSAGE = [
   `✅ **Your announce is live!**`,
   `🔗 {link}`,
@@ -75,9 +76,12 @@ const guildConfigs = new Map();
 function getConfig(guildId) {
   if (!guildConfigs.has(guildId)) {
     guildConfigs.set(guildId, {
-      channelId:     DISCORD_ANNOUNCES_CHANNEL_ID ?? null,
-      threadMessage: DEFAULT_THREAD_MESSAGE,
-      communityUrl:  null,
+      channelId:       DISCORD_ANNOUNCES_CHANNEL_ID ?? null,
+      threadMessage:   DEFAULT_THREAD_MESSAGE,
+      communityUrl:    null,
+      // Null means "wherever announces go". A server that never sets this still
+      // gets its events; one that wants a #events channel says so once.
+      eventsChannelId: null,
     });
   }
   return guildConfigs.get(guildId);
@@ -138,6 +142,7 @@ async function loadAllGuildConfigs() {
       if (setting === 'announces_channel_id')   cfg.channelId     = row.value;
       if (setting === 'announce_thread_message') cfg.threadMessage = row.value;
       if (setting === 'community_url')           cfg.communityUrl  = row.value;
+      if (setting === 'events_channel_id')       cfg.eventsChannelId = row.value;
     }
     console.log(`   Loaded config for ${guildConfigs.size} guild(s)`);
   } catch (err) {
@@ -252,6 +257,7 @@ function helpAdmin() {
     `• \`!setchannel [#channel]\` — set the announces channel`,
     `• \`!setmessage <text|reset>\` — customize the thread message`,
     `   placeholders: \`{link}\` \`{title}\` \`{price}\` \`{currency}\` \`{photos}\``,
+    `• \`!seteventchannel [#channel|clear]\` — where your community's events are posted`,
     `• \`!setcommunity <url|clear>\` — community link shown on announces *(Premium)*`,
     `• \`!upgrade\` — upgrade this server to Premium`,
   ].join('\n');
@@ -542,6 +548,43 @@ client.on(Events.MessageCreate, async (message) => {
     } catch (err) {
       console.error('setchannel failed:', err);
       await message.reply('⚠️ Could not save the channel. Please try again.');
+    }
+    return;
+  }
+
+  // ── !seteventchannel [#channel|clear] — admin only ───────────────────────────
+  // Where this server's 0nefor.one events are announced. Unset means they land
+  // in the announces channel, so a verified community gets them without doing
+  // anything; this exists for servers that want them kept apart.
+  if (lower.startsWith('!seteventchannel')) {
+    if (!canManage) {
+      await message.reply('⛔ You need the **Manage Server** permission to change the events channel.');
+      return;
+    }
+    const arg = content.slice('!seteventchannel'.length).trim().toLowerCase();
+    try {
+      if (arg === 'clear' || arg === 'reset') {
+        await deleteGuildSetting(guildId, 'events_channel_id');
+        cfg.eventsChannelId = null;
+        await message.reply(
+          cfg.channelId
+            ? `✅ Events will go to the announces channel, <#${cfg.channelId}>.`
+            : '✅ Events channel cleared. Set an announces channel with `!setchannel` so events have somewhere to go.',
+        );
+        return;
+      }
+      const target = message.mentions.channels.first() ?? message.channel;
+      await saveGuildSetting(guildId, 'events_channel_id', target.id);
+      cfg.eventsChannelId = target.id;
+      // A guild that was skipped for having no channel deserves another look.
+      eventChannelWarned.delete(guildId);
+      await message.reply(
+        `✅ Events from your 0nefor.one community will be posted in <#${target.id}>.\n` +
+        `Your community has to be **verified**, and this server linked to it with \`/verify\`.`,
+      );
+    } catch (err) {
+      console.error('seteventchannel failed:', err);
+      await message.reply('⚠️ Could not save the events channel. Please try again.');
     }
     return;
   }
@@ -908,6 +951,130 @@ async function processThreadDeletionQueue() {
   }
 }
 
+// ── A verified community's events → its own Discord server ────────────────────
+//
+// The guild/community link is written by /verify. Everything else lives in
+// community_event_post: which events have been announced, where, and which
+// announcements now have to come down. See the migration for the shape.
+//
+// Polling rather than realtime, matching the deletion queue above: one query a
+// minute against an indexed anti-join is cheaper than another live connection
+// to keep alive, and an event announced sixty seconds late is still news.
+const EVENT_POLL_MS = 60000;
+
+// Discord errors that will not fix themselves by trying again with the same
+// channel id: the channel is gone, or the bot cannot see or post in it.
+const PERMANENT_DISCORD_ERRORS = new Set([10003, 50001, 50013]);
+
+// One line per guild per process, not one line per poll.
+const eventChannelWarned = new Set();
+
+/** Events go to the events channel if there is one, else wherever announces go. */
+function eventsChannelFor(guildId) {
+  const cfg = getConfig(guildId);
+  return cfg.eventsChannelId ?? cfg.channelId ?? null;
+}
+
+async function postOneEvent(row) {
+  const channelId = eventsChannelFor(row.guild_id);
+  if (!channelId) {
+    if (!eventChannelWarned.has(row.guild_id)) {
+      eventChannelWarned.add(row.guild_id);
+      console.warn(`[events] guild ${row.guild_id} has no channel set — run !seteventchannel there`);
+    }
+    return;
+  }
+
+  // Claim the event before sending anything. The primary key on `event` is what
+  // makes this safe: two bot instances racing produces one failed insert, not
+  // two announcements in the same channel.
+  const { error: claimErr } = await supabase
+    .from('community_event_post')
+    .insert({ event: row.event_id, guild_id: row.guild_id, channel_id: channelId });
+  if (claimErr) {
+    if (claimErr.code !== '23505') console.error('[events] could not claim event:', claimErr);
+    return;
+  }
+
+  try {
+    const channel = await client.channels.fetch(channelId);
+    if (!channel?.isTextBased()) {
+      throw Object.assign(new Error('configured channel is not a text channel'), { code: 10003 });
+    }
+    const message = await channel.send({
+      content: eventAnnouncement(row),
+      embeds: [buildEventEmbed(row, APP_URL)],
+    });
+    await supabase
+      .from('community_event_post')
+      .update({ message_id: message.id })
+      .eq('event', row.event_id);
+    console.log(`[events] posted event #${row.event_id} to ${row.guild_id}/${channelId}`);
+  } catch (err) {
+    if (PERMANENT_DISCORD_ERRORS.has(err?.code)) {
+      // Keep the claim and record why. Retrying a channel the bot cannot post
+      // in would mean this line every minute until the event starts.
+      await supabase
+        .from('community_event_post')
+        .update({ error: String(err?.message ?? err).slice(0, 300) })
+        .eq('event', row.event_id);
+      console.error(`[events] giving up on event #${row.event_id}: ${err?.message ?? err}`);
+    } else {
+      // Release the claim so the next poll tries again.
+      await supabase.from('community_event_post').delete().eq('event', row.event_id);
+      console.error(`[events] event #${row.event_id} will be retried: ${err?.message ?? err}`);
+    }
+  }
+}
+
+async function postPendingEvents() {
+  try {
+    const { data, error } = await supabase.rpc('discord_pending_event_posts', { p_limit: 10 });
+    if (error) { console.error('[events] pending fetch failed:', error); return; }
+    for (const row of data ?? []) await postOneEvent(row);
+  } catch (err) {
+    console.error('postPendingEvents failed:', err);
+  }
+}
+
+/**
+ * Take down announcements for events that were deleted or hidden on the site.
+ * A Discord post advertising a tournament that is not happening is worse than
+ * never having posted it, which is why the ledger outlives the event row.
+ */
+async function retractEventPosts() {
+  try {
+    const { data, error } = await supabase
+      .from('community_event_post')
+      .select('event, channel_id, message_id')
+      .not('retract_at', 'is', null)
+      .limit(25);
+    if (error) { console.error('[events] retract fetch failed:', error); return; }
+
+    for (const row of data ?? []) {
+      try {
+        const channel = await client.channels.fetch(row.channel_id).catch(() => null);
+        const message = channel?.isTextBased()
+          ? await channel.messages.fetch(row.message_id).catch(() => null)
+          : null;
+        if (message) {
+          await message.delete();
+          console.log(`[events] retracted the post for event #${row.event}`);
+        }
+        // The row goes whether the message was there or not: gone is the state
+        // we wanted, and a message somebody already deleted by hand is done.
+        await supabase.from('community_event_post').delete().eq('event', row.event);
+      } catch (err) {
+        // Left in place on purpose. A bot can always delete its own message, so
+        // a failure here is transient and worth another pass.
+        console.error(`[events] retract failed for event #${row.event}, will retry:`, err?.message ?? err);
+      }
+    }
+  } catch (err) {
+    console.error('retractEventPosts failed:', err);
+  }
+}
+
 // ── Slash commands ────────────────────────────────────────────────────────────
 // `set()` replaces the whole global command list, so lib/slashCommands.js stays
 // the single source of truth and re-running this is idempotent.
@@ -1110,6 +1277,11 @@ client.once(Events.ClientReady, async (c) => {
 
   processThreadDeletionQueue();
   setInterval(processThreadDeletionQueue, DELETION_POLL_MS);
+
+  postPendingEvents();
+  retractEventPosts();
+  setInterval(postPendingEvents, EVENT_POLL_MS);
+  setInterval(retractEventPosts, EVENT_POLL_MS);
 
   console.log(`✅ Bot ready — logged in as ${c.user.tag}`);
   console.log(`   Active on ${c.guilds.cache.size} server(s)`);

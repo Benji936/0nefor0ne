@@ -88,9 +88,11 @@ test('prices render number-then-symbol, and a null price reads as trade only', (
 
 // ── definitions ───────────────────────────────────────────────────────────────
 
-test('registers exactly search, lf and duel, with duel as a launch entry point', () => {
+test('registers exactly search, lf, verify and duel, with duel as a launch entry point', () => {
   const defs = commandDefinitions();
-  assert.deepEqual(defs.map((d) => d.name), ['search', 'lf', 'duel']);
+  // The list replaces the full global command set on every boot, so anything
+  // missing here is a command that silently disappears from every server.
+  assert.deepEqual(defs.map((d) => d.name), ['search', 'lf', 'verify', 'duel']);
   const duel = defs.find((d) => d.name === 'duel');
   assert.equal(duel.type, 4); // PrimaryEntryPoint
   assert.equal(duel.handler, 2); // DiscordLaunchActivity

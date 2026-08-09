@@ -57,6 +57,52 @@ Push to GitHub → New Project → Deploy from repo → set Root Directory to
 
 ---
 
+## Community events → this server
+
+A community that is **verified** on 0nefor.one and linked to this server with
+`/verify` gets its events announced here. The owner creates the event once, on
+the website, and it appears in their own Discord without a second post.
+
+- **Where they go**: the channel set with `!seteventchannel`, or the announces
+  channel if that was never set. Nothing to configure for it to work.
+- **What links a server to a community**: `/verify` writes
+  `community_claim.discord_guild_id`. Only the claim belonging to the community's
+  *current* owner counts, so a shop that changed hands does not announce into the
+  previous owner's server.
+- **Verified is checked at post time**, not at event-creation time. A community
+  whose subscription lapsed stops being announced; the events it already posted
+  stay where they are.
+- **Deleted or hidden on the site → deleted here.** A post advertising a
+  tournament that is not happening is worse than never having posted it, so the
+  ledger outlives the event row specifically to be able to take the message down.
+- **Events that already started are never posted.** The bot being down over a
+  weekend means catching up on what is still ahead, not announcing a backlog.
+
+### Setup
+
+Apply `supabase/migrations/20260809_discord_event_posts.sql`, which creates
+`community_event_post` (the ledger of what has been announced) and
+`discord_pending_event_posts()` (what to announce next, service-role only).
+
+No new env vars. The bot polls once a minute, alongside the deletion queue.
+
+### When nothing appears
+
+Check, in order: the community is verified; `/verify` was run **in this server**
+by someone with Manage Server; the event is published and starts in the future;
+a channel is set. If the bot could not post at all, the reason is stored on the
+ledger row:
+
+```sql
+SELECT event, guild_id, channel_id, error FROM community_event_post WHERE error IS NOT NULL;
+```
+
+A row with an `error` is not retried — the bot gives up on a channel it cannot
+see or post in rather than logging the same failure every minute. Fix the
+permission, delete the row, and it will be picked up on the next poll.
+
+---
+
 ## Commands
 
 | Command | Who | Effect |
@@ -69,7 +115,9 @@ Push to GitHub → New Project → Deploy from repo → set Root Directory to
 | `!botcheck` | mod/admin | Shows watched channel **and plan (Free/Premium)** |
 | `!setchannel [#channel]` | Manage Server | Set the announces channel |
 | `!setmessage <text\|reset>` | Manage Server | Customize the thread message |
+| `!seteventchannel [#channel\|clear]` | Manage Server | Where this community's events are posted (defaults to the announces channel) |
 | `!setcommunity <url\|clear>` | **Premium** + Manage Server | Set the community link shown on announces |
+| `/verify <code>` | Manage Server | Link this server to your 0nefor.one community |
 
 The upgrade button uses `ButtonStyle.Premium` + your `sku_id`; Discord renders
 the checkout. Non-premium admins who try `!setcommunity` get the button too.
