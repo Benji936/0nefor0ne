@@ -6,10 +6,11 @@
 import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { requestClaimCode, verifyClaimCode, requestManualReview, startClaimCheckout, fetchMyClaim } from "@/lib/community";
-import { communityPricing, INTERVALS } from "@/lib/communityPricing";
+import { communityPricing } from "@/lib/communityPricing";
 import { isValidCode } from "@/lib/claimState";
 import { getCurrentSession, signInWithDiscord } from "@/lib/supabaseClient";
 import PlatformIcon from "@/components/community/PlatformIcon.vue";
+import PlanChooser from "@/components/community/PlanChooser.vue";
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -29,16 +30,10 @@ const doneMessage = ref("");
 const canVerify = computed(() => isValidCode(code.value) && !submitting.value);
 const price = computed(() => communityPricing(props.community));
 
-// Same offer as the self-verification route, same words. A claimed store and a
-// created one are buying the identical thing, and two descriptions of one price
-// is how a price stops being believed.
+// Same offer as the self-verification route, same component, same words. A
+// claimed store and a created one are buying the identical thing, and two
+// descriptions of one price is how a price stops being believed.
 const interval = ref("year");
-const plans = computed(() => INTERVALS.map((i) => ({
-  interval: i,
-  name: t(`communityVerify.plans.${i}.name`),
-  free: t(`communityVerify.plans.${i}.free`),
-  then: t(`communityVerify.plans.${i}.then`, { price: price.value[i].display }),
-})));
 
 watch(() => props.modelValue, async (open) => {
   if (!open) return;
@@ -190,22 +185,7 @@ async function sendManual() {
         <!-- Subscribe: pick a plan, both of which start free -->
         <template v-else-if="step === 'subscribe'">
           <p class="claim-body">{{ t('community.claimSubscribeBody') }}</p>
-          <fieldset class="claim-plans">
-            <label
-              v-for="p in plans"
-              :key="p.interval"
-              class="claim-plan"
-              :class="{ 'claim-plan--on': interval === p.interval }"
-            >
-              <input v-model="interval" class="claim-planRadio" type="radio" name="claim-plan" :value="p.interval" />
-              <span class="claim-planBody">
-                <span class="claim-planName">{{ p.name }}</span>
-                <span class="claim-planFree">{{ p.free }}</span>
-              </span>
-              <span class="claim-planThen">{{ p.then }}</span>
-            </label>
-          </fieldset>
-          <p class="claim-note">{{ t('communityVerify.plansWhy') }}</p>
+          <PlanChooser v-model="interval" :pricing="price" compact />
         </template>
 
         <!-- Manual review -->
@@ -288,7 +268,6 @@ async function sendManual() {
 .dlg-body::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 99px; }
 
 .claim-body { font-size: 13.5px; color: var(--c-muted); line-height: 1.6; margin: 0; }
-.claim-note { font-size: 12.5px; color: var(--c-muted); line-height: 1.55; margin: 0; }
 
 /* The price, on the step where the decision is still open. Full text colour
    rather than muted: it is the answer to the question being asked. */
@@ -298,26 +277,6 @@ async function sendManual() {
 }
 .claim-cost .v-icon { color: var(--c-trade); flex-shrink: 0; margin-top: 1px; }
 
-/* ── The two plans ─────────────────────────────────────────────────────────
-   Rows on rules, matching the verify route. A dialog is the last place to put
-   two pricing cards side by side. */
-.claim-plans { border: none; padding: 0; margin: 0; }
-.claim-plan {
-  display: flex; align-items: center; gap: 11px;
-  padding: 13px 10px 13px 2px;
-  border-top: 1px solid var(--c-border);
-  cursor: pointer;
-  transition: background-color .15s ease;
-}
-.claim-plan:last-of-type { border-bottom: 1px solid var(--c-border); }
-.claim-plan--on { background: var(--c-surface-2); }
-.claim-plan:hover:not(.claim-plan--on) { background: var(--c-surface-2); }
-.claim-plan:focus-within { outline: 2px solid var(--c-trade); outline-offset: -2px; }
-.claim-planRadio { accent-color: var(--c-trade); width: 16px; height: 16px; flex-shrink: 0; margin: 0 0 0 8px; cursor: pointer; }
-.claim-planBody { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
-.claim-planName { font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-muted); }
-.claim-planFree { font-size: 14.5px; font-weight: 700; line-height: 1.25; color: var(--c-text); }
-.claim-planThen { font-size: 12.5px; color: var(--c-muted); text-align: right; flex-shrink: 0; }
 
 .field-block { display: flex; flex-direction: column; gap: 6px; }
 .field-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-muted); }
