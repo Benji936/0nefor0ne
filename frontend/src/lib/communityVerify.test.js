@@ -171,3 +171,75 @@ describe("verifyStep", () => {
     expect(verifyStep({ community: group, claim, viewerId: "me" }).step).toBe("pay");
   });
 });
+
+// ── Paid through Discord ──────────────────────────────────────────────────────
+// A Guild Subscription bought for the bot verifies the same community. These
+// are the cases that would otherwise ask somebody to pay twice.
+
+describe("a community covered by a Discord Guild Subscription", () => {
+  const community = { id: 1, owner: "me", verified: true, kind: "discord", kinds: ["discord"] };
+  const covered = {
+    identity_verified_at: "2026-08-01T00:00:00Z",
+    discord_entitlement_at: "2026-08-09T00:00:00Z",
+  };
+
+  it("is done, and says the subscription came from Discord", () => {
+    const s = verifyStep({ community, claim: covered, viewerId: "me" });
+    expect(s.step).toBe("done");
+    expect(s.via).toBe("discord");
+  });
+
+  it("is not lapsed just because an old Stripe row says canceled", () => {
+    // This is One for One exactly: a cancelled Stripe subscription and a live
+    // Discord entitlement. Reading Stripe first showed "your subscription
+    // ended" to somebody who is paying right now.
+    const s = verifyStep({
+      community,
+      claim: { ...covered, subscription_status: "canceled" },
+      viewerId: "me",
+    });
+    expect(s.step).toBe("done");
+    expect(s.via).toBe("discord");
+  });
+
+  it("is not past-due either", () => {
+    const s = verifyStep({
+      community,
+      claim: { ...covered, subscription_status: "past_due" },
+      viewerId: "me",
+    });
+    expect(s.step).toBe("done");
+  });
+
+  it("still says stripe when that is what is paying", () => {
+    const s = verifyStep({
+      community,
+      claim: { identity_verified_at: "2026-08-01T00:00:00Z", subscription_status: "active" },
+      viewerId: "me",
+    });
+    expect(s.step).toBe("done");
+    expect(s.via).toBe("stripe");
+  });
+
+  it("does not skip proving: an entitlement without identity still asks for proof", () => {
+    const s = verifyStep({
+      community: { ...community, verified: false },
+      claim: { discord_entitlement_at: "2026-08-09T00:00:00Z" },
+      viewerId: "me",
+    });
+    expect(s.step).toBe("prove");
+  });
+
+  it("goes back to lapsed once the entitlement ends", () => {
+    const s = verifyStep({
+      community: { ...community, verified: false },
+      claim: {
+        identity_verified_at: "2026-08-01T00:00:00Z",
+        subscription_status: "canceled",
+        discord_entitlement_at: null,
+      },
+      viewerId: "me",
+    });
+    expect(s.step).toBe("lapsed");
+  });
+});

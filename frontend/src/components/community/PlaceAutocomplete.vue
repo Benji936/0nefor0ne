@@ -19,6 +19,12 @@ const props = defineProps({
   modelValue: { type: String, default: "" },
   placeholder: { type: String, default: "" },
   id: { type: String, default: null },
+  // Nominatim feature filter, e.g. "settlement" for a field that wants a town
+  // rather than the street, the district and the lake of the same name.
+  featureType: { type: String, default: null },
+  // What a pick writes back. An address field wants the whole unambiguous
+  // string; a City field wants the city, not "Geneva, Switzerland, Europe".
+  commit: { type: String, default: "full" },  // "full" | "primary"
 });
 const emit = defineEmits(["update:modelValue", "selected"]);
 const { t, locale } = useI18n();
@@ -48,7 +54,11 @@ async function run(q) {
   controller = new AbortController();
   loading.value = true;
   try {
-    const rows = await searchPlaces(q, { signal: controller.signal, locale: locale.value });
+    const rows = await searchPlaces(q, {
+      signal: controller.signal,
+      locale: locale.value,
+      featureType: props.featureType,
+    });
     results.value = rows;
     open.value = rows.length > 0;
     activeIdx.value = -1;
@@ -73,7 +83,7 @@ function onInput(e) {
 
 function choose(p) {
   suppress = true;
-  emit("update:modelValue", p.value);
+  emit("update:modelValue", props.commit === "primary" ? p.primary : p.value);
   emit("selected", p);
   cancelPending();
   open.value = false;

@@ -99,8 +99,105 @@ function entitlementIsActive(ent) {
   return ends === null || ends > Date.now();
 }
 
+// Guilds whose linked community is verified on the website. Paying either way
+// buys the same thing, so a store that subscribed on 0nefor.one gets the bot's
+// premium features here without buying a second subscription through Discord.
+//
+// This is the only honest form of "and vice versa": Discord mints Guild
+// Subscription entitlements when somebody pays Discord, and there is no
+// production API to grant one for free. So the bot honours the website's
+// answer rather than pretending Discord issued something.
+const siteVerifiedGuilds = new Set();
+
 function isPremiumGuild(guildId) {
-  return premiumGuilds.has(guildId);
+  return premiumGuilds.has(guildId) || siteVerifiedGuilds.has(guildId);
+}
+
+/**
+ * A Discord Guild Subscription verifies the linked community on the website.
+ *
+ * Two things have to be true beyond the entitlement, and the second is the one
+ * that matters: the guild must be linked to a community by /verify, and the
+ * Discord account that **owns the guild** must be the account that owns the
+ * community. Manage Server is enough to link a server; it is not enough to
+ * spend the server owner's subscription on your own listing.
+ *
+ * Writes only `discord_entitlement_at`, then asks the database to recompute.
+ * `community.verified` is derived from Stripe and Discord together, so an
+ * entitlement ending can never strip the badge from somebody paying by card.
+ */
+async function syncGuildEntitlement(guildId, active) {
+  try {
+    const guild = client.guilds.cache.get(guildId);
+    if (!guild) return; // not a server we are in; nothing to check ownership against
+
+    const { data, error } = await supabase.rpc('discord_entitlement_target', { p_guild_id: guildId });
+    if (error) { console.error('[entitlement→site] target lookup failed:', error); return; }
+    const target = Array.isArray(data) ? data[0] : null;
+    if (!target?.community_id) return; // never linked, or identity not proved yet
+
+    if (!target.owner_discord_id || target.owner_discord_id !== guild.ownerId) {
+      // Linked, but by somebody who is not the server's owner. Say so once
+      // rather than every ten minutes.
+      if (active && !entitlementOwnerWarned.has(guildId)) {
+        entitlementOwnerWarned.add(guildId);
+        console.warn(
+          `[entitlement→site] guild ${guildId} is premium but its owner is not the community owner — not verifying`,
+        );
+      }
+      return;
+    }
+
+    const { data: claim } = await supabase
+      .from('community_claim')
+      .select('id, discord_entitlement_at')
+      .eq('community', target.community_id)
+      .not('discord_guild_id', 'is', null)
+      .maybeSingle();
+    if (!claim) return;
+
+    const held = claim.discord_entitlement_at != null;
+    if (held === active) return; // already in the state we want; no write, no noise
+
+    const { error: writeErr } = await supabase
+      .from('community_claim')
+      .update({ discord_entitlement_at: active ? new Date().toISOString() : null })
+      .eq('id', claim.id);
+    if (writeErr) { console.error('[entitlement→site] write failed:', writeErr); return; }
+
+    const { data: verified, error: recErr } = await supabase
+      .rpc('recompute_community_verified', { p_community: target.community_id });
+    if (recErr) { console.error('[entitlement→site] recompute failed:', recErr); return; }
+
+    console.log(
+      `[entitlement→site] guild ${guildId} → community ${target.community_id}: ` +
+      `entitlement ${active ? 'granted' : 'ended'}, verified=${verified}`,
+    );
+  } catch (err) {
+    console.error('syncGuildEntitlement failed:', err);
+  }
+}
+
+const entitlementOwnerWarned = new Set();
+
+/** The reverse direction: who is verified on the website right now. */
+async function syncSiteVerifiedGuilds() {
+  try {
+    const { data, error } = await supabase
+      .from('community_claim')
+      .select('discord_guild_id, community!inner(verified)')
+      .not('discord_guild_id', 'is', null)
+      .eq('community.verified', true);
+    if (error) { console.error('[site→premium] fetch failed:', error); return; }
+
+    siteVerifiedGuilds.clear();
+    for (const row of data ?? []) {
+      if (row.discord_guild_id) siteVerifiedGuilds.add(row.discord_guild_id);
+    }
+    console.log(`[site→premium] ${siteVerifiedGuilds.size} guild(s) premium via website verification`);
+  } catch (err) {
+    console.error('syncSiteVerifiedGuilds failed:', err);
+  }
 }
 
 /**
@@ -124,6 +221,14 @@ async function syncEntitlements(client) {
     premiumGuilds.clear();
     for (const id of next) premiumGuilds.add(id);
     console.log(`[entitlements] synced — ${premiumGuilds.size} premium guild(s)`);
+
+    // Push the answer to the website for every server we are in, not only the
+    // premium ones: this is also how an entitlement that ended while the bot
+    // was down gets cleared. syncGuildEntitlement writes nothing when the state
+    // already matches, so the usual pass is all reads.
+    for (const guildId of client.guilds.cache.keys()) {
+      await syncGuildEntitlement(guildId, premiumGuilds.has(guildId));
+    }
   } catch (err) {
     console.error('[entitlements] sync failed:', err);
   }
@@ -900,6 +1005,7 @@ client.on(Events.EntitlementCreate, (ent) => {
   if (ent.guildId && entitlementIsActive(ent)) {
     premiumGuilds.add(ent.guildId);
     console.log(`[entitlements] +premium guild ${ent.guildId}`);
+    syncGuildEntitlement(ent.guildId, true);
   }
 });
 
@@ -908,9 +1014,11 @@ client.on(Events.EntitlementUpdate, (_oldEnt, ent) => {
   if (!ent.guildId) return;
   if (entitlementIsActive(ent)) {
     premiumGuilds.add(ent.guildId);
+    syncGuildEntitlement(ent.guildId, true);
   } else {
     premiumGuilds.delete(ent.guildId);
     console.log(`[entitlements] -premium guild ${ent.guildId} (ended)`);
+    syncGuildEntitlement(ent.guildId, false);
   }
 });
 
@@ -919,6 +1027,7 @@ client.on(Events.EntitlementDelete, (ent) => {
   if (ent.guildId) {
     premiumGuilds.delete(ent.guildId);
     console.log(`[entitlements] -premium guild ${ent.guildId} (removed)`);
+    syncGuildEntitlement(ent.guildId, false);
   }
 });
 
@@ -1273,7 +1382,13 @@ client.once(Events.ClientReady, async (c) => {
   await loadAllGuildConfigs();
   await registerSlashCommands(c);
   await syncEntitlements(c);
-  setInterval(() => syncEntitlements(c), ENTITLEMENT_RESYNC_MS);
+  await syncSiteVerifiedGuilds();
+  setInterval(async () => {
+    await syncEntitlements(c);
+    // After, not before: a guild this pass just verified should count as
+    // premium here on the same tick rather than ten minutes later.
+    await syncSiteVerifiedGuilds();
+  }, ENTITLEMENT_RESYNC_MS);
 
   processThreadDeletionQueue();
   setInterval(processThreadDeletionQueue, DELETION_POLL_MS);

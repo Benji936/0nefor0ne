@@ -288,6 +288,10 @@ const edit = ref({
   name: "", bio: "", links: [], kinds: [],
   city: "", country: "", avatar_url: null, banner_url: null,
   remote_duel: false,
+  // The pin the community already has, carried through untouched so saving a
+  // bio does not send the address back to the geocoder. Cleared the moment the
+  // address is edited, which is what asks for a fresh lookup — see watchEdit.
+  lat: null, lng: null,
 });
 
 // A place picks up a Discord server or starts a play group long after its page
@@ -303,6 +307,23 @@ function toggleEditKind(k) {
 // links carry no id). Never persisted; sanitizeLinks reads only platform/url/label.
 let linkKey = 0;
 
+// An edited address invalidates the pin that came with it. Dropping the
+// coordinates is what tells updateCommunity to look the new one up; keeping them
+// would leave a community showing a new city and sitting on the old city's map
+// for the rest of its life.
+//
+// Compared against the address the pin belongs to rather than against the
+// previous value, because opening the editor writes the whole working copy at
+// once: a watcher reading "the city changed" would fire on that too, and throw
+// away the coordinates startEdit had just seeded.
+const addressOf = (e) => `${e.city} ${e.country}`;
+let pinnedFor = "";
+watch(() => addressOf(edit.value), (now) => {
+  if (now === pinnedFor) return;
+  edit.value.lat = null;
+  edit.value.lng = null;
+});
+
 function startEdit() {
   const c = community.value;
   if (!c) return;
@@ -315,10 +336,14 @@ function startEdit() {
     city: c.city ?? "", country: c.country ?? "",
     avatar_url: c.avatar_url ?? null, banner_url: c.banner_url ?? null,
     remote_duel: !!c.remote_duel,
+    lat: Number.isFinite(c.lat) ? c.lat : null,
+    lng: Number.isFinite(c.lng) ? c.lng : null,
   };
+  pinnedFor = addressOf(edit.value);
   editErr.value = "";
   editing.value = true;
 }
+
 function cancelEdit() { editing.value = false; editErr.value = ""; }
 
 // ── Link editor ──────────────────────────────────────────────────────────────
@@ -403,6 +428,8 @@ async function saveEdit() {
       kinds:       edit.value.kinds,
       city:        edit.value.city.trim() || null,
       country:     edit.value.country || null,
+      lat:         edit.value.lat,
+      lng:         edit.value.lng,
       avatar_url:  edit.value.avatar_url || null,
       banner_url:  edit.value.banner_url || null,
       remote_duel: edit.value.remote_duel,

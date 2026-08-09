@@ -4,7 +4,8 @@ import { useI18n } from "vue-i18n";
 import { createCommunity, ALREADY_OWN_ONE } from "@/lib/community";
 import { KINDS, TYPE_KEYS } from "@/lib/communityKinds";
 import CommunityKindIcon from "@/components/community/CommunityKindIcon.vue";
-import { COUNTRIES } from "@/lib/countries";
+import PlaceAutocomplete from "@/components/community/PlaceAutocomplete.vue";
+import { COUNTRIES, countryByCode } from "@/lib/countries";
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -20,6 +21,11 @@ const discordUrl = ref("");
 const city       = ref("");
 const country    = ref("");
 const remoteDuel = ref(false);
+// Set only by picking a suggestion. Free text is still allowed, and then
+// createCommunity looks the city up itself — this just saves the round trip and
+// pins the exact place the owner chose rather than the best guess for its name.
+const lat = ref(null);
+const lng = ref(null);
 
 const submitting = ref(false);
 const errorMsg    = ref("");
@@ -39,6 +45,27 @@ watch(() => props.modelValue, open => {
   name.value = ""; kinds.value = ["store"]; bio.value = "";
   website.value = ""; discordUrl.value = ""; city.value = ""; country.value = "";
   remoteDuel.value = false;
+  lat.value = null; lng.value = null;
+});
+
+// A picked suggestion carries its own coordinates and its own country, so the
+// two fields below it stop being two more things to get right by hand. Typing
+// over the city afterwards drops the pin again (watch below), because the text
+// no longer describes the place we pinned.
+// The city text the pin belongs to. Compared rather than watched for any
+// change, because picking a suggestion writes the text and the coordinates in
+// that order, and a plain watcher would throw away the pin it just arrived with.
+let pinnedFor = "";
+function onCityPicked(place) {
+  lat.value = Number.isFinite(place.lat) ? place.lat : null;
+  lng.value = Number.isFinite(place.lon) ? place.lon : null;
+  pinnedFor = city.value;
+  const known = countryByCode(place.countryCode);
+  if (known) country.value = known.name;
+}
+watch(city, (v) => {
+  if (v === pinnedFor) return;
+  lat.value = null; lng.value = null;
 });
 
 // Order is meaning: the first kind picked is the primary one, the glyph the
@@ -62,6 +89,8 @@ async function submit() {
       discord_url: discordUrl.value.trim() || null,
       city:        city.value.trim() || null,
       country:     country.value || null,
+      lat:         lat.value,
+      lng:         lng.value,
       remote_duel: remoteDuel.value,
     };
     const row = await createCommunity({ kinds: kinds.value, ...patch });
@@ -166,8 +195,16 @@ async function submit() {
           <!-- City + Country -->
           <div class="field-row">
             <div class="field-block" style="flex:1">
-              <label class="field-label">{{ t('community.fieldCity') }}</label>
-              <input v-model="city" type="text" class="field-input" />
+              <label class="field-label" for="community-city">{{ t('community.fieldCity') }}</label>
+              <!-- Picking a real city is what puts the community on the map, so
+                   the field offers real cities instead of trusting a spelling. -->
+              <PlaceAutocomplete
+                id="community-city"
+                v-model="city"
+                feature-type="settlement"
+                commit="primary"
+                @selected="onCityPicked"
+              />
             </div>
             <div class="field-block" style="flex:1">
               <label class="field-label">{{ t('community.fieldCountry') }}</label>
