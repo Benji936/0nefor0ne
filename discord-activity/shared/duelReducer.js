@@ -14,12 +14,68 @@ export function initialState() {
     timer: { running: false, startedAt: null, baseElapsedMs: 0 },
     log: [], // [{ seq, text, at }]
     chat: [], // [{ seq, uid, name, text, at }]
+    // Set by the server from a verified store's grant, never by a client
+    // message. See CLIENT_ACTIONS below and the Worker's /api/tournament.
+    tournament: false,
+    host: null, // { name, slug } — the verified community hosting this duel
+    match: null, // { bestOf, rounds: [{ n, winner, lp, at }] }
     seq: 0,
   };
 }
 
+/**
+ * Everything a client is allowed to ask for.
+ *
+ * Actions arrive as JSON over a socket, so without this list a player could
+ * send `{ t: 'tournament:enable' }` and hand themselves a paid feature. The
+ * server-only actions are deliberately absent.
+ */
+export const CLIENT_ACTIONS = new Set([
+  'adjustLp', 'setLp', 'resetDuel',
+  'coin', 'dice', 'firstTurn', 'setTurn',
+  'chat',
+  'timer:start', 'timer:pause', 'timer:reset',
+  'match:start', 'match:round', 'match:undo', 'match:reset',
+]);
+
+const BEST_OF = [1, 3, 5];
+
+/** Rounds needed to take the match. Best of 3 is two. */
+export function roundsToWin(bestOf) {
+  return Math.floor((BEST_OF.includes(bestOf) ? bestOf : 3) / 2) + 1;
+}
+
+/** Rounds won per player, as a plain object. */
+export function matchScore(match) {
+  const tally = {};
+  for (const round of match?.rounds ?? []) {
+    tally[round.winner] = (tally[round.winner] ?? 0) + 1;
+  }
+  return tally;
+}
+
+/** Who has taken the match, or null while it is still open. */
+export function matchWinner(match) {
+  if (!match) return null;
+  const need = roundsToWin(match.bestOf);
+  const tally = matchScore(match);
+  for (const [uid, won] of Object.entries(tally)) {
+    if (won >= need) return uid;
+  }
+  return null;
+}
+
 const CHAT_MAX_LEN = 240;
 const CHAT_HISTORY = 60;
+
+const STOPPED_TIMER = { running: false, startedAt: null, baseElapsedMs: 0 };
+
+/** Everyone back to full life. Used at a reset and between rounds. */
+function freshLp(state, startLp = state.startLp) {
+  const lp = {};
+  for (const id of state.order) lp[id] = startLp;
+  return lp;
+}
 
 function commit(state, patch, logText) {
   const seq = state.seq + 1;
@@ -86,19 +142,88 @@ export function reduce(state, action) {
 
     case 'resetDuel': {
       const startLp = Math.max(1, Math.floor(action.startLp || state.startLp));
-      const lp = {};
-      for (const id of state.order) lp[id] = startLp;
       return commit(
         state,
         {
           startLp,
-          lp,
+          lp: freshLp(state, startLp),
           turn: null,
           coin: null,
           dice: null,
-          timer: { running: false, startedAt: null, baseElapsedMs: 0 },
+          timer: { ...STOPPED_TIMER },
         },
         `New duel — ${startLp} LP each`,
+      );
+    }
+
+    // ── Tournament, for a verified store ──────────────────────────────────────
+    // Server-only: set from the grant the Worker issues, not from a socket
+    // message. It is absent from CLIENT_ACTIONS on purpose.
+    case 'tournament:enable': {
+      if (state.tournament && !action.host) return state;
+      return commit(state, { tournament: true, host: action.host ?? state.host });
+    }
+
+    case 'match:start': {
+      if (!state.tournament) return state;
+      const bestOf = BEST_OF.includes(action.bestOf) ? action.bestOf : 3;
+      return commit(
+        state,
+        {
+          match: { bestOf, rounds: [] },
+          lp: freshLp(state),
+          turn: null,
+          coin: null,
+          dice: null,
+          timer: { ...STOPPED_TIMER },
+        },
+        `Match started — best of ${bestOf}`,
+      );
+    }
+
+    // One round decided. The life totals are snapshotted before they are reset,
+    // because the score line of a round is part of the result a judge is asked
+    // to confirm afterwards.
+    case 'match:round': {
+      if (!state.tournament || !state.match) return state;
+      if (matchWinner(state.match)) return state;
+      const winner = action.winner;
+      if (!state.players[winner]) return state;
+
+      const round = {
+        n: state.match.rounds.length + 1,
+        winner,
+        lp: { ...state.lp },
+        at: Date.now(),
+      };
+      const match = { ...state.match, rounds: [...state.match.rounds, round] };
+      const winnerName = state.players[winner].name;
+      const decided = matchWinner(match);
+      const score = matchScore(match);
+
+      return commit(
+        state,
+        { match, lp: freshLp(state), turn: null, timer: { ...STOPPED_TIMER } },
+        decided
+          ? `${winnerName} wins the match ${score[decided]}–${Math.max(0, match.rounds.length - score[decided])}`
+          : `${winnerName} takes round ${round.n}`,
+      );
+    }
+
+    // A misclick during a match is a result somebody has to argue about, so it
+    // is undoable rather than only resettable.
+    case 'match:undo': {
+      if (!state.tournament || !state.match?.rounds.length) return state;
+      const rounds = state.match.rounds.slice(0, -1);
+      return commit(state, { match: { ...state.match, rounds } }, `Round ${rounds.length + 1} taken back`);
+    }
+
+    case 'match:reset': {
+      if (!state.tournament || !state.match) return state;
+      return commit(
+        state,
+        { match: null, lp: freshLp(state), turn: null, timer: { ...STOPPED_TIMER } },
+        'Match cleared',
       );
     }
 

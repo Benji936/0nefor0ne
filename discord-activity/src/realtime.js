@@ -2,7 +2,7 @@
 // server (same origin), so in Discord the traffic rides through the built-in
 // `/.proxy/` mapping — no external-domain URL mapping required.
 
-export function createRoom({ instanceId, user, onState }) {
+export function createRoom({ instanceId, user, grant = null, onState }) {
   const isEmbedded = Boolean(new URLSearchParams(window.location.search).get('frame_id'));
   const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
   const prefix = isEmbedded ? '/.proxy/ws' : '/ws';
@@ -13,6 +13,10 @@ export function createRoom({ instanceId, user, onState }) {
     name: user.global_name || user.username || 'Duelist',
     avatar: user.avatar || '',
   });
+  // Signed by the Worker, checked by the Worker. Carrying it here rather than
+  // asserting "tournament=1" is the point: the socket cannot be talked into
+  // turning the feature on.
+  if (grant) qs.set('grant', grant);
 
   let ws = null;
   let closed = false;
