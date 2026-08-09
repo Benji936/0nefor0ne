@@ -18,6 +18,7 @@ import { readFile } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { slugify, withSuffix } from "../src/lib/communitySlug.js";
+import { canonicalCountry } from "../src/lib/countries.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const STORES = resolve(__dirname, "../../data/stores.json");
@@ -46,7 +47,11 @@ function toRow(store, usedSlugs) {
     slug,
     website: store.website ?? null,
     city: a.city ?? null,
-    country: a.country ?? null,
+    // Spelled the way the directory filter spells it. The source writes long
+    // forms ("Republic of Indonesia") that no country picker offers, which
+    // files a store where nobody can filter for it.
+    country: canonicalCountry(a.country)?.name ?? a.country ?? null,
+    country_code: canonicalCountry(a.country)?.code ?? null,
     region: store.region ?? null,
     lat: store.latitude ?? null,
     lng: store.longitude ?? null,

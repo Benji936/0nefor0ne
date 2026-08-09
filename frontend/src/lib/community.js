@@ -3,7 +3,7 @@ import { slugify, withSuffix } from "@/lib/communitySlug";
 import { sanitizeLinks } from "@/lib/communityLinks";
 import { normalizeKinds } from "@/lib/communityKinds";
 import { normalizeInterval } from "@/lib/communityPricing";
-import { codeForCountry, countryByCode } from "@/lib/countries";
+import { codeForCountry, countryByCode, canonicalCountry } from "@/lib/countries";
 import { geocodePlace } from "@/lib/geocode";
 import { invokeFunction } from "@/lib/edgeFunction";
 
@@ -60,10 +60,14 @@ async function uniqueSlug(name, city) {
 export async function resolveLocation({ city, country, lat, lng } = {}) {
   const known = Number.isFinite(lat) && Number.isFinite(lng);
   const cityText = String(city ?? "").trim();
-  const countryText = String(country ?? "").trim();
+  // Spelled the way the directory filter spells it, or left exactly as written
+  // when it is not a country we know. Somewhere unrecognised keeps its name;
+  // it is a gap in our list, not the owner getting it wrong.
+  const countryText = canonicalCountry(country)?.name ?? String(country ?? "").trim();
+  const noPin = { country: countryText || null, country_code: codeForCountry(countryText) };
 
-  if (known) return { lat, lng, country: country ?? null, country_code: codeForCountry(country) };
-  if (!cityText) return { lat: null, lng: null, country: country ?? null, country_code: codeForCountry(country) };
+  if (known) return { lat, lng, ...noPin };
+  if (!cityText) return { lat: null, lng: null, ...noPin };
 
   let place = null;
   try {
@@ -74,7 +78,7 @@ export async function resolveLocation({ city, country, lat, lng } = {}) {
     console.error("resolveLocation failed", e);
   }
   if (!place || !Number.isFinite(place.lat) || !Number.isFinite(place.lon)) {
-    return { lat: null, lng: null, country: country ?? null, country_code: codeForCountry(country) };
+    return { lat: null, lng: null, ...noPin };
   }
 
   // Only fill a country in, never overwrite one: the owner picked theirs from a

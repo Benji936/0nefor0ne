@@ -219,12 +219,55 @@ export const DIAL_CODE_ITEMS = COUNTRIES.map(c => ({
   value: c.dialCode,
 }));
 
+// ── Name matching ───────────────────────────────────────────────────────────
+// A country arrives spelled by whoever wrote it down: the store importer, a
+// geocoder, a form. The directory filter compares country names literally
+// against this list, so a row filed as "Republic of Indonesia" is a row nobody
+// can find by picking Indonesia — it is in the directory and out of it at the
+// same time. Everything that writes a country resolves it through here first.
+
+/** Names that mean a country on this list but are not spelled the way it is. */
+const ALIASES = new Map(Object.entries({
+  // ISO and most geocoders use the long form; this list uses the short one.
+  "republic of indonesia": "ID",
+  "united states of america": "US",
+  "the netherlands": "NL",
+  "kingdom of the netherlands": "NL",
+  "russian federation": "RU",
+  "republic of korea": "KR",
+  "south korea": "KR",
+  "viet nam": "VN",
+  "czechia": "CZ",
+  "türkiye": "TR",
+  "turkiye": "TR",
+  "united republic of tanzania": "TZ",
+  "myanmar (burma)": "MM",
+  "burma": "MM",
+  "cape verde": "CV",
+  "ivory coast": "CI",
+  "swaziland": "SZ",
+  "macedonia": "MK",
+}));
+
+/** Lookup key: case and the "and" / "&" split this list makes are not meaning.
+ *  Written as a rule rather than six alias entries because every "X and Y"
+ *  country on the list has the same mismatch, including the ones nobody has
+ *  imported yet. */
+const key = (name) => String(name).trim().toLowerCase().replace(/\s+and\s+/g, " & ");
+
+const BY_KEY = new Map(COUNTRIES.map(c => [key(c.name), c]));
+
+/** The entry a written country name means, or null if it is not one we know. */
+export function canonicalCountry(name) {
+  if (!name) return null;
+  const k = key(name);
+  return BY_KEY.get(k) ?? countryByCode(ALIASES.get(k)) ?? null;
+}
+
 /** Name to ISO code, for the forms that store a country by name.
  *  The community form's select carries `name` as its value (that is what the
  *  directory filters on), but pricing and currency read country_code, so the
  *  code has to be derived at write time or it is never set at all. */
-const CODE_BY_NAME = new Map(COUNTRIES.map(c => [c.name.toLowerCase(), c.code]));
 export function codeForCountry(name) {
-  if (!name) return null;
-  return CODE_BY_NAME.get(String(name).trim().toLowerCase()) ?? null;
+  return canonicalCountry(name)?.code ?? null;
 }

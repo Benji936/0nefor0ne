@@ -8,6 +8,11 @@
  *   country  — no country, so it is missing from the directory's country filter
  *              and priced in the USD fallback. Resolved backward, from the pin.
  *
+ * It also re-spells countries written a way the country picker does not offer.
+ * The directory filter compares names literally, so a store filed under
+ * "Republic of Indonesia" is listed and unfindable at the same time: picking
+ * Indonesia never matches it.
+ *
  * The forms now write both (see resolveLocation in src/lib/community.js); this
  * is for the rows that predate that, and for anything a future importer lands
  * without. Idempotent: it only ever touches rows that are missing a value, and
@@ -28,7 +33,7 @@
  *   SUPABASE_SERVICE_ROLE_KEY=... node scripts/backfill-community-geo.mjs
  */
 import { createClient } from "@supabase/supabase-js";
-import { countryByCode } from "../src/lib/countries.js";
+import { countryByCode, canonicalCountry } from "../src/lib/countries.js";
 
 const DRY = process.argv.includes("--dry-run");
 const LIMIT = parseInt(process.argv.find((a) => a.startsWith("--limit="))?.split("=")[1] ?? "0", 10);
@@ -77,7 +82,43 @@ async function reverse(lat, lng) {
   return row?.address?.country_code?.toUpperCase() ?? null;
 }
 
+/**
+ * Re-spell countries the country picker does not offer.
+ *
+ * Costs no geocoder call, so it runs over every row rather than only the ones
+ * with a gap: a country can be perfectly filled in and still be the wrong
+ * string. Discovered by paging (PostgREST caps a read at 1000 rows), then
+ * applied one bulk update per distinct misspelling.
+ */
+async function normalizeNames() {
+  const wrong = new Map();  // as written -> canonical entry
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await db
+      .from("community").select("country").not("country", "is", null)
+      .order("id").range(from, from + 999);
+    if (error) { console.error("read failed", error); process.exit(1); }
+    for (const { country } of data) {
+      const known = canonicalCountry(country);
+      if (known && known.name !== country) wrong.set(country, known);
+    }
+    if (data.length < 1000) break;
+  }
+
+  if (!wrong.size) { console.log("country names: all already canonical\n"); return; }
+  for (const [written, known] of wrong) {
+    console.log(`  ✓ "${written}" -> "${known.name}" (${known.code})`);
+    if (DRY) continue;
+    const { error } = await db
+      .from("community").update({ country: known.name, country_code: known.code })
+      .eq("country", written);
+    if (error) console.error(`  ! rename failed for "${written}"`, error.message);
+  }
+  console.log(`renamed ${wrong.size} country spelling(s)\n`);
+}
+
 async function main() {
+  await normalizeNames();
+
   const { data, error } = await db
     .from("community")
     .select("id, name, city, country, country_code, lat, lng")
