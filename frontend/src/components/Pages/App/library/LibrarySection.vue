@@ -14,16 +14,30 @@ defineProps({
   emptyText: { type: String,  default: "Nothing here yet." },
   ringClass: { type: String,  default: "ring-blue-400" },
   view:      { type: String,  default: "list" }, // 'list' (rows) | 'grid' (tiles)
+  // A wishlist renders one of these per named list. Those sub-sections share
+  // one add button and one heading level with the section above them, so both
+  // are optional rather than assumed.
+  showAdd:   { type: Boolean, default: true },
+  dense:     { type: Boolean, default: false },
+  // The lists a card can be moved to. Empty for the trade pile, which has none.
+  lists:     { type: Array,   default: () => [] },
 });
 
-const emit = defineEmits(["added", "deleted"]);
+const emit = defineEmits(["added", "deleted", "move"]);
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
-    <div class="flex flex-row items-center justify-between">
-      <p class="text-left text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">{{ title }}</p>
-      <AddCard :mode="mode" @added="emit('added', $event)" />
+  <div class="flex flex-col" :class="dense ? 'gap-2' : 'gap-4'">
+    <div class="flex flex-row items-center justify-between gap-2">
+      <p
+        class="text-left font-semibold tracking-wide"
+        :class="dense ? 'text-sm' : 'text-xl uppercase'"
+        :style="{ color: dense ? 'var(--c-muted)' : 'var(--c-text)' }"
+      >{{ title }}</p>
+      <div class="flex items-center gap-1">
+        <slot name="actions" />
+        <AddCard v-if="showAdd" :mode="mode" @added="emit('added', $event)" />
+      </div>
     </div>
 
     <!-- Skeleton -->
@@ -56,10 +70,19 @@ const emit = defineEmits(["added", "deleted"]);
           :wish="card"
           :layout="view"
           :class="newCardId === card.id ? `ring-2 ${ringClass}` : ''"
+          :lists="lists"
           @deleted="emit('deleted', $event)"
+          @move="emit('move', $event)"
         />
       </TransitionGroup>
-      <div v-if="cards.length === 0" class="flex flex-col items-center gap-3 py-10 text-center">
+      <!-- A named list that is empty says so in one line. The full empty state,
+           with its go-and-search prompt, belongs to a whole empty section. -->
+      <p
+        v-if="cards.length === 0 && dense"
+        class="text-xs py-2"
+        style="color: var(--c-muted)"
+      >{{ emptyText }}</p>
+      <div v-else-if="cards.length === 0" class="flex flex-col items-center gap-3 py-10 text-center">
         <div
           class="size-12 rounded-2xl flex items-center justify-center"
           style="background: color-mix(in srgb, var(--c-muted) 10%, transparent)"
