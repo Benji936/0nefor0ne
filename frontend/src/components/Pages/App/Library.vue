@@ -135,6 +135,9 @@ const { t } = useI18n();
         :new-card-id="newCardId"
         :empty-text="t('wishlists.emptyList')"
         ring-class="ring-pink-400"
+        collapsible
+        :collapsed="isCollapsed(group)"
+        @update:collapsed="setCollapsed(group, $event)"
         @deleted="onCardDeleted"
         @move="onCardMoved"
       >
@@ -201,6 +204,9 @@ export default {
     return {
       MAX_NAME_LEN,
       wishlists: [],
+      // Keys of the folded lists ('unsorted' for the unfiled group). An array
+      // rather than a Set so it survives JSON on the way to localStorage.
+      collapsedLists: [],
       listDialog: { open: false, id: null, name: '' },
       wished_cards: ref([]),
       wishes_quantity: 0,
@@ -258,6 +264,39 @@ export default {
           .map(c => c.locked_original_card_id)
       );
       return cards.filter(c => c.status === 'locked' || !lockedOriginalIds.has(c.id));
+    },
+
+    // ── Folding ───────────────────────────────────────────────────────
+    /** The stable key for a group. Unsorted has no id, but still folds. */
+    groupKey(group) {
+      return String(group.id ?? 'unsorted');
+    },
+    isCollapsed(group) {
+      return this.collapsedLists.includes(this.groupKey(group));
+    },
+    setCollapsed(group, collapsed) {
+      const key = this.groupKey(group);
+      this.collapsedLists = collapsed
+        ? [...this.collapsedLists, key]
+        : this.collapsedLists.filter(k => k !== key);
+      this.persistCollapsed();
+    },
+    persistCollapsed() {
+      if (typeof localStorage === 'undefined') return;
+      // Drop keys for lists that no longer exist, so deleting and remaking a
+      // list does not inherit the folded state of a different one.
+      const live = new Set(this.wishlistGroups.map(g => this.groupKey(g)));
+      this.collapsedLists = this.collapsedLists.filter(k => live.has(k));
+      localStorage.setItem('libraryCollapsedLists', JSON.stringify(this.collapsedLists));
+    },
+    restoreCollapsed() {
+      if (typeof localStorage === 'undefined') return;
+      try {
+        const saved = JSON.parse(localStorage.getItem('libraryCollapsedLists') ?? '[]');
+        if (Array.isArray(saved)) this.collapsedLists = saved.map(String);
+      } catch {
+        this.collapsedLists = [];
+      }
     },
 
     // ── Named wishlists ───────────────────────────────────────────────
@@ -409,6 +448,7 @@ export default {
     // Restore the saved collection layout (default: compact rows).
     const savedView = typeof localStorage !== 'undefined' ? localStorage.getItem('libraryView') : null;
     if (savedView === 'grid' || savedView === 'list') this.viewMode = savedView;
+    this.restoreCollapsed();
 
     await this.loadEverything();
   },

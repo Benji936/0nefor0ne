@@ -21,19 +21,39 @@ defineProps({
   dense:     { type: Boolean, default: false },
   // The lists a card can be moved to. Empty for the trade pile, which has none.
   lists:     { type: Array,   default: () => [] },
+  // Fold this section down to its heading. The state lives with the parent so
+  // it can be remembered between visits; this component only asks to flip it.
+  collapsible: { type: Boolean, default: false },
+  collapsed:   { type: Boolean, default: false },
 });
 
-const emit = defineEmits(["added", "deleted", "move"]);
+const emit = defineEmits(["added", "deleted", "move", "update:collapsed"]);
 </script>
 
 <template>
   <div class="flex flex-col" :class="dense ? 'gap-2' : 'gap-4'">
     <div class="flex flex-row items-center justify-between gap-2">
-      <p
-        class="text-left font-semibold tracking-wide"
-        :class="dense ? 'text-sm' : 'text-xl uppercase'"
+      <!-- The whole heading is the hit target when it folds: a chevron alone is
+           a small thing to ask somebody to aim at repeatedly. -->
+      <component
+        :is="collapsible ? 'button' : 'p'"
+        class="flex items-center gap-1.5 text-left font-semibold tracking-wide min-w-0"
+        :class="[dense ? 'text-sm' : 'text-xl uppercase', collapsible ? 'ls-toggle' : '']"
         :style="{ color: dense ? 'var(--c-muted)' : 'var(--c-text)' }"
-      >{{ title }}</p>
+        :aria-expanded="collapsible ? String(!collapsed) : null"
+        @click="collapsible && emit('update:collapsed', !collapsed)"
+      >
+        <v-icon
+          v-if="collapsible"
+          icon="mdi-chevron-down"
+          :size="dense ? 16 : 20"
+          class="ls-chev shrink-0"
+          :class="{ 'ls-chev--closed': collapsed }"
+        />
+        <span class="truncate">{{ title }}</span>
+        <!-- The count is what makes a folded list still worth reading. -->
+        <span v-if="collapsible" class="ls-count tabular-nums">{{ cards.length }}</span>
+      </component>
       <div class="flex items-center gap-1">
         <slot name="actions" />
         <AddCard v-if="showAdd" :mode="mode" @added="emit('added', $event)" />
@@ -41,7 +61,7 @@ const emit = defineEmits(["added", "deleted", "move"]);
     </div>
 
     <!-- Skeleton -->
-    <template v-if="loading">
+    <template v-if="loading && !collapsed">
       <div
         v-for="i in 3"
         :key="i"
@@ -58,7 +78,7 @@ const emit = defineEmits(["added", "deleted", "move"]);
     </template>
 
     <!-- Cards -->
-    <template v-else>
+    <template v-else-if="!collapsed">
       <TransitionGroup
         name="card-slide"
         tag="div"
@@ -106,4 +126,28 @@ const emit = defineEmits(["added", "deleted", "move"]);
 <style scoped>
 .card-slide-enter-active { transition: all 0.25s ease-out; }
 .card-slide-enter-from   { opacity: 0; transform: translateY(-6px); }
+
+/* A heading that folds is a button, but it must not look like one. */
+.ls-toggle {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: inherit;
+}
+.ls-toggle:hover .ls-count { color: var(--c-text); }
+
+.ls-chev { transition: transform 0.18s ease-out; }
+.ls-chev--closed { transform: rotate(-90deg); }
+
+/* What a folded list still tells you. */
+.ls-count {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  color: var(--c-muted);
+  background: color-mix(in srgb, var(--c-muted) 12%, transparent);
+}
 </style>
