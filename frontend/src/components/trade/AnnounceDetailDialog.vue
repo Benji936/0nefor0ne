@@ -177,6 +177,25 @@ const discordUrl  = computed(() => props.announce?.discord_url ?? null);
 const guildName   = computed(() => props.announce?.discord_guild_name ?? null);
 const guildIcon   = computed(() => props.announce?.discord_guild_icon ?? null);
 
+// With no chat pane the detail pane owns the whole dialog, and stacking a
+// full-width photo over the details pushes everything a reader came for below
+// the fold. Side by side instead: the photo takes the left column and the
+// listing is readable without scrolling. An announce posted from Discord is
+// always in this state — it has no seller account, so there is no thread to
+// open — and so is any listing seen while signed out.
+//
+// Needs a gallery to put in that column: a Looking For post with no photos
+// renders .bare-head instead and stays stacked.
+const splitLayout = computed(() => !canChat.value && showGallery.value);
+
+// The footer exists to hold buttons. Signed out on somebody else's listing
+// there are none, and an empty bordered strip under the details reads as a
+// rendering fault — more so beside the photo than beneath it.
+const showFoot = computed(() =>
+  isOwner.value
+  || (fromCommunity.value && !!discordUrl.value)
+  || (!!props.currentUserId && !fromCommunity.value));
+
 function close() { emit("update:modelValue", false); }
 
 async function handleDelete() {
@@ -280,7 +299,7 @@ function onCardAdded() {
         class="detail-pane"
         :class="{ 'pane--hidden-mobile': currentUserId && mobileTab !== 'details' }"
       >
-        <div class="dlg">
+        <div class="dlg" :class="{ 'dlg--split': splitLayout }">
 
       <!-- Image gallery (full bleed at top). Hidden for a Looking For post with
            no photos, which has nothing to show; .bare-head below stands in. -->
@@ -521,7 +540,7 @@ function onCardAdded() {
       </div>
 
       <!-- Actions footer -->
-      <div class="dlg-foot">
+      <div v-if="showFoot" class="dlg-foot">
         <template v-if="isOwner">
           <button class="btn-del" :disabled="deleting" @click="handleDelete">
             <v-progress-circular v-if="deleting" indeterminate size="14" width="2" />
@@ -619,6 +638,43 @@ function onCardAdded() {
   overflow: hidden;
   height: 100%;
   min-height: 0;
+}
+
+/* ── Split layout: photo beside the listing ───────────
+   Used when no chat pane is present, which is every announce posted from
+   Discord (no seller account, so no thread) and every listing seen signed out.
+   The dialog is the same 920px either way; stacking simply spent all of it on
+   the photo and pushed the title, the want list and the reply button out of
+   sight. Desktop only — below the breakpoint there is no width to split. */
+@media (min-width: 860px) {
+  .dlg--split {
+    display: grid;
+    /* The photo gets the smaller share: it is the thing a reader recognises at
+       a glance, and the text is the thing they have to actually read. */
+    grid-template-columns: 44% minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    /* Content decides the height, not the viewport. .dlg is height:100% for the
+       stacked layout, where the gallery sits above a body that scrolls; here
+       that inherits its way up to the shell's 92vh cap, and a short listing
+       opens as a full-height window mostly made of nothing. */
+    height: auto;
+  }
+  .dlg--split .gallery {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    /* A stated box, so the photo is fitted into the column rather than setting
+       the height of the dialog. Phone photos of a card are tall — the one this
+       was built against is 764x1700, which drew a 900px frame beside 240px of
+       text. Taller than 4:5 is letterboxed; `contain` means never cropped.
+       The row still grows past this when the listing itself is longer. */
+    aspect-ratio: 4 / 5;
+    height: auto;
+    border-right: 1px solid var(--c-border);
+  }
+  /* Scrolls only when a listing really is longer than the photo is tall, and
+     scrolls by itself rather than taking the whole dialog with it. */
+  .dlg--split .dlg-body { grid-column: 2; grid-row: 1; min-height: 0; }
+  .dlg--split .dlg-foot { grid-column: 2; grid-row: 2; }
 }
 
 /* ── Mobile Details / Chat toggle ─────────────────── */
