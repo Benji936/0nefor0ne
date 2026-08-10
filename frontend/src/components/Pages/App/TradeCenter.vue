@@ -402,6 +402,32 @@ export default {
     filterCardName(val) { this.loadCardTraders(val); },
     activeTab(val)       { this.$emit('tabChange', val); },
     initialTab(val)      { this.activeTab = val; },
+
+    // Load once the session actually arrives.
+    //
+    // App restores the session asynchronously and this component is not gated
+    // on it, so opening a tab by its URL mounts us with `login` still null —
+    // and every loader bails on that. Nothing ran them again, which is why a
+    // deep link came up empty while reaching the same tab from inside the app
+    // worked: by then the session was already there.
+    //
+    // The id, not the object: the session is replaced on every token refresh,
+    // and refetching all three tabs each time it is would be pure waste.
+    "login.user.id": {
+      async handler(id, was) {
+        if (!id) {
+          // Signed out. Signing out in this tab bounces off the trade centre,
+          // but signing out in another one does not — that just clears the
+          // session here and leaves us mounted, so drop the previous account's
+          // data rather than leaving it on screen for whoever is looking now.
+          this.allMatches = []; this.proposals = []; this.announces = [];
+          return;
+        }
+        if (id === was) return;
+        await this.loadMyProfile();  // trade_scope decides which matches survive
+        this.refreshAll();
+      },
+    },
   },
   async mounted() {
     await this.loadMyProfile();
