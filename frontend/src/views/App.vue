@@ -305,11 +305,9 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
           return this.$route.params.tab ?? 'matches';
         },
         mobileTabs() {
-          // NOTE: 5 tabs on mobile — if layout requires exactly 4, consider removing one or grouping.
+          // Collection and Decks moved to the user menu, same as on the rail.
           return [
             { key: 'search',      label: this.$t('cards.nav'),   icon: 'mdi-magnify',                iconActive: 'mdi-magnify',                action: () => this.changePage('cards') },
-            { key: 'library',     label: this.$t('nav.library'), icon: 'mdi-cards-outline',           iconActive: 'mdi-cards',                  action: () => this.changePage('library') },
-            { key: 'decks',       label: this.$t('nav.decks'),   icon: 'mdi-cards-variant',           iconActive: 'mdi-cards-variant',          action: () => this.changePage('decks') },
             { key: 'TradeCenter', label: this.$t('nav.trades'),  icon: 'mdi-swap-horizontal',         iconActive: 'mdi-swap-horizontal-bold',   action: () => this.openMatches() },
             { key: 'account',     label: this.$t('nav.account'), icon: 'mdi-account-circle-outline',  iconActive: 'mdi-account-circle',         action: () => this.changePage('account') },
           ];
@@ -359,6 +357,8 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
             library: `/${lc}/library`,
             decks: `/${lc}/decks`,
             TradeCenter: `/${lc}/trade/matches`,
+            // Not a route name — the user menu's shortcut straight to the tab.
+            proposals: `/${lc}/trade/proposals`,
             account: `/${lc}/account`,
             cards: `/${lc}/cards`,
             simulator: `/${lc}/simulator`,
