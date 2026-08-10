@@ -45,7 +45,9 @@ const kindAnnounces = computed(() => {
 const isLf = computed(() => kindFilter.value === ANNOUNCE_KIND.LOOKING_FOR);
 
 // Split by ownership
-const myAnnounces    = computed(() => kindAnnounces.value.filter(a => a.seller === currentUserId.value));
+const myAnnounces    = computed(() => (currentUserId.value
+  ? kindAnnounces.value.filter(a => a.seller === currentUserId.value)
+  : []));
 const otherAnnounces = computed(() => kindAnnounces.value.filter(a => a.seller !== currentUserId.value));
 
 const filteredOthers = computed(() => {

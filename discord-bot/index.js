@@ -518,6 +518,27 @@ async function findUserByDiscordId(discordUserId) {
   return data?.id ?? null;
 }
 
+/**
+ * The community this server is linked to, if any.
+ *
+ * This is what lets somebody post without a 0nefor.one account: the announce is
+ * owned by the community instead of by a member. It deliberately requires the
+ * link that `/verify` creates, so an unlinked server has no community to post
+ * into and its members still get the signup prompt.
+ */
+async function findCommunityByGuildId(guildId) {
+  // Not maybeSingle(): there is no unique index on discord_guild_id, and one
+  // stray duplicate must not start rejecting every post in the server.
+  const { data, error } = await supabase
+    .from('community_claim')
+    .select('community_row:community!inner(id, name, slug)')
+    .eq('discord_guild_id', guildId)
+    .order('id', { ascending: true })
+    .limit(1);
+  if (error) { console.error('Community lookup error:', error); return null; }
+  return data?.[0]?.community_row ?? null;
+}
+
 async function uploadAttachment(announceId, uploaderId, url, index) {
   try {
     const buffer = await new Promise((resolve, reject) => {
@@ -529,7 +550,9 @@ async function uploadAttachment(announceId, uploaderId, url, index) {
       }).on('error', reject);
     });
     const ext = url.split('.').pop()?.split('?')[0] ?? 'jpg';
-    const safePath = `${announceId}/${uploaderId}/${Date.now()}_${index}.${ext}`;
+    // Community announces have no uploader account. The path segment is only a
+    // namespace (no storage policy reads it), so a literal stands in fine.
+    const safePath = `${announceId}/${uploaderId ?? 'community'}/${Date.now()}_${index}.${ext}`;
     const { error: uploadError } = await supabase.storage
       .from('announce-images')
       .upload(safePath, buffer, { contentType: 'image/jpeg', upsert: false });
@@ -801,7 +824,14 @@ client.on(Events.MessageCreate, async (message) => {
   const discordUserId = message.author.id;
   const supabaseUserId = await findUserByDiscordId(discordUserId);
 
-  if (!supabaseUserId) {
+  // No account is no longer a dead end. If this server is linked to a community,
+  // the announce goes live owned by that community, tagged with the author's
+  // public Discord identity, and buyers are pointed back to the Discord message.
+  // Signing up later retro-claims every announce posted this way (see
+  // claim_community_announces in 20260810_community_announce.sql).
+  const community = supabaseUserId ? null : await findCommunityByGuildId(guildId);
+
+  if (!supabaseUserId && !community) {
     await message.reply({
       content: [
         `👋 **Hey ${message.author.username}!** To post an announce on **0nefor.one**, you need a free account.`,
@@ -886,7 +916,11 @@ client.on(Events.MessageCreate, async (message) => {
   const { data: announceData, error: announceError } = await supabase
     .from('announce')
     .insert({
-      seller: supabaseUserId,
+      seller: supabaseUserId,                     // null for a community announce
+      community: community?.id ?? null,           // set only when there is no seller
+      discord_author_id:     supabaseUserId ? null : discordUserId,
+      discord_author_name:   supabaseUserId ? null : message.author.displayName ?? message.author.username,
+      discord_author_avatar: supabaseUserId ? null : (message.author.displayAvatarURL({ extension: 'png', size: 128 }) ?? null),
       title,
       description,
       price,
@@ -950,6 +984,16 @@ client.on(Events.MessageCreate, async (message) => {
   }
   if (premium && communityUrl) {
     confirmationLines.push(`🏠 Posted from **${message.guild.name}** — ${communityUrl}`);
+  }
+  if (community) {
+    // Say plainly that the listing is not on their own account yet, and what
+    // signing up would change. This is the pitch the old signup gate used to
+    // make, except now it is made after the announce is already live.
+    confirmationLines.push(
+      `👥 Posted under **${community.name}**, with your Discord name on it. ` +
+      `Buyers will be sent to this message to reach you.`,
+      `💡 Sign in with Discord at ${APP_URL} and this listing becomes yours automatically.`,
+    );
   }
   const confirmation = { content: confirmationLines.join('\n') };
 

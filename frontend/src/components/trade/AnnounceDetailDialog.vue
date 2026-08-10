@@ -108,7 +108,8 @@ async function pickAndLinkCard(card) {
   }
 }
 
-const isOwner = computed(() => props.announce?.seller === props.currentUserId);
+// Guarded against null === null: see AnnounceCard.vue.
+const isOwner = computed(() => !!props.currentUserId && props.announce?.seller === props.currentUserId);
 const isLf = computed(() => isLookingFor(props.announce));
 
 // ── Expiry (owner-facing only) ────────────────────────────────────────────
@@ -128,16 +129,30 @@ const formattedPrice = computed(() => {
   return new Intl.NumberFormat(undefined, { style: "currency", currency: props.announce.currency || "EUR" }).format(p);
 });
 
-const sellerName    = computed(() => props.announce?.Trader?.Name || props.announce?.Trader?.name || t("announces.unknownSeller"));
-const sellerAvatar  = computed(() => props.announce?.Trader?.avatar_url ?? null);
+// Posted from Discord by somebody with no account yet. The announce belongs to
+// the community and there is no seller to chat with on-site, so the contact
+// route becomes the Discord message the listing came from.
+const fromCommunity = computed(() => !props.announce?.seller && !!props.announce?.Community);
+const communityName = computed(() => props.announce?.Community?.name ?? null);
+
+const sellerName = computed(() =>
+  fromCommunity.value
+    ? (props.announce?.discord_author_name || t("announces.unknownSeller"))
+    : (props.announce?.Trader?.Name || props.announce?.Trader?.name || t("announces.unknownSeller")));
+const sellerAvatar = computed(() =>
+  fromCommunity.value
+    ? (props.announce?.discord_author_avatar ?? null)
+    : (props.announce?.Trader?.avatar_url ?? null));
 const sellerInitial = computed(() => (sellerName.value || "?")[0].toUpperCase());
 const location = computed(() => {
+  if (fromCommunity.value) return communityName.value;
   const city    = props.announce?.Trader?.City    || props.announce?.Trader?.city;
   const country = props.announce?.Trader?.Country || props.announce?.Trader?.country;
   if (city && country) return `${city}, ${country}`;
   return country || null;
 });
-const rating = computed(() => props.announce?.Trader?.avg_rating ?? null);
+const rating = computed(() => (fromCommunity.value ? null : props.announce?.Trader?.avg_rating ?? null));
+const canChat = computed(() => !!props.currentUserId && !fromCommunity.value);
 const images = computed(() => props.announce?.images ?? []);
 const wantCards = computed(() =>
   [...(props.announce?.wantCards ?? [])].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
@@ -233,7 +248,7 @@ function onCardAdded() {
     <div v-if="announce" class="shell">
 
       <!-- Mobile-only Details / Chat toggle -->
-      <div v-if="currentUserId" class="mtabs">
+      <div v-if="canChat" class="mtabs">
         <button class="mtab" :class="{ 'mtab--active': mobileTab === 'details' }" @click="mobileTab = 'details'">
           {{ t('announceChat.tabDetails') }}
         </button>
@@ -242,9 +257,12 @@ function onCardAdded() {
         </button>
       </div>
 
-      <!-- Chat pane (left on desktop; only for logged-in users) -->
+      <!-- Chat pane (left on desktop; only for logged-in users).
+           A community announce has no seller, so there is no thread to open:
+           the announce_chat guard requires the seller to be one of the two
+           participants. Buyers use the Discord link instead. -->
       <div
-        v-if="currentUserId"
+        v-if="canChat"
         class="chat-pane"
         :class="{ 'pane--hidden-mobile': mobileTab !== 'chat' }"
       >
@@ -490,7 +508,7 @@ function onCardAdded() {
             <span class="seller__label">{{ t('announce.postedBy') }}</span>
             <span class="seller__name tl-name">{{ sellerName }}</span>
             <span v-if="location" class="seller__loc">
-              <v-icon icon="mdi-map-marker-outline" size="11" />
+              <v-icon :icon="fromCommunity ? 'mdi-account-group-outline' : 'mdi-map-marker-outline'" size="11" />
               {{ location }}
             </span>
           </div>
@@ -537,7 +555,19 @@ function onCardAdded() {
           </button>
         </template>
         <template v-else>
-          <button v-if="currentUserId" class="btn-contact" @click="handlePropose">
+          <!-- No seller account behind this one, so there is nobody to propose a
+               trade to on-site. The author is reachable where they posted. -->
+          <a
+            v-if="fromCommunity && discordUrl"
+            class="btn-contact"
+            :href="discordUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <v-icon icon="mdi-discord" size="17" />
+            {{ t('announce.replyOnDiscord') }}
+          </a>
+          <button v-else-if="currentUserId && !fromCommunity" class="btn-contact" @click="handlePropose">
             <v-icon icon="mdi-handshake-outline" size="17" />
             {{ t('announce.contactSeller') }}
           </button>

@@ -24,6 +24,7 @@ export async function fetchAnnounces() {
     .from("announce")
     .select(`
       *,
+      Community:community(id, name, slug, avatar_url, verified),
       images:announce_image(id, url, sort_order),
       wantCards:announce_want_card(id, ygo_card_id, card_name, qty, sort_order)
     `)
@@ -44,22 +45,25 @@ export async function fetchAnnounces() {
   const announces = announceData ?? [];
   if (announces.length === 0) return [];
 
-  // 2. Fetch seller profiles
-  const sellerIds = [...new Set(announces.map(a => a.seller))];
-  const { data: traderData, error: traderError } = await getClient()
-    .from("Trader")
-    .select("id, Name, City, Country, avatar_url")
-    .in("id", sellerIds);
-
-  if (traderError) {
-    console.error("fetchAnnounces (traders) failed", traderError);
+  // 2. Fetch seller profiles.
+  // Community announces have no seller, so filter the nulls out rather than
+  // sending them to .in(), which would ask for a trader with a null id.
+  const sellerIds = [...new Set(announces.map(a => a.seller).filter(Boolean))];
+  let traderData = [];
+  if (sellerIds.length > 0) {
+    const { data, error: traderError } = await getClient()
+      .from("Trader")
+      .select("id, Name, City, Country, avatar_url")
+      .in("id", sellerIds);
+    if (traderError) console.error("fetchAnnounces (traders) failed", traderError);
+    traderData = data ?? [];
   }
-  
-  const tradersById = Object.fromEntries((traderData ?? []).map(t => [t.id, t]));
+
+  const tradersById = Object.fromEntries(traderData.map(t => [t.id, t]));
 
   // 3. Combine and sort images
   return announces.map(a => {
-    a.Trader = tradersById[a.seller] || {};
+    a.Trader = (a.seller && tradersById[a.seller]) || {};
     a.images = (a.images ?? []).sort((img1, img2) => img1.sort_order - img2.sort_order);
     a.wantCards = (a.wantCards ?? []).sort((w1, w2) => w1.sort_order - w2.sort_order);
     return a;

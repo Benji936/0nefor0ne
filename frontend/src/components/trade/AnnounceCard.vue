@@ -19,7 +19,9 @@ const props = defineProps({
 
 const emit = defineEmits(["click"]);
 
-const isOwner = computed(() => props.announce.seller === props.currentUserId);
+// Both sides are null on a community announce seen by a logged-out visitor,
+// and null === null would make every one of them look owned. Require an id.
+const isOwner = computed(() => !!props.currentUserId && props.announce.seller === props.currentUserId);
 
 const coverImage  = computed(() => props.announce.images?.[0]?.url ?? null);
 const imageCount  = computed(() => props.announce.images?.length ?? 0);
@@ -61,10 +63,23 @@ const formattedPrice = computed(() => {
   }).format(p);
 });
 
-const sellerName    = computed(() => props.announce.Trader?.Name || props.announce.Trader?.name || t("announces.unknownSeller"));
-const sellerAvatar  = computed(() => props.announce.Trader?.avatar_url ?? null);
+// Posted from Discord by somebody with no account yet: the announce belongs to
+// the community, and the identity shown is the author's public Discord profile.
+// TraderLink degrades to a plain span on a null id, so no link guard is needed.
+const fromCommunity = computed(() => !props.announce.seller && !!props.announce.Community);
+
+const sellerName = computed(() =>
+  fromCommunity.value
+    ? (props.announce.discord_author_name || t("announces.unknownSeller"))
+    : (props.announce.Trader?.Name || props.announce.Trader?.name || t("announces.unknownSeller")));
+const sellerAvatar = computed(() =>
+  fromCommunity.value
+    ? (props.announce.discord_author_avatar ?? null)
+    : (props.announce.Trader?.avatar_url ?? null));
 const sellerInitial = computed(() => (sellerName.value || "?")[0].toUpperCase());
 const location = computed(() => {
+  // The community stands in for a location: it is what says where this came from.
+  if (fromCommunity.value) return props.announce.Community?.name ?? null;
   const city    = props.announce.Trader?.City    || props.announce.Trader?.city;
   const country = props.announce.Trader?.Country || props.announce.Trader?.country;
   if (city && country) return `${city}, ${country}`;
