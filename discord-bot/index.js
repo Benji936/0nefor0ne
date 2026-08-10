@@ -32,6 +32,7 @@ const { createHash } = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 const { parseAnnounce, ANNOUNCE_KIND } = require('./lib/parseAnnounce');
 const { parseWantList, buildWantRows, wantListTitle } = require('./lib/wantList');
+const { isCloseCommand, closedStatusFor, canCloseAnnounce } = require('./lib/closeAnnounce');
 const { searchListings } = require('./lib/marketplace');
 const { commandDefinitions, buildSearchEmbed, escapeMd } = require('./lib/slashCommands');
 const { buildEventEmbed, eventAnnouncement } = require('./lib/eventPost');
@@ -285,6 +286,7 @@ const HELP_SELL_TOPICS  = new Set(['sell', 'sale', 'post', 'posting', 'announce'
 const HELP_LF_TOPICS    = new Set(['lf', 'looking', 'lookingfor', 'looking for', 'wanted', 'want', 'wtb', 'search', 'searching']);
 const HELP_ADMIN_TOPICS = new Set(['admin', 'mod', 'mods', 'staff', 'commands']);
 
+
 function helpChannelMention(cfg) {
   return cfg.channelId
     ? `<#${cfg.channelId}>`
@@ -300,9 +302,10 @@ function helpOverview(cfg, isAdmin) {
     `**What do you want to do?**`,
     `• 💰 **Sell or trade a card** → type \`!help sell\``,
     `• 🔎 **Look for a card (LF)** → type \`!help lf\``,
+    `• ✅ **Close one of your listings** → type \`!sold\` or \`!close\` in its thread`,
     `• 🗡️ **Duel someone over webcam** → type \`!duel\``,
     ``,
-    `⚠️ First time? You need a free account — click **Login with Discord** on ${APP_URL}`,
+    `⚠️ First time? Link a free account so your listings live on your profile — click **Login with Discord** on ${APP_URL}`,
   ];
   if (isAdmin) lines.push(``, `🛠 Managing this server? Type \`!help admin\` for mod tools.`);
   return lines.join('\n');
@@ -327,6 +330,10 @@ function helpSell(cfg) {
     `Near mint, 1st edition`,
     `45€`,
     '```',
+    ``,
+    `**When it sells** — type \`!sold\` in your listing's thread. That takes it off`,
+    `the marketplace and locks the thread. \`!close\` does the same for a listing`,
+    `you simply no longer want up.`,
   ].join('\n');
 }
 
@@ -352,6 +359,9 @@ function helpLf(cfg) {
     `archetype: Darklord`,
     `budget 120€`,
     '```',
+    ``,
+    `**When you find it** — type \`!found\` in your post's thread to take it down,`,
+    `or \`!close\` if you gave up on the hunt.`,
   ].join('\n');
 }
 
@@ -365,6 +375,8 @@ function helpAdmin() {
     `• \`!seteventchannel [#channel|clear]\` — where your community's events are posted`,
     `• \`!setcommunity <url|clear>\` — community link shown on announces *(Premium)*`,
     `• \`!upgrade\` — upgrade this server to Premium`,
+    `• \`!close\` / \`!sold\` — in a listing's thread, close it on the author's behalf`,
+    `   *(needs Manage Messages; authors can always close their own)*`,
   ].join('\n');
 }
 
@@ -645,6 +657,89 @@ client.on(Events.MessageCreate, async (message) => {
       ``,
       `No account needed to duel.`,
     ].join('\n'));
+    return;
+  }
+
+  // ── !close / !sold — close your own listing, from its thread ─────────────────
+  // Both retire the announce; they differ only in the status written, which is
+  // what the marketplace shows. `!sold` is the happy ending, `!close` is "never
+  // mind". Either way the listing leaves the marketplace (fetchAnnounces only
+  // returns status = 'active') and the thread is locked so the conversation
+  // stops without destroying the history.
+  if (isCloseCommand(lower)) {
+    if (!message.channel?.isThread()) {
+      await message.reply('💬 Use this **inside your listing\'s thread** — the thread the bot opened under your announce.');
+      return;
+    }
+
+    const threadUrl = `https://discord.com/channels/${guildId}/${message.channelId}`;
+    const { data: row, error } = await supabase
+      .from('announce')
+      .select('id, title, kind, status, seller, discord_author_id')
+      .eq('discord_url', threadUrl)
+      .maybeSingle();
+
+    if (error) {
+      console.error('close lookup failed:', error);
+      await message.reply('⚠️ Could not reach the marketplace. Please try again in a moment.');
+      return;
+    }
+    if (!row) {
+      await message.reply('🤔 This thread is not linked to a listing, so there is nothing to close.');
+      return;
+    }
+    if (row.status !== 'active') {
+      await message.reply(`✅ **${row.title}** is already closed (${row.status}).`);
+      return;
+    }
+
+    // Who may close it. Both branches guard against a null on either side:
+    // a community announce has no seller, and a visitor has no account, so an
+    // unguarded comparison would let null match null and hand strangers the key.
+    const myUserId = await findUserByDiscordId(message.author.id);
+    const isAuthor = canCloseAnnounce({
+      announce: row, discordUserId: message.author.id, supabaseUserId: myUserId,
+    });
+    // Mods can close on the author's behalf: people leave servers, and a stale
+    // listing should not be un-closable because its author is gone.
+    const isMod = !!(canManage || member?.permissions.has(PermissionFlagsBits.ManageMessages));
+
+    if (!isAuthor && !isMod) {
+      await message.reply('⛔ Only the person who posted this listing can close it.');
+      return;
+    }
+
+    const status = closedStatusFor(lower);
+    const sold = status === 'sold';
+
+    const { error: updErr } = await supabase
+      .from('announce')
+      .update({ status })
+      .eq('id', row.id);
+    if (updErr) {
+      console.error('close update failed:', updErr);
+      await message.reply('⚠️ Could not close the listing. Please try again in a moment.');
+      return;
+    }
+
+    const isLfRow = row.kind === ANNOUNCE_KIND.LOOKING_FOR;
+    const headline = sold
+      ? (isLfRow ? '🎯 Marked as **found**.' : '💰 Marked as **sold**.')
+      : '📕 Listing **closed**.';
+    // Reply before locking: a message sent to an archived thread would reopen it.
+    await message.reply(
+      `${headline} **${row.title}** has been removed from the marketplace.` +
+      (isMod && !isAuthor ? `\n🛡️ Closed by a moderator.` : ''),
+    );
+
+    // Best-effort: the listing is already closed on the site, and failing to
+    // tidy the thread must not make it look like the command did not work.
+    try {
+      await message.channel.setLocked(true);
+      await message.channel.setArchived(true);
+    } catch (err) {
+      console.error('close: could not lock/archive thread:', err);
+    }
     return;
   }
 

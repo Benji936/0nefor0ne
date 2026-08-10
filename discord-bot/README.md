@@ -111,6 +111,8 @@ permission, delete the row, and it will be picked up on the next poll.
 | `!help sell` | anyone | Step-by-step for a sell/trade announce |
 | `!help lf` | anyone | Step-by-step for a Looking For post |
 | `!help admin` | anyone | Lists the mod/admin commands |
+| `!sold` / `!found` | listing author | **In the listing's thread**: marks it sold, locks the thread |
+| `!close` / `!cancel` | listing author | Same, but records it as archived rather than sold |
 | `!upgrade` / `!premium` | anyone | Shows the native Discord purchase button |
 | `!botcheck` | mod/admin | Shows watched channel **and plan (Free/Premium)** |
 | `!setchannel [#channel]` | Manage Server | Set the announces channel |
