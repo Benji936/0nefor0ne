@@ -62,11 +62,29 @@ const displayName = computed(() =>
   traderName.value?.trim() || props.login?.user?.email?.split('@')[0] || 'Account'
 );
 
+// Your own things: the collection you keep, the decks you build, the trades you
+// have going. They used to sit in the left rail and the phone tab bar beside
+// places to explore; they belong behind your own name instead.
 const menuItems = computed(() => [
   {
     label: t('userMenu.accountProfile'),
     icon:  'mdi-account-circle-outline',
     action: 'account',
+  },
+  {
+    label: t('nav.collection'),
+    icon:  'mdi-cards',
+    action: 'library',
+  },
+  {
+    label: t('nav.decks'),
+    icon:  'mdi-cards-variant',
+    action: 'decks',
+  },
+  {
+    label: t('tradeCenter.proposals'),
+    icon:  'mdi-swap-horizontal-bold',
+    action: 'proposals',
   },
 ]);
 

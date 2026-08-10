@@ -17,7 +17,13 @@ const localeChildren = [
   // Function's allowlist, not by hiding the URL, and there is nobody to show a
   // nav entry to.
   { path: 'admin/review', name: 'adminReview', component: () => import(/* webpackChunkName: "admin-review" */ '@/components/Pages/App/AdminReviewPage.vue') },
-  { path: "trade",     name: "TradeCenter", component: () => import(/* webpackChunkName: "trade" */       "@/components/Pages/App/TradeCenter.vue") },
+  // The tab is a param on one route rather than three sibling routes, so
+  // switching tabs keeps the same component mounted. Siblings would tear it
+  // down and rebuild it — refetching all three lists, and dropping the realtime
+  // channels — every time somebody clicked between them.
+  // Optional, so existing `{ name: 'TradeCenter' }` links with no tab still
+  // resolve; TradeCenter rewrites the bare path to the canonical one.
+  { path: "trade/:tab(matches|proposals|announces)?", name: "TradeCenter", component: () => import(/* webpackChunkName: "trade" */       "@/components/Pages/App/TradeCenter.vue") },
   { path: 'trader/:id', name: 'trader',     component: () => import(/* webpackChunkName: "trader" */      '@/components/Pages/App/TraderPage.vue') },
   { path: "account",   name: "account",     component: () => import(/* webpackChunkName: "account" */     "@/components/Pages/App/Account.vue") },
   { path: "card/:id",  name: "card",        component: () => import(/* webpackChunkName: "card" */        "@/components/Pages/App/CardPage.vue") },
@@ -46,6 +52,7 @@ export const routes = [
   { path: '/community', redirect: () => `/${detectLocale()}/community` },
   { path: '/community/:slug', redirect: (to) => `/${detectLocale()}/community/${to.params.slug}` },
   { path: "/trade",     redirect: ()   => `/${detectLocale()}/trade`   },
+  { path: '/trade/:tab', redirect: (to) => `/${detectLocale()}/trade/${to.params.tab}` },
   { path: '/trader/:id', redirect: (to) => `/${detectLocale()}/trader/${to.params.id}` },
   { path: "/account",   redirect: ()   => `/${detectLocale()}/account` },
   { path: "/privacy",   redirect: ()   => `/${detectLocale()}/privacy` },

@@ -135,16 +135,18 @@ import { fetchMatches, fetchTradersWithCard, bucketMatches } from "@/lib/matches
 import { fetchMyProposals, acceptTradeProposal, completeTradeProposal, cancelTradeProposal, declineTradeProposal } from "@/lib/proposals";
 import { fetchAnnounces } from "@/lib/announces";
 
+/** The tabs, in order. First one is what a bare /trade means. Kept in step with
+ *  the route's `:tab` matcher in router/index.js. */
+const TABS = ["matches", "proposals", "announces"];
+
 export default {
   props: {
     login:          { type: Object, default: null },
     filterCardName: { type: String, default: "" },
-    initialTab:     { type: String, default: "matches" },
   },
-  emits: ["clearFilter", "tabChange"],
+  emits: ["clearFilter"],
   data() {
     return {
-      activeTab:          this.initialTab ?? "matches",
       loadingMatches:     false,
       allMatches:         [],
       loadingCardTraders: false,
@@ -179,6 +181,17 @@ export default {
     };
   },
   computed: {
+    // The open tab IS the URL. Reading and writing it through the route means a
+    // tab is linkable, survives a refresh and answers the back button, and it
+    // keeps every existing `activeTab = "proposals"` in this file working —
+    // those now navigate instead of mutating local state.
+    activeTab: {
+      get() { return this.$route.params.tab || TABS[0]; },
+      set(tab) {
+        if (!TABS.includes(tab) || tab === this.activeTab) return;
+        this.$router.push({ name: "TradeCenter", params: { ...this.$route.params, tab } });
+      },
+    },
     tabs() {
       const pendingCount = this.proposals.filter(p => p.status === "pending" && !p.i_am_proposer).length;
       return [
@@ -366,8 +379,6 @@ export default {
       this.dialogUser = existing ?? { id: traderId, name: null, theyWant: [], theyHave: [] };
       this.dialogOpen = true;
     },
-    switchToProposals() { this.activeTab = "proposals"; },
-    switchToTab(tab)    { if (tab) this.activeTab = tab; },
     async loadCardTraders(cardName) {
       if (!cardName) { this.cardTraders = []; return; }
       this.loadingCardTraders = true;
@@ -400,8 +411,47 @@ export default {
   },
   watch: {
     filterCardName(val) { this.loadCardTraders(val); },
-    activeTab(val)       { this.$emit('tabChange', val); },
-    initialTab(val)      { this.activeTab = val; },
+
+    // One canonical URL per view. /trade stays a valid way in — plenty of links
+    // and bookmarks point at it — but it settles on /trade/matches.
+    //
+    // A watcher rather than a line in mounted(): arriving at /trade from inside
+    // the app reuses this component, so mounted() would not run and the bare
+    // URL would sit there. `immediate` covers the fresh-load case mounted()
+    // used to. `replace`, so the back button leaves rather than bouncing here.
+    "$route.params.tab": {
+      immediate: true,
+      handler(tab) {
+        if (tab || this.$route.name !== "TradeCenter") return;
+        this.$router.replace({ name: "TradeCenter", params: { ...this.$route.params, tab: TABS[0] } });
+      },
+    },
+
+    // Load once the session actually arrives.
+    //
+    // App restores the session asynchronously and this component is not gated
+    // on it, so opening a tab by its URL mounts us with `login` still null —
+    // and every loader bails on that. Nothing ran them again, which is why a
+    // deep link came up empty while reaching the same tab from inside the app
+    // worked: by then the session was already there.
+    //
+    // The id, not the object: the session is replaced on every token refresh,
+    // and refetching all three tabs each time it is would be pure waste.
+    "login.user.id": {
+      async handler(id, was) {
+        if (!id) {
+          // Signed out. Signing out in this tab bounces off the trade centre,
+          // but signing out in another one does not — that just clears the
+          // session here and leaves us mounted, so drop the previous account's
+          // data rather than leaving it on screen for whoever is looking now.
+          this.allMatches = []; this.proposals = []; this.announces = [];
+          return;
+        }
+        if (id === was) return;
+        await this.loadMyProfile();  // trade_scope decides which matches survive
+        this.refreshAll();
+      },
+    },
   },
   async mounted() {
     await this.loadMyProfile();

@@ -32,10 +32,10 @@ const items = computed(() => {
   const all = [
     { key: "cards",     label: t("nav.search"),     icon: "mdi-magnify",              event: "navigate", arg: "cards",    match: ["cards", "search"], guest: true },
     { key: "dashboard", label: t("nav.home"),       icon: "mdi-home-outline",         event: "navigate", arg: "dashboard", match: ["dashboard"],       guest: true },
-    { key: "library",   label: t("nav.collection"), icon: "mdi-cards",                event: "navigate", arg: "library",   match: ["library"],           guest: false },
-    { key: "decks",     label: t("nav.decks"),      icon: "mdi-cards-variant",        event: "navigate", arg: "decks",     match: ["decks", "deckDetail"], guest: false },
+    // Collection, Decks and Proposals live in the user menu instead. They are
+    // about your own things rather than places to explore, and the rail was
+    // seven items deep; what is left is what you come here to look through.
     { key: "trade-matches",   label: t("tradeCenter.matches"),   icon: "mdi-account-group-outline", event: "tradeTab", arg: "matches", match: ["TradeCenter"], guest: false, tab: "matches" },
-    { key: "trade-proposals", label: t("tradeCenter.proposals"), icon: "mdi-swap-horizontal-bold",  event: "tradeTab", arg: "proposals", match: ["TradeCenter"], guest: false, tab: "proposals" },
     { key: "trade-announces", label: t("tradeCenter.announces"), icon: "mdi-bullhorn-outline",       event: "tradeTab", arg: "announces", match: ["TradeCenter"], guest: false, tab: "announces" },
   ];
   return props.authenticated ? all : all.filter((i) => i.guest);

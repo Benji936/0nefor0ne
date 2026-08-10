@@ -262,9 +262,7 @@ function switchLang(lang) {
         ref="pageRef"
         :login="authenticated"
         :filter-card-name="filterCardName"
-        :initial-tab="activeTradeTab"
         @TradeCenter="openMatches($event)"
-        @tabChange="activeTradeTab = $event"
         @requireAuth="openLogin()"
         @logout="logout"
         @clear-filter="filterCardName = ''"
@@ -300,12 +298,16 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
         page() {
           return this.$route.name ?? 'search';
         },
+        /** Active Trade Center sub-tab, for SideNav's highlight. From the route
+         *  for the same reason as `page`: it used to be mirrored in local state
+         *  here and in the page, and two copies of one fact drift. */
+        activeTradeTab() {
+          return this.$route.params.tab ?? 'matches';
+        },
         mobileTabs() {
-          // NOTE: 5 tabs on mobile — if layout requires exactly 4, consider removing one or grouping.
+          // Collection and Decks moved to the user menu, same as on the rail.
           return [
             { key: 'search',      label: this.$t('cards.nav'),   icon: 'mdi-magnify',                iconActive: 'mdi-magnify',                action: () => this.changePage('cards') },
-            { key: 'library',     label: this.$t('nav.library'), icon: 'mdi-cards-outline',           iconActive: 'mdi-cards',                  action: () => this.changePage('library') },
-            { key: 'decks',       label: this.$t('nav.decks'),   icon: 'mdi-cards-variant',           iconActive: 'mdi-cards-variant',          action: () => this.changePage('decks') },
             { key: 'TradeCenter', label: this.$t('nav.trades'),  icon: 'mdi-swap-horizontal',         iconActive: 'mdi-swap-horizontal-bold',   action: () => this.openMatches() },
             { key: 'account',     label: this.$t('nav.account'), icon: 'mdi-account-circle-outline',  iconActive: 'mdi-account-circle',         action: () => this.changePage('account') },
           ];
@@ -319,8 +321,6 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
             authUnsubscribe: null,
             // Side-rail pinned/collapsed state — restored from localStorage in mounted().
             railCollapsed: false,
-            // Active Trade Center sub-tab — kept here so SideNav can highlight it.
-            activeTradeTab: "matches",
           };
       },
       watch: {
@@ -356,31 +356,26 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
             search: `/${lc}/`,
             library: `/${lc}/library`,
             decks: `/${lc}/decks`,
-            TradeCenter: `/${lc}/trade`,
+            TradeCenter: `/${lc}/trade/matches`,
+            // Not a route name — the user menu's shortcut straight to the tab.
+            proposals: `/${lc}/trade/proposals`,
             account: `/${lc}/account`,
             cards: `/${lc}/cards`,
             simulator: `/${lc}/simulator`,
           };
           this.$router.push(pathMap[name] ?? `/${lc}/`);
         },
+        // The tab is in the URL now, so opening one is just navigating to it —
+        // no reaching into the page's instance after the route settles.
         openMatches(card = null) {
           this.filterCardName = card?.name ?? "";
-          const lc = this.$route.params.locale || 'en';
-          this.$router.push(`/${lc}/trade`);
+          this.openTradeTab('matches');
         },
         openTradeTab(tab) {
-          this.activeTradeTab = tab;
           const lc = this.$route.params.locale || 'en';
-          this.$router.push(`/${lc}/trade`).then(() => {
-            this.$nextTick(() => this.$refs.pageRef?.switchToTab?.(tab));
-          });
+          this.$router.push(`/${lc}/trade/${tab}`);
         },
-        openProposals() {
-          const lc = this.$route.params.locale || 'en';
-          this.$router.push(`/${lc}/trade`).then(() => {
-            this.$nextTick(() => this.$refs.pageRef?.switchToProposals?.());
-          });
-        },
+        openProposals() { this.openTradeTab('proposals'); },
         toggleTheme() {
           const isDark = this.isDarkTheme;
           this.$vuetify.theme.global.name = isDark ? 'neonDuskLight' : 'neonDusk';
