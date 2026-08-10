@@ -6,6 +6,7 @@ import TraderLink from "@/components/trade/TraderLink.vue";
 import { isLookingFor } from "@/lib/announceKind";
 import { isExpired, isExpiringSoon, daysUntilExpiry } from "@/lib/announceExpiry";
 import { archetypeArtUrl, ensureArchetypeArtManifest } from "@/lib/archetypeArt";
+import { cardImage } from "@/lib/cardImage";
 
 ensureArchetypeArtManifest();
 
@@ -45,6 +46,23 @@ const hasImageSlot = computed(() => !isLf.value || !!coverImage.value);
 // Distinct cards on the want list, not total copies: "8 cards" reads better
 // than "23 cards" for a list of eight lines asking for three copies each.
 const wantCount = computed(() => (isLf.value ? props.announce.wantCards?.length ?? 0 : 0));
+
+// The covers of what a Looking For post is after. Recognising the art is
+// faster than reading a line that says how many cards there are, and it is the
+// thing a passer-by scans the list for.
+//
+// Only entries the resolver pinned to a passcode can show a cover. The rest are
+// real wants — "Kashtira Fenrir (alt art)" is still something to answer — but
+// they have no image, so they are counted into the +N rather than drawn as
+// blanks. Same reason the strip is capped: past a handful these stop being
+// recognisable and start being a wall.
+const WANT_THUMB_MAX = 5;
+const wantThumbs = computed(() =>
+  isLf.value
+    ? (props.announce.wantCards ?? []).filter((w) => w.ygo_card_id).slice(0, WANT_THUMB_MAX)
+    : []
+);
+const wantOverflow = computed(() => Math.max(0, wantCount.value - wantThumbs.value.length));
 
 // Expiry state. Only ever surfaces on the owner's own cards, because
 // fetchAnnounces() does not return other people's expired listings at all.
@@ -142,7 +160,21 @@ const location = computed(() => {
         <v-icon v-else icon="mdi-cards-outline" size="12" />
         {{ announce.archetype }}
       </p>
-      <p v-if="wantCount" class="ac-wants">
+      <!-- What the poster is after, as covers. Falls back to the count line for
+           a want list where nothing resolved to a card. -->
+      <div v-if="wantThumbs.length" class="ac-wantstrip">
+        <span
+          v-for="w in wantThumbs"
+          :key="w.id ?? w.card_name"
+          class="ac-wantstrip__item"
+          :title="w.card_name"
+        >
+          <img :src="cardImage(w.ygo_card_id)" :alt="w.card_name" class="ac-wantstrip__img" loading="lazy" />
+          <span v-if="w.qty > 1" class="ac-wantstrip__qty">{{ w.qty }}</span>
+        </span>
+        <span v-if="wantOverflow" class="ac-wantstrip__more">+{{ wantOverflow }}</span>
+      </div>
+      <p v-else-if="wantCount" class="ac-wants">
         <v-icon icon="mdi-format-list-bulleted" size="12" />
         {{ t('announce.wantCount', { count: wantCount }, wantCount) }}
       </p>
@@ -334,6 +366,55 @@ const location = computed(() => {
   font-weight: 600;
   color: var(--c-muted);
 }
+/* Want-list covers. Deliberately does not wrap: the strip is capped at five, and
+   a second row would change the card's height and break the grid's rhythm. */
+.ac-wantstrip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  /* The clip is a guard against a strip wider than the card. The padding is what
+     keeps it from eating the qty badge, which hangs 3px past the cover it sits on
+     — overflow clips to the padding box, so the badge needs room inside it. */
+  padding: 0 4px 4px 0;
+  overflow: hidden;
+}
+.ac-wantstrip__item {
+  position: relative;
+  flex-shrink: 0;
+  line-height: 0;
+}
+.ac-wantstrip__img {
+  display: block;
+  width: 30px;
+  height: 44px; /* the 59:86 card ratio, near enough at this size */
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid var(--c-border);
+}
+/* Only drawn above one copy — a "1" on every cover would be noise. */
+.ac-wantstrip__qty {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  min-width: 15px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  color: var(--c-text);
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 13px;
+  text-align: center;
+}
+.ac-wantstrip__more {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--c-muted);
+}
+.ac--expired .ac-wantstrip__img { filter: grayscale(0.85); }
+
 .ac-archetype {
   display: flex;
   align-items: center;
