@@ -155,7 +155,10 @@ export default {
       locationCity:       "",
       profileDialogOpen:  false,
       profileTraderId:    null,
-      subscription:       null,
+      // Set when a reload was asked for while one was already running.
+      matchesStale:       false,
+      proposalsStale:     false,
+      announcesStale:     false,
       dialogOpen:         false,
       dialogUser:         null,
       editProposal:       null,
@@ -245,26 +248,46 @@ export default {
         console.error('loadMyProfile failed', err);
       }
     },
+    // The three loaders below re-run themselves when something asked for a
+    // reload while one was already in flight. They used to return early in that
+    // case, which threw the request away — and the request thrown away was the
+    // most recent one, so a change landing during a slow fetch left the screen
+    // showing the state from before it. That is the half of the staleness that
+    // survived even once the realtime channel was delivering.
     async loadMatches() {
-      if (!this.login?.user?.id || this.loadingMatches) return;
+      if (!this.login?.user?.id) return;
+      if (this.loadingMatches) { this.matchesStale = true; return; }
       this.loadingMatches = true;
       try   { this.allMatches = await fetchMatches(); }
       catch (err) { console.error(err); }
       finally { this.loadingMatches = false; }
+      if (this.matchesStale) { this.matchesStale = false; return this.loadMatches(); }
     },
     async loadProposals() {
-      if (!this.login?.user?.id || this.loadingProposals) return;
+      if (!this.login?.user?.id) return;
+      if (this.loadingProposals) { this.proposalsStale = true; return; }
       this.loadingProposals = true;
       try   { this.proposals = await fetchMyProposals(); }
       catch (err) { console.error(err); }
       finally { this.loadingProposals = false; }
+      if (this.proposalsStale) { this.proposalsStale = false; return this.loadProposals(); }
     },
     async loadAnnounces() {
-      if (!this.login?.user?.id || this.loadingAnnounces) return;
+      if (!this.login?.user?.id) return;
+      if (this.loadingAnnounces) { this.announcesStale = true; return; }
       this.loadingAnnounces = true;
       try   { this.announces = await fetchAnnounces(); }
       catch (err) { console.error(err); }
       finally { this.loadingAnnounces = false; }
+      if (this.announcesStale) { this.announcesStale = false; return this.loadAnnounces(); }
+    },
+    /** Everything the three tabs show, reloaded. Used when we cannot trust that
+     *  we heard about changes — coming back to a backgrounded tab, or regaining
+     *  a network connection. */
+    refreshAll() {
+      if (!this.filterCardName) this.loadMatches();
+      this.loadProposals();
+      this.loadAnnounces();
     },
     onOpenTrade(user) {
       this.editProposal = null; this.counterProposal = null;
@@ -391,15 +414,51 @@ export default {
     const debouncedLoadProposals = debounce(() => this.loadProposals(), 600);
     const debouncedLoadAnnounces = debounce(() => this.loadAnnounces(), 600);
 
-    this.subscription = getClient()
-      .channel("trade-center-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "Card" },  debouncedLoadMatches)
-      .on("postgres_changes", { event: "*", schema: "public", table: "Trade" }, debouncedLoadProposals)
-      .on("postgres_changes", { event: "*", schema: "public", table: "announce" }, debouncedLoadAnnounces)
-      .subscribe();
+    // One channel per table, not one channel for all three.
+    //
+    // These used to share a channel, and that is what broke the whole tab. A
+    // postgres_changes binding naming a table that is not in the supabase_realtime
+    // publication invalidates the entire channel — every other binding on it goes
+    // silent too, while subscribe() still reports SUBSCRIBED. `Trade` was not
+    // published, so it took matches and announces down with it and said nothing.
+    // The publication is fixed (20260810_trade_realtime.sql); separate channels
+    // are so the next such mistake costs one tab instead of three.
+    //
+    // Kept off `data`: Vue would hand back a reactive proxy of the channel, and
+    // removeChannel matches by identity.
+    this._subscriptions = [
+      ["trade-center-matches",   "Card",     debouncedLoadMatches],
+      ["trade-center-proposals", "Trade",    debouncedLoadProposals],
+      ["trade-center-announces", "announce", debouncedLoadAnnounces],
+    ].map(([name, table, handler]) =>
+      getClient()
+        .channel(name)
+        .on("postgres_changes", { event: "*", schema: "public", table }, handler)
+        // Without this the failure modes are all silent. A channel that errors
+        // or times out simply stops updating, and the only clue is a screen
+        // that will not move. CLOSED is not in the list: leaving the page closes
+        // these on purpose, and shouting about it would bury the real faults.
+        .subscribe((status) => {
+          if (["CHANNEL_ERROR", "TIMED_OUT"].includes(status)) {
+            console.error(`realtime: ${name} is ${status}; ${table} will not live-update`);
+          }
+        })
+    );
+
+    // A websocket does not survive a sleeping laptop or a backgrounded tab, and
+    // whatever happened while it was down was never delivered. Re-read on the
+    // way back rather than trusting a connection we know was interrupted.
+    this._onWake = () => { if (document.visibilityState === "visible") this.refreshAll(); };
+    document.addEventListener("visibilitychange", this._onWake);
+    window.addEventListener("online", this._onWake);
   },
   beforeUnmount() {
-    if (this.subscription) getClient().removeChannel(this.subscription);
+    (this._subscriptions ?? []).forEach((ch) => getClient().removeChannel(ch));
+    this._subscriptions = [];
+    if (this._onWake) {
+      document.removeEventListener("visibilitychange", this._onWake);
+      window.removeEventListener("online", this._onWake);
+    }
   },
 };
 </script>
