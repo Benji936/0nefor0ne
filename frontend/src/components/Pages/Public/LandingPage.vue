@@ -12,10 +12,17 @@
 // Theme via repo --c-* tokens (1:1 with the design). Tailwind is used only for
 // layout/spacing/typography; all show/hide is driven by scoped-CSS media queries
 // (never `hidden sm:flex` — Tailwind v4 base `.hidden` defeats `sm:` here).
-import { computed } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { useTheme } from "vuetify";
 import { BUILT_WITH_TOOLS as builtWithTools } from "@/lib/builtWithTools";
+import {
+  MIN_TO_SHOW,
+  decorateRecent,
+  fetchRecentTraders,
+  fetchTopTradepiles,
+  traderInitial,
+} from "@/lib/people";
 
 const props = defineProps({
   // Session | null, forwarded by App.vue's RouterView. Drives the auth-aware CTAs.
@@ -96,6 +103,33 @@ const previewColl = [
 function onImgError(e) {
   if (e?.currentTarget) e.currentTarget.style.opacity = "0";
 }
+
+// ── People section: who joined lately, and who has the deepest pile. ────────
+//
+// Fetched in onMounted rather than at setup, because this page is SSG-
+// pre-rendered: at build time there is no browser, and a snapshot of "recent"
+// baked into the HTML would be stale the moment somebody signed up. Empty
+// arrays are what the pre-rendered HTML ships with, and the section is hidden
+// until they fill — so the page never flashes an empty shell.
+const recentTraders = ref([]);
+const topPiles = ref([]);
+
+// Both, or neither. Three names and one pile reads as an empty room; showing
+// nothing at all is the more honest version of the same fact.
+const showPeople = computed(
+  () => recentTraders.value.length >= MIN_TO_SHOW && topPiles.value.length >= MIN_TO_SHOW
+);
+
+// Join date, place and initial worked out once per row rather than three times
+// per render from inside the template. Shared with the app home's version of
+// the same list.
+const recentPeople = computed(() => decorateRecent(recentTraders.value));
+
+onMounted(async () => {
+  const [recent, piles] = await Promise.all([fetchRecentTraders(3), fetchTopTradepiles(3)]);
+  recentTraders.value = recent;
+  topPiles.value = piles;
+});
 </script>
 
 <template>
@@ -410,6 +444,64 @@ function onImgError(e) {
               <span class="lp-showcase-name">Blue-Eyes W. Dragon</span>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== People: who is already here ===== -->
+    <!-- Hidden entirely until there are enough real rows to fill it; see
+         showPeople. Client-fetched, so it is absent from the pre-rendered HTML
+         and appears once the data lands. -->
+    <section v-if="showPeople" class="lp-section lp-people" aria-labelledby="lp-people-heading">
+      <span class="lp-eyebrow lp-eyebrow-people">
+        <span class="lp-eyebrow-dot lp-eyebrow-dot-people" />{{ $t("landing.people.eyebrow") }}
+      </span>
+      <h2 id="lp-people-heading" class="lp-h2">{{ $t("landing.people.heading") }}</h2>
+      <p class="lp-section-sub">{{ $t("landing.people.subheading") }}</p>
+
+      <div class="lp-people-cols">
+        <!-- Newest members -->
+        <div class="lp-people-col">
+          <h3 class="lp-people-col-title">{{ $t("people.newestTitle") }}</h3>
+          <ul class="lp-people-list">
+            <li v-for="t in recentPeople" :key="t.id">
+              <router-link :to="`/${locale}/trader/${t.id}`" class="lp-person">
+                <span class="lp-person-avatar">
+                  <img v-if="t.avatar_url" :src="t.avatar_url" alt="" loading="lazy" @error="onImgError" />
+                  <span v-else>{{ t.initial }}</span>
+                </span>
+                <span class="lp-person-text">
+                  <span class="lp-person-name">{{ t.Name }}</span>
+                  <span v-if="t.place" class="lp-person-meta">{{ t.place }}</span>
+                </span>
+                <span v-if="t.agoKey" class="lp-person-when">
+                  {{ $t(t.agoKey, { n: t.agoCount }, t.agoCount) }}
+                </span>
+              </router-link>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Deepest trade piles -->
+        <div class="lp-people-col">
+          <h3 class="lp-people-col-title">{{ $t("people.pilesTitle") }}</h3>
+          <ul class="lp-people-list">
+            <li v-for="(t, i) in topPiles" :key="t.id">
+              <router-link :to="`/${locale}/trader/${t.id}`" class="lp-person">
+                <span class="lp-person-rank" aria-hidden="true">{{ i + 1 }}</span>
+                <span class="lp-person-avatar">
+                  <img v-if="t.avatar_url" :src="t.avatar_url" alt="" loading="lazy" @error="onImgError" />
+                  <span v-else>{{ traderInitial(t.name) }}</span>
+                </span>
+                <span class="lp-person-text">
+                  <span class="lp-person-name">{{ t.name }}</span>
+                </span>
+                <span class="lp-person-count">
+                  {{ $t("people.pileCount", { count: t.pile_size }, t.pile_size) }}
+                </span>
+              </router-link>
+            </li>
+          </ul>
         </div>
       </div>
     </section>
@@ -992,6 +1084,97 @@ function onImgError(e) {
 .lp-showcase-match { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .lp-swap-ring { width: 46px; height: 46px; border-color: var(--c-mutual); animation: ofo-ring 2.8s ease-out infinite; }
 .lp-match-tag { font-size: 10.5px; font-weight: 700; color: var(--c-mutual); }
+
+/* ── People: who is already here ── */
+.lp-people { padding: clamp(28px, 5vw, 56px) clamp(18px, 4vw, 40px) clamp(20px, 3vw, 30px); }
+.lp-eyebrow-people { color: var(--c-trade); }
+.lp-eyebrow-dot-people { background: var(--c-trade); }
+
+/* Two columns that answer two different questions, so they are separated by a
+   rule rather than boxed as cards — the section is one thought, not two. */
+.lp-people-cols {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(28px, 4vw, 44px);
+}
+@media (min-width: 860px) {
+  .lp-people-cols { grid-template-columns: 1fr 1fr; gap: clamp(40px, 5vw, 72px); }
+  .lp-people-col + .lp-people-col {
+    padding-left: clamp(40px, 5vw, 72px);
+    border-left: 1px solid color-mix(in srgb, var(--c-border) 60%, transparent);
+  }
+}
+
+.lp-people-col-title {
+  margin: 0 0 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--c-muted);
+}
+
+.lp-people-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.lp-people-list li + li { border-top: 1px solid color-mix(in srgb, var(--c-border) 45%, transparent); }
+
+.lp-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 10px;
+  margin: 0 -10px; /* hover reaches past the text without widening the column */
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--c-text);
+  transition: background 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.lp-person:hover { background: var(--c-surface); }
+
+.lp-person-rank {
+  flex: none;
+  width: 18px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--c-muted) 70%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+
+.lp-person-avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--c-accent);
+}
+.lp-person-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* min-width: 0 so a long name truncates instead of shoving the count off. */
+.lp-person-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.lp-person-name {
+  font-weight: 600;
+  font-size: 14.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lp-person-meta { font-size: 12px; color: var(--c-muted); }
+
+.lp-person-when { flex: none; font-size: 12px; color: var(--c-muted); }
+.lp-person-count {
+  flex: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-trade);
+  font-variant-numeric: tabular-nums;
+}
 
 /* ── Discord community ── */
 .lp-discord { padding: clamp(20px, 3vw, 30px) clamp(18px, 4vw, 40px) clamp(48px, 7vw, 84px); }
