@@ -147,6 +147,16 @@
       },
       "cta": "Rejoindre notre Discord"
     },
+    "plan": {
+      "eyebrow": "Pour les boutiques et les communautés",
+      "heading": "Vous tenez une boutique, un Discord ou un groupe local ?",
+      "body": "Faites-vous une place sur la carte. Les communautés vérifiées sont celles que les collectionneurs trouvent en cherchant près de chez eux, et les seules qui peuvent publier des événements.",
+      "freeYear": "La première année est gratuite.",
+      "thenYear": "Ensuite, {year} par an.",
+      "monthly": "Ou {month} par mois, avec six mois offerts. Résiliable à tout moment.",
+      "cta": "Trouvez la vôtre, ou ajoutez-la",
+      "mockName": "Votre boutique"
+    },
     "donate": {
       "eyebrow": "Soutien",
       "heading": "Gardez One for One gratuit",

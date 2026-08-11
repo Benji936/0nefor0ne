@@ -16,6 +16,7 @@ import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { useTheme } from "vuetify";
 import { BUILT_WITH_TOOLS as builtWithTools } from "@/lib/builtWithTools";
+import { communityPricing } from "@/lib/communityPricing";
 import {
   MIN_TO_SHOW,
   decorateRecent,
@@ -130,6 +131,19 @@ onMounted(async () => {
   recentTraders.value = recent;
   topPiles.value = piles;
 });
+
+// ── Community plan: what a shop or server owner pays. ───────────────────────
+//
+// The authoritative currency comes from the community's own country at checkout
+// (communityPricing). Here there is neither a community nor a session, so the
+// page locale is the only signal there is. It is a guess, and a safe one: the
+// yearly figure is the same round number in every currency except GBP, and GBP
+// is the cheaper one, so a British reader is never quoted less than they pay.
+//
+// Read through communityPricing rather than written out, so the landing page
+// cannot quote a price the checkout has since moved away from.
+const PRICING_COUNTRY = { fr: "FR", de: "DE", it: "IT" }; // en falls through to USD
+const planPrice = computed(() => communityPricing(null, PRICING_COUNTRY[locale.value] ?? null));
 </script>
 
 <template>
@@ -531,6 +545,83 @@ onMounted(async () => {
           <span class="lp-discord-logo">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.3698a19.7913 19.7913 0 0 0-4.8851-1.5152.0741.0741 0 0 0-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 0 0-.0785-.037 19.7363 19.7363 0 0 0-4.8852 1.515.0699.0699 0 0 0-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 0 0 .0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 0 0 .0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 0 0-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 0 1-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 0 1 .0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 0 1 .0785.0095c.1202.099.246.198.3728.2924a.077.077 0 0 1-.0066.1276 12.2986 12.2986 0 0 1-1.873.8914.0766.0766 0 0 0-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 0 0 .0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 0 0 .0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 0 0-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" /></svg>
           </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Community plan: the offer to shop and server owners ===== -->
+    <!-- Deliberately not a third copy of the Discord/Donate panel. Those two are
+         the same block with one hex swapped, and a third would close the page
+         with a stack of interchangeable slabs. This one speaks to a different
+         reader (an owner, not a collector) and shows what verification buys
+         instead of only listing it.
+
+         Amethyst, not teal, despite the badge it is selling: teal belongs to the
+         agreement chain (DESIGN.md, The Agreement Rule) and an offer is not an
+         agreement. The one teal mark here is inside the mock, where it is
+         reproducing what the directory actually renders. -->
+    <section class="lp-section lp-plan" aria-labelledby="lp-plan-heading">
+      <div class="lp-plan-grid">
+        <div class="lp-plan-copy">
+          <span class="lp-eyebrow lp-eyebrow-plan">
+            <span class="lp-eyebrow-dot lp-eyebrow-dot-plan" />{{ $t("landing.plan.eyebrow") }}
+          </span>
+          <h2 id="lp-plan-heading" class="lp-h2 lp-plan-h2">{{ $t("landing.plan.heading") }}</h2>
+          <p class="lp-plan-body">{{ $t("landing.plan.body") }}</p>
+
+          <!-- The same four promises the verify page makes, read from the same
+               keys. One list, so the pitch cannot outgrow what is delivered. -->
+          <ul class="lp-plan-unlocks">
+            <li v-for="k in ['unlockNear', 'unlockEvents', 'unlockBadge', 'unlockRanking']" :key="k">
+              <svg class="lp-ico-sm lp-plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+              {{ $t(`communityVerify.${k}`) }}
+            </li>
+          </ul>
+
+          <p class="lp-plan-price">
+            <strong class="lp-plan-free">{{ $t("landing.plan.freeYear") }}</strong>
+            {{ $t("landing.plan.thenYear", { year: planPrice.year.display }) }}
+          </p>
+          <p class="lp-plan-alt">{{ $t("landing.plan.monthly", { month: planPrice.month.display }) }}</p>
+
+          <router-link :to="{ name: 'community', params: { locale } }" class="lp-btn lp-btn-trade">
+            {{ $t("landing.plan.cta") }}
+            <svg class="lp-ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+          </router-link>
+        </div>
+
+        <!-- Your listing carrying the badge, above the ones without it: the mark
+             and the ranking, shown rather than described twice. Every claim it
+             makes is already in the list on the left, so the whole mock is
+             decorative and hidden from assistive tech. -->
+        <div class="lp-plan-visual" aria-hidden="true">
+          <span class="lp-plan-visual-label">{{ $t("community.home") }}</span>
+
+          <div class="lp-plan-card">
+            <div class="lp-plan-card-banner"></div>
+            <span class="lp-plan-card-avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16l-1.2-4.2A1 1 0 0 0 17.8 4H6.2a1 1 0 0 0-.96.73L4 9Z" /><path d="M4 9v10h16V9" /><path d="M9.5 19v-5.5h5V19" /></svg>
+            </span>
+            <div class="lp-plan-card-body">
+              <span class="lp-plan-card-top">
+                <span class="lp-plan-card-name">{{ $t("landing.plan.mockName") }}</span>
+                <!-- The directory's verified mark, reproduced: a teal disc with
+                     the on-accent check that every brand colour carries. -->
+                <span class="lp-plan-card-check">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                </span>
+              </span>
+              <span class="lp-plan-card-meta">{{ $t("community.typeStore") }}</span>
+            </div>
+          </div>
+
+          <div v-for="n in 2" :key="n" class="lp-plan-ghost">
+            <span class="lp-plan-ghost-mark" />
+            <span class="lp-plan-ghost-lines">
+              <span class="lp-plan-ghost-bar" />
+              <span class="lp-plan-ghost-bar lp-plan-ghost-bar-short" />
+            </span>
+          </div>
         </div>
       </div>
     </section>
@@ -1229,6 +1320,135 @@ onMounted(async () => {
 @media (prefers-reduced-motion: reduce) {
   .lp-btn-discord:hover { transform: none; }
 }
+
+/* ── Community plan: the offer to shop and server owners ── */
+/* No panel, no glow, no logo blob: the two sections either side of this one are
+   already that shape, and the difference in form is what tells the reader this
+   paragraph is addressed to someone else. A hairline above does the separating
+   that a border-radius would otherwise have to. */
+.lp-plan {
+  padding: clamp(4px, 1vw, 10px) clamp(18px, 4vw, 40px) clamp(48px, 7vw, 84px);
+}
+.lp-plan-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(30px, 4vw, 56px);
+  align-items: center;
+  padding-top: clamp(34px, 5vw, 60px);
+  border-top: 1px solid color-mix(in srgb, var(--c-border) 60%, transparent);
+}
+@media (min-width: 900px) {
+  .lp-plan-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: clamp(48px, 6vw, 88px); }
+}
+
+.lp-plan-copy { min-width: 0; }
+.lp-eyebrow-plan { color: var(--c-trade); }
+.lp-eyebrow-dot-plan { background: var(--c-trade); }
+.lp-plan-h2 { margin: 16px 0 0; }
+.lp-plan-body { margin: 14px 0 0; font-size: 16px; line-height: 1.55; color: var(--c-muted); max-width: 480px; }
+
+.lp-plan-unlocks { list-style: none; margin: 22px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.lp-plan-unlocks li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14.5px;
+  line-height: 1.45;
+  font-weight: 600;
+  color: var(--c-text);
+}
+.lp-plan-check { color: var(--c-trade); margin-top: 3px; }
+
+/* The free year leads and the price follows it in the same sentence: the offer
+   is "nothing for a year", and a figure quoted first would be read as the ask. */
+.lp-plan-price { margin: 24px 0 0; font-size: 16px; line-height: 1.5; color: var(--c-muted); }
+.lp-plan-free { color: var(--c-text); font-weight: 700; }
+.lp-plan-alt { margin: 5px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--c-muted); }
+
+/* ── The mock: a verified listing, and the ones without the mark ── */
+.lp-plan-visual { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.lp-plan-visual-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  margin-bottom: 2px;
+}
+
+.lp-plan-card {
+  position: relative;
+  border: 1.5px solid color-mix(in srgb, var(--c-trade) 55%, var(--c-border));
+  border-radius: 16px;
+  background: var(--c-surface);
+  overflow: hidden;
+  box-shadow: var(--c-shadow, 0 18px 44px -16px rgba(104, 48, 168, 0.28));
+}
+.lp-plan-card-banner {
+  height: 58px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--c-trade) 26%, var(--c-surface-2)), var(--c-surface-2));
+}
+.lp-plan-card-avatar {
+  position: absolute;
+  top: 34px;
+  left: 14px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--c-surface-2);
+  border: 2.5px solid var(--c-surface);
+  color: var(--c-trade);
+}
+.lp-plan-card-avatar svg { width: 22px; height: 22px; }
+
+.lp-plan-card-body { padding: 26px 14px 14px; display: flex; flex-direction: column; gap: 4px; }
+.lp-plan-card-top { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.lp-plan-card-name {
+  font-weight: 700;
+  font-size: 14.5px;
+  color: var(--c-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lp-plan-card-check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--c-mutual);
+  color: var(--c-on-accent);
+}
+.lp-plan-card-check svg { width: 11px; height: 11px; }
+.lp-plan-card-meta { font-size: 12px; color: var(--c-muted); }
+
+/* The listings that did not claim theirs. Blank rather than invented: naming
+   them would be putting words in a real shop's mouth, and the point they make
+   is only about position. */
+.lp-plan-ghost {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--c-border) 55%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--c-surface) 45%, transparent);
+}
+.lp-plan-ghost:last-child { opacity: 0.55; }
+.lp-plan-ghost-mark {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--c-muted) 22%, transparent);
+}
+.lp-plan-ghost-lines { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+.lp-plan-ghost-bar { height: 8px; border-radius: 99px; background: color-mix(in srgb, var(--c-muted) 22%, transparent); }
+.lp-plan-ghost-bar-short { width: 42%; }
 
 /* ── Donate / support ── */
 .lp-donate { padding: clamp(4px, 1vw, 10px) clamp(18px, 4vw, 40px) clamp(48px, 7vw, 84px); }
