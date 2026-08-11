@@ -164,6 +164,7 @@ const planMonth = computed(() => formatPrice(planPrice.value.month.amount, planP
         <nav class="lp-nav" aria-label="Primary">
           <router-link :to="`/${locale}/cards`" class="lp-nav-link">{{ $t("landing.nav.search") }}</router-link>
           <router-link :to="`/${locale}/dashboard`" class="lp-nav-link">{{ $t("nav.home") }}</router-link>
+          <router-link :to="`/${locale}/trade/announces`" class="lp-nav-link">{{ $t("tradeCenter.announces") }}</router-link>
           <router-link :to="{ name: 'community', params: { locale } }" class="lp-nav-link">{{ $t("community.home") }}</router-link>
         </nav>
 

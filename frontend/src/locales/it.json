@@ -341,7 +341,6 @@
     "goToCollection": "Vai alla mia collezione per aggiungere carte"
   },
   "announces": {
-    "loginRequired": "Accedi per navigare e pubblicare annunci",
     "noAnnouncesTitle": "Nessun annuncio ancora",
     "noAnnouncesDesc": "Sii il primo a pubblicare un annuncio!",
     "newAnnounce": "Nuovo annuncio",
@@ -380,6 +379,7 @@
     "sold": "Venduto",
     "archived": "Archiviato",
     "contactSeller": "Contatta il venditore",
+    "loginToContact": "Accedi per contattare",
     "postedBy": "Pubblicato da",
     "deleteConfirm": "Eliminare questo annuncio?",
     "editTitle": "Modifica annuncio",
