@@ -18,12 +18,12 @@ useHead({
   <v-container fluid class="py-5" style="max-width: 1500px; margin-left: 0; padding-left: 0.75rem;">
 
     <div class="d-flex flex-column gap-6">
+      <!-- People first: the cards are always here, the people are the part that
+           changes, and this is the only place in the app that says who else
+           turned up. -->
+      <SearchTraders />
       <SearchTrending />
       <SearchLatestReleases />
-      <!-- People before the set browser: the browser is a long tail somebody
-           scrolls into deliberately, so anything meant to be noticed goes above
-           it. -->
-      <SearchTraders />
       <SearchSetBrowser />
     </div>
   </v-container>
