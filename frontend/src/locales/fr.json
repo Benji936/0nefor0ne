@@ -312,7 +312,11 @@
     "tradeCancelled": "Échange annulé.",
     "failedToCancel": "Échec de l'annulation.",
     "counterSent": "Contre-offre n°{id} envoyée.",
-    "proposalSent": "Proposition n°{id} envoyée."
+    "proposalSent": "Proposition n°{id} envoyée.",
+    "cancelConfirmTitle": "Annuler cet échange ?",
+    "cancelConfirmBody": "{name} et vous étiez d'accord sur cet échange. L'annulation est définitive, et son avis ne sera pas demandé.",
+    "cancelConfirmKeep": "Garder l'échange",
+    "cancelConfirmDo": "Annuler"
   },
   "matches": {
     "loginRequired": "Connectez-vous pour voir vos correspondances d'échange.",
@@ -462,7 +466,6 @@
     "submit": "Envoyer",
     "uploadPhotos": "Envoyez des photos de vos cartes pour que l'autre joueur puisse vérifier et accepter.",
     "failedToSave": "Échec de l'enregistrement de la proposition.",
-    "waitingForUpload": "En attente que {name} envoie ses photos et accepte.",
     "waitingForConfirm": "En attente que {name} confirme.",
     "them": "Eux",
     "you": "Vous",
@@ -474,7 +477,14 @@
     "tradeMethodOther": "Autre",
     "youPay": "Vous payez",
     "theyPay": "{name} paie",
-    "meetupAt": "Meet at"
+    "meetupAt": "Meet at",
+    "yoursToReview": "À vous de répondre.",
+    "photoYoursMissing": "Ajoutez une photo de vos cartes, pour que {name} voie ce qu'il reçoit.",
+    "photoTheirsMissing": "En attente d'une photo de {name}.",
+    "waitingAccept": "En attente de la réponse de {name}.",
+    "viewTrade": "Voir l'échange",
+    "starLabel": "{n} étoile | {n} étoiles",
+    "viewProfileOf": "Voir le profil de {name}"
   },
   "proposeDialog": {
     "title": "Proposer un échange",
@@ -551,10 +561,17 @@
     "uploadBothBeforeConfirm": "Les deux parties doivent envoyer leurs photos avant de confirmer.",
     "waitingForConfirmDetail": "En attente que {name} confirme.",
     "bothUploadedConfirmHint": "Les deux photos sont envoyées  confirmez quand vous avez reçu vos cartes.",
-    "uploadBothToAccept": "Les deux parties doivent envoyer leurs photos pour pouvoir accepter.",
     "photosVerifiedCanAccept": "Photos vérifiées  vous pouvez maintenant accepter.",
     "waitingForReview": "En attente que {name} examine et accepte.",
-    "declinePlaceholder": "Optionnel  expliquez pourquoi vous refusez…"
+    "declinePlaceholder": "Optionnel  expliquez pourquoi vous refusez…",
+    "acceptWithoutPhotos": "Aucune des deux parties n'a montré ses cartes. Vous pouvez accepter quand même, mais les photos sont la seule trace de ce qui a été promis."
+  },
+  "tradeError": {
+    "stale": "Cet échange a évolué depuis que vous l'avez ouvert. Il vient d'être actualisé.",
+    "notYours": "Ce n'est pas à vous d'agir sur cette partie de l'échange.",
+    "gone": "Cet échange n'existe plus.",
+    "signedOut": "Vous avez été déconnecté. Reconnectez-vous pour continuer.",
+    "generic": "Cela n'a pas fonctionné. Réessayez dans un instant."
   },
   "traderProfile": {
     "communitiesTitle": "Communautés",
@@ -819,7 +836,9 @@
     "clickOrDrag": "Cliquez ou déposez une photo",
     "uploading": "Envoi en cours…",
     "waitingUpload": "En attente de {name} pour envoyer",
-    "loading": "Chargement…"
+    "loading": "Chargement…",
+    "openPhoto": "Ouvrir la photo dans un nouvel onglet",
+    "deletePhoto": "Supprimer cette photo"
   },
   "time": {
     "justNow": "à l'instant",
@@ -969,6 +988,10 @@
     "communityVerify": {
       "title": "Vérifier votre communauté | One for One",
       "desc": "Prouvez que la boutique, le serveur ou le groupe que vous gérez existe, et activez sa marque de vérification."
+    },
+    "TradeCenter": {
+      "title": "Centre d'échange — correspondances, propositions et annonces | One for One",
+      "desc": "Voyez qui a ce que vous cherchez, répondez aux propositions et publiez vos recherches."
     }
   },
   "deckIgnore": {

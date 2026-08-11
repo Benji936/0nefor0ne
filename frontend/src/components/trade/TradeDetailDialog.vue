@@ -3,6 +3,7 @@ import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { cardImage } from "@/lib/cardImage";
 import { fetchTradeEvents } from "@/lib/proposals";
+import { pendingWaitKey } from "@/lib/tradePending";
 import { timeAgo as sharedTimeAgo } from "@/lib/notifications";
 import TradeChatDialog   from "@/components/trade/TradeChatDialog.vue";
 import TradePhotosPanel  from "@/components/trade/TradePhotosPanel.vue";
@@ -19,7 +20,12 @@ const props = defineProps({
 const emit = defineEmits(["update:modelValue", "accept", "decline", "cancel", "complete", "counter"]);
 
 // ── Photos status (lifted from TradePhotosPanel via v-model) ─────────────
-const bothUploaded = ref(false);
+// The panel is subscribed to trade_photo in realtime, so these are current
+// even while the dialog stays open. The proposal prop is a snapshot from the
+// last list load and would go stale the moment somebody uploads.
+const bothUploaded   = ref(false);
+const mineUploaded   = ref(false);
+const theirsUploaded = ref(false);
 
 // ── Chat overlay ──────────────────────────────────────────────────────────
 const chatOpen = ref(false);
@@ -52,6 +58,13 @@ const isAccepted     = computed(() => props.proposal?.status === "accepted");
 const showPhotoPanel = computed(() => isPending.value || isAccepted.value);
 const iConfirmed     = computed(() => props.proposal?.i_confirmed    ?? false);
 const theyConfirmed  = computed(() => props.proposal?.they_confirmed ?? false);
+// Same function ProposalRow uses, so the list and the dialog never disagree,
+// but fed the panel's live photo state rather than the proposal snapshot.
+const waitKey = computed(() => pendingWaitKey({
+  i_am_proposer: props.proposal?.i_am_proposer,
+  i_uploaded:    mineUploaded.value,
+  they_uploaded: theirsUploaded.value,
+}));
 
 // ── Card display helpers ──────────────────────────────────────────────────
 function shortenRarity(r) {
@@ -182,9 +195,11 @@ function confirmDecline() {
             density="compact"
             style="color: var(--c-muted)"
             :title="t('tradeDetail.openChat')"
+            :aria-label="t('tradeDetail.openChat')"
             @click="chatOpen = true"
           />
-          <v-btn icon="mdi-close" variant="text" density="compact" style="color: var(--c-muted)" @click="close" />
+          <v-btn icon="mdi-close" variant="text" density="compact" style="color: var(--c-muted)"
+            :aria-label="t('common.close')" @click="close" />
         </div>
         <div class="h-px w-full" style="background: linear-gradient(90deg, var(--c-accent), transparent 40%, transparent 60%, var(--c-trade))" />
       </div>
@@ -289,6 +304,8 @@ function confirmDecline() {
           :proposal="proposal"
           :current-user-id="currentUserId"
           v-model:both-uploaded="bothUploaded"
+          v-model:mine-uploaded="mineUploaded"
+          v-model:theirs-uploaded="theirsUploaded"
         />
 
         <!-- ── Activity log ── -->
@@ -416,10 +433,23 @@ function confirmDecline() {
 
           <!-- Pending actions -->
           <template v-else-if="isPending">
-            <span class="text-xs grow" style="color: var(--c-muted)">
-              <template v-if="!proposal.i_am_proposer && !bothUploaded">{{ t('tradeDetail.uploadBothToAccept') }}</template>
-              <template v-else-if="!proposal.i_am_proposer && bothUploaded">{{ t('tradeDetail.photosVerifiedCanAccept') }}</template>
-              <template v-else-if="proposal.i_am_proposer">{{ t('tradeDetail.waitingForReview', { name: proposal.counterparty_name ?? t('proposal.them') }) }}</template>
+            <!--
+              Photos are advice, not a gate. Accepting without them is allowed
+              and always was on the server; disabling the button only ever
+              stopped the honest half of the users. What it says instead is what
+              they are giving up, at the moment they can still fix it.
+            -->
+            <span
+              v-if="!proposal.i_am_proposer && !bothUploaded"
+              class="flex items-start gap-2 text-xs grow rounded-lg px-3 py-2"
+              style="color: var(--c-text); background: color-mix(in srgb, var(--c-accent) 8%, transparent); border: 1px solid color-mix(in srgb, var(--c-accent) 25%, transparent)"
+            >
+              <v-icon icon="mdi-alert-outline" size="14" color="var(--c-accent)" class="shrink-0 !mt-0.5" />
+              <span>{{ t('tradeDetail.acceptWithoutPhotos') }}</span>
+            </span>
+            <span v-else class="text-xs grow" style="color: var(--c-muted)">
+              <template v-if="!proposal.i_am_proposer">{{ t('tradeDetail.photosVerifiedCanAccept') }}</template>
+              <template v-else>{{ t(`proposal.${waitKey}`, { name: proposal.counterparty_name ?? t('proposal.them') }) }}</template>
             </span>
             <div class="flex gap-2 shrink-0 flex-wrap w-full">
               <template v-if="!proposal.i_am_proposer">
@@ -442,7 +472,12 @@ function confirmDecline() {
                   </div>
                 </template>
                 <template v-else>
-                  <v-btn variant="text" prepend-icon="mdi-cancel" style="color: var(--c-muted)" @click="action('cancel')">{{ t('proposal.cancel') }}</v-btn>
+                  <!--
+                    No Cancel here. For the recipient it did the same job as
+                    Decline — refusing an offer — but landed on a different
+                    status and threw away the chance to say why. Decline is the
+                    one that tells the proposer something.
+                  -->
                   <v-btn variant="outlined" prepend-icon="mdi-close"
                     style="border-color: var(--c-accent); color: var(--c-accent)"
                     @click="declining = true">{{ t('proposal.decline') }}</v-btn>
@@ -450,8 +485,7 @@ function confirmDecline() {
                     style="border-color: var(--c-trade); color: var(--c-trade)"
                     @click="emit('counter', proposal); close()">{{ t('proposal.counter') }}</v-btn>
                   <v-btn variant="flat" prepend-icon="mdi-check"
-                    :disabled="!bothUploaded"
-                    :style="bothUploaded ? 'background-color: var(--c-mutual); color: #0C0820' : 'opacity: 0.45'"
+                    style="background-color: var(--c-mutual); color: #0C0820"
                     @click="action('accept')">{{ t('proposal.accept') }}</v-btn>
                 </template>
               </template>

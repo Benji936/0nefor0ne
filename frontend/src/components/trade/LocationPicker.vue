@@ -148,7 +148,8 @@ function distLabel(place) {
 
     <!-- Search modal -->
     <v-dialog v-model="pickerOpen" max-width="560" scrollable>
-      <v-card theme="dark" style="background-color: var(--c-surface); color: var(--c-text)">
+      <!-- No hardcoded theme: see the note in ProposeTradeDialog. -->
+      <v-card style="background-color: var(--c-surface); color: var(--c-text)">
         <!-- Header -->
         <div class="flex items-center gap-2 px-4 py-3 border-b" style="border-color: var(--c-border)">
           <v-icon icon="mdi-map-marker-radius-outline" size="18" color="var(--c-trade)" />

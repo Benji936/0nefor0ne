@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import { cardImage } from "@/lib/cardImage";
 import { getClient } from "@/lib/supabaseClient";
 import { timeAgo } from "@/lib/notifications";
+import { pendingWaitKey } from "@/lib/tradePending";
 import TradeDetailDialog from "@/components/trade/TradeDetailDialog.vue";
 
 const { t } = useI18n();
@@ -31,6 +32,8 @@ const isAccepted    = computed(() => props.proposal.status === "accepted");
 const iConfirmed    = computed(() => props.proposal.i_confirmed    ?? false);
 const theyConfirmed = computed(() => props.proposal.they_confirmed ?? false);
 const initials      = computed(() => (props.proposal.counterparty_name ?? "?")[0].toUpperCase());
+// What this pending trade is actually waiting on, rather than a guess.
+const waitKey       = computed(() => pendingWaitKey(props.proposal));
 
 const detailOpen  = ref(false);
 const cardsOpen   = ref(false);
@@ -108,25 +111,30 @@ function cancelRating() {
             : 'color-mix(in srgb, var(--c-accent) 18%, transparent)',
           color: proposal.i_am_proposer ? 'var(--c-trade)' : 'var(--c-accent)',
         }"
-        :title="t('proposal.viewProfile')"
+        aria-hidden="true"
         @click.stop="emit('openProfile', proposal.counterparty_id)"
       >
         <img
           v-if="proposal.counterparty_avatar_url"
           :src="proposal.counterparty_avatar_url"
-          :alt="proposal.counterparty_name ?? 'Avatar'"
+          alt=""
           class="w-full h-full object-cover"
         />
         <span v-else>{{ initials }}</span>
       </div>
 
-      <div
-        class="flex flex-col grow min-w-0 cursor-pointer"
-        @click.stop="emit('openProfile', proposal.counterparty_id)"
-      >
-        <span class="font-semibold text-sm truncate hover:underline underline-offset-2" style="color: var(--c-text)">
+      <!-- The avatar above is the same target and is aria-hidden, so this is
+           the single stop a keyboard or screen reader lands on. -->
+      <div class="flex flex-col grow min-w-0">
+        <button
+          type="button"
+          class="font-semibold text-sm truncate hover:underline underline-offset-2 text-left bg-transparent border-0 p-0 cursor-pointer"
+          style="color: var(--c-text)"
+          :aria-label="t('proposal.viewProfileOf', { name: proposal.counterparty_name ?? t('common.anonymous') })"
+          @click.stop="emit('openProfile', proposal.counterparty_id)"
+        >
           {{ proposal.counterparty_name ?? t('common.anonymous') }}
-        </span>
+        </button>
         <span class="text-[11px]" style="color: var(--c-muted)">
           {{ proposal.i_am_proposer ? t('proposal.youProposed') : t('proposal.proposedToYou') }} · {{ timeAgo(proposal.created_at) }}
         </span>
@@ -151,6 +159,7 @@ function cancelRating() {
         density="compact"
         style="color: var(--c-muted)"
         :title="t('proposal.viewDetails')"
+        :aria-label="t('proposal.viewDetails')"
         @click.stop="detailOpen = true"
       />
     </div>
@@ -191,8 +200,11 @@ function cancelRating() {
     </div>
 
     <!-- Expandable card fan -->
+    <!-- Two elements on purpose: the outer one is what the grid-rows transition
+         animates, the inner one keeps the flex layout it would otherwise fight. -->
     <Transition name="cards-expand">
-      <div v-show="cardsOpen" class="flex flex-col md:flex-row" style="border-top: 1px solid var(--c-border)">
+      <div v-show="cardsOpen" style="border-top: 1px solid var(--c-border)">
+      <div class="flex flex-col md:flex-row">
 
         <!-- You give (accent/pink tint) -->
         <div
@@ -267,6 +279,7 @@ function cancelRating() {
           </div>
         </div>
       </div>
+      </div>
     </Transition>
 
     <!-- Settlement chips -->
@@ -328,10 +341,12 @@ function cancelRating() {
       style="border-top: 1px solid var(--c-border)"
     >
       <template v-if="isPending">
-        <span class="text-xs grow" style="color: var(--c-muted)">
-          {{ proposal.i_am_proposer
-            ? t('proposal.waitingForUpload', { name: proposal.counterparty_name ?? t('proposal.them') })
-            : t('proposal.uploadPhotos') }}
+        <span class="text-xs grow flex items-center gap-2" style="color: var(--c-muted)">
+          <v-icon
+            v-if="waitKey === 'photoYoursMissing'"
+            icon="mdi-camera-plus-outline" size="13" color="var(--c-accent)"
+          />
+          {{ t(`proposal.${waitKey}`, { name: proposal.counterparty_name ?? t('proposal.them') }) }}
         </span>
         <v-btn
           v-if="proposal.i_am_proposer"
@@ -339,11 +354,18 @@ function cancelRating() {
           style="border-color: var(--c-border); color: var(--c-muted)"
           @click="emit('edit', proposal)"
         >{{ t('proposal.editOffer') }}</v-btn>
+        <!--
+          The label follows the state rather than the role: a proposer who has
+          already uploaded was still being told to "Upload photos".
+        -->
         <v-btn
-          size="small" variant="flat" :prepend-icon="proposal.i_am_proposer ? 'mdi-camera-outline' : 'mdi-check-circle-outline'"
+          size="small" variant="flat"
+          :prepend-icon="waitKey === 'yoursToReview' ? 'mdi-check-circle-outline'
+            : waitKey === 'photoYoursMissing' ? 'mdi-camera-outline' : 'mdi-eye-outline'"
           style="background-color: var(--c-surface-2); color: var(--c-text)"
           @click="detailOpen = true"
-        >{{ proposal.i_am_proposer ? t('proposal.uploadPhotosBtn') : t('proposal.reviewAndAccept') }}</v-btn>
+        >{{ waitKey === 'yoursToReview' ? t('proposal.reviewAndAccept')
+          : waitKey === 'photoYoursMissing' ? t('proposal.uploadPhotosBtn') : t('proposal.viewTrade') }}</v-btn>
       </template>
 
       <template v-else-if="isAccepted">
@@ -427,14 +449,24 @@ function cancelRating() {
           <span class="text-xs" style="color: var(--c-muted)">
             {{ t('proposal.rateTrader', { name: proposal.counterparty_name ?? t('common.anonymous') }) }}
           </span>
-          <div class="flex gap-1">
+          <!--
+            The stars are a 20px glyph inside a 44px target. Rating happens on a
+            phone, at a table, right after a trade; a 20px tap target is a
+            mis-tap and a wrong rating you cannot take back.
+          -->
+          <div class="flex" role="radiogroup" :aria-label="t('proposal.rateTrader', { name: proposal.counterparty_name ?? t('common.anonymous') })">
             <button
               v-for="s in 5" :key="s"
-              class="cursor-pointer transition-transform hover:scale-110"
-              style="touch-action: manipulation"
+              type="button"
+              class="star-btn"
+              role="radio"
+              :aria-checked="pendingScore === s"
+              :aria-label="t('proposal.starLabel', { n: s }, s)"
               @click="pendingScore = s"
               @mouseenter="hoverStar = s"
               @mouseleave="hoverStar = 0"
+              @focus="hoverStar = s"
+              @blur="hoverStar = 0"
             >
               <v-icon
                 :icon="s <= (hoverStar || pendingScore) ? 'mdi-star' : 'mdi-star-outline'"
@@ -526,22 +558,55 @@ function cancelRating() {
   outline-color: rgba(255, 255, 255, 0.3);
 }
 
-/* Cards expand / collapse transition */
+/* 44px minimum target (WCAG 2.5.5), with the glyph centred inside it. */
+.star-btn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  /* Vertical only. Pulling in horizontally too would overlap adjacent targets,
+     so the left edge of one star would belong to the star before it. */
+  margin: -12px 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.star-btn:hover { transform: scale(1.12); }
+.star-btn:focus-visible {
+  outline: 2px solid var(--c-mutual);
+  outline-offset: -6px;
+  border-radius: 8px;
+}
+
+/*
+  Cards expand / collapse.
+
+  grid-template-rows, not max-height. The old version animated to a fixed
+  260px ceiling; stacked on mobile the two card panels come to roughly 284px,
+  so the panel snapped open at the end of its own animation. 0fr → 1fr
+  animates to the content's real height, whatever that turns out to be.
+*/
 .cards-expand-enter-active,
 .cards-expand-leave-active {
-  transition: max-height 0.26s cubic-bezier(0.22, 1, 0.36, 1),
-              opacity    0.20s ease;
-  overflow: hidden;
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.26s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity           0.20s ease;
 }
+.cards-expand-enter-active > *,
+.cards-expand-leave-active > * { overflow: hidden; min-height: 0; }
+
 .cards-expand-enter-from,
 .cards-expand-leave-to {
-  max-height: 0;
+  grid-template-rows: 0fr;
   opacity: 0;
 }
-.cards-expand-enter-to,
-.cards-expand-leave-from {
-  max-height: 260px;
-  opacity: 1;
+
+@media (prefers-reduced-motion: reduce) {
+  .cards-expand-enter-active,
+  .cards-expand-leave-active { transition: opacity 0.12s ease; }
+  .star-btn { transition: none; }
 }
 
 .card-fan-extra {

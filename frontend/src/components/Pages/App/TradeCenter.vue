@@ -118,6 +118,32 @@ import AnnounceDetailDialog from "@/components/trade/AnnounceDetailDialog.vue";
       @propose="onProposeFromProfile"
     />
 
+    <!--
+      Cancelling an accepted trade cannot be undone, so it is the one action in
+      this flow that asks. Named, not generic: the counterparty is in the
+      sentence, because "are you sure?" tells nobody anything.
+    -->
+    <v-dialog v-model="cancelConfirm.open" max-width="440">
+      <v-card style="background-color: var(--c-surface); color: var(--c-text); border: 1px solid var(--c-border)" class="!rounded-2xl">
+        <div class="flex flex-col gap-3 px-6 pt-6">
+          <div class="flex items-center gap-3">
+            <v-icon icon="mdi-alert-circle-outline" size="22" color="var(--c-accent)" />
+            <p class="text-base font-bold" style="color: var(--c-text)">{{ $t('tradeCenter.cancelConfirmTitle') }}</p>
+          </div>
+          <p class="text-sm" style="color: var(--c-muted); line-height: 1.55">
+            {{ $t('tradeCenter.cancelConfirmBody', { name: cancelConfirm.proposal?.counterparty_name ?? $t('common.anonymous') }) }}
+          </p>
+        </div>
+        <div class="flex justify-end gap-2 px-6 py-5">
+          <v-btn variant="text" style="color: var(--c-muted)" :disabled="cancelConfirm.working"
+            @click="cancelConfirm.open = false">{{ $t('tradeCenter.cancelConfirmKeep') }}</v-btn>
+          <v-btn variant="flat" style="background-color: var(--c-accent); color: white"
+            :loading="cancelConfirm.working"
+            @click="doCancel(cancelConfirm.proposal)">{{ $t('tradeCenter.cancelConfirmDo') }}</v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+
     <v-snackbar v-model="snackbar.open" :timeout="4000" :color="snackbar.color ?? 'var(--c-mutual)'">
       {{ snackbar.message }}
     </v-snackbar>
@@ -133,6 +159,7 @@ function debounce(fn, ms) {
 }
 import { fetchMatches, fetchTradersWithCard, bucketMatches } from "@/lib/matches";
 import { fetchMyProposals, acceptTradeProposal, completeTradeProposal, cancelTradeProposal, declineTradeProposal } from "@/lib/proposals";
+import { tradeErrorKey, isStaleTradeError } from "@/lib/tradeErrors";
 import { fetchAnnounces } from "@/lib/announces";
 
 /** The tabs, in order. First one is what a bare /trade means. Kept in step with
@@ -166,6 +193,8 @@ export default {
       editProposal:       null,
       counterProposal:    null,
       snackbar:           { open: false, message: "", color: null },
+      // Cancelling an accepted trade is asked about first; see onCancel.
+      cancelConfirm:      { open: false, proposal: null, working: false },
       // Current user's trade scope profile
       myTradeScope:       "worldwide",
       myCountry:          "",
@@ -341,13 +370,27 @@ export default {
         this.snackbar = { open: true, message: err.message ?? this.$t('tradeCenter.failedToConfirm'), color: "var(--c-accent)" };
       }
     },
+    /**
+     * Say what went wrong in the user's language instead of Postgres's.
+     *
+     * A status clash almost always means the other side acted while this page
+     * was open, so the row on screen is a lie either way: reload it.
+     */
+    reportTradeError(err, fallbackKey) {
+      this.snackbar = {
+        open: true,
+        message: this.$t(tradeErrorKey(err, fallbackKey)),
+        color: "var(--c-accent)",
+      };
+      if (isStaleTradeError(err)) this.loadProposals();
+    },
     async onAccept(proposal) {
       try {
         await acceptTradeProposal(proposal.id);
         this.snackbar = { open: true, message: this.$t('tradeCenter.tradeAccepted'), color: "var(--c-mutual)" };
         await this.loadProposals();
       } catch (err) {
-        this.snackbar = { open: true, message: err.message ?? this.$t('tradeCenter.failedToAccept'), color: "var(--c-accent)" };
+        this.reportTradeError(err, 'tradeCenter.failedToAccept');
       }
     },
     async onDecline(payload) {
@@ -358,16 +401,33 @@ export default {
         this.snackbar = { open: true, message: this.$t('tradeCenter.tradeDeclined'), color: "var(--c-muted)" };
         await this.loadProposals();
       } catch (err) {
-        this.snackbar = { open: true, message: err.message ?? this.$t('tradeCenter.failedToDecline'), color: "var(--c-accent)" };
+        this.reportTradeError(err, 'tradeCenter.failedToDecline');
       }
     },
-    async onCancel(proposal) {
+    /**
+     * Cancelling a pending proposal withdraws an offer nobody has agreed to, so
+     * it goes straight through. Cancelling an *accepted* trade tears up an
+     * agreement two people made, possibly after arranging to meet, and no path
+     * reverses it — that one asks first.
+     */
+    onCancel(proposal) {
+      if (proposal?.status === 'accepted') {
+        this.cancelConfirm = { open: true, proposal, working: false };
+        return;
+      }
+      this.doCancel(proposal);
+    },
+    async doCancel(proposal) {
+      if (!proposal) return;
+      this.cancelConfirm.working = true;
       try {
         await cancelTradeProposal(proposal.id);
         this.snackbar = { open: true, message: this.$t('tradeCenter.tradeCancelled'), color: "var(--c-muted)" };
         await this.loadProposals();
       } catch (err) {
-        this.snackbar = { open: true, message: err.message ?? this.$t('tradeCenter.failedToCancel'), color: "var(--c-accent)" };
+        this.reportTradeError(err, 'tradeCenter.failedToCancel');
+      } finally {
+        this.cancelConfirm = { open: false, proposal: null, working: false };
       }
     },
     onOpenProfile(traderId) {

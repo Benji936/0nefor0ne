@@ -143,7 +143,7 @@ Three semantic roles, one neutral system, two modes. The dark mode is canonical;
 
 ### Tertiary — Mutual (Teal)
 
-- **Trade Match Teal** (`#2DD4BF`): Mutual match badges, "They want this" indicators in the propose-trade UI, match count chips. Used nowhere else. When it appears, it means something.
+- **Trade Match Teal** (`#2DD4BF`): The agreement chain, start to finish. Mutual match badges, "they want this" indicators, match count chips, then Accept, Confirm your side, both-sides-verified, agreed meetup and cash terms, and the post-trade rating. Not a general-purpose success color: see The Agreement Rule below.
 
 ### Neutral
 
@@ -158,7 +158,11 @@ Three semantic roles, one neutral system, two modes. The dark mode is canonical;
 
 **The No-Gray Rule.** Pure grays (`#555`, `#ccc`, `text-gray-*`) are prohibited. Every neutral in the system is tinted toward the brand hue. Icon fills, placeholder text, and muted labels use `var(--c-muted)` (Soft Violet), not a gray.
 
-**The Mutual Scarcity Rule.** Teal appears only for confirmed mutual matches and "they want this" signals in the trade negotiation UI. Never use it for generic success states, positive alerts, or decoration.
+**The Agreement Rule.** Teal marks agreement: the moment two people line up, and every step that follows from it. Mutual matches and "they want this" signals, then Accept, Confirm your side, both-sides-verified, the meetup and cash terms once they are set, and the rating after the trade closes.
+
+This used to be the Mutual Scarcity Rule, which reserved teal for confirmed mutual matches alone and forbade it for "generic success states". The codebase went the other way, deliberately and consistently: by mid-2026 teal was on all seven of those things across the trade flow, and reversing it would have meant repainting Accept and Confirm in amethyst, where they would read as "offer" rather than "agree". The rule is rewritten to match, and the audit note is left here so nobody reads the change as drift.
+
+What teal still must not do is decorate. It is not a positive-alert color, not a highlight, and not available for anything outside the agreement chain: an upload that succeeded, a saved setting, or a green-for-go badge is not agreement. Amethyst remains the color of offering, pink the color of wanting, and neither borrows teal to look pleased with itself.
 
 ## 3. Typography
 
@@ -282,6 +286,6 @@ Animated pulse skeletons using `var(--c-skeleton)` (`#1E1248` dark, `#E2D2F8` li
 - **Don't** create sterile white product grids. The light mode uses lavender-tinted whites (`#FEFEFF`, `#F8F5FF`), never clinical white.
 - **Don't** use side-stripe borders (`border-left > 1px` as a colored accent). Use full borders, background tints, or leading icons instead.
 - **Don't** use `background-clip: text` with a gradient background for decorative purposes. Emphasis is achieved through weight and size contrast, never gradient text.
-- **Don't** render the mutual color (`#2DD4BF`, teal) for anything other than confirmed mutual matches. Using it for generic success or positivity dilutes its meaning.
+- **Don't** render the mutual color (`#2DD4BF`, teal) outside the agreement chain. Matching, accepting, confirming and rating are teal; an upload that worked, a saved form, or a green-for-go badge is not. See The Agreement Rule.
 - **Don't** place headless `<AddCard>` components inside Vuetify `v-overlay` default slots — they teleport out of DOM scope and break `$refs`. Always place them as siblings outside the overlay.
 - **Don't** mix `<script setup>` with Options API methods that need to be called via `$refs` without `defineExpose()`. The methods become inaccessible. Consolidate to one API style per component.

@@ -312,7 +312,11 @@
     "tradeCancelled": "Tausch abgebrochen.",
     "failedToCancel": "Abbrechen fehlgeschlagen.",
     "counterSent": "Gegenangebot #{id} gesendet.",
-    "proposalSent": "Vorschlag #{id} gesendet."
+    "proposalSent": "Vorschlag #{id} gesendet.",
+    "cancelConfirmTitle": "Diesen Tausch abbrechen?",
+    "cancelConfirmBody": "{name} und du wart euch über diesen Tausch einig. Ein Abbruch lässt sich nicht rückgängig machen, und {name} wird nicht gefragt.",
+    "cancelConfirmKeep": "Tausch behalten",
+    "cancelConfirmDo": "Abbrechen"
   },
   "matches": {
     "loginRequired": "Melde dich an, um deine Tauschpartner zu sehen.",
@@ -462,7 +466,6 @@
     "submit": "Absenden",
     "uploadPhotos": "Lade Fotos deiner Karten hoch, damit die andere Person sie überprüfen und annehmen kann.",
     "failedToSave": "Vorschlag konnte nicht gespeichert werden.",
-    "waitingForUpload": "Warten auf {name}, Fotos hochzuladen und zu akzeptieren.",
     "waitingForConfirm": "Warten auf {name}, zu bestätigen.",
     "them": "Sie",
     "you": "Du",
@@ -474,7 +477,14 @@
     "tradeMethodOther": "Sonstiges",
     "youPay": "Du zahlst",
     "theyPay": "{name} zahlt",
-    "meetupAt": "Meet at"
+    "meetupAt": "Meet at",
+    "yoursToReview": "Du bist am Zug.",
+    "photoYoursMissing": "Füge ein Foto deiner Karten hinzu, damit {name} sieht, was ankommt.",
+    "photoTheirsMissing": "Warten auf ein Foto von {name}.",
+    "waitingAccept": "Warten auf die Antwort von {name}.",
+    "viewTrade": "Tausch ansehen",
+    "starLabel": "{n} Stern | {n} Sterne",
+    "viewProfileOf": "Profil von {name} ansehen"
   },
   "proposeDialog": {
     "title": "Tausch vorschlagen",
@@ -551,10 +561,17 @@
     "uploadBothBeforeConfirm": "Beide Seiten müssen Fotos hochladen, bevor bestätigt werden kann.",
     "waitingForConfirmDetail": "Warten auf {name}, zu bestätigen.",
     "bothUploadedConfirmHint": "Beide haben hochgeladen  bestätige, wenn du deine Karten erhalten hast.",
-    "uploadBothToAccept": "Beide Seiten müssen Fotos hochladen, um annehmen zu können.",
     "photosVerifiedCanAccept": "Fotos verifiziert  du kannst jetzt annehmen.",
     "waitingForReview": "Warten auf {name}, zu prüfen und anzunehmen.",
-    "declinePlaceholder": "Optional  teile mit, warum du ablehnst…"
+    "declinePlaceholder": "Optional  teile mit, warum du ablehnst…",
+    "acceptWithoutPhotos": "Noch hat keine Seite ihre Karten gezeigt. Du kannst trotzdem annehmen, aber Fotos sind der einzige Nachweis dessen, was zugesagt wurde."
+  },
+  "tradeError": {
+    "stale": "Dieser Tausch hat sich geändert, seit du ihn geöffnet hast. Er wurde gerade aktualisiert.",
+    "notYours": "Diese Seite des Tauschs liegt nicht bei dir.",
+    "gone": "Diesen Tausch gibt es nicht mehr.",
+    "signedOut": "Du wurdest abgemeldet. Melde dich erneut an.",
+    "generic": "Das hat nicht geklappt. Versuch es gleich noch einmal."
   },
   "traderProfile": {
     "communitiesTitle": "Communitys",
@@ -819,7 +836,9 @@
     "clickOrDrag": "Klicken oder Foto hierher ziehen",
     "uploading": "Wird hochgeladen…",
     "waitingUpload": "Warte auf {name} zum Hochladen",
-    "loading": "Lädt…"
+    "loading": "Lädt…",
+    "openPhoto": "Foto in neuem Tab öffnen",
+    "deletePhoto": "Dieses Foto löschen"
   },
   "time": {
     "justNow": "gerade eben",
@@ -969,6 +988,10 @@
     "communityVerify": {
       "title": "Community verifizieren | One for One",
       "desc": "Weise nach, dass es den Laden, Server oder die Gruppe wirklich gibt, und schalte das Verifiziert-Zeichen frei."
+    },
+    "TradeCenter": {
+      "title": "Tauschzentrale — Treffer, Angebote und Anzeigen | One for One",
+      "desc": "Sieh, wer hat, was du suchst, beantworte Tauschangebote und poste deine Gesuche."
     }
   },
   "deckIgnore": {

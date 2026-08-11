@@ -59,13 +59,22 @@ useHead(
     const IMAGE = `${BASE}/logo.png`;
     const OG_LOCALES = { en: "en_US", fr: "fr_FR", de: "de_DE", it: "it_IT" };
 
+    // vue-i18n returns the key itself when a message is missing, and a key is
+    // a truthy string, so `t(...) || fallback` never reached its fallback: any
+    // route without a meta entry put the literal "meta.TradeCenter.title" in
+    // the browser tab and the <title> tag. Compare against the key instead.
+    const meta = (key, fallbackKey) => {
+      const res = t(key, {}, { missingWarn: false, fallbackWarn: false, locale: loc });
+      return res === key ? t(fallbackKey, {}, { locale: loc }) : res;
+    };
+
     const isSearch = page === "search" || !page;
     const title = isSearch && q
       ? t("meta.search.titleWithQuery", { query: q }, { locale: loc })
-      : t(`meta.${page || "search"}.title`, {}, { missingWarn: false, locale: loc }) || t("meta.search.title", {}, { locale: loc });
+      : meta(`meta.${page || "search"}.title`, "meta.search.title");
     const desc = isSearch && q
       ? t("meta.search.descWithQuery", { query: q }, { locale: loc })
-      : t(`meta.${page || "search"}.desc`, {}, { missingWarn: false, locale: loc }) || t("meta.search.desc", {}, { locale: loc });
+      : meta(`meta.${page || "search"}.desc`, "meta.search.desc");
 
     const canonical = `${BASE}${path}`;
 
