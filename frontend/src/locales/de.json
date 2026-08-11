@@ -147,6 +147,16 @@
       },
       "cta": "Discord beitreten"
     },
+    "plan": {
+      "eyebrow": "Für Läden und Communities",
+      "heading": "Betreibst du einen Laden, einen Discord oder eine lokale Gruppe?",
+      "body": "Zeig dich auf der Karte. Verifizierte Communities sind die, die Sammler finden, wenn sie in ihrer Nähe suchen, und die einzigen, die Events posten können.",
+      "freeYear": "Das erste Jahr ist kostenlos.",
+      "thenYear": "Danach {year} pro Jahr.",
+      "monthly": "Oder {month} pro Monat, mit sechs Monaten gratis. Jederzeit kündbar.",
+      "cta": "Finde deine, oder füge sie hinzu",
+      "mockName": "Dein Laden"
+    },
     "donate": {
       "eyebrow": "Unterstützung",
       "heading": "One for One kostenlos halten",

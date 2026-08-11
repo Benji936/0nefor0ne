@@ -13,7 +13,7 @@
 // screen reader come for free.
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { INTERVALS } from "@/lib/communityPricing";
+import { INTERVALS, formatPrice } from "@/lib/communityPricing";
 
 const props = defineProps({
   /** 'year' | 'month' */
@@ -24,7 +24,9 @@ const props = defineProps({
   compact: { type: Boolean, default: false },
 });
 const emit = defineEmits(["update:modelValue"]);
-const { t } = useI18n();
+// `locale` as well as `t`: the price is formatted here, and where the currency
+// symbol sits is a fact about the reader's language, not about the shop.
+const { t, locale } = useI18n();
 
 // A name unique to the instance, so two choosers on one page could never end
 // up in the same radio group and fight over the selection.
@@ -34,7 +36,9 @@ const plans = computed(() => INTERVALS.map((i) => ({
   interval: i,
   name: t(`communityVerify.plans.${i}.name`),
   free: t(`communityVerify.plans.${i}.free`),
-  then: t(`communityVerify.plans.${i}.then`, { price: props.pricing[i].display }),
+  then: t(`communityVerify.plans.${i}.then`, {
+    price: formatPrice(props.pricing[i].amount, props.pricing.currency, locale.value),
+  }),
 })));
 </script>
 

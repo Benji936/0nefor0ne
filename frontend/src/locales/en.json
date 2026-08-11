@@ -147,6 +147,16 @@
       },
       "cta": "Join our Discord"
     },
+    "plan": {
+      "eyebrow": "For stores and communities",
+      "heading": "Run a shop, a Discord, or a local group?",
+      "body": "Put it on the map. Verified communities are the ones collectors find when they search near them, and the only ones that can post events.",
+      "freeYear": "The first year is free.",
+      "thenYear": "After that, {year} a year.",
+      "monthly": "Or {month} a month, with six months free. Cancel any time.",
+      "cta": "Find yours, or add it",
+      "mockName": "Your store"
+    },
     "donate": {
       "eyebrow": "Support",
       "heading": "Keep One for One free",
