@@ -158,11 +158,13 @@ const planMonth = computed(() => formatPrice(planPrice.value.month.amount, planP
           <span class="lp-wordmark">{{ $t("landing.hero.productName") }}</span>
         </router-link>
 
+        <!-- Only the destinations a signed-out reader can actually reach. Decks,
+             Collection and Trade all need a session, so from here they were four
+             links to the same login prompt. Same guest set the side rail shows. -->
         <nav class="lp-nav" aria-label="Primary">
           <router-link :to="`/${locale}/cards`" class="lp-nav-link">{{ $t("landing.nav.search") }}</router-link>
-          <router-link :to="`/${locale}/decks`" class="lp-nav-link">{{ $t("landing.nav.decks") }}</router-link>
-          <router-link :to="`/${locale}/library`" class="lp-nav-link">{{ $t("landing.nav.collection") }}</router-link>
-          <router-link :to="`/${locale}/trade`" class="lp-nav-link">{{ $t("landing.nav.trade") }}</router-link>
+          <router-link :to="`/${locale}/dashboard`" class="lp-nav-link">{{ $t("nav.home") }}</router-link>
+          <router-link :to="{ name: 'community', params: { locale } }" class="lp-nav-link">{{ $t("community.home") }}</router-link>
         </nav>
 
         <div class="lp-header-cta">

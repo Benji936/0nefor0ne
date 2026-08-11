@@ -50,9 +50,6 @@
   "landing": {
     "nav": {
       "search": "Recherche",
-      "decks": "Decks",
-      "collection": "Collection",
-      "trade": "Échanges",
       "login": "Se connecter"
     },
     "hero": {
