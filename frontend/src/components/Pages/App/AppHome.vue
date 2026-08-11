@@ -20,11 +20,14 @@ useHead({
     <div class="d-flex flex-column gap-6">
       <!-- People first: the cards are always here, the people are the part that
            changes, and this is the only place in the app that says who else
-           turned up. -->
+           turned up.
+           Then the set browser, because it is the one thing on this page you
+           type into — a search box below two scrolling card rails is a search
+           box nobody finds. The rails are for browsing and can wait. -->
       <SearchTraders />
+      <SearchSetBrowser />
       <SearchTrending />
       <SearchLatestReleases />
-      <SearchSetBrowser />
     </div>
   </v-container>
 </template>
