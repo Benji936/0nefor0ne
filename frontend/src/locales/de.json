@@ -131,6 +131,21 @@
       "labelMatch": "TREFFER",
       "labelWishlist": "Deine Wunschliste"
     },
+    "people": {
+      "eyebrow": "Die Spieler",
+      "heading": "Hier ist schon was los",
+      "subheading": "Echte Konten, echte Tauschstapel. Jeder Name führt zu dem, was zum Tausch steht.",
+      "joinedTitle": "Neueste Mitglieder",
+      "pilesTitle": "Größte Tauschstapel",
+      "pileCount": "{count} Karte | {count} Karten",
+      "ago": {
+        "today": "heute",
+        "day": "vor {n} Tag | vor {n} Tagen",
+        "week": "vor {n} Woche | vor {n} Wochen",
+        "month": "vor {n} Monat | vor {n} Monaten",
+        "year": "vor {n} Jahr | vor {n} Jahren"
+      }
+    },
     "discord": {
       "eyebrow": "Community",
       "heading": "Tausche direkt über Discord",

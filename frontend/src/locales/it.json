@@ -131,6 +131,21 @@
       "labelMatch": "MATCH",
       "labelWishlist": "La tua lista dei desideri"
     },
+    "people": {
+      "eyebrow": "I giocatori",
+      "heading": "Qui c'è già qualcuno",
+      "subheading": "Account veri, collezioni vere. Ogni nome porta a ciò che offre in scambio.",
+      "joinedTitle": "Ultimi iscritti",
+      "pilesTitle": "Collezioni più grandi",
+      "pileCount": "{count} carta | {count} carte",
+      "ago": {
+        "today": "oggi",
+        "day": "{n} giorno fa | {n} giorni fa",
+        "week": "{n} settimana fa | {n} settimane fa",
+        "month": "{n} mese fa | {n} mesi fa",
+        "year": "{n} anno fa | {n} anni fa"
+      }
+    },
     "discord": {
       "eyebrow": "Community",
       "heading": "Scambia direttamente da Discord",
