@@ -6,7 +6,7 @@
 import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { requestClaimCode, verifyClaimCode, requestManualReview, startClaimCheckout, fetchMyClaim, fetchMyCountryCode } from "@/lib/community";
-import { communityPricing } from "@/lib/communityPricing";
+import { communityPricing, formatPrice } from "@/lib/communityPricing";
 import { isValidCode } from "@/lib/claimState";
 import { getCurrentSession, signInWithDiscord } from "@/lib/supabaseClient";
 import PlatformIcon from "@/components/community/PlatformIcon.vue";
@@ -17,7 +17,7 @@ const props = defineProps({
   community:  { type: Object,  default: null },
 });
 const emit = defineEmits(["update:modelValue", "claimed", "stale"]);
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const step = ref("intro");          // intro | code | subscribe | manual | done
 const signedIn = ref(false);
@@ -30,6 +30,9 @@ const doneMessage = ref("");
 const canVerify = computed(() => isValidCode(code.value) && !submitting.value);
 const myCountryCode = ref(null);
 const price = computed(() => communityPricing(props.community, myCountryCode.value));
+// Currency from the shop's country, wording from the reader's. See formatPrice.
+const priceYear = computed(() => formatPrice(price.value.year.amount, price.value.currency, locale.value));
+const priceMonth = computed(() => formatPrice(price.value.month.amount, price.value.currency, locale.value));
 
 // Same offer as the self-verification route, same component, same words. A
 // claimed store and a created one are buying the identical thing, and two
@@ -160,7 +163,7 @@ async function sendManual() {
                first year costs nothing while they are still deciding. -->
           <p class="claim-cost">
             <v-icon icon="mdi-gift-outline" size="15" />
-            <span>{{ t('communityVerify.costUpfront', { year: price.year.display, month: price.month.display }) }}</span>
+            <span>{{ t('communityVerify.costUpfront', { year: priceYear, month: priceMonth }) }}</span>
           </p>
         </template>
 

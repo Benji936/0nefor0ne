@@ -11,10 +11,12 @@
 // Switzerland was billed in USD until CHF was added here, because CH is neither
 // GB nor eurozone and fell through to the fallback.
 
-const CHF = { currency: "chf", year: { amount: 60, display: "CHF 60" }, month: { amount: 6, display: "CHF 6" } };
-const GBP = { currency: "gbp", year: { amount: 50, display: "£50" },    month: { amount: 5, display: "£5" } };
-const EUR = { currency: "eur", year: { amount: 60, display: "€60" },    month: { amount: 6, display: "€6" } };
-const USD = { currency: "usd", year: { amount: 60, display: "$60" },    month: { amount: 6, display: "$6" } };
+// Amounts only. How a price is written is a question about the reader, not
+// about the shop, so it is answered at render time by formatPrice below.
+const CHF = { currency: "chf", year: { amount: 60 }, month: { amount: 6 } };
+const GBP = { currency: "gbp", year: { amount: 50 }, month: { amount: 5 } };
+const EUR = { currency: "eur", year: { amount: 60 }, month: { amount: 6 } };
+const USD = { currency: "usd", year: { amount: 60 }, month: { amount: 6 } };
 
 // ISO-3166 alpha-2 codes of euro-area countries.
 const EUROZONE = new Set([
@@ -48,6 +50,45 @@ export function communityPricing(community, fallbackCountryCode = null) {
   if (cc === "GB") return structuredClone(GBP);
   if (EUROZONE.has(cc)) return structuredClone(EUR);
   return structuredClone(USD);
+}
+
+/**
+ * A price written the way the reader's language writes it.
+ *
+ * Two separate inputs, deliberately not collapsed into one. `currency` follows
+ * the community's country, because that is what Stripe will present at
+ * checkout. `locale` follows the reader's UI language, because that is what
+ * decides where the symbol goes. A French reader looking at a British shop
+ * should see "50 £": the currency is the shop's, the word order is theirs.
+ *
+ * This replaces a stored display string that always put the symbol in front.
+ * That is right in English and wrong in the other three languages we ship,
+ * where "€60 par an" should read "60 € par an".
+ *
+ * narrowSymbol rather than the default: in French, USD and GBP otherwise
+ * render as "$US" and "£GB". Only one currency is ever on screen at a time,
+ * so there is nothing for the longer form to disambiguate against.
+ *
+ * Whole units, because every plan is a round figure and "€60.00" invites the
+ * reader to look for cents that are never there.
+ */
+export function formatPrice(amount, currency, locale = "en") {
+  const code = String(currency ?? "").toUpperCase();
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: code,
+      currencyDisplay: "narrowSymbol",
+      // Both bounds, or Intl throws: a currency's default minimum is 2, which
+      // would exceed a maximum of 0.
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  } catch {
+    // A malformed currency code must not take the price off the page. Mirrors
+    // the fallback in communityEvents.js formatEventWhen.
+    return `${code} ${amount}`;
+  }
 }
 
 /** Guards what reaches the Edge Function. Anything unrecognised becomes yearly

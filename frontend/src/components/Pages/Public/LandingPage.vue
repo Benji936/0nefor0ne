@@ -16,7 +16,7 @@ import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { useTheme } from "vuetify";
 import { BUILT_WITH_TOOLS as builtWithTools } from "@/lib/builtWithTools";
-import { communityPricing } from "@/lib/communityPricing";
+import { communityPricing, formatPrice } from "@/lib/communityPricing";
 import {
   MIN_TO_SHOW,
   decorateRecent,
@@ -144,6 +144,8 @@ onMounted(async () => {
 // cannot quote a price the checkout has since moved away from.
 const PRICING_COUNTRY = { fr: "FR", de: "DE", it: "IT" }; // en falls through to USD
 const planPrice = computed(() => communityPricing(null, PRICING_COUNTRY[locale.value] ?? null));
+const planYear = computed(() => formatPrice(planPrice.value.year.amount, planPrice.value.currency, locale.value));
+const planMonth = computed(() => formatPrice(planPrice.value.month.amount, planPrice.value.currency, locale.value));
 </script>
 
 <template>
@@ -580,9 +582,9 @@ const planPrice = computed(() => communityPricing(null, PRICING_COUNTRY[locale.v
 
           <p class="lp-plan-price">
             <strong class="lp-plan-free">{{ $t("landing.plan.freeYear") }}</strong>
-            {{ $t("landing.plan.thenYear", { year: planPrice.year.display }) }}
+            {{ $t("landing.plan.thenYear", { year: planYear }) }}
           </p>
-          <p class="lp-plan-alt">{{ $t("landing.plan.monthly", { month: planPrice.month.display }) }}</p>
+          <p class="lp-plan-alt">{{ $t("landing.plan.monthly", { month: planMonth }) }}</p>
 
           <router-link :to="{ name: 'community', params: { locale } }" class="lp-btn lp-btn-trade">
             {{ $t("landing.plan.cta") }}

@@ -15,7 +15,7 @@ import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { useHead } from "@unhead/vue";
 import { fetchBySlug, verifyClaimCode, startClaimCheckout, fetchMyCountryCode } from "@/lib/community";
-import { communityPricing } from "@/lib/communityPricing";
+import { communityPricing, formatPrice } from "@/lib/communityPricing";
 import { isValidCode } from "@/lib/claimState";
 import {
   verifyStep, domainMatches, siteHost, fetchVerifyClaim,
@@ -65,6 +65,10 @@ const justPaid = ref(route.query.verify === "success");
 // USD default this replaces.
 const myCountryCode = ref(null);
 const price = computed(() => communityPricing(community.value, myCountryCode.value));
+// The currency comes from the community's country; the wording of it comes from
+// the reader's language. See formatPrice.
+const priceYear = computed(() => formatPrice(price.value.year.amount, price.value.currency, locale.value));
+const priceMonth = computed(() => formatPrice(price.value.month.amount, price.value.currency, locale.value));
 
 // Yearly is preselected because it is the one being recommended, and the reason
 // is on screen next to it rather than implied by the order.
@@ -635,7 +639,7 @@ function signIn() {
                domain is ten minutes of somebody's evening, and finding out the
                price once it is done is the wrong order. -->
           <p class="cv__cost">
-            {{ t('communityVerify.costUpfront', { year: price.year.display, month: price.month.display }) }}
+            {{ t('communityVerify.costUpfront', { year: priceYear, month: priceMonth }) }}
           </p>
         </template>
       </aside>
