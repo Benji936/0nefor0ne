@@ -18,12 +18,11 @@ import { useTheme } from "vuetify";
 import { BUILT_WITH_TOOLS as builtWithTools } from "@/lib/builtWithTools";
 import {
   MIN_TO_SHOW,
+  decorateRecent,
   fetchRecentTraders,
   fetchTopTradepiles,
-  joinedAgo,
   traderInitial,
-  traderPlace,
-} from "@/lib/landingTraders";
+} from "@/lib/people";
 
 const props = defineProps({
   // Session | null, forwarded by App.vue's RouterView. Drives the auth-aware CTAs.
@@ -121,24 +120,10 @@ const showPeople = computed(
   () => recentTraders.value.length >= MIN_TO_SHOW && topPiles.value.length >= MIN_TO_SHOW
 );
 
-// "3 days ago" as a key plus a count, so each language pluralises its own way.
-// Resolved once here rather than in the template, where v-if plus the message
-// call would recompute it three times per row on every render.
-//
-// A row whose timestamp will not parse keeps its name and loses only the date:
-// a missing join date must not cost us the person it belongs to.
-const recentPeople = computed(() =>
-  recentTraders.value.map((t) => {
-    const ago = joinedAgo(t.created_at);
-    return {
-      ...t,
-      place: traderPlace(t),
-      initial: traderInitial(t.Name),
-      agoKey: ago ? `landing.people.ago.${ago.unit}` : null,
-      agoCount: ago?.count ?? 0,
-    };
-  })
-);
+// Join date, place and initial worked out once per row rather than three times
+// per render from inside the template. Shared with the app home's version of
+// the same list.
+const recentPeople = computed(() => decorateRecent(recentTraders.value));
 
 onMounted(async () => {
   const [recent, piles] = await Promise.all([fetchRecentTraders(3), fetchTopTradepiles(3)]);
@@ -477,7 +462,7 @@ onMounted(async () => {
       <div class="lp-people-cols">
         <!-- Newest members -->
         <div class="lp-people-col">
-          <h3 class="lp-people-col-title">{{ $t("landing.people.joinedTitle") }}</h3>
+          <h3 class="lp-people-col-title">{{ $t("people.newestTitle") }}</h3>
           <ul class="lp-people-list">
             <li v-for="t in recentPeople" :key="t.id">
               <router-link :to="`/${locale}/trader/${t.id}`" class="lp-person">
@@ -499,7 +484,7 @@ onMounted(async () => {
 
         <!-- Deepest trade piles -->
         <div class="lp-people-col">
-          <h3 class="lp-people-col-title">{{ $t("landing.people.pilesTitle") }}</h3>
+          <h3 class="lp-people-col-title">{{ $t("people.pilesTitle") }}</h3>
           <ul class="lp-people-list">
             <li v-for="(t, i) in topPiles" :key="t.id">
               <router-link :to="`/${locale}/trader/${t.id}`" class="lp-person">
@@ -512,7 +497,7 @@ onMounted(async () => {
                   <span class="lp-person-name">{{ t.name }}</span>
                 </span>
                 <span class="lp-person-count">
-                  {{ $t("landing.people.pileCount", { count: t.pile_size }, t.pile_size) }}
+                  {{ $t("people.pileCount", { count: t.pile_size }, t.pile_size) }}
                 </span>
               </router-link>
             </li>

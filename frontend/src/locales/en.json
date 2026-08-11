@@ -134,17 +134,7 @@
     "people": {
       "eyebrow": "The traders",
       "heading": "People are already here",
-      "subheading": "Real accounts, real trade piles. Every name below links to what they have up for trade.",
-      "joinedTitle": "Newest members",
-      "pilesTitle": "Deepest trade piles",
-      "pileCount": "{count} card | {count} cards",
-      "ago": {
-        "today": "today",
-        "day": "{n} day ago | {n} days ago",
-        "week": "{n} week ago | {n} weeks ago",
-        "month": "{n} month ago | {n} months ago",
-        "year": "{n} year ago | {n} years ago"
-      }
+      "subheading": "Real accounts, real trade piles. Every name below links to what they have up for trade."
     },
     "discord": {
       "eyebrow": "Community",
@@ -185,6 +175,20 @@
       "privacyPolicy": "Privacy Policy",
       "builtWith": "Built with",
       "builtWithStripTitle": "Built with & partners"
+    }
+  },
+  "people": {
+    "newestTitle": "Newest members",
+    "pilesTitle": "Deepest trade piles",
+    "pileCount": "{count} card | {count} cards",
+    "sectionTitle": "Traders",
+    "sectionHint": "Who else is here",
+    "ago": {
+      "today": "today",
+      "day": "{n} day ago | {n} days ago",
+      "week": "{n} week ago | {n} weeks ago",
+      "month": "{n} month ago | {n} months ago",
+      "year": "{n} year ago | {n} years ago"
     }
   },
   "auth": {

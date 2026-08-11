@@ -1,12 +1,14 @@
 /**
- * The people behind the landing page's community section.
+ * Who is here: the two lists shown on the public landing page and again on the
+ * app home, where they stop being proof that somebody is around and start
+ * being a way to find them.
  *
  * Two questions, both public: who joined most recently, and who has put the
  * most into their trade pile. Neither exposes anything a visitor could not
  * already read from the Trader directory — it is the same rows, sorted.
  *
- * Reads return [] on failure. A marketing page that cannot reach the database
- * should quietly lose one section, never show a broken one.
+ * Reads return [] on failure. A page that cannot reach the database should
+ * quietly lose one section, never show a broken one.
  *
  * See supabase/migrations/20260811_landing_traders.sql for where these come
  * from, and why the pile count is a function rather than a client-side count.
@@ -82,4 +84,26 @@ export function traderPlace(trader) {
  *  no picture, so this is the common case, not the fallback. */
 export function traderInitial(name) {
   return (String(name ?? "").trim()[0] ?? "?").toUpperCase();
+}
+
+/**
+ * Everything a row needs to render, worked out once.
+ *
+ * Both pages show the same list, and both would otherwise call joinedAgo three
+ * times per row from inside a template — once for the v-if and twice for the
+ * message. The `ago` key is null when the timestamp will not parse, and the
+ * row then renders without a date: a bad timestamp must not cost us the person
+ * it belongs to.
+ */
+export function decorateRecent(traders = []) {
+  return (traders ?? []).map((t) => {
+    const ago = joinedAgo(t?.created_at);
+    return {
+      ...t,
+      place: traderPlace(t),
+      initial: traderInitial(t?.Name),
+      agoKey: ago ? `people.ago.${ago.unit}` : null,
+      agoCount: ago?.count ?? 0,
+    };
+  });
 }

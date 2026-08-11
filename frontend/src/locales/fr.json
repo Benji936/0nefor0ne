@@ -134,17 +134,7 @@
     "people": {
       "eyebrow": "Les joueurs",
       "heading": "Ils sont déjà là",
-      "subheading": "De vrais comptes, de vraies collections. Chaque nom mène à ce qu'il propose à l'échange.",
-      "joinedTitle": "Derniers inscrits",
-      "pilesTitle": "Plus grosses collections",
-      "pileCount": "{count} carte | {count} cartes",
-      "ago": {
-        "today": "aujourd'hui",
-        "day": "il y a {n} jour | il y a {n} jours",
-        "week": "il y a {n} semaine | il y a {n} semaines",
-        "month": "il y a {n} mois | il y a {n} mois",
-        "year": "il y a {n} an | il y a {n} ans"
-      }
+      "subheading": "De vrais comptes, de vraies collections. Chaque nom mène à ce qu'il propose à l'échange."
     },
     "discord": {
       "eyebrow": "Communauté",
@@ -185,6 +175,20 @@
       "privacyPolicy": "Politique de confidentialité",
       "builtWith": "Conçu avec",
       "builtWithStripTitle": "Conçu avec & partenaires"
+    }
+  },
+  "people": {
+    "newestTitle": "Derniers inscrits",
+    "pilesTitle": "Plus grosses collections",
+    "pileCount": "{count} carte | {count} cartes",
+    "sectionTitle": "Joueurs",
+    "sectionHint": "Qui d'autre est là",
+    "ago": {
+      "today": "aujourd'hui",
+      "day": "il y a {n} jour | il y a {n} jours",
+      "week": "il y a {n} semaine | il y a {n} semaines",
+      "month": "il y a {n} mois | il y a {n} mois",
+      "year": "il y a {n} an | il y a {n} ans"
     }
   },
   "auth": {

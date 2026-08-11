@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { joinedAgo, traderPlace, traderInitial } from "./landingTraders.js";
+import { joinedAgo, traderPlace, traderInitial, decorateRecent } from "./people.js";
 
 const NOW = new Date("2026-08-11T12:00:00Z");
 const daysBefore = (n) => new Date(NOW.getTime() - n * 86_400_000);
@@ -56,6 +56,33 @@ describe("traderPlace", () => {
     expect(traderPlace({ City: "  ", country_code: "  " })).toBeNull();
     expect(traderPlace({})).toBeNull();
     expect(traderPlace()).toBeNull();
+  });
+});
+
+describe("decorateRecent", () => {
+  it("works out everything a row needs to render", () => {
+    const [row] = decorateRecent([
+      { id: "a", Name: "Dosu", City: "Vernier", country_code: "ch", created_at: daysBefore(14) },
+    ]);
+    expect(row).toMatchObject({
+      id: "a",
+      place: "Vernier, CH",
+      initial: "D",
+      agoKey: "people.ago.week",
+    });
+    expect(row.agoCount).toBeGreaterThan(0);
+  });
+
+  it("keeps the person when the join date will not parse", () => {
+    const [row] = decorateRecent([{ id: "a", Name: "Dosu", created_at: "nonsense" }]);
+    expect(row.Name).toBe("Dosu");
+    expect(row.agoKey).toBeNull();
+    expect(row.agoCount).toBe(0);
+  });
+
+  it("survives being handed nothing", () => {
+    expect(decorateRecent()).toEqual([]);
+    expect(decorateRecent(null)).toEqual([]);
   });
 });
 
