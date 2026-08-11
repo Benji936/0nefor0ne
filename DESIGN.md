@@ -98,12 +98,12 @@ components:
     rounded: "{rounded.xl}"
     padding: "20px"
   chip-mutual:
-    backgroundColor: "rgba(45,212,191,0.15)"
+    backgroundColor: "color-mix(in srgb, {colors.mutual} 15%, transparent)"
     textColor: "{colors.mutual}"
     rounded: "{rounded.full}"
     padding: "4px 10px"
   chip-trade:
-    backgroundColor: "rgba(154,82,245,0.15)"
+    backgroundColor: "color-mix(in srgb, {colors.trade} 15%, transparent)"
     textColor: "{colors.trade}"
     rounded: "{rounded.full}"
     padding: "4px 10px"
@@ -221,10 +221,10 @@ TradeMarket uses tonal layering as its primary depth model — surfaces are stac
 
 Vuetify `v-btn` with `variant="flat"` and inline style overrides for semantic color. Shape is gently rounded (8px radius) — not pill, not square.
 
-- **Trade button** (amethyst `#9A52F5`, white text, 8px radius, `mdi-plus-box` prefix icon): Primary action for adding to trade pile or proposing a trade.
-- **Accent button** (hot pink `#F42D87`, white text, 8px radius, `mdi-heart-plus` prefix icon): Wishlist actions.
-- **Mutual button** (teal `#2DD4BF`, dark text `#13031A`, 8px radius): "See traders" / confirm match actions.
-- **Ghost / Cancel** (`variant="text"`, `color="gray"`): Destructive-adjacent actions, dialog cancel. No background.
+- **Trade button** (amethyst `{colors.trade}` background, `{colors.on-accent}` label, 8px radius, `mdi-plus-box` prefix icon): Primary action for adding to trade pile or proposing a trade.
+- **Accent button** (hot pink `{colors.accent}` background, `{colors.on-accent}` label, 8px radius, `mdi-heart-plus` prefix icon): Wishlist actions.
+- **Mutual button** (teal `{colors.mutual}` background, `{colors.on-accent}` label, 8px radius): "See traders" / confirm match actions.
+- **Ghost / Cancel** (`variant="text"`, label `var(--c-muted)`): Destructive-adjacent actions, dialog cancel. No background. Not `color="gray"`: see The No-Gray Rule.
 - **Hover:** Vuetify handles opacity shift; add no extra transforms on buttons.
 - **Loading:** Vuetify `:loading` prop shows spinner inline — always used on async submit actions.
 

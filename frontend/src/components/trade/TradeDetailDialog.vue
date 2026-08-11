@@ -453,7 +453,7 @@ function confirmDecline() {
               <template v-if="!proposal.i_am_proposer">{{ t('tradeDetail.photosVerifiedCanAccept') }}</template>
               <template v-else>{{ t(`proposal.${waitKey}`, { name: proposal.counterparty_name ?? t('proposal.them') }) }}</template>
             </span>
-            <div class="flex gap-2 shrink-0 flex-wrap w-full">
+            <div class="action-row flex gap-2 shrink-0 flex-wrap w-full">
               <template v-if="!proposal.i_am_proposer">
                 <template v-if="declining">
                   <div class="flex flex-col gap-2 w-full gap-5">
@@ -522,3 +522,25 @@ function confirmDecline() {
     :current-user-id="currentUserId"
   />
 </template>
+
+<style scoped>
+/*
+  On a phone the three pending actions wrapped into a ragged two-by-two: Accept
+  landed on its own row directly under Decline, same left edge, 39px apart. The
+  most important button in the product, isolated below the one that refuses the
+  trade, both about 110px wide and reading as a grid.
+
+  Stacked full-width instead. Order is unchanged, so focus order still matches
+  what is on screen, and each target is unambiguous at a thumb's accuracy.
+*/
+/* Vuetify sizes its buttons through --v-btn-height (36px by default), so that
+   is the knob to turn; a bare min-height leaves the grid tracks inside the
+   button at the old size. Base rule first, so the mobile override below wins
+   rather than being undone by source order. */
+.action-row :deep(.v-btn) { --v-btn-height: 40px; }
+
+@media (max-width: 480px) {
+  .action-row { flex-direction: column; align-items: stretch; }
+  .action-row :deep(.v-btn) { width: 100%; --v-btn-height: 44px; }
+}
+</style>

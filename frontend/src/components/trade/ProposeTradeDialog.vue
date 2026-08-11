@@ -302,16 +302,38 @@ watch(() => props.user?.id ?? props.editProposal?.id ?? props.counterProposal?.i
   theirTradePile.value = [];
 });
 
+/**
+ * Card names in my library, and the subset I have already offered.
+ *
+ * Indexed once per change rather than scanned per row. These were three
+ * separate `myOffers.some(...)` walks — one in the filter below, two more in
+ * the template's v-for — so the suggestions panel was doing O(offers × wishlist)
+ * work on every keystroke in its filter box. At a 238-card pile that is around
+ * fourteen thousand comparisons per render.
+ */
+const offeredNames = computed(() => {
+  const set = new Set();
+  for (const card of myOffers.value) {
+    if ((giveSelection.value[card.id] ?? 0) > 0) set.add(card.name);
+  }
+  return set;
+});
+/** Names I hold and could still offer, for the "you have it" dot. */
+const availableNames = computed(() => {
+  const set = new Set();
+  for (const card of myOffers.value) {
+    if (card.status !== "locked") set.add(card.name);
+  }
+  return set;
+});
+
 const filteredWanted = computed(() => {
   const q = wantedFilter.value.toLowerCase().trim();
   return counterpartyWishlist.value.filter(c => {
     if (q && !c.name.toLowerCase().includes(q)) return false;
     // Hide cards the user has already committed to giving (avoid the confusion of
     // a card appearing in both "You give" and "Cards they want" simultaneously)
-    const alreadyOffered = myOffers.value.some(
-      mo => mo.name === c.name && (giveSelection.value[mo.id] ?? 0) > 0
-    );
-    return !alreadyOffered;
+    return !offeredNames.value.has(c.name);
   });
 });
 
@@ -480,12 +502,12 @@ function marketLinks(name, setCode) {
                     :style="{
                       height: '72px',
                       backgroundColor: 'var(--c-surface)',
-                      ringColor: myOffers.some(c => c.name === item.name) ? 'var(--c-mutual)' : 'var(--c-border)',
+                      ringColor: availableNames.has(item.name) ? 'var(--c-mutual)' : 'var(--c-border)',
                     }"
                   />
                   <!-- "You have it" dot -->
                   <span
-                    v-if="myOffers.some(c => c.name === item.name && c.status !== 'locked')"
+                    v-if="availableNames.has(item.name)"
                     class="absolute -top-1 -right-1 size-4 rounded-full border-2 flex items-center justify-center"
                     style="background-color: var(--c-mutual); border-color: var(--c-surface-2)"
                     :title="t('proposeDialog.alreadyInLibrary')"
@@ -926,9 +948,15 @@ function marketLinks(name, setCode) {
 .row-selected--receive { --row-color: var(--c-trade); }
 
 /* Count chips and the "they want this" signal, tinted from one --chip var so
-   the three roles stay the only source of colour. */
+   the three roles stay the only source of colour.
+
+   The fallback is not decoration: color-mix() with an undefined var is invalid
+   at computed-value time, which drops the whole declaration, and Tailwind's
+   preflight border-width:0 then wins. Without it a missing --chip renders the
+   chip as bare black text with no border or background. */
 .chip-count,
 .signal-chip {
+  --chip: var(--c-muted);
   font-size: 11px;
   font-weight: 700;
   padding: 4px 8px;
