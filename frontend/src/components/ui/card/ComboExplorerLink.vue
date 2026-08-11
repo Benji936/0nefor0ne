@@ -28,7 +28,7 @@ watch(() => props.cardId, check);
     v-if="show"
     :to="`/${route.params.locale || 'en'}/combo/${cardId}`"
     class="inline-flex items-center gap-2 px-3 py-2 rounded-lg no-underline text-sm font-medium w-fit transition-opacity hover:opacity-80"
-    style="background: var(--c-accent); color: #fff"
+    style="background: var(--c-accent); color: var(--c-on-accent)"
   >
     <v-icon icon="mdi-sitemap-outline" size="16" />
     {{ t('combo.explore') }}

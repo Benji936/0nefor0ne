@@ -12,7 +12,7 @@ const props = defineProps({
   currentUserId: { type: String,  default: null  },
 });
 
-const emit = defineEmits(["update:bothUploaded"]);
+const emit = defineEmits(["update:bothUploaded", "update:mineUploaded", "update:theirsUploaded"]);
 
 // ── State ─────────────────────────────────────────────────────────────────
 const photos        = ref([]);
@@ -25,9 +25,17 @@ let   photoSub      = null;
 // ── Derived ───────────────────────────────────────────────────────────────
 const myPhotos    = computed(() => photos.value.filter(p => p.uploader === props.currentUserId));
 const theirPhotos = computed(() => photos.value.filter(p => p.uploader !== props.currentUserId));
-const bothUploaded = computed(() => myPhotos.value.length > 0 && theirPhotos.value.length > 0);
+const mineUploaded   = computed(() => myPhotos.value.length > 0);
+const theirsUploaded = computed(() => theirPhotos.value.length > 0);
+const bothUploaded   = computed(() => mineUploaded.value && theirsUploaded.value);
 
-watch(bothUploaded, val => emit("update:bothUploaded", val), { immediate: true });
+// Lifted individually, not just as "both": this panel is subscribed to
+// trade_photo in realtime, so it is the only place that knows who has uploaded
+// *right now*. The dialog around it would otherwise be reading a snapshot
+// taken when the proposals list last loaded.
+watch(bothUploaded,   val => emit("update:bothUploaded",   val), { immediate: true });
+watch(mineUploaded,   val => emit("update:mineUploaded",   val), { immediate: true });
+watch(theirsUploaded, val => emit("update:theirsUploaded", val), { immediate: true });
 
 // ── Data loading ──────────────────────────────────────────────────────────
 async function loadPhotos() {
@@ -153,20 +161,35 @@ watch(() => props.open, (open) => {
         <p v-if="uploadError" class="text-xs px-1" style="color: var(--c-accent)">{{ uploadError }}</p>
 
         <div v-if="myPhotos.length" class="flex flex-wrap gap-2">
+          <!--
+            An anchor, not a click handler on the image. `window` is not in
+            template scope, so the previous `window.open(...)` compiled to
+            `_ctx.window.open(...)` and threw on every click: your own photos
+            would not open, while theirs (already anchors, below) did.
+          -->
           <div
             v-for="photo in myPhotos"
             :key="photo.id"
-            class="relative group rounded-lg overflow-hidden cursor-pointer"
+            class="relative group rounded-lg overflow-hidden"
             style="width: 80px; height: 80px; background-color: var(--c-surface-2)"
           >
-            <img :src="photo.url" loading="lazy" class="w-full h-full object-cover"
-              @click="window.open(photo.url, '_blank')" />
-            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            <a
+              :href="photo.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="block w-full h-full"
+              :aria-label="t('tradePhotos.openPhoto')"
+            >
+              <img :src="photo.url" loading="lazy" alt="" class="w-full h-full object-cover" />
+            </a>
+            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity pointer-events-none"
               style="background: rgba(0,0,0,0.55)">
               <v-btn
                 icon="mdi-delete-outline" size="x-small" variant="text"
+                class="pointer-events-auto"
                 style="color: var(--c-accent)"
-                @click.stop="onDeletePhoto(photo)"
+                :aria-label="t('tradePhotos.deletePhoto')"
+                @click.stop.prevent="onDeletePhoto(photo)"
               />
             </div>
           </div>
@@ -205,8 +228,9 @@ watch(() => props.open, (open) => {
             rel="noopener noreferrer"
             class="rounded-lg overflow-hidden block"
             style="width: 80px; height: 80px; background-color: var(--c-surface-2)"
+            :aria-label="t('tradePhotos.openPhoto')"
           >
-            <img :src="photo.url" loading="lazy" class="w-full h-full object-cover" />
+            <img :src="photo.url" loading="lazy" alt="" class="w-full h-full object-cover" />
           </a>
         </div>
       </div>

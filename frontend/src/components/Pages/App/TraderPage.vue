@@ -148,7 +148,7 @@ function goBack() {
 .tp__propose {
   display: inline-flex; align-items: center; gap: 8px;
   min-height: 44px; padding: 0 20px; border-radius: 12px;
-  background: var(--c-trade); color: #fff; border: none; cursor: pointer;
+  background: var(--c-trade); color: var(--c-on-accent); border: none; cursor: pointer;
   font-size: 14px; font-weight: 700;
   transition: opacity .15s ease, transform .15s ease;
 }

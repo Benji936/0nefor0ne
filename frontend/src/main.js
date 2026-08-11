@@ -31,10 +31,17 @@ export const createApp = ViteSSG(
         defaultTheme: 'neonDusk',
         themes: {
           // Variation A: Amethyst Nights (active)
+          //
+          // These are the same roles as the --c-* custom properties in
+          // assets/main.css, declared a second time because Vuetify cannot read
+          // CSS variables for its own `color="primary"` resolution. The two
+          // drifted once already, when the CSS side was corrected for contrast
+          // and this side was not. src/lib/palette.test.js now fails the build
+          // if they disagree.
           neonDusk: {
             dark: true,
             colors: {
-              primary:    '#9A52F5',
+              primary:    '#A362F7',
               secondary:  '#F42D87',
               background: '#0B0617',
               surface:    '#13092A',
@@ -48,11 +55,11 @@ export const createApp = ViteSSG(
             dark: false,
             colors: {
               primary:    '#6B20D9',
-              secondary:  '#C9185A',
+              secondary:  '#C21456',
               background: '#FFFFFF',
               surface:    '#F7F2FF',
               error:      '#BE1262',
-              info:       '#0882A8',
+              info:       '#076B82',
               success:    '#059669',
               warning:    '#D97706',
             },

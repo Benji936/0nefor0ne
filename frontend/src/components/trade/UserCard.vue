@@ -29,37 +29,37 @@ const kindMeta = computed(() => {
       return {
         label: t("userCard.mutual"),
         color: "var(--c-mutual)",
-        glow: "rgba(132,204,22,0.22)",
+        glow: "color-mix(in srgb, var(--c-mutual) 22%, transparent)",
         bg: "color-mix(in srgb, var(--c-mutual) 4%, transparent)",
         borderColor: "color-mix(in srgb, var(--c-mutual) 28%, transparent)",
-        btnText: "#0C0820",
+        btnText: "var(--c-on-accent)",
       };
     case "they_have":
       return {
         label: t("userCard.hasYourWants"),
         color: "var(--c-trade)",
-        glow: "rgba(144,102,255,0.22)",
+        glow: "color-mix(in srgb, var(--c-trade) 22%, transparent)",
         bg: "color-mix(in srgb, var(--c-trade) 4%, transparent)",
         borderColor: "color-mix(in srgb, var(--c-trade) 28%, transparent)",
-        btnText: "white",
+        btnText: "var(--c-on-accent)",
       };
     case "they_want":
       return {
         label: t("userCard.wantsYours"),
         color: "var(--c-accent)",
-        glow: "rgba(240,72,122,0.22)",
+        glow: "color-mix(in srgb, var(--c-accent) 22%, transparent)",
         bg: "color-mix(in srgb, var(--c-accent) 4%, transparent)",
         borderColor: "color-mix(in srgb, var(--c-accent) 28%, transparent)",
-        btnText: "white",
+        btnText: "var(--c-on-accent)",
       };
     default:
       return {
         label: t("userCard.match"),
         color: "var(--c-muted)",
-        glow: "rgba(167,139,250,0.18)",
+        glow: "color-mix(in srgb, var(--c-muted) 18%, transparent)",
         bg: "color-mix(in srgb, var(--c-muted) 4%, transparent)",
         borderColor: "color-mix(in srgb, var(--c-muted) 20%, transparent)",
-        btnText: "white",
+        btnText: "var(--c-on-accent)",
       };
   }
 });

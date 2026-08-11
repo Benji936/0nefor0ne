@@ -312,7 +312,11 @@
     "tradeCancelled": "Trade cancelled.",
     "failedToCancel": "Failed to cancel.",
     "counterSent": "Counter-offer #{id} sent.",
-    "proposalSent": "Proposal #{id} sent."
+    "proposalSent": "Proposal #{id} sent.",
+    "cancelConfirmTitle": "Cancel this trade?",
+    "cancelConfirmBody": "You and {name} both agreed to this trade. Cancelling it cannot be undone, and they will not be asked first.",
+    "cancelConfirmKeep": "Keep the trade",
+    "cancelConfirmDo": "Cancel it"
   },
   "matches": {
     "loginRequired": "Log in to see your trade matches.",
@@ -462,7 +466,6 @@
     "submit": "Submit",
     "uploadPhotos": "Upload photos of your cards so the other person can verify and accept.",
     "failedToSave": "Failed to save proposal.",
-    "waitingForUpload": "Waiting for {name} to upload photos and accept.",
     "waitingForConfirm": "Waiting for {name} to confirm.",
     "them": "Them",
     "you": "You",
@@ -474,7 +477,15 @@
     "tradeMethodOther": "Other",
     "youPay": "You pay",
     "theyPay": "{name} pays",
-    "meetupAt": "Meet at"
+    "meetupAt": "Meet at",
+    "yoursToReview": "Yours to answer.",
+    "photoYoursMissing": "Add a photo of your cards, so {name} can see what they are getting.",
+    "photoTheirsMissing": "Waiting for {name} to add a photo.",
+    "waitingAccept": "Waiting for {name} to answer.",
+    "viewTrade": "View trade",
+    "starLabel": "{n} star | {n} stars",
+    "viewProfileOf": "View {name}'s profile",
+    "toggleCards": "Show or hide the cards in this trade"
   },
   "proposeDialog": {
     "title": "Propose a trade",
@@ -551,10 +562,17 @@
     "uploadBothBeforeConfirm": "Upload photos on both sides before confirming.",
     "waitingForConfirmDetail": "Waiting for {name} to confirm.",
     "bothUploadedConfirmHint": "Both sides have uploaded  confirm when you've received your cards.",
-    "uploadBothToAccept": "Upload photos on both sides to enable accepting.",
     "photosVerifiedCanAccept": "Photos verified  you can now accept.",
     "waitingForReview": "Waiting for {name} to review and accept.",
-    "declinePlaceholder": "Optional  let them know why you're declining…"
+    "declinePlaceholder": "Optional  let them know why you're declining…",
+    "acceptWithoutPhotos": "Neither side has shown their cards yet. You can accept anyway, but photos are the only record of what was promised."
+  },
+  "tradeError": {
+    "stale": "This trade has moved on since you opened it. We have refreshed it below.",
+    "notYours": "That is not your side of this trade to act on.",
+    "gone": "This trade no longer exists.",
+    "signedOut": "You have been signed out. Sign in again to continue.",
+    "generic": "That did not go through. Try again in a moment."
   },
   "traderProfile": {
     "communitiesTitle": "Communities",
@@ -819,7 +837,9 @@
     "clickOrDrag": "Click or drag a photo",
     "uploading": "Uploading…",
     "waitingUpload": "Waiting for {name} to upload",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "openPhoto": "Open photo in a new tab",
+    "deletePhoto": "Delete this photo"
   },
   "time": {
     "justNow": "just now",
@@ -969,6 +989,10 @@
     "communityVerify": {
       "title": "Verify your community | One for One",
       "desc": "Prove the shop, server or group you run is real, and turn on its verified mark."
+    },
+    "TradeCenter": {
+      "title": "Trade Centre — matches, proposals and announces | One for One",
+      "desc": "See who has what you want, answer trade proposals, and post what you are looking for."
     }
   },
   "deckIgnore": {

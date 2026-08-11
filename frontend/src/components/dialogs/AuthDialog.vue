@@ -279,7 +279,7 @@ async function loginWithDiscord() {
           <v-btn
             type="submit"
             variant="flat"
-            style="background-color: var(--c-accent); color: white"
+            style="background-color: var(--c-accent); color: var(--c-on-accent)"
             :loading="submitting"
             block
           >{{ submitLabel }}</v-btn>

@@ -781,7 +781,7 @@ function onCardAdded() {
   position: absolute; top: 10px; left: 10px;
   display: flex; align-items: center; gap: 4px;
   padding: 4px 9px; border-radius: 99px;
-  background: var(--c-trade); color: #fff;
+  background: var(--c-trade); color: var(--c-on-accent);
   font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
   backdrop-filter: blur(4px);
 }
@@ -805,7 +805,7 @@ function onCardAdded() {
 .bare-head__own {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 4px 9px; border-radius: 99px;
-  background: var(--c-trade); color: #fff;
+  background: var(--c-trade); color: var(--c-on-accent);
   font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
 }
 .bare-head__price { font-size: 14px; font-weight: 800; color: var(--c-text); }
@@ -853,7 +853,7 @@ function onCardAdded() {
   /* Dark ink, not white: --c-mutual is a bright teal in dark theme, where white
      lands at 1.86:1. This ink clears AA in both themes (4.52 light, 10.69 dark)
      and matches the on-mutual text colour DESIGN.md already specifies. */
-  color: #13031A;
+  color: var(--c-on-accent);
   background: var(--c-mutual);
 }
 .detail-archetype {
@@ -943,7 +943,7 @@ function onCardAdded() {
   padding: 6px 12px;
   border-radius: 9px;
   background: var(--c-trade);
-  color: #fff;
+  color: var(--c-on-accent);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
@@ -1145,7 +1145,7 @@ function onCardAdded() {
   display: flex; align-items: center; gap: 7px;
   padding: 10px 22px; border-radius: 12px;
   width: 100%;  justify-content: center;
-  background: var(--c-trade); color: #fff;
+  background: var(--c-trade); color: var(--c-on-accent);
   font-size: 14px; font-weight: 700;
   cursor: pointer; transition: opacity 0.15s ease, transform 0.15s ease;
 }

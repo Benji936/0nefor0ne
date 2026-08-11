@@ -95,7 +95,7 @@ async function toggle() {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 15px; border-radius: 11px;
   border: 1.5px solid var(--c-trade);
-  background: var(--c-trade); color: #fff;
+  background: var(--c-trade); color: var(--c-on-accent);
   font-size: 13px; font-weight: 700;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;

@@ -334,7 +334,7 @@ async function manageSubscription(row) {
             variant="flat"
             size="large"
             block
-            style="background: var(--c-accent); color: white"
+            style="background: var(--c-accent); color: var(--c-on-accent)"
             :prepend-icon="saved ? 'mdi-check' : 'mdi-content-save-outline'"
             :loading="saving"
             :disabled="loading"

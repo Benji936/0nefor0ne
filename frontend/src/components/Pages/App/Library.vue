@@ -518,7 +518,7 @@ export default {
   cursor: pointer;
 }
 .lib-dlg__btn--go {
-  color: white;
+  color: var(--c-on-accent);
   background: var(--c-accent);
   border-color: var(--c-accent);
 }

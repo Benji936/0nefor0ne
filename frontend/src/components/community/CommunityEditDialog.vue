@@ -436,7 +436,7 @@ async function submit() {
 .btn-submit {
   display: flex; align-items: center; gap: 7px;
   padding: 9px 20px; border-radius: 11px;
-  background: var(--c-trade); color: #fff;
+  background: var(--c-trade); color: var(--c-on-accent);
   font-size: 13px; font-weight: 700;
   cursor: pointer; transition: opacity 0.15s ease, transform 0.15s ease;
   min-width: 120px; justify-content: center;

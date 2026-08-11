@@ -176,7 +176,7 @@
                 size="small"
                 prepend-icon="mdi-check"
                 :loading="saving"
-                style="background-color: var(--c-trade); color: white"
+                style="background-color: var(--c-trade); color: var(--c-on-accent)"
                 @click="saveProfile"
               >Save changes</v-btn>
             </div>

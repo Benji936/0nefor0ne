@@ -302,16 +302,38 @@ watch(() => props.user?.id ?? props.editProposal?.id ?? props.counterProposal?.i
   theirTradePile.value = [];
 });
 
+/**
+ * Card names in my library, and the subset I have already offered.
+ *
+ * Indexed once per change rather than scanned per row. These were three
+ * separate `myOffers.some(...)` walks — one in the filter below, two more in
+ * the template's v-for — so the suggestions panel was doing O(offers × wishlist)
+ * work on every keystroke in its filter box. At a 238-card pile that is around
+ * fourteen thousand comparisons per render.
+ */
+const offeredNames = computed(() => {
+  const set = new Set();
+  for (const card of myOffers.value) {
+    if ((giveSelection.value[card.id] ?? 0) > 0) set.add(card.name);
+  }
+  return set;
+});
+/** Names I hold and could still offer, for the "you have it" dot. */
+const availableNames = computed(() => {
+  const set = new Set();
+  for (const card of myOffers.value) {
+    if (card.status !== "locked") set.add(card.name);
+  }
+  return set;
+});
+
 const filteredWanted = computed(() => {
   const q = wantedFilter.value.toLowerCase().trim();
   return counterpartyWishlist.value.filter(c => {
     if (q && !c.name.toLowerCase().includes(q)) return false;
     // Hide cards the user has already committed to giving (avoid the confusion of
     // a card appearing in both "You give" and "Cards they want" simultaneously)
-    const alreadyOffered = myOffers.value.some(
-      mo => mo.name === c.name && (giveSelection.value[mo.id] ?? 0) > 0
-    );
-    return !alreadyOffered;
+    return !offeredNames.value.has(c.name);
   });
 });
 
@@ -359,7 +381,12 @@ function marketLinks(name, setCode) {
     height="100dvh"
     scrollable
   >
-    <v-card v-if="effectiveUser" theme="dark" class="trade-dialog !rounded-none overflow-hidden" style="background-color: var(--c-surface); color: var(--c-text); height: 100dvh; display: flex; flex-direction: column">
+    <!--
+      No `theme="dark"`. The --c-* tokens follow html.dark, but a hardcoded
+      Vuetify theme does not, so in light mode the surfaces went light while the
+      checkboxes and number inputs inside stayed dark-themed.
+    -->
+    <v-card v-if="effectiveUser" class="trade-dialog !rounded-none overflow-hidden" style="background-color: var(--c-surface); color: var(--c-text); height: 100dvh; display: flex; flex-direction: column">
       <!-- Header -->
       <div class="relative">
         <div class="flex items-center gap-3 px-4 sm:px-6 py-3 sm:py-4">
@@ -379,7 +406,7 @@ function marketLinks(name, setCode) {
             </span>
             <span class="text-xs sm:text-sm mt-1 truncate" style="color: var(--c-muted)">{{ t('proposeDialog.with') }} {{ effectiveUser.name ?? t('proposeDialog.anonymous') }}</span>
           </div>
-          <v-btn icon="mdi-close" variant="text" color="white" density="compact" @click="close" />
+          <v-btn icon="mdi-close" variant="text" density="compact" :aria-label="t('common.close')" @click="close" />
         </div>
         <!-- Gradient accent line -->
         <div class="h-[2px] w-full" style="background: linear-gradient(90deg, var(--c-accent), transparent 40%, transparent 60%, var(--c-trade))" />
@@ -408,15 +435,15 @@ function marketLinks(name, setCode) {
         <template v-else>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:h-full min-h-0">
           <!-- ── You give ── -->
-          <section class="flex flex-col gap-3 min-h-0">
+          <section class="flex flex-col gap-3 min-h-0" role="group" aria-labelledby="col-you-give">
             <!-- Header -->
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <v-icon icon="mdi-arrow-up-circle" :color="'var(--c-accent)'" size="20" />
-                <p class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">{{ t('proposeDialog.youGive') }}</p>
+                <p id="col-you-give" class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">{{ t('proposeDialog.youGive') }}</p>
                 <span
                   v-if="givePayload.length > 0"
-                  class="text-[11px] px-2 py-1 rounded-md bg-pink-500/15 text-pink-300 border border-pink-500/30 font-semibold"
+                  class="chip-count" :style="{ '--chip': 'var(--c-accent)' }"
                 >{{ givePayload.length }}</span>
               </div>
               <v-btn
@@ -425,7 +452,7 @@ function marketLinks(name, setCode) {
                 prepend-icon="mdi-heart-search"
                 :style="showWantedPicker
                   ? { backgroundColor: 'var(--c-surface-2)', color: 'var(--c-text)' }
-                  : { backgroundColor: 'var(--c-trade)', color: 'white' }"
+                  : { backgroundColor: 'var(--c-trade)', color: 'var(--c-on-accent)' }"
                 @click="openWantedPicker"
               >{{ showWantedPicker ? t('proposeDialog.hideSuggestions') : t('proposeDialog.addToOffer') }}</v-btn>
             </div>
@@ -475,12 +502,12 @@ function marketLinks(name, setCode) {
                     :style="{
                       height: '72px',
                       backgroundColor: 'var(--c-surface)',
-                      ringColor: myOffers.some(c => c.name === item.name) ? 'var(--c-mutual)' : 'var(--c-border)',
+                      ringColor: availableNames.has(item.name) ? 'var(--c-mutual)' : 'var(--c-border)',
                     }"
                   />
                   <!-- "You have it" dot -->
                   <span
-                    v-if="myOffers.some(c => c.name === item.name && c.status !== 'locked')"
+                    v-if="availableNames.has(item.name)"
                     class="absolute -top-1 -right-1 size-4 rounded-full border-2 flex items-center justify-center"
                     style="background-color: var(--c-mutual); border-color: var(--c-surface-2)"
                     :title="t('proposeDialog.alreadyInLibrary')"
@@ -530,7 +557,7 @@ function marketLinks(name, setCode) {
                   :class="[
                     card.status === 'locked' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
                     card.status !== 'locked' && (giveSelection[card.id] ?? 0) > 0
-                      ? 'border-pink-500/50 bg-pink-950/40 shadow-[inset_0_0_20px_rgba(133,20,75,0.08)]'
+                      ? 'row-selected row-selected--give'
                       : card.status !== 'locked' ? 'hover:bg-[var(--c-surface-2)]' : '',
                   ]"
                   :style="card.status !== 'locked' && (giveSelection[card.id] ?? 0) > 0 ? {} : { borderColor: 'var(--c-border)' }"
@@ -566,7 +593,7 @@ function marketLinks(name, setCode) {
                     </div>
                     <span
                       v-if="card.theyWantThis"
-                      class="text-[11px] font-bold text-lime-300 bg-lime-500/15 border border-lime-500/30 px-2 py-1 rounded-md w-fit flex items-center gap-1"
+                      class="signal-chip" :style="{ '--chip': 'var(--c-mutual)' }"
                     ><v-icon icon="mdi-star-four-points" size="10" color="var(--c-mutual)" />{{ t('proposeDialog.theyWantThis') }}</span>
                   </div>
                   <v-number-input
@@ -584,13 +611,13 @@ function marketLinks(name, setCode) {
           </section>
 
           <!-- ── You receive ── -->
-          <section class="flex flex-col gap-4 min-h-0">
+          <section class="flex flex-col gap-4 min-h-0" role="group" aria-labelledby="col-you-receive">
             <div class="flex items-center gap-3">
               <v-icon icon="mdi-arrow-down-circle" :color="'var(--c-trade)'" size="20" />
-              <p class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">{{ t('proposeDialog.youReceive') }}</p>
+              <p id="col-you-receive" class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">{{ t('proposeDialog.youReceive') }}</p>
               <span
                 v-if="receivePayload.length > 0"
-                class="text-[11px] px-2 py-1 rounded-md bg-blue-500/15 text-blue-300 border border-blue-500/30 font-semibold"
+                class="chip-count" :style="{ '--chip': 'var(--c-trade)' }"
               >
                 {{ receivePayload.length }}
               </span>
@@ -673,7 +700,7 @@ function marketLinks(name, setCode) {
                         ? 'opacity-50 cursor-not-allowed'
                         : 'cursor-pointer',
                       card.status !== 'locked' && (receiveSelection[card.id] ?? 0) > 0
-                        ? 'border-blue-500/50 bg-blue-950/40 shadow-[inset_0_0_20px_rgba(17,102,153,0.08)]'
+                        ? 'row-selected row-selected--receive'
                         : card.status !== 'locked' ? 'hover:bg-[var(--c-surface-2)]' : '',
                     ]"
                     :style="card.status !== 'locked' && (receiveSelection[card.id] ?? 0) > 0 ? {} : { borderColor: 'var(--c-border)' }"
@@ -796,8 +823,10 @@ function marketLinks(name, setCode) {
                 <button
                   class="absolute -top-2 -right-2 size-5 rounded-full flex items-center justify-center cursor-pointer"
                   style="background-color: var(--c-accent)"
+                  type="button"
                   @click="removePhoto"
                   :title="t('proposeDialog.removePhoto')"
+                  :aria-label="t('proposeDialog.removePhoto')"
                 >
                   <v-icon icon="mdi-close" size="12" color="white" />
                 </button>
@@ -840,12 +869,12 @@ function marketLinks(name, setCode) {
             <span v-if="givePayload.length > 0 || receivePayload.length > 0" class="flex items-center gap-3">
               <span class="flex items-center gap-2">
                 <v-icon icon="mdi-arrow-up-bold" size="14" color="var(--c-accent)" />
-                <span class="text-pink-300 font-semibold">{{ givePayload.length }}</span>
+                <span class="font-semibold" style="color: var(--c-accent)">{{ givePayload.length }}</span>
               </span>
               <v-icon icon="mdi-swap-horizontal" size="16" color="var(--c-muted)" />
               <span class="flex items-center gap-2">
                 <v-icon icon="mdi-arrow-down-bold" size="14" color="var(--c-trade)" />
-                <span class="text-blue-300 font-semibold">{{ receivePayload.length }}</span>
+                <span class="font-semibold" style="color: var(--c-trade)">{{ receivePayload.length }}</span>
               </span>
             </span>
             <span v-else class="text-xs sm:text-sm max-sm:hidden block" style="color: var(--c-muted)">{{ t('proposeDialog.selectCards') }}</span>
@@ -854,7 +883,7 @@ function marketLinks(name, setCode) {
             <v-btn variant="text" color="gray" size="small" @click="close" :disabled="submitting">{{ t('common.cancel') }}</v-btn>
             <v-btn
               variant="flat"
-              style="background-color: var(--c-accent); color: white"
+              style="background-color: var(--c-accent); color: var(--c-on-accent)"
               :prepend-icon="isEditing ? 'mdi-content-save-outline' : 'mdi-send'"
               class="!rounded-xl"
               size="small"
@@ -892,10 +921,59 @@ function marketLinks(name, setCode) {
   background-color: var(--c-border);
   border-radius: 99px;
 }
+/*
+  DESIGN.md gives the Trade Row a bordered default state. It never had one:
+  the width was missing, so `borderColor` on the unselected rows and
+  `border-pink-500/50` on the selected ones were both painting a 0px border.
+  One declaration here gives every state something to colour.
+*/
 .trade-row {
+  border: 1px solid transparent;
   transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
               border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
               box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/*
+  Selection, in the palette's own terms. Give is accent (what you are parting
+  with), receive is trade-amethyst (what is coming to you). Both were raw
+  Tailwind before, and the receive side was a blue that appears in no role.
+*/
+.row-selected {
+  border-color: color-mix(in srgb, var(--row-color) 50%, transparent);
+  background-color: color-mix(in srgb, var(--row-color) 12%, transparent);
+  box-shadow: inset 0 0 20px color-mix(in srgb, var(--row-color) 10%, transparent);
+}
+.row-selected--give    { --row-color: var(--c-accent); }
+.row-selected--receive { --row-color: var(--c-trade); }
+
+/* Count chips and the "they want this" signal, tinted from one --chip var so
+   the three roles stay the only source of colour.
+
+   The fallback is not decoration: color-mix() with an undefined var is invalid
+   at computed-value time, which drops the whole declaration, and Tailwind's
+   preflight border-width:0 then wins. Without it a missing --chip renders the
+   chip as bare black text with no border or background. */
+.chip-count,
+.signal-chip {
+  --chip: var(--c-muted);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: var(--chip);
+  background-color: color-mix(in srgb, var(--chip) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--chip) 30%, transparent);
+}
+.signal-chip {
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trade-row { transition: none; }
 }
 /* Visible keyboard focus across the dialog's custom interactive elements (DESIGN.md: focus states). */
 .trade-row:focus-visible {

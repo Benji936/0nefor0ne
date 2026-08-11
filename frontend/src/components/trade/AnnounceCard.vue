@@ -313,10 +313,10 @@ const location = computed(() => {
   white-space: nowrap;
 }
 .ac-badge--lf {
-  /* Dark ink, not white: --c-mutual is a bright teal in dark theme, where white
-     lands at 1.86:1. This ink clears AA in both themes (4.52 light, 10.69 dark)
-     and matches the on-mutual text colour DESIGN.md already specifies. */
-  color: #13031A;
+  /* --c-on-accent, which flips per theme: dark ink on the bright teal of dark
+     mode (10.69:1, where white would be 1.86), white on the deep teal of light
+     mode (6.11:1). See The Label Contrast Rule in DESIGN.md. */
+  color: var(--c-on-accent);
   background: var(--c-mutual);
 }
 /* Neutral rather than red: an expired listing is dormant, not an error, and

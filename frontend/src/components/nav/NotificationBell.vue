@@ -112,7 +112,7 @@ onBeforeUnmount(() => {
       <span
         v-if="unreadCount > 0"
         class="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full flex items-center justify-center text-[10px] font-bold px-1 pointer-events-none"
-        style="background: var(--c-accent); color: white; line-height: 1"
+        style="background: var(--c-accent); color: var(--c-on-accent); line-height: 1"
       >{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
     </button>
 

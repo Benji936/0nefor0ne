@@ -134,14 +134,14 @@
               <v-btn
                 variant="flat"
                 class="!min-h-[28px] !px-3"
-                :style="{ backgroundColor: 'var(--c-trade)', color: 'white' }"
+                :style="{ backgroundColor: 'var(--c-trade)', color: 'var(--c-on-accent)' }"
                 prepend-icon="mdi-plus-box"
                 @click="openTrade"
               >{{ $t('cardPage.addToTrade') }}</v-btn>
               <v-btn
                 variant="flat"
                 class="!min-h-[28px] !px-3"
-                :style="{ backgroundColor: 'var(--c-accent)', color: 'white' }"
+                :style="{ backgroundColor: 'var(--c-accent)', color: 'var(--c-on-accent)' }"
                 prepend-icon="mdi-heart-plus"
                 @click="openWish"
               >{{ $t('cardPage.addToWishlist') }}</v-btn>

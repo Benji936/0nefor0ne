@@ -12,17 +12,22 @@ colors:
   text: "#EDE8FF"
   muted: "#A890D0"
   accent: "#F42D87"
-  trade: "#9A52F5"
+  trade: "#A362F7"
   mutual: "#2DD4BF"
+  # The label colour for anything sitting ON accent/trade/mutual. Dark in the
+  # dark theme (where the brand colours are bright), white in the light theme
+  # (where they are deep). See The Label Contrast Rule.
+  on-accent: "#13031A"
+  on-accent-light: "#FFFFFF"
   bg-light: "#FFFFFF"
   surface-light: "#F7F2FF"
   surface-2-light: "#EDE0FF"
   border-light: "#C5ABED"
   text-light: "#1C0852"
   muted-light: "#6830A8"
-  accent-light: "#C9185A"
+  accent-light: "#C21456"
   trade-light: "#6B20D9"
-  mutual-light: "#0882A8"
+  mutual-light: "#076B82"
   nav: "#0B0617"
   skeleton: "#1E1248"
 typography:
@@ -64,27 +69,27 @@ spacing:
 components:
   button-trade:
     backgroundColor: "{colors.trade}"
-    textColor: "#ffffff"
+    textColor: "{colors.on-accent}"
     rounded: "{rounded.md}"
     padding: "8px 20px"
   button-trade-hover:
     backgroundColor: "#B56EFF"
-    textColor: "#ffffff"
+    textColor: "{colors.on-accent}"
     rounded: "{rounded.md}"
     padding: "8px 20px"
   button-accent:
     backgroundColor: "{colors.accent}"
-    textColor: "#ffffff"
+    textColor: "{colors.on-accent}"
     rounded: "{rounded.md}"
     padding: "8px 20px"
   button-accent-hover:
     backgroundColor: "#FF6A9A"
-    textColor: "#ffffff"
+    textColor: "{colors.on-accent}"
     rounded: "{rounded.md}"
     padding: "8px 20px"
   button-mutual:
     backgroundColor: "{colors.mutual}"
-    textColor: "#13031A"
+    textColor: "{colors.on-accent}"
     rounded: "{rounded.md}"
     padding: "8px 20px"
   card-surface:
@@ -93,12 +98,12 @@ components:
     rounded: "{rounded.xl}"
     padding: "20px"
   chip-mutual:
-    backgroundColor: "rgba(45,212,191,0.15)"
+    backgroundColor: "color-mix(in srgb, {colors.mutual} 15%, transparent)"
     textColor: "{colors.mutual}"
     rounded: "{rounded.full}"
     padding: "4px 10px"
   chip-trade:
-    backgroundColor: "rgba(154,82,245,0.15)"
+    backgroundColor: "color-mix(in srgb, {colors.trade} 15%, transparent)"
     textColor: "{colors.trade}"
     rounded: "{rounded.full}"
     padding: "4px 10px"
@@ -132,18 +137,18 @@ Three semantic roles, one neutral system, two modes. The dark mode is canonical;
 
 ### Primary — Trade (Amethyst)
 
-- **Amethyst Trade** (`#9A52F5` dark / `#6B20D9` light): Trade pile actions, "Add to trade," "Propose trade" buttons, the "You give" column in the negotiation UI. The color of offering something.
+- **Amethyst Trade** (`#A362F7` dark / `#6B20D9` light): Trade pile actions, "Add to trade," "Propose trade" buttons, the "You give" column in the negotiation UI. The color of offering something.
 - **Deep Amethyst Surface** (`#13092A`): Card and panel backgrounds in dark mode. The base layer on which card art rests.
 - **Amethyst Border** (`#3A206E`): Dividers, input strokes, card outlines. Visible but not demanding.
 
 ### Secondary — Accent (Hot Pink)
 
-- **Collector's Pink** (`#F42D87` dark / `#C9185A` light): Wishlist actions, heart icons, "Add to wishlist" buttons, the "You receive" emotional framing. The color of want.
-- **Pink Berry** (`#C9185A` light mode): Deeper pink for light-mode contrast without losing warmth.
+- **Collector's Pink** (`#F42D87` dark / `#C21456` light): Wishlist actions, heart icons, "Add to wishlist" buttons, the "You receive" emotional framing. The color of want.
+- **Pink Berry** (`#C21456` light mode): Deeper pink for light-mode contrast without losing warmth.
 
 ### Tertiary — Mutual (Teal)
 
-- **Trade Match Teal** (`#2DD4BF`): Mutual match badges, "They want this" indicators in the propose-trade UI, match count chips. Used nowhere else. When it appears, it means something.
+- **Trade Match Teal** (`#2DD4BF` dark / `#076B82` light): The agreement chain, start to finish. Mutual match badges, "they want this" indicators, match count chips, then Accept, Confirm your side, both-sides-verified, agreed meetup and cash terms, and the post-trade rating. Not a general-purpose success color: see The Agreement Rule below.
 
 ### Neutral
 
@@ -156,9 +161,26 @@ Three semantic roles, one neutral system, two modes. The dark mode is canonical;
 
 ### Named Rules
 
+**The Label Contrast Rule.** Text on a brand colour uses `var(--c-on-accent)`, never a literal `white` or `#fff`. The brand colours invert between themes: bright in dark mode, deep in light mode. A fixed white label therefore passes in one theme and fails in the other, which is exactly what happened. Measured, at Vuetify's 14px/500 button text, where AA wants 4.5:1:
+
+| | white label | `--c-on-accent` |
+|---|---|---|
+| accent, dark | 3.77 ✗ | **5.28 ✓** |
+| trade, dark | 4.29 ✗ | **5.35 ✓** |
+| mutual, light | 4.40 ✗ | **6.11 ✓** |
+| accent, light | 5.95 ✓ | 5.95 ✓ (white) |
+
+Three token values moved with it, each to the nearest passing shade so the hue is unchanged: dark `trade` `#9A52F5` → `#A362F7` (it read 4.09:1 as text on `surface-2`), light `accent` `#C9185A` → `#C21456` (4.44:1 on `surface-2`), light `mutual` `#0882A8` → `#076B82` (3.50:1 on `surface-2`, and 4.40:1 under a white label).
+
+Brightening dark `trade` costs nothing precisely because the label is dark: a brighter background improves both the text-on-surface reading and the label-on-button reading at once.
+
 **The No-Gray Rule.** Pure grays (`#555`, `#ccc`, `text-gray-*`) are prohibited. Every neutral in the system is tinted toward the brand hue. Icon fills, placeholder text, and muted labels use `var(--c-muted)` (Soft Violet), not a gray.
 
-**The Mutual Scarcity Rule.** Teal appears only for confirmed mutual matches and "they want this" signals in the trade negotiation UI. Never use it for generic success states, positive alerts, or decoration.
+**The Agreement Rule.** Teal marks agreement: the moment two people line up, and every step that follows from it. Mutual matches and "they want this" signals, then Accept, Confirm your side, both-sides-verified, the meetup and cash terms once they are set, and the rating after the trade closes.
+
+This used to be the Mutual Scarcity Rule, which reserved teal for confirmed mutual matches alone and forbade it for "generic success states". The codebase went the other way, deliberately and consistently: by mid-2026 teal was on all seven of those things across the trade flow, and reversing it would have meant repainting Accept and Confirm in amethyst, where they would read as "offer" rather than "agree". The rule is rewritten to match, and the audit note is left here so nobody reads the change as drift.
+
+What teal still must not do is decorate. It is not a positive-alert color, not a highlight, and not available for anything outside the agreement chain: an upload that succeeded, a saved setting, or a green-for-go badge is not agreement. Amethyst remains the color of offering, pink the color of wanting, and neither borrows teal to look pleased with itself.
 
 ## 3. Typography
 
@@ -199,10 +221,10 @@ TradeMarket uses tonal layering as its primary depth model — surfaces are stac
 
 Vuetify `v-btn` with `variant="flat"` and inline style overrides for semantic color. Shape is gently rounded (8px radius) — not pill, not square.
 
-- **Trade button** (amethyst `#9A52F5`, white text, 8px radius, `mdi-plus-box` prefix icon): Primary action for adding to trade pile or proposing a trade.
-- **Accent button** (hot pink `#F42D87`, white text, 8px radius, `mdi-heart-plus` prefix icon): Wishlist actions.
-- **Mutual button** (teal `#2DD4BF`, dark text `#13031A`, 8px radius): "See traders" / confirm match actions.
-- **Ghost / Cancel** (`variant="text"`, `color="gray"`): Destructive-adjacent actions, dialog cancel. No background.
+- **Trade button** (amethyst `{colors.trade}` background, `{colors.on-accent}` label, 8px radius, `mdi-plus-box` prefix icon): Primary action for adding to trade pile or proposing a trade.
+- **Accent button** (hot pink `{colors.accent}` background, `{colors.on-accent}` label, 8px radius, `mdi-heart-plus` prefix icon): Wishlist actions.
+- **Mutual button** (teal `{colors.mutual}` background, `{colors.on-accent}` label, 8px radius): "See traders" / confirm match actions.
+- **Ghost / Cancel** (`variant="text"`, label `var(--c-muted)`): Destructive-adjacent actions, dialog cancel. No background. Not `color="gray"`: see The No-Gray Rule.
 - **Hover:** Vuetify handles opacity shift; add no extra transforms on buttons.
 - **Loading:** Vuetify `:loading` prop shows spinner inline — always used on async submit actions.
 
@@ -282,6 +304,6 @@ Animated pulse skeletons using `var(--c-skeleton)` (`#1E1248` dark, `#E2D2F8` li
 - **Don't** create sterile white product grids. The light mode uses lavender-tinted whites (`#FEFEFF`, `#F8F5FF`), never clinical white.
 - **Don't** use side-stripe borders (`border-left > 1px` as a colored accent). Use full borders, background tints, or leading icons instead.
 - **Don't** use `background-clip: text` with a gradient background for decorative purposes. Emphasis is achieved through weight and size contrast, never gradient text.
-- **Don't** render the mutual color (`#2DD4BF`, teal) for anything other than confirmed mutual matches. Using it for generic success or positivity dilutes its meaning.
+- **Don't** render the mutual color (`#2DD4BF`, teal) outside the agreement chain. Matching, accepting, confirming and rating are teal; an upload that worked, a saved form, or a green-for-go badge is not. See The Agreement Rule.
 - **Don't** place headless `<AddCard>` components inside Vuetify `v-overlay` default slots — they teleport out of DOM scope and break `$refs`. Always place them as siblings outside the overlay.
 - **Don't** mix `<script setup>` with Options API methods that need to be called via `$refs` without `defineExpose()`. The methods become inaccessible. Consolidate to one API style per component.

@@ -99,7 +99,7 @@ function propose() {
           v-if="!isSelf"
           variant="flat"
           prepend-icon="mdi-swap-horizontal"
-          style="background: var(--c-trade); color: white"
+          style="background: var(--c-trade); color: var(--c-on-accent)"
           @click="propose"
         >{{ t('traderProfile.proposeTrade') }}</v-btn>
       </div>

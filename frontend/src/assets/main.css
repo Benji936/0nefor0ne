@@ -11,9 +11,14 @@
   --c-border:    #C5ABED;
   --c-text:      #1C0852;
   --c-muted:     #6830A8;
-  --c-accent:    #C9185A;
+  /* Accent and mutual are a shade deeper than the original design values
+     (#C9185A, #0882A8). Both failed 4.5:1 as text on --c-surface-2, and white
+     on the old mutual came to 4.40:1, which put the Accept button under AA in
+     light mode. These are the nearest passing values, so the hue is unmoved.
+     Measured ratios live in DESIGN.md §2. */
+  --c-accent:    #C21456;
   --c-trade:     #6B20D9;
-  --c-mutual:    #0882A8;
+  --c-mutual:    #076B82;
   --c-nav:       #FFFFFF;
   --c-skeleton:  #E2D2F8;
   /* Landing-page design tokens (exact values from the "One for One" design).
@@ -36,7 +41,10 @@ html.dark {
   --c-text:      #EDE8FF;
   --c-muted:     #A890D0;
   --c-accent:    #F42D87;
-  --c-trade:     #9A52F5;
+  /* Brightened from #9A52F5: as text on --c-surface-2 it was 4.09:1. Nothing
+     is traded away, because button labels on trade are --c-on-accent (dark),
+     not white, so a brighter background improves that side too (4.64 → 5.35). */
+  --c-trade:     #A362F7;
   --c-mutual:    #2DD4BF;
   --c-nav:       #0B0617;
   --c-skeleton:  #1E1248;

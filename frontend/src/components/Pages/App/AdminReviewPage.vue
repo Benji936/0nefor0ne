@@ -345,7 +345,7 @@ const isEmpty = computed(() => claims.value.length === 0 && reports.value.length
   font-size: 13px; font-weight: 600; cursor: pointer;
 }
 .ar__btn:hover:not(:disabled) { border-color: color-mix(in srgb, var(--c-trade) 50%, var(--c-border)); }
-.ar__btn--go { background: var(--c-trade); border-color: transparent; color: #fff; }
+.ar__btn--go { background: var(--c-trade); border-color: transparent; color: var(--c-on-accent); }
 .ar__btn--danger { background: var(--c-error, #ef4444); border-color: transparent; color: #fff; }
 .ar__btn:disabled { opacity: 0.45; cursor: default; }
 

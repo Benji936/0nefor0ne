@@ -114,7 +114,7 @@ watch(() => props.open, (open) => {
           <div
             class="rounded-2xl px-3 py-2 text-sm leading-snug"
             :style="msg.sender === currentUserId
-              ? { backgroundColor: 'var(--c-trade)', color: 'white' }
+              ? { backgroundColor: 'var(--c-trade)', color: 'var(--c-on-accent)' }
               : { backgroundColor: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }"
           >{{ msg.content }}</div>
           <span class="text-[10px] mt-1 px-1" style="color: var(--c-muted)">{{ formatMsgTime(msg.created_at) }}</span>
@@ -131,7 +131,7 @@ watch(() => props.open, (open) => {
       />
       <v-btn icon="mdi-send" variant="flat"  density="default" :loading="sendingMessage"
         :disabled="!newMessage.trim()"
-        style="background-color: var(--c-trade); color: white; border-radius: 12px"
+        style="background-color: var(--c-trade); color: var(--c-on-accent); border-radius: 12px"
         @click="sendMessage"/>
     </div>
     <p v-else class="text-xs mt-2 italic" style="color: var(--c-muted)">
@@ -163,7 +163,7 @@ watch(() => props.open, (open) => {
           <div
             class="rounded-2xl px-3 py-2 text-sm leading-snug"
             :style="msg.sender === currentUserId
-              ? { backgroundColor: 'var(--c-trade)', color: 'white' }
+              ? { backgroundColor: 'var(--c-trade)', color: 'var(--c-on-accent)' }
               : { backgroundColor: 'var(--c-surface-2)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }"
           >{{ msg.content }}</div>
           <span class="text-[10px] mt-1 px-1" style="color: var(--c-muted)">{{ formatMsgTime(msg.created_at) }}</span>
@@ -183,7 +183,7 @@ watch(() => props.open, (open) => {
         />
         <v-btn icon="mdi-send" variant="flat" size="small" density="default" :loading="sendingMessage"
           :disabled="!newMessage.trim()"
-          style="background-color: var(--c-trade); color: white; border-radius: 12px; padding: 5px;"
+          style="background-color: var(--c-trade); color: var(--c-on-accent); border-radius: 12px; padding: 5px;"
           @click="sendMessage" />
       </div>
       <p v-else class="text-xs italic" style="color: var(--c-muted)">

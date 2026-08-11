@@ -76,7 +76,7 @@
       <v-btn
         v-else-if="missingCount > 0"
         variant="flat"
-        :style="{ backgroundColor: 'var(--c-accent)', color: 'white' }"
+        :style="{ backgroundColor: 'var(--c-accent)', color: 'var(--c-on-accent)' }"
         prepend-icon="mdi-heart-plus"
         :loading="adding"
         @click="addMissingToWishlist"

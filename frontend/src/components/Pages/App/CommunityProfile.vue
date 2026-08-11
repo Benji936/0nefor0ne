@@ -978,7 +978,7 @@ async function onStale() {
 .cp-missing__back {
   display: inline-flex; align-items: center; gap: 7px;
   min-height: 44px; padding: 0 18px; border-radius: 12px;
-  background: var(--c-trade); color: #fff;
+  background: var(--c-trade); color: var(--c-on-accent);
   font-size: 13px; font-weight: 700; text-decoration: none;
   transition: opacity 0.15s ease;
 }
@@ -1244,7 +1244,7 @@ async function onStale() {
 .cp-claim {
   display: inline-flex; align-items: center; gap: 7px;
   min-height: 44px; padding: 0 18px; border-radius: 12px;
-  background: var(--c-trade); color: #fff;
+  background: var(--c-trade); color: var(--c-on-accent);
   font-size: 13px; font-weight: 700; cursor: pointer;
   transition: opacity 0.15s ease;
 }
@@ -1401,7 +1401,7 @@ a.cp-claim { text-decoration: none; }
 .btn-cancel-edit:disabled { opacity: 0.4; pointer-events: none; }
 .btn-save-edit {
   display: flex; align-items: center; gap: 7px; min-width: 140px; min-height: 44px; justify-content: center;
-  padding: 0 20px; border-radius: 12px; background: var(--c-trade); color: #fff;
+  padding: 0 20px; border-radius: 12px; background: var(--c-trade); color: var(--c-on-accent);
   font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity 0.15s ease;
 }
 .btn-save-edit:hover:not(:disabled) { opacity: 0.9; }

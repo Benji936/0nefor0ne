@@ -3,6 +3,7 @@ import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { cardImage } from "@/lib/cardImage";
 import { fetchTradeEvents } from "@/lib/proposals";
+import { pendingWaitKey } from "@/lib/tradePending";
 import { timeAgo as sharedTimeAgo } from "@/lib/notifications";
 import TradeChatDialog   from "@/components/trade/TradeChatDialog.vue";
 import TradePhotosPanel  from "@/components/trade/TradePhotosPanel.vue";
@@ -19,7 +20,12 @@ const props = defineProps({
 const emit = defineEmits(["update:modelValue", "accept", "decline", "cancel", "complete", "counter"]);
 
 // ── Photos status (lifted from TradePhotosPanel via v-model) ─────────────
-const bothUploaded = ref(false);
+// The panel is subscribed to trade_photo in realtime, so these are current
+// even while the dialog stays open. The proposal prop is a snapshot from the
+// last list load and would go stale the moment somebody uploads.
+const bothUploaded   = ref(false);
+const mineUploaded   = ref(false);
+const theirsUploaded = ref(false);
 
 // ── Chat overlay ──────────────────────────────────────────────────────────
 const chatOpen = ref(false);
@@ -52,6 +58,13 @@ const isAccepted     = computed(() => props.proposal?.status === "accepted");
 const showPhotoPanel = computed(() => isPending.value || isAccepted.value);
 const iConfirmed     = computed(() => props.proposal?.i_confirmed    ?? false);
 const theyConfirmed  = computed(() => props.proposal?.they_confirmed ?? false);
+// Same function ProposalRow uses, so the list and the dialog never disagree,
+// but fed the panel's live photo state rather than the proposal snapshot.
+const waitKey = computed(() => pendingWaitKey({
+  i_am_proposer: props.proposal?.i_am_proposer,
+  i_uploaded:    mineUploaded.value,
+  they_uploaded: theirsUploaded.value,
+}));
 
 // ── Card display helpers ──────────────────────────────────────────────────
 function shortenRarity(r) {
@@ -182,9 +195,11 @@ function confirmDecline() {
             density="compact"
             style="color: var(--c-muted)"
             :title="t('tradeDetail.openChat')"
+            :aria-label="t('tradeDetail.openChat')"
             @click="chatOpen = true"
           />
-          <v-btn icon="mdi-close" variant="text" density="compact" style="color: var(--c-muted)" @click="close" />
+          <v-btn icon="mdi-close" variant="text" density="compact" style="color: var(--c-muted)"
+            :aria-label="t('common.close')" @click="close" />
         </div>
         <div class="h-px w-full" style="background: linear-gradient(90deg, var(--c-accent), transparent 40%, transparent 60%, var(--c-trade))" />
       </div>
@@ -197,10 +212,12 @@ function confirmDecline() {
           <section v-for="side in [
             { label: t('tradeDetail.youGive'),    icon: 'mdi-arrow-up-circle',   color: 'var(--c-accent)', cards: proposal.i_give,    qtyColor: 'var(--c-accent)' },
             { label: t('tradeDetail.youReceive'), icon: 'mdi-arrow-down-circle', color: 'var(--c-trade)',  cards: proposal.i_receive, qtyColor: 'var(--c-trade)' },
-          ]" :key="side.label" class="flex flex-col gap-3">
+          ]" :key="side.label" class="flex flex-col gap-3"
+            role="group" :aria-labelledby="`side-${side.label.replace(/\W+/g, '-')}`">
             <div class="flex items-center gap-2 pb-1" style="border-bottom: 1px solid var(--c-border)">
               <v-icon :icon="side.icon" size="18" :color="side.color" />
-              <span class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">{{ side.label }}</span>
+              <span :id="`side-${side.label.replace(/\W+/g, '-')}`"
+                class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">{{ side.label }}</span>
               <span v-if="side.cards?.length" class="ml-auto text-[11px] font-semibold px-2 py-1 rounded-md"
                 :style="{ background: `color-mix(in srgb, ${side.color} 15%, transparent)`, color: side.color }">
                 {{ t('tradeDetail.cardCount', side.cards.length) }}
@@ -289,6 +306,8 @@ function confirmDecline() {
           :proposal="proposal"
           :current-user-id="currentUserId"
           v-model:both-uploaded="bothUploaded"
+          v-model:mine-uploaded="mineUploaded"
+          v-model:theirs-uploaded="theirsUploaded"
         />
 
         <!-- ── Activity log ── -->
@@ -408,7 +427,7 @@ function confirmDecline() {
                   v-if="!iConfirmed"
                   variant="flat" prepend-icon="mdi-handshake-outline"
                   :disabled="!bothUploaded"
-                  :style="bothUploaded ? 'background-color: var(--c-mutual); color: #0C0820' : 'opacity: 0.45'"
+                  :style="bothUploaded ? 'background-color: var(--c-mutual); color: var(--c-on-accent)' : 'opacity: 0.45'"
                   @click="action('complete')">{{ t('proposal.confirmYourSide') }}</v-btn>
               </div>
             </div>
@@ -416,16 +435,35 @@ function confirmDecline() {
 
           <!-- Pending actions -->
           <template v-else-if="isPending">
-            <span class="text-xs grow" style="color: var(--c-muted)">
-              <template v-if="!proposal.i_am_proposer && !bothUploaded">{{ t('tradeDetail.uploadBothToAccept') }}</template>
-              <template v-else-if="!proposal.i_am_proposer && bothUploaded">{{ t('tradeDetail.photosVerifiedCanAccept') }}</template>
-              <template v-else-if="proposal.i_am_proposer">{{ t('tradeDetail.waitingForReview', { name: proposal.counterparty_name ?? t('proposal.them') }) }}</template>
+            <!--
+              Photos are advice, not a gate. Accepting without them is allowed
+              and always was on the server; disabling the button only ever
+              stopped the honest half of the users. What it says instead is what
+              they are giving up, at the moment they can still fix it.
+            -->
+            <span
+              v-if="!proposal.i_am_proposer && !bothUploaded"
+              class="flex items-start gap-2 text-xs grow rounded-lg px-3 py-2"
+              style="color: var(--c-text); background: color-mix(in srgb, var(--c-accent) 8%, transparent); border: 1px solid color-mix(in srgb, var(--c-accent) 25%, transparent)"
+            >
+              <v-icon icon="mdi-alert-outline" size="14" color="var(--c-accent)" class="shrink-0 !mt-0.5" />
+              <span>{{ t('tradeDetail.acceptWithoutPhotos') }}</span>
             </span>
-            <div class="flex gap-2 shrink-0 flex-wrap w-full">
+            <span v-else class="text-xs grow" style="color: var(--c-muted)">
+              <template v-if="!proposal.i_am_proposer">{{ t('tradeDetail.photosVerifiedCanAccept') }}</template>
+              <template v-else>{{ t(`proposal.${waitKey}`, { name: proposal.counterparty_name ?? t('proposal.them') }) }}</template>
+            </span>
+            <div class="action-row flex gap-2 shrink-0 flex-wrap w-full">
               <template v-if="!proposal.i_am_proposer">
                 <template v-if="declining">
                   <div class="flex flex-col gap-2 w-full gap-5">
+                    <!-- Labelled, not just placeheld: a placeholder is not an
+                         accessible name and disappears as soon as you type. -->
+                    <label for="decline-reason" class="text-xs font-semibold" style="color: var(--c-muted)">
+                      {{ t('tradeDetail.declineReason') }}
+                    </label>
                     <textarea
+                      id="decline-reason"
                       v-model="declineReason"
                       :placeholder="t('tradeDetail.declinePlaceholder')"
                       rows="2"
@@ -436,13 +474,18 @@ function confirmDecline() {
                     <div class="flex gap-2 justify-end">
                       <v-btn size="small" variant="text" style="color: var(--c-muted)" @click="declining = false">{{ t('common.back') }}</v-btn>
                       <v-btn size="small" variant="flat"
-                        style="background-color: var(--c-accent); color: white"
+                        style="background-color: var(--c-accent); color: var(--c-on-accent)"
                         @click="confirmDecline">{{ t('common.confirm') }}</v-btn>
                     </div>
                   </div>
                 </template>
                 <template v-else>
-                  <v-btn variant="text" prepend-icon="mdi-cancel" style="color: var(--c-muted)" @click="action('cancel')">{{ t('proposal.cancel') }}</v-btn>
+                  <!--
+                    No Cancel here. For the recipient it did the same job as
+                    Decline — refusing an offer — but landed on a different
+                    status and threw away the chance to say why. Decline is the
+                    one that tells the proposer something.
+                  -->
                   <v-btn variant="outlined" prepend-icon="mdi-close"
                     style="border-color: var(--c-accent); color: var(--c-accent)"
                     @click="declining = true">{{ t('proposal.decline') }}</v-btn>
@@ -450,8 +493,7 @@ function confirmDecline() {
                     style="border-color: var(--c-trade); color: var(--c-trade)"
                     @click="emit('counter', proposal); close()">{{ t('proposal.counter') }}</v-btn>
                   <v-btn variant="flat" prepend-icon="mdi-check"
-                    :disabled="!bothUploaded"
-                    :style="bothUploaded ? 'background-color: var(--c-mutual); color: #0C0820' : 'opacity: 0.45'"
+                    style="background-color: var(--c-mutual); color: var(--c-on-accent)"
                     @click="action('accept')">{{ t('proposal.accept') }}</v-btn>
                 </template>
               </template>
@@ -480,3 +522,25 @@ function confirmDecline() {
     :current-user-id="currentUserId"
   />
 </template>
+
+<style scoped>
+/*
+  On a phone the three pending actions wrapped into a ragged two-by-two: Accept
+  landed on its own row directly under Decline, same left edge, 39px apart. The
+  most important button in the product, isolated below the one that refuses the
+  trade, both about 110px wide and reading as a grid.
+
+  Stacked full-width instead. Order is unchanged, so focus order still matches
+  what is on screen, and each target is unambiguous at a thumb's accuracy.
+*/
+/* Vuetify sizes its buttons through --v-btn-height (36px by default), so that
+   is the knob to turn; a bare min-height leaves the grid tracks inside the
+   button at the old size. Base rule first, so the mobile override below wins
+   rather than being undone by source order. */
+.action-row :deep(.v-btn) { --v-btn-height: 40px; }
+
+@media (max-width: 480px) {
+  .action-row { flex-direction: column; align-items: stretch; }
+  .action-row :deep(.v-btn) { width: 100%; --v-btn-height: 44px; }
+}
+</style>

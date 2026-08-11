@@ -463,7 +463,7 @@ function onTabKeydown(e) {
 .tpb-match__cta {
   display: inline-flex; align-items: center; gap: 6px;
   min-height: 36px; padding: 0 14px; border-radius: 10px;
-  background: var(--c-trade); color: #fff; border: none; cursor: pointer;
+  background: var(--c-trade); color: var(--c-on-accent); border: none; cursor: pointer;
   font-size: 13px; font-weight: 700; white-space: nowrap;
   transition: opacity 0.15s ease;
 }
@@ -635,7 +635,7 @@ function onTabKeydown(e) {
   flex-shrink: 0;
   display: inline-flex; align-items: center;
   min-height: 38px; padding: 0 16px; border-radius: 10px;
-  background: var(--c-trade); color: #fff; border: none; cursor: pointer;
+  background: var(--c-trade); color: var(--c-on-accent); border: none; cursor: pointer;
   font-size: 13px; font-weight: 700; white-space: nowrap;
   transition: opacity 0.15s ease;
 }
