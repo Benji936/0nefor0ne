@@ -2,7 +2,7 @@
 import LanguageTooltip from '@/components/tooltips/LanguageTooltip.vue';
 import ConditionTooltip from '@/components/tooltips/ConditionTooltip.vue';
 import { cardImage } from '@/lib/cardImage';
-defineEmits(['deleted']);
+defineEmits(['deleted', 'move']);
 </script>
 
 <template>
@@ -54,6 +54,30 @@ defineEmits(['deleted']);
         ><v-icon icon="mdi-open-in-new" size="12" />{{ wish.extension }}</a>
       </div>
     </div>
+
+    <!-- Move to another wishlist -->
+    <v-menu v-if="canFile" location="bottom end">
+      <template #activator="{ props: menu }">
+        <button
+          v-bind="menu"
+          class="shrink-0 flex items-center justify-center rounded-md transition-colors ce-file"
+          style="width: 30px; height: 30px"
+          :title="$t('wishlists.moveTo')"
+          :aria-label="$t('wishlists.moveTo')"
+        >
+          <v-icon icon="mdi-folder-move-outline" size="16" />
+        </button>
+      </template>
+      <v-list density="compact" style="background: var(--c-surface); border: 1px solid var(--c-border)">
+        <v-list-item
+          v-for="opt in fileOptions"
+          :key="opt.id ?? 'unsorted'"
+          @click="$emit('move', { cardId: wish.id, listId: opt.id })"
+        >
+          <v-list-item-title class="text-sm" style="color: var(--c-text)">{{ opt.name }}</v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-menu>
 
     <!-- Quantity / locked status -->
     <div class="shrink-0">
@@ -155,6 +179,29 @@ defineEmits(['deleted']);
           :min="minQuantity"
         />
       </template>
+
+      <!-- Move to another wishlist -->
+      <v-menu v-if="canFile" location="bottom end">
+        <template #activator="{ props: menu }">
+          <button
+            v-bind="menu"
+            class="flex items-center justify-center gap-1 rounded-md py-1 text-[11px] font-semibold transition-colors ce-file"
+            :title="$t('wishlists.moveTo')"
+          >
+            <v-icon icon="mdi-folder-move-outline" size="13" />
+            {{ $t('wishlists.moveTo') }}
+          </button>
+        </template>
+        <v-list density="compact" style="background: var(--c-surface); border: 1px solid var(--c-border)">
+          <v-list-item
+            v-for="opt in fileOptions"
+            :key="opt.id ?? 'unsorted'"
+            @click="$emit('move', { cardId: wish.id, listId: opt.id })"
+          >
+            <v-list-item-title class="text-sm" style="color: var(--c-text)">{{ opt.name }}</v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-menu>
     </div>
   </div>
   </div>
@@ -164,7 +211,14 @@ defineEmits(['deleted']);
 import { getClient } from "@/lib/supabaseClient";
 
 export default {
-  props: ['wish', 'layout'],
+  props: {
+    wish:   { required: true },
+    layout: { default: 'list' },
+    // Named wishlists this card could be filed under. Empty for a trade-pile
+    // card, which has no lists — the control hides itself rather than offering
+    // somewhere to put something that cannot go there.
+    lists:  { type: Array, default: () => [] },
+  },
   data() {
     return {
       quantityCount: this.wish.quantity,
@@ -173,6 +227,18 @@ export default {
     };
   },
   computed: {
+    /** Only a wished card can be filed, and only when there is a list to file
+     *  it under. Mirrors the card_wishlist_only_when_wish CHECK. */
+    canFile() {
+      return !!this.wish?.wish && this.lists.length > 0;
+    },
+    /** The lists, plus the way back out to unsorted. */
+    fileOptions() {
+      return [
+        ...this.lists.map(l => ({ id: l.id, name: l.name })),
+        { id: null, name: this.$t('wishlists.unsorted') },
+      ].filter(o => o.id !== (this.wish?.wishlist ?? null));
+    },
     /**
      * The lowest value the quantity input allows.
      * Always derived from the live reservedQty count, not from wish.status —
@@ -236,6 +302,19 @@ export default {
 </script>
 
 <style scoped>
+/* Quiet until wanted: filing is a thing you do occasionally, and a button per
+   card at full contrast would compete with the card itself. */
+.ce-file {
+  color: var(--c-muted);
+  border: 1px solid var(--c-border);
+  background: transparent;
+  cursor: pointer;
+}
+.ce-file:hover {
+  color: var(--c-text);
+  background: var(--c-surface-2);
+}
+
 .card-element {
   width: 160px;
 }

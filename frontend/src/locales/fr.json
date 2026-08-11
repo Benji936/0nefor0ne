@@ -1481,5 +1481,22 @@
     "billingMissing": "Aucun prix défini pour {list}",
     "billingLive": "Mode réel",
     "billingTest": "Mode test"
+  },
+  "wishlists": {
+    "newList": "Nouvelle liste",
+    "rename": "Renommer",
+    "delete": "Supprimer la liste",
+    "unsorted": "Non classées",
+    "emptyList": "Rien dans cette liste pour l’instant.",
+    "namePlaceholder": "ex. Cartes convoitées",
+    "moveTo": "Déplacer vers une liste",
+    "save": "Enregistrer",
+    "deleted": "« {name} » supprimée. Ses cartes sont de retour dans Non classées.",
+    "saveFailed": "Impossible d’enregistrer cette liste.",
+    "moveFailed": "Impossible de déplacer cette carte.",
+    "error": {
+      "too_long": "{max} caractères maximum.",
+      "duplicate": "Vous avez déjà une liste portant ce nom."
+    }
   }
 }

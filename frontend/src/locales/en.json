@@ -1481,5 +1481,22 @@
     "billingMissing": "No price set for {list}",
     "billingLive": "Live mode",
     "billingTest": "Test mode"
+  },
+  "wishlists": {
+    "newList": "New list",
+    "rename": "Rename",
+    "delete": "Delete list",
+    "unsorted": "Unsorted",
+    "emptyList": "Nothing on this list yet.",
+    "namePlaceholder": "e.g. Chase cards",
+    "moveTo": "Move to list",
+    "save": "Save",
+    "deleted": "Deleted “{name}”. Its cards are back in Unsorted.",
+    "saveFailed": "Could not save that list.",
+    "moveFailed": "Could not move that card.",
+    "error": {
+      "too_long": "Keep it to {max} characters.",
+      "duplicate": "You already have a list with that name."
+    }
   }
 }

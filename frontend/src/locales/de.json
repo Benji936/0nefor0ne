@@ -1481,5 +1481,22 @@
     "billingMissing": "Kein Preis für {list} hinterlegt",
     "billingLive": "Live-Modus",
     "billingTest": "Testmodus"
+  },
+  "wishlists": {
+    "newList": "Neue Liste",
+    "rename": "Umbenennen",
+    "delete": "Liste löschen",
+    "unsorted": "Nicht einsortiert",
+    "emptyList": "Auf dieser Liste steht noch nichts.",
+    "namePlaceholder": "z. B. Wunschkarten",
+    "moveTo": "In Liste verschieben",
+    "save": "Speichern",
+    "deleted": "„{name}“ gelöscht. Die Karten sind wieder unter „Nicht einsortiert“.",
+    "saveFailed": "Diese Liste konnte nicht gespeichert werden.",
+    "moveFailed": "Diese Karte konnte nicht verschoben werden.",
+    "error": {
+      "too_long": "Höchstens {max} Zeichen.",
+      "duplicate": "Du hast bereits eine Liste mit diesem Namen."
+    }
   }
 }
