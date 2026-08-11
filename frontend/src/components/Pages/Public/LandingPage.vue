@@ -659,7 +659,7 @@ onMounted(async () => {
 .lp-btn-accent:hover { filter: brightness(1.07); transform: translateY(-1px); }
 .lp-btn-outline { background: transparent; color: var(--c-text); border: 1px solid var(--c-border); padding: 13px 24px; }
 .lp-btn-outline:hover { background: var(--c-surface); border-color: var(--c-accent); }
-.lp-btn-trade { background: var(--c-trade); color: #fff; padding: 13px 22px; border-radius: 11px; font-size: 15px; margin-top: 26px; }
+.lp-btn-trade { background: var(--c-trade); color: var(--c-on-accent); padding: 13px 22px; border-radius: 11px; font-size: 15px; margin-top: 26px; }
 .lp-btn-trade:hover { filter: brightness(1.07); }
 
 .lp-ico { width: 17px; height: 17px; }

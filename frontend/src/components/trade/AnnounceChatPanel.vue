@@ -288,7 +288,7 @@ const openThreadName = computed(() => {
   border-radius: 16px; padding: 8px 12px;
   font-size: 13px; line-height: 1.4; word-break: break-word;
 }
-.msg--me .msg-bubble   { background: var(--c-trade); color: #fff; }
+.msg--me .msg-bubble   { background: var(--c-trade); color: var(--c-on-accent); }
 .msg--them .msg-bubble { background: var(--c-surface-2); border: 1px solid var(--c-border); color: var(--c-text); }
 .msg-time { font-size: 10px; color: var(--c-muted); margin-top: 3px; padding: 0 3px; }
 
@@ -309,7 +309,7 @@ const openThreadName = computed(() => {
 .chat-send {
   display: flex; align-items: center; justify-content: center;
   width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
-  background: var(--c-trade); color: #fff; cursor: pointer;
+  background: var(--c-trade); color: var(--c-on-accent); cursor: pointer;
   transition: opacity 0.15s ease;
 }
 .chat-send:disabled { opacity: 0.4; pointer-events: none; }

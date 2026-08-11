@@ -484,7 +484,8 @@
     "waitingAccept": "Warten auf die Antwort von {name}.",
     "viewTrade": "Tausch ansehen",
     "starLabel": "{n} Stern | {n} Sterne",
-    "viewProfileOf": "Profil von {name} ansehen"
+    "viewProfileOf": "Profil von {name} ansehen",
+    "toggleCards": "Karten dieses Tauschs ein- oder ausblenden"
   },
   "proposeDialog": {
     "title": "Tausch vorschlagen",

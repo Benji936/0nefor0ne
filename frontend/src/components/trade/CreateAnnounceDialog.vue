@@ -397,7 +397,7 @@ async function submit() {
                   type="button"
                   class="flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-xs font-semibold border cursor-pointer transition-all"
                   :style="!isLf
-                    ? { backgroundColor: 'var(--c-trade)', borderColor: 'var(--c-trade)', color: 'white' }
+                    ? { backgroundColor: 'var(--c-trade)', borderColor: 'var(--c-trade)', color: 'var(--c-on-accent)' }
                     : { backgroundColor: 'transparent', borderColor: 'var(--c-border)', color: 'var(--c-muted)' }"
                   :aria-pressed="!isLf"
                   @click="setKind('sell')"
@@ -408,7 +408,7 @@ async function submit() {
                   type="button"
                   class="flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-xs font-semibold border cursor-pointer transition-all"
                   :style="isLf
-                    ? { backgroundColor: 'var(--c-mutual)', borderColor: 'var(--c-mutual)', color: 'white' }
+                    ? { backgroundColor: 'var(--c-mutual)', borderColor: 'var(--c-mutual)', color: 'var(--c-on-accent)' }
                     : { backgroundColor: 'transparent', borderColor: 'var(--c-border)', color: 'var(--c-muted)' }"
                   :aria-pressed="isLf"
                   @click="setKind('looking_for')"
@@ -886,7 +886,7 @@ async function submit() {
 .btn-submit {
   display: flex; align-items: center; gap: 7px;
   padding: 9px 20px; border-radius: 11px;
-  background: var(--c-trade); color: #fff;
+  background: var(--c-trade); color: var(--c-on-accent);
   font-size: 13px; font-weight: 700;
   cursor: pointer; transition: opacity 0.15s ease, transform 0.15s ease;
   min-width: 120px; justify-content: center;

@@ -212,10 +212,12 @@ function confirmDecline() {
           <section v-for="side in [
             { label: t('tradeDetail.youGive'),    icon: 'mdi-arrow-up-circle',   color: 'var(--c-accent)', cards: proposal.i_give,    qtyColor: 'var(--c-accent)' },
             { label: t('tradeDetail.youReceive'), icon: 'mdi-arrow-down-circle', color: 'var(--c-trade)',  cards: proposal.i_receive, qtyColor: 'var(--c-trade)' },
-          ]" :key="side.label" class="flex flex-col gap-3">
+          ]" :key="side.label" class="flex flex-col gap-3"
+            role="group" :aria-labelledby="`side-${side.label.replace(/\W+/g, '-')}`">
             <div class="flex items-center gap-2 pb-1" style="border-bottom: 1px solid var(--c-border)">
               <v-icon :icon="side.icon" size="18" :color="side.color" />
-              <span class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">{{ side.label }}</span>
+              <span :id="`side-${side.label.replace(/\W+/g, '-')}`"
+                class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">{{ side.label }}</span>
               <span v-if="side.cards?.length" class="ml-auto text-[11px] font-semibold px-2 py-1 rounded-md"
                 :style="{ background: `color-mix(in srgb, ${side.color} 15%, transparent)`, color: side.color }">
                 {{ t('tradeDetail.cardCount', side.cards.length) }}
@@ -425,7 +427,7 @@ function confirmDecline() {
                   v-if="!iConfirmed"
                   variant="flat" prepend-icon="mdi-handshake-outline"
                   :disabled="!bothUploaded"
-                  :style="bothUploaded ? 'background-color: var(--c-mutual); color: #0C0820' : 'opacity: 0.45'"
+                  :style="bothUploaded ? 'background-color: var(--c-mutual); color: var(--c-on-accent)' : 'opacity: 0.45'"
                   @click="action('complete')">{{ t('proposal.confirmYourSide') }}</v-btn>
               </div>
             </div>
@@ -455,7 +457,13 @@ function confirmDecline() {
               <template v-if="!proposal.i_am_proposer">
                 <template v-if="declining">
                   <div class="flex flex-col gap-2 w-full gap-5">
+                    <!-- Labelled, not just placeheld: a placeholder is not an
+                         accessible name and disappears as soon as you type. -->
+                    <label for="decline-reason" class="text-xs font-semibold" style="color: var(--c-muted)">
+                      {{ t('tradeDetail.declineReason') }}
+                    </label>
                     <textarea
+                      id="decline-reason"
                       v-model="declineReason"
                       :placeholder="t('tradeDetail.declinePlaceholder')"
                       rows="2"
@@ -466,7 +474,7 @@ function confirmDecline() {
                     <div class="flex gap-2 justify-end">
                       <v-btn size="small" variant="text" style="color: var(--c-muted)" @click="declining = false">{{ t('common.back') }}</v-btn>
                       <v-btn size="small" variant="flat"
-                        style="background-color: var(--c-accent); color: white"
+                        style="background-color: var(--c-accent); color: var(--c-on-accent)"
                         @click="confirmDecline">{{ t('common.confirm') }}</v-btn>
                     </div>
                   </div>
@@ -485,7 +493,7 @@ function confirmDecline() {
                     style="border-color: var(--c-trade); color: var(--c-trade)"
                     @click="emit('counter', proposal); close()">{{ t('proposal.counter') }}</v-btn>
                   <v-btn variant="flat" prepend-icon="mdi-check"
-                    style="background-color: var(--c-mutual); color: #0C0820"
+                    style="background-color: var(--c-mutual); color: var(--c-on-accent)"
                     @click="action('accept')">{{ t('proposal.accept') }}</v-btn>
                 </template>
               </template>

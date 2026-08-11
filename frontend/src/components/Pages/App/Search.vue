@@ -60,7 +60,7 @@ const HOW_IT_WORKS = computed(() => [
           <v-btn
             size="large"
             variant="flat"
-            :style="{ background: 'var(--c-trade)', color: 'white', fontWeight: 700, minHeight: '48px', paddingInline: '28px' }"
+            :style="{ background: 'var(--c-trade)', color: 'var(--c-on-accent)', fontWeight: 700, minHeight: '48px', paddingInline: '28px' }"
             @click="$emit('requireAuth')"
           >
             {{ $t('hero.cta') }}

@@ -413,12 +413,12 @@ function marketLinks(name, setCode) {
         <template v-else>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:h-full min-h-0">
           <!-- ── You give ── -->
-          <section class="flex flex-col gap-3 min-h-0">
+          <section class="flex flex-col gap-3 min-h-0" role="group" aria-labelledby="col-you-give">
             <!-- Header -->
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <v-icon icon="mdi-arrow-up-circle" :color="'var(--c-accent)'" size="20" />
-                <p class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">{{ t('proposeDialog.youGive') }}</p>
+                <p id="col-you-give" class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">{{ t('proposeDialog.youGive') }}</p>
                 <span
                   v-if="givePayload.length > 0"
                   class="chip-count" :style="{ '--chip': 'var(--c-accent)' }"
@@ -430,7 +430,7 @@ function marketLinks(name, setCode) {
                 prepend-icon="mdi-heart-search"
                 :style="showWantedPicker
                   ? { backgroundColor: 'var(--c-surface-2)', color: 'var(--c-text)' }
-                  : { backgroundColor: 'var(--c-trade)', color: 'white' }"
+                  : { backgroundColor: 'var(--c-trade)', color: 'var(--c-on-accent)' }"
                 @click="openWantedPicker"
               >{{ showWantedPicker ? t('proposeDialog.hideSuggestions') : t('proposeDialog.addToOffer') }}</v-btn>
             </div>
@@ -589,10 +589,10 @@ function marketLinks(name, setCode) {
           </section>
 
           <!-- ── You receive ── -->
-          <section class="flex flex-col gap-4 min-h-0">
+          <section class="flex flex-col gap-4 min-h-0" role="group" aria-labelledby="col-you-receive">
             <div class="flex items-center gap-3">
               <v-icon icon="mdi-arrow-down-circle" :color="'var(--c-trade)'" size="20" />
-              <p class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">{{ t('proposeDialog.youReceive') }}</p>
+              <p id="col-you-receive" class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">{{ t('proposeDialog.youReceive') }}</p>
               <span
                 v-if="receivePayload.length > 0"
                 class="chip-count" :style="{ '--chip': 'var(--c-trade)' }"
@@ -861,7 +861,7 @@ function marketLinks(name, setCode) {
             <v-btn variant="text" color="gray" size="small" @click="close" :disabled="submitting">{{ t('common.cancel') }}</v-btn>
             <v-btn
               variant="flat"
-              style="background-color: var(--c-accent); color: white"
+              style="background-color: var(--c-accent); color: var(--c-on-accent)"
               :prepend-icon="isEditing ? 'mdi-content-save-outline' : 'mdi-send'"
               class="!rounded-xl"
               size="small"

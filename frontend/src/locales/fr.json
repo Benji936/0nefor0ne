@@ -484,7 +484,8 @@
     "waitingAccept": "En attente de la réponse de {name}.",
     "viewTrade": "Voir l'échange",
     "starLabel": "{n} étoile | {n} étoiles",
-    "viewProfileOf": "Voir le profil de {name}"
+    "viewProfileOf": "Voir le profil de {name}",
+    "toggleCards": "Afficher ou masquer les cartes de cet échange"
   },
   "proposeDialog": {
     "title": "Proposer un échange",

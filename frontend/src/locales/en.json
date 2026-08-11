@@ -484,7 +484,8 @@
     "waitingAccept": "Waiting for {name} to answer.",
     "viewTrade": "View trade",
     "starLabel": "{n} star | {n} stars",
-    "viewProfileOf": "View {name}'s profile"
+    "viewProfileOf": "View {name}'s profile",
+    "toggleCards": "Show or hide the cards in this trade"
   },
   "proposeDialog": {
     "title": "Propose a trade",

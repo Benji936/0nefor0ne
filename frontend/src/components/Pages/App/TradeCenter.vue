@@ -29,7 +29,7 @@ import AnnounceDetailDialog from "@/components/trade/AnnounceDetailDialog.vue";
         <span
           v-if="tab.badge > 0"
           class="px-1 py-1 w-6 h-6 rounded-md text-[11px] items-center font-bold tabular-nums"
-          style="background: var(--c-accent); color: white"
+          style="background: var(--c-accent); color: var(--c-on-accent)"
         >{{ tab.badge }}</span>
       </button>
     </div>
@@ -137,7 +137,7 @@ import AnnounceDetailDialog from "@/components/trade/AnnounceDetailDialog.vue";
         <div class="flex justify-end gap-2 px-6 py-5">
           <v-btn variant="text" style="color: var(--c-muted)" :disabled="cancelConfirm.working"
             @click="cancelConfirm.open = false">{{ $t('tradeCenter.cancelConfirmKeep') }}</v-btn>
-          <v-btn variant="flat" style="background-color: var(--c-accent); color: white"
+          <v-btn variant="flat" style="background-color: var(--c-accent); color: var(--c-on-accent)"
             :loading="cancelConfirm.working"
             @click="doCancel(cancelConfirm.proposal)">{{ $t('tradeCenter.cancelConfirmDo') }}</v-btn>
         </div>

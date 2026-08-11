@@ -302,7 +302,7 @@ async function sendManual() {
 .btn-cancel { padding: 9px 16px; border-radius: 11px; font-size: 13px; font-weight: 600; color: var(--c-muted); cursor: pointer; transition: background 0.15s ease; }
 .btn-cancel:hover { background: var(--c-surface-2); }
 .btn-cancel:disabled { opacity: 0.4; pointer-events: none; }
-.btn-submit { display: flex; align-items: center; gap: 7px; padding: 9px 20px; border-radius: 11px; background: var(--c-trade); color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity 0.15s ease, transform 0.15s ease; min-width: 120px; justify-content: center; }
+.btn-submit { display: flex; align-items: center; gap: 7px; padding: 9px 20px; border-radius: 11px; background: var(--c-trade); color: var(--c-on-accent); font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity 0.15s ease, transform 0.15s ease; min-width: 120px; justify-content: center; }
 .btn-submit:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
 .btn-submit:disabled { opacity: 0.4; pointer-events: none; }
 </style>

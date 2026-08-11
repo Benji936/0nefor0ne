@@ -286,8 +286,8 @@ function openCreate() {
   transition: background 0.15s ease, color 0.15s ease;
 }
 .filter-btn:hover { color: var(--c-text); }
-.filter-btn--active { background: var(--c-trade); color: #fff; }
-.filter-btn--active.filter-btn--lf { background: var(--c-mutual); color: #13031A; }
+.filter-btn--active { background: var(--c-trade); color: var(--c-on-accent); }
+.filter-btn--active.filter-btn--lf { background: var(--c-mutual); color: var(--c-on-accent); }
 .filter-btn--active:hover { color: #fff; }
 .filter-btn--active.filter-btn--lf:hover { color: #13031A; }
 
@@ -299,7 +299,7 @@ function openCreate() {
   padding: 8px 16px;
   border-radius: 12px;
   background: var(--c-trade);
-  color: #fff;
+  color: var(--c-on-accent);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;

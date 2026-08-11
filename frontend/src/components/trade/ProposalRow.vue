@@ -164,10 +164,17 @@ function cancelRating() {
       />
     </div>
 
-    <!-- Card summary bar: always visible, click to expand fan -->
-    <div
-      class="flex items-center gap-3 px-4 py-3 cursor-pointer select-none transition-colors duration-150"
+    <!-- Card summary bar: always visible, click to expand fan.
+         A real button, not a clickable div: this is the only way to see which
+         cards are in a proposal from the list, and it was unreachable by
+         keyboard. -->
+    <button
+      type="button"
+      class="summary-bar flex items-center gap-3 px-4 py-3 w-full cursor-pointer select-none transition-colors duration-150"
       :style="{ borderTop: '1px solid var(--c-border)', background: cardsOpen ? 'var(--c-surface-2)' : 'transparent' }"
+      :aria-expanded="String(cardsOpen)"
+      :aria-controls="`trade-cards-${proposal.id}`"
+      :aria-label="t('proposal.toggleCards')"
       @click="cardsOpen = !cardsOpen"
     >
       <!-- You give: count + label -->
@@ -197,13 +204,13 @@ function cancelRating() {
         class="shrink-0"
         style="transition: transform 0.2s cubic-bezier(0.22,1,0.36,1)"
       />
-    </div>
+    </button>
 
     <!-- Expandable card fan -->
     <!-- Two elements on purpose: the outer one is what the grid-rows transition
          animates, the inner one keeps the flex layout it would otherwise fight. -->
     <Transition name="cards-expand">
-      <div v-show="cardsOpen" style="border-top: 1px solid var(--c-border)">
+      <div v-show="cardsOpen" :id="`trade-cards-${proposal.id}`" style="border-top: 1px solid var(--c-border)">
       <div class="flex flex-col md:flex-row">
 
         <!-- You give (accent/pink tint) -->
@@ -406,7 +413,7 @@ function cancelRating() {
             <v-btn
               v-if="!iConfirmed"
               size="small" variant="flat" prepend-icon="mdi-handshake-outline"
-              style="background-color: var(--c-mutual); color: #0C0820"
+              style="background-color: var(--c-mutual); color: var(--c-on-accent)"
               @click="emit('complete', proposal)"
             >{{ t('proposal.confirmYourSide') }}</v-btn>
             <span v-else class="text-xs grow" style="color: var(--c-muted)">
@@ -493,7 +500,7 @@ function cancelRating() {
               <button class="text-xs cursor-pointer transition-opacity hover:opacity-70" style="color: var(--c-muted)" @click="cancelRating">{{ t('common.cancel') }}</button>
               <v-btn
                 size="x-small" variant="flat"
-                style="background: var(--c-mutual); color: #0C0820; min-height: 28px"
+                style="background: var(--c-mutual); color: var(--c-on-accent); min-height: 28px"
                 :loading="ratingSubmitting"
                 @click="submitRating"
               >{{ t('proposal.submit') }}</v-btn>
@@ -556,6 +563,20 @@ function cancelRating() {
 .card-fan-item:hover .card-fan-img {
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.65);
   outline-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Was a div, now a button: strip the UA styles it brings and keep the row's
+   full-width, left-to-right layout. */
+.summary-bar {
+  background: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+.summary-bar:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: -2px;
 }
 
 /* 44px minimum target (WCAG 2.5.5), with the glyph centred inside it. */

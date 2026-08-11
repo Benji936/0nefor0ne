@@ -149,7 +149,7 @@ function placeLabel(e) {
   position: absolute; top: 8px; left: 8px;
   font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
   padding: 3px 8px; border-radius: 7px;
-  background: var(--c-mutual); color: #13031A;
+  background: var(--c-mutual); color: var(--c-on-accent);
 }
 
 .uev-card__body { padding: 11px 13px 13px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }

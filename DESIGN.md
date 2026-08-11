@@ -12,17 +12,22 @@ colors:
   text: "#EDE8FF"
   muted: "#A890D0"
   accent: "#F42D87"
-  trade: "#9A52F5"
+  trade: "#A362F7"
   mutual: "#2DD4BF"
+  # The label colour for anything sitting ON accent/trade/mutual. Dark in the
+  # dark theme (where the brand colours are bright), white in the light theme
+  # (where they are deep). See The Label Contrast Rule.
+  on-accent: "#13031A"
+  on-accent-light: "#FFFFFF"
   bg-light: "#FFFFFF"
   surface-light: "#F7F2FF"
   surface-2-light: "#EDE0FF"
   border-light: "#C5ABED"
   text-light: "#1C0852"
   muted-light: "#6830A8"
-  accent-light: "#C9185A"
+  accent-light: "#C21456"
   trade-light: "#6B20D9"
-  mutual-light: "#0882A8"
+  mutual-light: "#076B82"
   nav: "#0B0617"
   skeleton: "#1E1248"
 typography:
@@ -64,27 +69,27 @@ spacing:
 components:
   button-trade:
     backgroundColor: "{colors.trade}"
-    textColor: "#ffffff"
+    textColor: "{colors.on-accent}"
     rounded: "{rounded.md}"
     padding: "8px 20px"
   button-trade-hover:
     backgroundColor: "#B56EFF"
-    textColor: "#ffffff"
+    textColor: "{colors.on-accent}"
     rounded: "{rounded.md}"
     padding: "8px 20px"
   button-accent:
     backgroundColor: "{colors.accent}"
-    textColor: "#ffffff"
+    textColor: "{colors.on-accent}"
     rounded: "{rounded.md}"
     padding: "8px 20px"
   button-accent-hover:
     backgroundColor: "#FF6A9A"
-    textColor: "#ffffff"
+    textColor: "{colors.on-accent}"
     rounded: "{rounded.md}"
     padding: "8px 20px"
   button-mutual:
     backgroundColor: "{colors.mutual}"
-    textColor: "#13031A"
+    textColor: "{colors.on-accent}"
     rounded: "{rounded.md}"
     padding: "8px 20px"
   card-surface:
@@ -132,18 +137,18 @@ Three semantic roles, one neutral system, two modes. The dark mode is canonical;
 
 ### Primary — Trade (Amethyst)
 
-- **Amethyst Trade** (`#9A52F5` dark / `#6B20D9` light): Trade pile actions, "Add to trade," "Propose trade" buttons, the "You give" column in the negotiation UI. The color of offering something.
+- **Amethyst Trade** (`#A362F7` dark / `#6B20D9` light): Trade pile actions, "Add to trade," "Propose trade" buttons, the "You give" column in the negotiation UI. The color of offering something.
 - **Deep Amethyst Surface** (`#13092A`): Card and panel backgrounds in dark mode. The base layer on which card art rests.
 - **Amethyst Border** (`#3A206E`): Dividers, input strokes, card outlines. Visible but not demanding.
 
 ### Secondary — Accent (Hot Pink)
 
-- **Collector's Pink** (`#F42D87` dark / `#C9185A` light): Wishlist actions, heart icons, "Add to wishlist" buttons, the "You receive" emotional framing. The color of want.
-- **Pink Berry** (`#C9185A` light mode): Deeper pink for light-mode contrast without losing warmth.
+- **Collector's Pink** (`#F42D87` dark / `#C21456` light): Wishlist actions, heart icons, "Add to wishlist" buttons, the "You receive" emotional framing. The color of want.
+- **Pink Berry** (`#C21456` light mode): Deeper pink for light-mode contrast without losing warmth.
 
 ### Tertiary — Mutual (Teal)
 
-- **Trade Match Teal** (`#2DD4BF`): The agreement chain, start to finish. Mutual match badges, "they want this" indicators, match count chips, then Accept, Confirm your side, both-sides-verified, agreed meetup and cash terms, and the post-trade rating. Not a general-purpose success color: see The Agreement Rule below.
+- **Trade Match Teal** (`#2DD4BF` dark / `#076B82` light): The agreement chain, start to finish. Mutual match badges, "they want this" indicators, match count chips, then Accept, Confirm your side, both-sides-verified, agreed meetup and cash terms, and the post-trade rating. Not a general-purpose success color: see The Agreement Rule below.
 
 ### Neutral
 
@@ -155,6 +160,19 @@ Three semantic roles, one neutral system, two modes. The dark mode is canonical;
 - **Deep Indigo Text** (`#1A0D45`): Primary text in light mode. High contrast without the harshness of pure black.
 
 ### Named Rules
+
+**The Label Contrast Rule.** Text on a brand colour uses `var(--c-on-accent)`, never a literal `white` or `#fff`. The brand colours invert between themes: bright in dark mode, deep in light mode. A fixed white label therefore passes in one theme and fails in the other, which is exactly what happened. Measured, at Vuetify's 14px/500 button text, where AA wants 4.5:1:
+
+| | white label | `--c-on-accent` |
+|---|---|---|
+| accent, dark | 3.77 ✗ | **5.28 ✓** |
+| trade, dark | 4.29 ✗ | **5.35 ✓** |
+| mutual, light | 4.40 ✗ | **6.11 ✓** |
+| accent, light | 5.95 ✓ | 5.95 ✓ (white) |
+
+Three token values moved with it, each to the nearest passing shade so the hue is unchanged: dark `trade` `#9A52F5` → `#A362F7` (it read 4.09:1 as text on `surface-2`), light `accent` `#C9185A` → `#C21456` (4.44:1 on `surface-2`), light `mutual` `#0882A8` → `#076B82` (3.50:1 on `surface-2`, and 4.40:1 under a white label).
+
+Brightening dark `trade` costs nothing precisely because the label is dark: a brighter background improves both the text-on-surface reading and the label-on-button reading at once.
 
 **The No-Gray Rule.** Pure grays (`#555`, `#ccc`, `text-gray-*`) are prohibited. Every neutral in the system is tinted toward the brand hue. Icon fills, placeholder text, and muted labels use `var(--c-muted)` (Soft Violet), not a gray.
 

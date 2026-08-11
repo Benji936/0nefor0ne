@@ -27,7 +27,7 @@ const emit = defineEmits(["toggle", "click"]);
         <span
           v-if="notifs.some(n => !n.read)"
           class="size-4 rounded-full flex items-center justify-center text-[10px] font-bold tabular-nums"
-          style="background: var(--c-accent); color: white"
+          style="background: var(--c-accent); color: var(--c-on-accent)"
         >{{ notifs.filter(n => !n.read).length }}</span>
       </div>
       <v-icon

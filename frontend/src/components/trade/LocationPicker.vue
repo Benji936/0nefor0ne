@@ -93,7 +93,7 @@ function distLabel(place) {
         type="button"
         class="flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-xs font-semibold border transition-all cursor-pointer"
         :style="deliveryMode === 'location'
-          ? { backgroundColor: 'var(--c-trade)', borderColor: 'var(--c-trade)', color: 'white' }
+          ? { backgroundColor: 'var(--c-trade)', borderColor: 'var(--c-trade)', color: 'var(--c-on-accent)' }
           : { backgroundColor: 'transparent', borderColor: 'var(--c-border)', color: 'var(--c-muted)' }"
         @click="setMode('location')"
       >
@@ -103,7 +103,7 @@ function distLabel(place) {
         type="button"
         class="flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-xs font-semibold border transition-all cursor-pointer"
         :style="deliveryMode === 'mail'
-          ? { backgroundColor: 'var(--c-trade)', borderColor: 'var(--c-trade)', color: 'white' }
+          ? { backgroundColor: 'var(--c-trade)', borderColor: 'var(--c-trade)', color: 'var(--c-on-accent)' }
           : { backgroundColor: 'transparent', borderColor: 'var(--c-border)', color: 'var(--c-muted)' }"
         @click="setMode('mail')"
       >
