@@ -152,6 +152,32 @@ may ignore one or both hints if they appear together on the same element.
 
 ---
 
+## 6. Vercel must be told to serve the prerendered files (P1 fix)
+
+**Problem:** vite-ssg writes `dist/en/cards.html`, `dist/en/card/19144622.html` and so on, but
+Vercel served the SPA shell at every one of those URLs. `/en/` worked because directory indexes
+always resolve to `index.html`; `/en/cards` did not, because Vercel will not try `cards.html`
+for an extensionless path unless `cleanUrls` is on. The lookup missed, and the SPA-fallback
+rewrite caught it. 250 of the 254 URLs in `sitemap.xml` were byte-identical 7 kB shells.
+
+**Fix:** `"cleanUrls": true` in `frontend/vercel.json`. Keep the catch-all rewrite — it is still
+the right fallback for routes that are not prerendered. `cleanUrls` also 308s `/en/cards.html`
+to `/en/cards`, which stops the prerendered files being indexable at a second address.
+
+**`vercel.json` takes no comments.** It is schema-validated, and an unknown key — including a
+`"//"` comment key — fails the deployment during configuration validation, *before* the build
+runs. The symptom is a failed check with no build logs at all and a status URL pointing at the
+project-configuration docs. Explain changes in the commit message instead.
+
+**Verify on a deploy, never locally** — `vite preview` does its own extension resolution and
+will happily serve pages that production does not:
+```bash
+curl -sI https://<deployment>/en/cards | grep -i content-length   # ~42 kB, not ~7 kB
+curl -s  https://<deployment>/en/cards | grep -o '<title>[^<]*'   # page title, not the shell's
+```
+
+---
+
 ## Affected Files
 
 | File | Issues |

@@ -1,5 +1,4 @@
 {
-  "//": "cleanUrls makes Vercel resolve /en/cards to the prerendered en/cards.html. Without it that lookup misses, the catch-all rewrite below wins, and every URL but the four homepages serves the empty app shell — 250 of the 254 URLs in sitemap.xml were byte-identical because of it. It also 308s /en/cards.html to /en/cards, so the prerendered files stop being indexable at a second address.",
   "cleanUrls": true,
   "redirects": [
     { "source": "/",              "destination": "/en/",             "permanent": true },
