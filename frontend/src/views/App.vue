@@ -10,7 +10,7 @@ import NotificationBell from "@/components/nav/NotificationBell.vue";
 import UserMenuChip from "@/components/nav/UserMenuChip.vue";
 import TcgPlayerAd from "@/components/ads/TcgPlayerAd.vue";
 import CardHoverPreview from "@/components/ui/card/CardHoverPreview.vue";
-import { setLocale, SUPPORTED } from "@/i18n.js";
+import { persistLocale, SUPPORTED } from "@/i18n.js";
 
 const { t, locale } = useI18n();
 const router = useRouter();
@@ -119,7 +119,12 @@ useHead(
 const LANG_LABELS = { en: "English", fr: "Français", de: "Deutsch", it: "Italiano" };
 
 function switchLang(lang) {
-  setLocale(lang);
+  // `locale` here is this app's own instance, injected by useI18n — the router
+  // hook in main.js sets the same ref again when the replace below lands, which
+  // is idempotent. Doing it here too means the switch still works if the URL
+  // has no locale segment to rewrite.
+  locale.value = lang;
+  persistLocale(lang);
   // Swap the locale segment in the current URL so the address bar stays in sync
   const currentLocale = route.params.locale || "en";
   const newPath = route.path.replace(

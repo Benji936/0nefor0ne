@@ -8,11 +8,20 @@ Reference skill for fixing SSR/SSG SEO issues in Vue 3 + vite-ssg + @unhead/vue 
 snapshots head tags *after* app render. If `t()` is called without an explicit locale option,
 it resolves against whatever locale was active at snapshot time — often English (the default).
 
-**Root cause:** In vite-ssg, each route is rendered in a new app instance. The `locale` ref
-from `useI18n()` is reactive, but the `computed(() => ...)` passed to `useHead` may close over
-a stale locale value if vue-i18n's composable locale is not yet propagated when `@unhead` collects.
+**Root cause (corrected 2026-08-12):** vite-ssg renders each route in a new app instance, but
+`src/i18n.js` exported one `createI18n()` result at module scope, so every app shared a single
+locale ref. vite-ssg renders routes concurrently in one Node process; the locale one route's
+guard set was overwritten by another route's before the first finished rendering. Nothing about
+@unhead's snapshot timing was involved.
 
-**Fix:** Force the locale explicitly on every `t()` call inside `useHead` computed:
+**Fix (real):** `createAppI18n()` is a factory called inside the `ViteSSG` setup callback, and
+`main.js`'s `router.beforeEach` — the only code holding that app's instance — is the single
+place the locale is set. `src/router/index.js` is shared by every app and must stay stateless.
+
+**Fix (the workaround below):** forcing an explicit locale on `t()` inside `useHead` made the
+*head* immune to the shared ref. It is still correct and worth keeping, but on its own it hid
+the bug rather than fixing it: `/fr/`, `/de/` and `/it/` shipped correct localized titles above
+an English body for months, and a title-only check cannot see that. Assert on the **body**:
 ```js
 const { t, locale } = useI18n()
 const localeVal = computed(() => route.params?.locale || 'en')
@@ -159,8 +168,12 @@ grep -c 'og:image' dist/en/card/*/index.html                   # all non-zero
 grep '"price"' dist/en/card/*/index.html                       # should be empty
 grep 'fetchpriority' dist/en/card/*/index.html                 # should appear
 
-# Locale titles
+# Locale titles — necessary but NOT sufficient: these passed for months while
+# the bodies below were English. Never treat a green title check as proof.
 grep '<title>' dist/fr/index.html   # must contain French text
 grep '<title>' dist/de/index.html   # must contain German text
 grep '<title>' dist/it/index.html   # must contain Italian text
+
+# Locale bodies — the check that actually catches a leaked locale.
+npm run verify:ssg                  # asserts body copy per locale, all page types
 ```

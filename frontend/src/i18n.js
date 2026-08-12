@@ -23,20 +23,40 @@ function detectLocale() {
   return "en";
 }
 
-const i18n = createI18n({
-  legacy: false,          // use Composition API mode
-  locale: "en",
-  fallbackLocale: "en",
-  globalInjection: true,
-  messages: { en, fr, de, it },
-});
+/**
+ * One i18n instance per app — never a module-level singleton.
+ *
+ * A shared instance is harmless in the browser, where exactly one app exists.
+ * It is wrong under vite-ssg, which renders routes concurrently inside a single
+ * Node process: the locale one page's route guard set leaked into another
+ * page's renderToString before it finished. The symptom was /fr/, /de/ and /it/
+ * shipping a correct French, German or Italian <title> — those resolve
+ * per-route with an explicit `locale` option, so they never touched the shared
+ * state — above an English body. Three locale homepages read as duplicates of
+ * the English one while their hreflang cluster insisted they were translations,
+ * and which pages came out wrong could change from build to build.
+ */
+export function createAppI18n(locale = "en") {
+  return createI18n({
+    legacy: false,          // use Composition API mode
+    locale: SUPPORTED.includes(locale) ? locale : "en",
+    fallbackLocale: "en",
+    globalInjection: true,
+    messages: { en, fr, de, it },
+  });
+}
 
-/** Change locale and persist the choice. */
-export function setLocale(lang) {
+/**
+ * The side effects of a locale change that live outside vue-i18n. No-ops during
+ * SSG, where there is no window to persist to and no document to label.
+ * Setting the locale itself belongs to the router hook in main.js, which is the
+ * only code holding a reference to the current app's instance.
+ */
+export function persistLocale(lang) {
   if (!SUPPORTED.includes(lang)) return;
-  i18n.global.locale.value = lang;
   if (typeof window !== "undefined") {
-    localStorage.setItem(STORAGE_KEY, lang);
+    // Mirrors detectLocale's guard: Safari private mode throws on write too.
+    try { localStorage.setItem(STORAGE_KEY, lang); } catch { /* no-op */ }
   }
   if (typeof document !== "undefined") {
     document.documentElement.setAttribute("lang", lang);
@@ -44,4 +64,3 @@ export function setLocale(lang) {
 }
 
 export { SUPPORTED, detectLocale };
-export default i18n;
