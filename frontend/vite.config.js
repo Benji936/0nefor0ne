@@ -1,5 +1,6 @@
 import { fileURLToPath, URL } from 'node:url'
 
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import { TOP_CARD_IDS } from './src/data/card-ids.js'
 import { TOP_SET_SLUGS } from './src/data/set-slugs.js'
@@ -7,6 +8,21 @@ import { TOP_COMMUNITY_SLUGS } from './src/data/community-slugs.js'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import tailwindcss from '@tailwindcss/vite'
+
+// Card IDs to prerender, written by scripts/generate-sitemap.mjs earlier in the
+// same `npm run build` from the same Supabase query that produced sitemap.xml.
+// Reading it here is what keeps the two lists identical. Absent when vite-ssg is
+// run on its own, which is why TOP_CARD_IDS remains as the floor.
+function prerenderCardIds() {
+  try {
+    const ids = JSON.parse(readFileSync('./src/data/prerender-cards.generated.json', 'utf8'))
+    if (Array.isArray(ids) && ids.length) return ids
+    console.warn('[ssg] prerender manifest is empty — falling back to TOP_CARD_IDS')
+  } catch {
+    console.warn('[ssg] no prerender manifest (run scripts/generate-sitemap.mjs first) — falling back to TOP_CARD_IDS')
+  }
+  return TOP_CARD_IDS
+}
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => ({
@@ -68,14 +84,17 @@ export default defineConfig(({ command }) => ({
         included.push(`/${locale}/`)
       }
 
-      // Privacy pages: /en/privacy, /fr/privacy, /de/privacy, /it/privacy
+      // Static content pages, all locales. terms and built-with were in
+      // sitemap.xml but not here, so all eight resolved to the SPA shell.
       for (const locale of locales) {
         included.push(`/${locale}/privacy`)
+        included.push(`/${locale}/terms`)
+        included.push(`/${locale}/built-with`)
       }
 
-      // Top-16 English card pages (English only — non-English redirect to /en/)
-      // IDs sourced from src/data/card-ids.js (single source of truth)
-      for (const id of TOP_CARD_IDS) {
+      // English card pages (non-English redirect to /en/). Same IDs the sitemap
+      // lists — see prerenderCardIds above.
+      for (const id of prerenderCardIds()) {
         included.push(`/en/card/${id}`)
       }
 
@@ -98,7 +117,7 @@ export default defineConfig(({ command }) => ({
         included.push('/en/community/' + slug)
       }
 
-      return included  // 4 + 4 + 16 + 30 + 4 + 4 + TOP_COMMUNITY_SLUGS.length = 62 + N paths
+      return included
     },
   },
 }))

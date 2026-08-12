@@ -1,19 +1,47 @@
-import { readFileSync, existsSync } from 'node:fs'
+import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { TOP_CARD_IDS } from '../src/data/card-ids.js'
+import { TOP_SET_SLUGS } from '../src/data/set-slugs.js'
+
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const DIST = resolve(__dirname, '../dist')
+// dist/sitemap.xml is the file that actually gets served, and the one
+// prune-sitemap.mjs rewrites. public/ is the pre-build copy, checked only when
+// verify is run on its own without a build.
+const DIST_SITEMAP = resolve(DIST, 'sitemap.xml')
+const SITEMAP = existsSync(DIST_SITEMAP) ? DIST_SITEMAP : resolve(__dirname, '../public/sitemap.xml')
+
+// Sampled from what the build actually emitted, not from a hardcoded list and
+// not from the manifest either.
+//
+// Hardcoding was the first mistake: the old sixteen were what vite.config.js
+// used to prerender, and once the prerender list followed the live trending
+// query, eleven stopped being built and this script called them missing when
+// nothing was wrong. Reading the manifest was the second: it records what the
+// build *meant* to emit, so a card legitimately skipped by vite-ssg after a
+// ygoprodeck timeout would fail the build for a third party's outage. Whether
+// every intended page exists is the sitemap invariant's job, below. These
+// checks are about the quality of the pages that do.
+function sampleCardIds(n) {
+  try {
+    return readdirSync(resolve(DIST, 'en/card')).sort().slice(0, n)
+  } catch {
+    try {
+      return JSON.parse(readFileSync(resolve(__dirname, '../src/data/prerender-cards.generated.json'), 'utf8')).slice(0, n)
+    } catch {
+      return TOP_CARD_IDS.slice(0, n)
+    }
+  }
+}
 
 const ROUTES = [
   ...['/en/', '/fr/', '/de/', '/it/'].map(p => ({ path: p, type: 'home' })),
   ...['/en/privacy', '/fr/privacy', '/de/privacy', '/it/privacy'].map(p => ({ path: p, type: 'privacy' })),
   ...['/en/cards', '/fr/cards', '/de/cards', '/it/cards'].map(p => ({ path: p, type: 'cards' })),
-  ...[10966439, 18711696, 19144622, 27632520, 31533473, 38811586, 4026187, 54077752, 57847269, 69140098, 70088809, 81684048, 83232904, 91237821, 96334243, 98829635]
-    .map(id => ({ path: `/en/card/${id}`, type: 'card' })),
-  { path: '/en/set/Metal%20Raiders', type: 'set' },
-  { path: '/en/set/Legend%20of%20Blue%20Eyes%20White%20Dragon', type: 'set' },
-  { path: '/en/set/Invasion%20of%20Chaos', type: 'set' },
+  ...sampleCardIds(8).map(id => ({ path: `/en/card/${id}`, type: 'card' })),
+  ...TOP_SET_SLUGS.slice(0, 3).map(s => ({ path: `/en/set/${encodeURIComponent(s)}`, type: 'set' })),
 ]
 
 // A string that must appear in the rendered <body> of each locale + page type.
@@ -146,4 +174,36 @@ for (const { path, type } of ROUTES) {
   }
 }
 console.log(`\nResult: ${pass} pass, ${fail} fail out of ${ROUTES.length} routes`)
-process.exit(fail > 0 ? 1 : 0)
+
+// ── Every URL we submit to Google must be a page we actually built ────────────
+//
+// This is the invariant the whole SEO problem came down to. sitemap.xml listed
+// 254 URLs and the build emitted 62 of them; the other 192 resolved to the SPA
+// shell — one 7 kB page submitted to Google 192 times under the same title. The
+// two lists are now generated from one query, and this asserts they stayed that
+// way. It is a cheap check against an expensive, entirely invisible failure:
+// nothing about the running site looks wrong when it breaks.
+let drift = 0
+try {
+  const locs = [...readFileSync(SITEMAP, 'utf8').matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1])
+  const seen = new Set()
+  const dupes = locs.filter(l => seen.has(l) || !seen.add(l))
+  const missing = locs.filter(l => !existsSync(routeToFile(l.replace(/^https?:\/\/[^/]+/, ''))))
+
+  if (missing.length) {
+    console.error(`\nFAIL sitemap: ${missing.length} of ${locs.length} URLs have no page in dist/`)
+    for (const m of missing.slice(0, 10)) console.error(`  ${m}`)
+    if (missing.length > 10) console.error(`  … and ${missing.length - 10} more`)
+    drift += missing.length
+  }
+  if (dupes.length) {
+    console.error(`\nFAIL sitemap: ${dupes.length} duplicate <loc> entries, e.g. ${dupes[0]}`)
+    drift += dupes.length
+  }
+  if (!drift) console.log(`Sitemap: all ${locs.length} URLs have a prerendered page, no duplicates`)
+} catch (err) {
+  console.error(`\nFAIL sitemap: could not read ${SITEMAP} — ${err.message}`)
+  drift++
+}
+
+process.exit(fail > 0 || drift > 0 ? 1 : 0)
