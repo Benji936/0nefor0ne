@@ -4,14 +4,16 @@
  * Drops any <url> whose page is not in dist/, then writes the result to both
  * dist/sitemap.xml (what gets served) and public/sitemap.xml (the repo copy).
  *
- * Why this exists rather than just failing the build: card pages fetch from
- * db.ygoprodeck.com during prerender, and CardPage.vue deliberately throws on a
- * null response so vite-ssg skips that route (see the onServerPrefetch comment
- * there). A third-party timeout therefore drops a page that generate-sitemap.mjs
- * already committed to advertising. Failing the build on that would let someone
- * else's API outage block every deploy; pruning ships a slightly shorter sitemap
- * instead, which is the correct outcome — a <loc> pointing at a page that does
- * not exist is worse than no <loc> at all.
+ * Why this exists rather than just failing the build: a third-party API having a
+ * bad minute must not block every deploy. A <loc> pointing at a page that does
+ * not exist is worse than no <loc> at all, so a shorter sitemap is the right
+ * outcome.
+ *
+ * Note what this does NOT catch. Throwing from onServerPrefetch does not make
+ * vite-ssg skip a route — it writes the page anyway, in its loading state — so a
+ * failed prefetch produces a file that exists and is empty, which looks fine
+ * from here. The skeleton scan in verify-ssg-output.mjs is what catches that;
+ * this only removes URLs with no file at all.
  *
  * verify-ssg-output.mjs asserts the invariant afterwards, so if this ever stops
  * working the build still fails rather than quietly submitting phantom URLs.

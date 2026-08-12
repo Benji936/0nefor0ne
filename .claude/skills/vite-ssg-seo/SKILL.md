@@ -49,18 +49,35 @@ og:image, or JSON-LD. vite-ssg silently writes degraded HTML.
 
 **Two-layer fix:**
 
-### Layer A — throw on null to skip the route
+### Layer A — throw on null (but this does NOT skip the route)
 ```js
 onServerPrefetch(async () => {
   const data = await fetchCard(cardId)
   if (!data) {
-    throw new Error(`No data for card ${cardId}`) // vite-ssg skips this route
+    throw new Error(`No data for card ${cardId}`) // logs; does NOT skip
   }
   ssrCard.value = data
 })
 ```
-Throwing inside `onServerPrefetch` causes vite-ssg to abort rendering that route and move on.
-The route is simply omitted from the `dist/` output rather than written with incomplete HTML.
+
+**Corrected 2026-08-12.** This section used to claim the route is "omitted from the `dist/`
+output rather than written with incomplete HTML". It is not. vite-ssg writes the page anyway,
+frozen in whatever state the component was in when the throw happened — which is the loading
+skeleton, under a completely correct `<head>`.
+
+Measured: 651 archetype routes were requested, 123 of them threw here, and all 651 files were
+written. The 123 had no `<h1>` and ~102 characters of nav chrome. They passed every head-based
+check, passed the sitemap-completeness check (the files exist), and rendered perfectly in a
+browser, because the client refetches on mount.
+
+**What actually works:** decide whether a page should exist *before* the route is requested.
+`src/data/archetype-slugs.js` carries a card count per archetype and omits anything under the
+floor; `includedRoutes` and `generate-sitemap.mjs` both read that one list. The throw stays as a
+log line for the unexpected cases.
+
+**And check the output:** `verify-ssg-output.mjs` walks every prerendered page and fails the
+build on any that lacks an `<h1>` in the rendered body or has under 200 characters of text.
+Sampling is not enough — when 123 pages were broken, the three sampled archetypes were all fine.
 
 ### Layer B — rich fallback in useHead for safety
 Even if the throw path is present, add a full fallback so partial runs don't produce bare pages:
