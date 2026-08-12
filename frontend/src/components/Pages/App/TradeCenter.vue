@@ -569,9 +569,19 @@ export default {
         // or times out simply stops updating, and the only clue is a screen
         // that will not move. CLOSED is not in the list: leaving the page closes
         // these on purpose, and shouting about it would bury the real faults.
-        .subscribe((status) => {
+        //
+        // The second argument matters and used to be dropped. Without it the
+        // message says a channel failed but not why, and the two causes want
+        // opposite fixes: a permissions or publication problem is permanent and
+        // needs a migration, while a dropped socket is transient and the client
+        // rejoins on its own. Chasing the first when it was the second costs an
+        // afternoon. "recovers on its own" is said out loud for the same reason.
+        .subscribe((status, err) => {
           if (["CHANNEL_ERROR", "TIMED_OUT"].includes(status)) {
-            console.error(`realtime: ${name} is ${status}; ${table} will not live-update`);
+            console.error(
+              `realtime: ${name} is ${status}; ${table} will not live-update until it rejoins`,
+              err ?? "(no error detail; usually a dropped socket, which recovers on its own)",
+            );
           }
         })
     );
