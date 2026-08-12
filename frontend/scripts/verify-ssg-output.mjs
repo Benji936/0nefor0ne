@@ -45,12 +45,11 @@ function bodyOf(html) {
     .replace(/<noscript[\s\S]*?<\/noscript>/g, ' ')
 }
 
-// vite-ssg emits /en/index.html for /en/ and /en/privacy.html for /en/privacy
+// With ssgOptions.dirStyle 'nested', every route is a directory holding an
+// index.html — /en/ and /en/privacy alike. Vercel resolves those without the
+// cleanUrls flag, which is the whole point of the nested layout.
 function routeToFile(path) {
-  // trailing slash → index.html
-  if (path.endsWith('/')) return resolve(DIST, path.replace(/^\//, ''), 'index.html')
-  // no trailing slash → <path>.html
-  return resolve(DIST, path.replace(/^\//, '') + '.html')
+  return resolve(DIST, path.replace(/^\//, ''), 'index.html')
 }
 
 let pass = 0, fail = 0

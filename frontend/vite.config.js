@@ -45,6 +45,19 @@ export default defineConfig(({ command }) => ({
   ssgOptions: {
     script: 'async',
     formatting: 'minify',
+    // Emit en/cards/index.html rather than en/cards.html.
+    //
+    // Vercel resolved /en/ to dist/en/index.html and served the SPA shell for
+    // everything else, because it will not try cards.html for an extensionless
+    // /en/cards. 250 of the 254 URLs in sitemap.xml were that shell.
+    //
+    // `cleanUrls: true` fixes the lookup and breaks the SPA fallback: with it
+    // on, every route we do NOT prerender — /en/library, /en/decks, the 184
+    // card pages outside TOP_CARD_IDS — returned a hard 404 instead of the
+    // shell. Directory indexes need no such flag. /en/ already proved they are
+    // resolved before the rewrite in vercel.json is consulted; nesting extends
+    // that to every prerendered page and leaves the fallback untouched.
+    dirStyle: 'nested',
     async includedRoutes(paths, routes) {
       const locales = ['en', 'fr', 'de', 'it']
 

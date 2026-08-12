@@ -1,5 +1,4 @@
 {
-  "cleanUrls": true,
   "redirects": [
     { "source": "/",              "destination": "/en/",             "permanent": true },
     { "source": "/library",       "destination": "/en/library",      "permanent": true },
