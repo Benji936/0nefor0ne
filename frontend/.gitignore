@@ -43,3 +43,7 @@ public/engine/ocgcore.sync.wasm
 # Generated at build time from repo-root /data (see scripts/sync-ots-data.mjs)
 public/data/stores.json
 public/data/events.json
+
+# Written by scripts/generate-sitemap.mjs so vite.config.js prerenders exactly
+# the card pages the sitemap lists. Regenerated every build; never edit by hand.
+src/data/prerender-cards.generated.json

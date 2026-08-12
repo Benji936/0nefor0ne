@@ -20,6 +20,14 @@ import { TOP_SET_SLUGS } from "../src/data/set-slugs.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(__dirname, "../public/sitemap.xml");
 
+// The card IDs this run put in the sitemap, handed to vite.config.js so
+// includedRoutes prerenders exactly them. The two lists used to be independent —
+// the sitemap took 200 IDs from Supabase, includedRoutes took 16 from
+// card-ids.js — so 184 sitemap URLs pointed at pages that were never built and
+// resolved to the SPA shell. Generated, gitignored, and only ever written here;
+// vite.config.js falls back to TOP_CARD_IDS when it is absent.
+const MANIFEST = resolve(__dirname, "../src/data/prerender-cards.generated.json");
+
 // Env vars win when set (staging, a fork); the literals keep the build working
 // with zero configuration. The anon key is public by design — see the note in
 // src/lib/supabaseClient.js.
@@ -161,7 +169,17 @@ async function fetchTopCards(limit) {
 // ── Build sitemap ─────────────────────────────────────────────────────────────
 
 async function main() {
-  const cards = await fetchTopCards(LIMIT);
+  const fetched = await fetchTopCards(LIMIT);
+
+  // The trending RPC can return the same image_id more than once — one build
+  // returned 200 rows covering 196 cards. Only the Card-table fallback deduped,
+  // so the duplicates reached the sitemap as repeated <loc> entries and made the
+  // prerender count look 4 short of the sitemap count for no reason.
+  const seenIds = new Set();
+  const cards = fetched.filter(c => !seenIds.has(c.image_id) && seenIds.add(c.image_id));
+  if (cards.length !== fetched.length) {
+    console.log(`  Deduplicated ${fetched.length - cards.length} repeated image_id(s) → ${cards.length} unique cards`);
+  }
 
   const staticEntries  = STATIC_PAGES.map(urlEntry).join("");
   const cardEntries    = cards.map(c =>
@@ -189,7 +207,9 @@ ${setEntries}
 `;
 
   await writeFile(OUT, xml, "utf8");
+  await writeFile(MANIFEST, JSON.stringify(cards.map(c => c.image_id), null, 2), "utf8");
   console.log(`\nWrote ${OUT}`);
+  console.log(`Wrote ${MANIFEST} (${cards.length} card IDs for includedRoutes)`);
   console.log(`  ${STATIC_PAGES.length} static pages × ${LOCALES.length} locales = ${STATIC_PAGES.length * LOCALES.length} entries`);
   console.log(`  ${cards.length} card pages × en only = ${cards.length} entries`);
   console.log(`  ${TOP_SET_SLUGS.length} set pages × en only = ${TOP_SET_SLUGS.length} entries`);
