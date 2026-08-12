@@ -432,7 +432,11 @@ export default {
         }
       } catch (err) {
         console.error(`[vite-ssg] Skipping card ${cardId} — API error:`, err?.message ?? err);
-        throw err; // causes vite-ssg to skip this route silently
+        // Does NOT skip the route, despite what this comment used to claim:
+        // vite-ssg writes the page anyway, in its loading state. The throw is a
+        // log line, not a guard. verify-ssg-output.mjs scans every prerendered
+        // page for exactly that outcome.
+        throw err;
       }
     });
 

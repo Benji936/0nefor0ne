@@ -7,13 +7,28 @@ import { ARCHETYPES, ARCHETYPE_BY_SLUG } from "@/data/archetype-slugs.js";
 // linked from every card page in the archetype. The generator is run by hand, so
 // nothing else would catch a bad regeneration before it shipped.
 describe("archetype slugs", () => {
-  it("covers every archetype in archetype-art.json", () => {
+  // A subset, not a copy: archetypes with fewer than three cards are dropped by
+  // the generator. Every entry must still be a real archetype from the art
+  // manifest with the right hero card, or the page renders someone else's art.
+  it("is a subset of archetype-art.json with matching art ids", () => {
     const art = JSON.parse(
       readFileSync(resolve(__dirname, "../../public/archetype-art.json"), "utf8"),
     );
-    expect(ARCHETYPES).toHaveLength(Object.keys(art).length);
+    expect(ARCHETYPES.length).toBeGreaterThan(0);
+    expect(ARCHETYPES.length).toBeLessThanOrEqual(Object.keys(art).length);
     for (const { name, artId } of ARCHETYPES) {
+      expect(art, `${name} missing from archetype-art.json`).toHaveProperty([name]);
       expect(art[name]).toBe(artId);
+    }
+  });
+
+  // The floor is the whole reason 123 archetypes were dropped. Enforcing it here
+  // means a regeneration that loses the count — and would therefore ship stub
+  // pages again — fails the suite instead of the crawl.
+  it("keeps only archetypes at or above the three-card floor", () => {
+    for (const { name, cards } of ARCHETYPES) {
+      if (cards === null) continue; // API unreachable at generation time; kept deliberately
+      expect(cards, `${name} has ${cards} cards`).toBeGreaterThanOrEqual(3);
     }
   });
 

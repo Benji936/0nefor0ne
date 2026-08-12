@@ -119,7 +119,13 @@ export default {
         loading.value = false
       } catch (e) {
         console.warn(`[vite-ssg] Skipping set "${route.params.setSlug}" — ${e.message}`)
-        throw e  // MUST throw to skip route in vite-ssg
+        // Throwing does NOT make vite-ssg skip the route — measured, not
+        // assumed: 123 archetype routes threw here and all 123 were written out
+        // anyway, frozen in the loading state with a perfect <head>. It only
+        // surfaces the failure in the build log. Whether a page should exist has
+        // to be decided before the route is requested, which is why
+        // archetype-slugs.js carries a card count and TOP_SET_SLUGS is curated.
+        throw e
       }
     })
 

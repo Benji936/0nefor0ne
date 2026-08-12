@@ -211,6 +211,49 @@ for (const { path, type } of ROUTES) {
 }
 console.log(`\nResult: ${pass} pass, ${fail} fail out of ${ROUTES.length} routes`)
 
+// ── No prerendered page may be a loading skeleton ─────────────────────────────
+//
+// Sampling cannot find this. The per-route checks above test three archetypes;
+// when 123 of 651 shipped as skeletons, all three sampled ones were fine and the
+// build passed. So this walks everything.
+//
+// The failure it catches is specific and silent: a page whose <head> is perfect
+// — title, description, canonical, JSON-LD all correct — above a body frozen in
+// its loading state. It renders fine in a browser, because the client fetches on
+// mount. Only a crawler sees the empty version.
+let skeletons = 0
+{
+  const pages = []
+  const walk = dir => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = resolve(dir, e.name)
+      if (e.isDirectory()) walk(p)
+      else if (e.name === 'index.html' && p !== resolve(DIST, 'index.html')) pages.push(p)
+    }
+  }
+  // dist/index.html is excluded above on purpose: it IS the SPA shell, the
+  // fallback vercel.json rewrites unprerendered routes to.
+  walk(DIST)
+
+  const bad = []
+  for (const p of pages) {
+    const html = readFileSync(p, 'utf8')
+    const body = bodyOf(html)
+    const text = body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+    if (!/<h1[\s>]/.test(body) || text.length <= MIN_BODY_CHARS) {
+      bad.push([p.slice(DIST.length), text.length])
+    }
+  }
+  if (bad.length) {
+    console.error(`\nFAIL skeletons: ${bad.length} of ${pages.length} prerendered pages have no <h1> or under ${MIN_BODY_CHARS} chars of body`)
+    for (const [p, n] of bad.slice(0, 10)) console.error(`  ${p} — ${n} chars`)
+    if (bad.length > 10) console.error(`  … and ${bad.length - 10} more`)
+    skeletons = bad.length
+  } else {
+    console.log(`Rendered: all ${pages.length} prerendered pages have a heading and body content`)
+  }
+}
+
 // ── Every URL we submit to Google must be a page we actually built ────────────
 //
 // This is the invariant the whole SEO problem came down to. sitemap.xml listed
@@ -242,4 +285,4 @@ try {
   drift++
 }
 
-process.exit(fail > 0 || drift > 0 ? 1 : 0)
+process.exit(fail > 0 || drift > 0 || skeletons > 0 ? 1 : 0)
