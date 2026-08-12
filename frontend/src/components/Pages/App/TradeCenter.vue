@@ -80,6 +80,7 @@ import AnnounceDetailDialog from "@/components/trade/AnnounceDetailDialog.vue";
       :announces="announces"
       @openCreate="onOpenCreateAnnounce"
       @openDetail="onOpenAnnounceDetail"
+      @requireAuth="$emit('requireAuth')"
     />
 
     <!-- Dialogs -->
@@ -116,6 +117,7 @@ import AnnounceDetailDialog from "@/components/trade/AnnounceDetailDialog.vue";
       @updated="onAnnounceUpdated"
       @edit="onEditAnnounce"
       @propose="onProposeFromProfile"
+      @requireAuth="$emit('requireAuth')"
     />
 
     <!--
@@ -171,7 +173,7 @@ export default {
     login:          { type: Object, default: null },
     filterCardName: { type: String, default: "" },
   },
-  emits: ["clearFilter"],
+  emits: ["clearFilter", "requireAuth"],
   data() {
     return {
       loadingMatches:     false,
@@ -223,11 +225,15 @@ export default {
     },
     tabs() {
       const pendingCount = this.proposals.filter(p => p.status === "pending" && !p.i_am_proposer).length;
-      return [
-        { key: "matches",   label: this.$t("tradeCenter.matches"),   icon: "mdi-account-group-outline", badge: 0 },
-        { key: "proposals", label: this.$t("tradeCenter.proposals"), icon: "mdi-swap-horizontal-bold",  badge: pendingCount },
-        { key: "announces", label: this.$t("tradeCenter.announces"), icon: "mdi-bullhorn-outline",  badge: 0 },
+      const all = [
+        { key: "matches",   label: this.$t("tradeCenter.matches"),   icon: "mdi-account-group-outline", badge: 0, guest: false },
+        { key: "proposals", label: this.$t("tradeCenter.proposals"), icon: "mdi-swap-horizontal-bold",  badge: pendingCount, guest: false },
+        { key: "announces", label: this.$t("tradeCenter.announces"), icon: "mdi-bullhorn-outline",  badge: 0, guest: true },
       ];
+      // Matches and proposals are computed from a session and say so with a
+      // padlock. Now that a signed-out visitor can arrive here on purpose, the
+      // phone tab bar shows only the tab that has something on it for them.
+      return this.login?.user ? all : all.filter(t => t.guest);
     },
     visibleMatches() {
       return this.filterCardName ? this.cardTraders : this.allMatches;
@@ -314,8 +320,13 @@ export default {
       finally { this.loadingProposals = false; }
       if (this.proposalsStale) { this.proposalsStale = false; return this.loadProposals(); }
     },
+    // No session guard, unlike matches and proposals above. Those two are about
+    // you and cannot be computed without a you; announces are a public board,
+    // readable by anon under the announce_select_all policy, and fetchAnnounces
+    // already handles a null viewer (it just stops including your own expired
+    // rows). A signed-out reader gets the listings; posting and contacting are
+    // where the session is actually required.
     async loadAnnounces() {
-      if (!this.login?.user?.id) return;
       if (this.loadingAnnounces) { this.announcesStale = true; return; }
       this.loadingAnnounces = true;
       try   { this.announces = await fetchAnnounces(); }
@@ -483,6 +494,12 @@ export default {
       immediate: true,
       handler(tab) {
         if (tab || this.$route.name !== "TradeCenter") return;
+        // Still matches for everyone, including guests, who now have a tab of
+        // their own to land on. Sending them there instead was tried and put
+        // back: this runs immediately on mount, and the session has not been
+        // restored yet at that point, so `login` is null for a member and a
+        // guest alike. Guessing here would deep-link members to the wrong tab.
+        // Every link that means announces says /trade/announces outright.
         this.$router.replace({ name: "TradeCenter", params: { ...this.$route.params, tab: TABS[0] } });
       },
     },
@@ -504,7 +521,11 @@ export default {
           // but signing out in another one does not — that just clears the
           // session here and leaves us mounted, so drop the previous account's
           // data rather than leaving it on screen for whoever is looking now.
-          this.allMatches = []; this.proposals = []; this.announces = [];
+          this.allMatches = []; this.proposals = [];
+          // Announces are not this account's data, so they are refetched rather
+          // than blanked: what changes on sign-out is only that your own
+          // expired rows drop out of the query.
+          this.announces = []; this.loadAnnounces();
           return;
         }
         if (id === was) return;

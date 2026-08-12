@@ -11,7 +11,7 @@ const props = defineProps({
   announces: { type: Array,   default: () => [] },
 });
 
-const emit = defineEmits(["openCreate", "openDetail"]);
+const emit = defineEmits(["openCreate", "openDetail", "requireAuth"]);
 const { t } = useI18n();
 
 // In-tab kind filter. "all" shows both kinds; the other two options narrow
@@ -65,6 +65,9 @@ const filteredOthers = computed(() => {
 // that filter is active, Selling otherwise, including for "All"). The
 // dialog's own kind toggle still lets the user switch afterwards.
 function openCreate() {
+  // Browsing is open to everyone; posting is not. A guest who presses this gets
+  // the login dialog rather than a create form that would fail on submit.
+  if (!props.login?.user) return emit("requireAuth");
   emit("openCreate", isLf.value ? ANNOUNCE_KIND.LOOKING_FOR : ANNOUNCE_KIND.SELL);
 }
 </script>
@@ -72,16 +75,13 @@ function openCreate() {
 <template>
   <div class="announces-page">
 
-    <!-- ── Not logged in ───────────────────────────────────── -->
-    <div v-if="!login?.user" class="state-center">
-      <div class="state-icon">
-        <v-icon icon="mdi-lock-outline" size="40" style="color: var(--c-muted)" />
-      </div>
-      <p class="state-title">{{ t("announces.loginRequired") }}</p>
-    </div>
+    <!-- No signed-out padlock here. The board is public: announces are readable
+         by anon in the database, and this is the page a stranger arriving from
+         the landing nav lands on. What needs a session is posting and
+         contacting, and each of those asks at the point it is pressed. -->
 
     <!-- ── Loading skeleton ────────────────────────────────── -->
-    <div v-else-if="loading" class="content-area">
+    <div v-if="loading" class="content-area">
       <div class="section-grid">
         <div v-for="i in 8" :key="i" class="skeleton-card" />
       </div>

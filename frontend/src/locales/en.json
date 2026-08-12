@@ -50,9 +50,6 @@
   "landing": {
     "nav": {
       "search": "Search",
-      "decks": "Decks",
-      "collection": "Collection",
-      "trade": "Trade",
       "login": "Log in"
     },
     "hero": {
@@ -344,7 +341,6 @@
     "goToCollection": "Go to My Collection to add cards"
   },
   "announces": {
-    "loginRequired": "Log in to browse and post announces",
     "noAnnouncesTitle": "No announces yet",
     "noAnnouncesDesc": "Be the first to post a listing!",
     "newAnnounce": "New Announce",
@@ -383,6 +379,7 @@
     "sold": "Sold",
     "archived": "Archived",
     "contactSeller": "Contact Seller",
+    "loginToContact": "Log in to contact",
     "postedBy": "Posted by",
     "deleteConfirm": "Delete this announce?",
     "editTitle": "Edit announce",

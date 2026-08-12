@@ -19,7 +19,7 @@ const props = defineProps({
   announce:      { type: Object,  default: null  },
   currentUserId: { type: String,  default: null  },
 });
-const emit = defineEmits(["update:modelValue", "deleted", "updated", "propose", "edit"]);
+const emit = defineEmits(["update:modelValue", "deleted", "updated", "propose", "edit", "requireAuth"]);
 const { t } = useI18n();
 const route = useRoute();
 
@@ -188,13 +188,15 @@ const guildIcon   = computed(() => props.announce?.discord_guild_icon ?? null);
 // renders .bare-head instead and stays stacked.
 const splitLayout = computed(() => !canChat.value && showGallery.value);
 
-// The footer exists to hold buttons. Signed out on somebody else's listing
-// there are none, and an empty bordered strip under the details reads as a
-// rendering fault — more so beside the photo than beneath it.
+// The footer exists to hold buttons, and an empty bordered strip under the
+// details reads as a rendering fault — more so beside the photo than beneath
+// it. The one case with nothing to put in it is a community-relayed post whose
+// server left no invite link: nobody to propose to, nowhere to send you. A
+// signed-out reader used to be the other such case, and is not any more — they
+// get the log-in-to-contact button.
 const showFoot = computed(() =>
   isOwner.value
-  || (fromCommunity.value && !!discordUrl.value)
-  || (!!props.currentUserId && !fromCommunity.value));
+  || (fromCommunity.value ? !!discordUrl.value : true));
 
 function close() { emit("update:modelValue", false); }
 
@@ -232,6 +234,7 @@ async function handleRenew() {
 function handleEdit() { emit("edit", props.announce); close(); }
 
 function handlePropose() { emit("propose", props.announce.seller); close(); }
+function handleLoginToContact() { emit("requireAuth"); close(); }
 
 async function handleAddToTradeList() {
   if (addingToList.value || addedToList.value) return;
@@ -589,6 +592,13 @@ function onCardAdded() {
           <button v-else-if="currentUserId && !fromCommunity" class="btn-contact" @click="handlePropose">
             <v-icon icon="mdi-handshake-outline" size="17" />
             {{ t('announce.contactSeller') }}
+          </button>
+          <!-- Signed out: the announce is readable, the seller is not reachable.
+               Say which of those it is, rather than ending the dialog on a dead
+               end with no action in it at all. -->
+          <button v-else-if="!fromCommunity" class="btn-contact" @click="handleLoginToContact">
+            <v-icon icon="mdi-login" size="17" />
+            {{ t('announce.loginToContact') }}
           </button>
         </template>
       </div>

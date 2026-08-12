@@ -50,9 +50,6 @@
   "landing": {
     "nav": {
       "search": "Suche",
-      "decks": "Decks",
-      "collection": "Sammlung",
-      "trade": "Tauschen",
       "login": "Anmelden"
     },
     "hero": {
@@ -344,7 +341,6 @@
     "goToCollection": "Zur Sammlung, um Karten hinzuzufügen"
   },
   "announces": {
-    "loginRequired": "Melden Sie sich an, um Anzeigen zu durchsuchen und zu erstellen",
     "noAnnouncesTitle": "Noch keine Anzeigen",
     "noAnnouncesDesc": "Erstelle als Erster eine Anzeige!",
     "newAnnounce": "Neue Anzeige",
@@ -383,6 +379,7 @@
     "sold": "Verkauft",
     "archived": "Archiviert",
     "contactSeller": "Verkäufer kontaktieren",
+    "loginToContact": "Zum Kontaktieren anmelden",
     "postedBy": "Gepostet von",
     "deleteConfirm": "Diese Anzeige löschen?",
     "editTitle": "Anzeige bearbeiten",

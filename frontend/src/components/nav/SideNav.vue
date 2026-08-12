@@ -36,7 +36,9 @@ const items = computed(() => {
     // about your own things rather than places to explore, and the rail was
     // seven items deep; what is left is what you come here to look through.
     { key: "trade-matches",   label: t("tradeCenter.matches"),   icon: "mdi-account-group-outline", event: "tradeTab", arg: "matches", match: ["TradeCenter"], guest: false, tab: "matches" },
-    { key: "trade-announces", label: t("tradeCenter.announces"), icon: "mdi-bullhorn-outline",       event: "tradeTab", arg: "announces", match: ["TradeCenter"], guest: false, tab: "announces" },
+    // Announces is guest-visible: the board is public, so hiding the way to it
+    // from the people most likely to be browsing was the wrong way round.
+    { key: "trade-announces", label: t("tradeCenter.announces"), icon: "mdi-bullhorn-outline",       event: "tradeTab", arg: "announces", match: ["TradeCenter"], guest: true,  tab: "announces" },
   ];
   return props.authenticated ? all : all.filter((i) => i.guest);
 });
