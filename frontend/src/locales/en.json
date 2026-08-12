@@ -702,7 +702,8 @@
     "priceTcg": "TCGPlayer {price}",
     "priceCm": "Cardmarket {price}",
     "showAllPrintings": "Show all {count} printings",
-    "showLess": "Show less"
+    "showLess": "Show less",
+    "seeArchetype": "See all {name} cards"
   },
   "setPage": {
     "title": "{setName}  Yu-Gi-Oh! Set | One for One",
@@ -1000,6 +1001,10 @@
     "TradeCenter": {
       "title": "Trade Centre — matches, proposals and announces | One for One",
       "desc": "See who has what you want, answer trade proposals, and post what you are looking for."
+    },
+    "archetype": {
+      "title": "Yu-Gi-Oh! Archetypes | One for One",
+      "desc": "Browse every card in a Yu-Gi-Oh! archetype and find them in other collectors' trade piles on One for One."
     }
   },
   "deckIgnore": {
@@ -1548,5 +1553,11 @@
       "too_long": "Keep it to {max} characters.",
       "duplicate": "You already have a list with that name."
     }
+  },
+  "archetypePage": {
+    "back": "Back to cards",
+    "notFound": "Archetype not found",
+    "heading": "{name} archetype",
+    "cardCount": "No cards | 1 card | {count} cards"
   }
 }

@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import { TOP_CARD_IDS } from './src/data/card-ids.js'
 import { TOP_SET_SLUGS } from './src/data/set-slugs.js'
+import { ARCHETYPES } from './src/data/archetype-slugs.js'
 import { TOP_COMMUNITY_SLUGS } from './src/data/community-slugs.js'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
@@ -101,6 +102,14 @@ export default defineConfig(({ command }) => ({
       // Set pages — English-only (set names are always English)
       for (const setName of TOP_SET_SLUGS) {
         included.push('/en/set/' + encodeURIComponent(setName))
+      }
+
+      // Archetype pages — English-only, same reason. Slugs are pre-computed and
+      // committed (see archetype-slugs.js), so these URLs are stable. Archetypes
+      // with fewer than 3 cards throw during prerender and drop out here and
+      // from the sitemap; the count below is the ceiling, not the result.
+      for (const { slug } of ARCHETYPES) {
+        included.push('/en/archetype/' + slug)
       }
 
       // Dedicated card search/browse page: /en/cards, /fr/cards, /de/cards, /it/cards

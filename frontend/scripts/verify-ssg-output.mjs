@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 import { TOP_CARD_IDS } from '../src/data/card-ids.js'
 import { TOP_SET_SLUGS } from '../src/data/set-slugs.js'
+import { ARCHETYPES } from '../src/data/archetype-slugs.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const DIST = resolve(__dirname, '../dist')
@@ -42,7 +43,15 @@ const ROUTES = [
   ...['/en/cards', '/fr/cards', '/de/cards', '/it/cards'].map(p => ({ path: p, type: 'cards' })),
   ...sampleCardIds(8).map(id => ({ path: `/en/card/${id}`, type: 'card' })),
   ...TOP_SET_SLUGS.slice(0, 3).map(s => ({ path: `/en/set/${encodeURIComponent(s)}`, type: 'set' })),
+  ...ARCHETYPES.slice(0, 3).map(a => ({ path: `/en/archetype/${a.slug}`, type: 'archetype' })),
 ]
+
+// Page types whose whole purpose is content a crawler can read. The skeleton
+// bug these guard against rendered ~100 characters of nav chrome and no <h1>,
+// while the title, description and JSON-LD stayed perfect — so every head-based
+// check passed for as long as it existed.
+const CONTENT_TYPES = new Set(['home', 'cards', 'privacy', 'card', 'set', 'archetype'])
+const MIN_BODY_CHARS = 200
 
 // A string that must appear in the rendered <body> of each locale + page type.
 //
@@ -117,6 +126,33 @@ for (const { path, type } of ROUTES) {
       ...(locale === 'de' ? [['title contains German keyword', html.includes('Tausch')]] : []),
       ...(locale === 'it' ? [['title contains Italian keyword', html.includes('Scambio')]] : []),
     ] : []),
+    // Rendered content — the check the head assertions above cannot make. <h1>
+    // is tested against the body specifically: index.html's <noscript> fallback
+    // carries one, so `html.includes('<h1')` is true even for a blank page.
+    ...(CONTENT_TYPES.has(type) ? (() => {
+      const body = bodyOf(html)
+      const text = body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+      return [
+        ['<h1> in rendered body', /<h1[\s>]/.test(body)],
+        [`body over ${MIN_BODY_CHARS} chars (got ${text.length})`, text.length > MIN_BODY_CHARS],
+      ]
+    })() : []),
+    // Archetype pages: the card list is the page, so assert the structured data
+    // that describes it actually made it out.
+    ...(type === 'archetype' ? (() => {
+      const jld = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+      let items = 0
+      for (const m of jld) {
+        try {
+          const s = JSON.parse(m[1])
+          if (s['@type'] === 'CollectionPage') items = s.mainEntity?.numberOfItems ?? 0
+        } catch { /* index.html's blocks are not all JSON-parseable in isolation */ }
+      }
+      return [
+        ['json-ld CollectionPage with items', items > 0],
+        ['canonical is /en/', /rel="canonical" href="https:\/\/0nefor\.one\/en\/archetype\//.test(html)],
+      ]
+    })() : []),
     // Body language — the check the title assertions above cannot make.
     ...(nonEnglish ? (() => {
       const body = bodyOf(html)

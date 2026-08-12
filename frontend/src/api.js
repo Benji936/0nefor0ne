@@ -120,6 +120,19 @@ async function getWithRetry(url, retries = 2, delayMs = 600) {
     }
 }
 
+/** Every card in an archetype, for /en/archetype/:slug.
+ *  searchByArchetype below caps at `num` because it feeds a 12-card strip on the
+ *  card page; the archetype page is the full list, so no num/offset here. */
+export const getCardsByArchetype = async (archetype = "", locale = "en") => {
+    const url = `${API_URL}cardinfo.php?archetype=${encodeURIComponent(archetype)}${langParam(locale)}`;
+    try {
+        return await getWithRetry(url);
+    } catch (error) {
+        console.error("Error fetching cards for archetype " + archetype, error);
+        return { data: { data: [] } };
+    }
+};
+
 export const getCardsBySet = async (setName = "", locale = "en") => {
     const url = `${API_URL}cardinfo.php?cardset=${encodeURIComponent(setName)}${langParam(locale)}`;
     try {

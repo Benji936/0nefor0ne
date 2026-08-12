@@ -83,6 +83,18 @@ export default {
     const route = useRoute()
     const ssrSetData = ref(null)
 
+    // cards/loading/error are refs here, not data(), so onServerPrefetch can
+    // fill them before renderToString. They used to live in data() and be
+    // populated from mounted(), which does not run during SSG — so every
+    // prerendered set page shipped the loading skeleton: no <h1>, no card grid,
+    // about 100 characters of nav chrome. The <title>, description and JSON-LD
+    // were all correct, because useHead reads ssrSetData directly, so the page
+    // looked fine in a browser and fine in the head. Only the part a crawler
+    // reads was empty.
+    const cards = ref([])
+    const loading = ref(true)
+    const error = ref(null)
+
     // Build-time prefetch: vite-ssg awaits this before snapshotting HTML.
     onServerPrefetch(async () => {
       const setName = decodeURIComponent(route.params.setSlug)
@@ -91,7 +103,7 @@ export default {
         const raw = res?.data?.data ?? []
         if (!raw.length) throw new Error(`No cards for set: ${setName}`)
 
-        const cards = raw.map(card => {
+        const shaped = raw.map(card => {
           const printing = card.card_sets?.find(s => s.set_name === setName) ?? card.card_sets?.[0] ?? null
           return {
             id: card.id,
@@ -102,7 +114,9 @@ export default {
           }
         })
 
-        ssrSetData.value = { setName, cards }
+        ssrSetData.value = { setName, cards: shaped }
+        cards.value = shaped
+        loading.value = false
       } catch (e) {
         console.warn(`[vite-ssg] Skipping set "${route.params.setSlug}" — ${e.message}`)
         throw e  // MUST throw to skip route in vite-ssg
@@ -193,15 +207,7 @@ export default {
       }
     }))
 
-    return { ssrSetData }
-  },
-
-  data() {
-    return {
-      cards: [],
-      loading: true,
-      error: null,
-    }
+    return { ssrSetData, cards, loading, error }
   },
 
   computed: {
@@ -225,12 +231,9 @@ export default {
   },
 
   mounted() {
-    if (this.ssrSetData) {
-      this.cards = this.ssrSetData.cards
-      this.loading = false
-    } else {
-      this.fetchCards()
-    }
+    // Prerendered pages already have cards/loading set by onServerPrefetch;
+    // only a client-side arrival needs to fetch.
+    if (!this.ssrSetData) this.fetchCards()
   },
 
   watch: {

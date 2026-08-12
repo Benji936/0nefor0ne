@@ -78,11 +78,17 @@ useHead(
 
     const canonical = `${BASE}${path}`;
 
-    // Card pages (/xx/card/:id) are English-only; emit en + x-default only.
-    const isCardPage = /^\/[a-z]{2}\/card\//.test(path);
+    // English-only page types: card, set and archetype. All three name things
+    // that exist only in English, and router/index.js 301s their /fr, /de and
+    // /it URLs to /en. Only card pages were listed here, so set pages have been
+    // advertising three hreflang alternates that redirect — and a hreflang
+    // target that does not resolve to itself gets the whole cluster discarded,
+    // taking the valid en and x-default entries with it. Archetype pages are
+    // the same shape, hence the widened test rather than a third special case.
+    const isEnglishOnly = /^\/[a-z]{2}\/(card|set|archetype)\//.test(path);
     const enPath = path.replace(new RegExp(`^/${loc}(/|$)`), `/en$1`);
     const hreflangLinks = [];
-    if (!isCardPage) {
+    if (!isEnglishOnly) {
       for (const lang of SUPPORTED) {
         const localePath = path.replace(new RegExp(`^/${loc}(/|$)`), `/${lang}$1`);
         hreflangLinks.push({ rel: "alternate", hreflang: lang, href: `${BASE}${localePath}` });
