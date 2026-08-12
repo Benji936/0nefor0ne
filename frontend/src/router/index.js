@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { SUPPORTED, detectLocale, setLocale } from "@/i18n.js";
+import { SUPPORTED, detectLocale } from "@/i18n.js";
 // LandingPage is eagerly loaded — it's the public home every user hits first.
 // All other pages are lazy-loaded so their code is only downloaded when needed.
 import LandingPage from "@/components/Pages/Public/LandingPage.vue";
@@ -79,7 +79,9 @@ export const routes = [
     beforeEnter(to, _from, next) {
       const locale = to.params.locale;
       if (!SUPPORTED.includes(locale)) return next(`/${detectLocale()}/`);
-      setLocale(locale);
+      // Validation only. Activating the locale is main.js's beforeEach, which
+      // is the one hook that can reach the current app's own i18n instance —
+      // this module is shared by every app, so it must stay stateless.
       next();
     },
     children: localeChildren,

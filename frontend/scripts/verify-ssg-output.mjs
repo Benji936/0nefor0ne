@@ -8,6 +8,7 @@ const DIST = resolve(__dirname, '../dist')
 const ROUTES = [
   ...['/en/', '/fr/', '/de/', '/it/'].map(p => ({ path: p, type: 'home' })),
   ...['/en/privacy', '/fr/privacy', '/de/privacy', '/it/privacy'].map(p => ({ path: p, type: 'privacy' })),
+  ...['/en/cards', '/fr/cards', '/de/cards', '/it/cards'].map(p => ({ path: p, type: 'cards' })),
   ...[10966439, 18711696, 19144622, 27632520, 31533473, 38811586, 4026187, 54077752, 57847269, 69140098, 70088809, 81684048, 83232904, 91237821, 96334243, 98829635]
     .map(id => ({ path: `/en/card/${id}`, type: 'card' })),
   { path: '/en/set/Metal%20Raiders', type: 'set' },
@@ -15,12 +16,40 @@ const ROUTES = [
   { path: '/en/set/Invasion%20of%20Chaos', type: 'set' },
 ]
 
-// vite-ssg emits /en/index.html for /en/ and /en/privacy.html for /en/privacy
+// A string that must appear in the rendered <body> of each locale + page type.
+//
+// The title checks below all passed while /fr/, /de/ and /it/ were shipping an
+// English body: titles resolve per-route with an explicit `locale` option, so
+// they were never affected by the shared-i18n leak this guards against. Only a
+// body assertion catches it. `home` and `privacy` are the two types that broke;
+// `cards` is the control that did not.
+// `privacy` matches on chrome rather than page copy on purpose: the policy text
+// is hardcoded English in all four locales — a separate gap, not this one — so
+// the surrounding navigation is the only part of that page a locale leak could
+// still corrupt. If the policy is ever translated, move this to its heading.
+const BODY_MARKERS = {
+  home:    { fr: 'Échangez vos doublons', de: 'Tausche Dubletten',  it: 'Scambia i doppioni' },
+  privacy: { fr: 'Réduire le menu',       de: 'Menü einklappen',    it: 'Comprimi menu' },
+  cards:   { fr: 'Parcourir les cartes',  de: 'Karten durchsuchen', it: 'Sfoglia carte' },
+}
+
+// The English hero copy. Its presence on a non-English page is the exact
+// signature of the leak, whatever the page type.
+const ENGLISH_HERO = 'Trade duplicates.'
+
+/** Rendered body only: no <head>, and no <noscript> fallback (which is always English). */
+function bodyOf(html) {
+  const afterHead = html.split('</head>')[1] ?? ''
+  return afterHead
+    .replace(/<script[\s\S]*?<\/script>/g, ' ')
+    .replace(/<noscript[\s\S]*?<\/noscript>/g, ' ')
+}
+
+// With ssgOptions.dirStyle 'nested', every route is a directory holding an
+// index.html — /en/ and /en/privacy alike. Vercel resolves those without the
+// cleanUrls flag, which is the whole point of the nested layout.
 function routeToFile(path) {
-  // trailing slash → index.html
-  if (path.endsWith('/')) return resolve(DIST, path.replace(/^\//, ''), 'index.html')
-  // no trailing slash → <path>.html
-  return resolve(DIST, path.replace(/^\//, '') + '.html')
+  return resolve(DIST, path.replace(/^\//, ''), 'index.html')
 }
 
 let pass = 0, fail = 0
@@ -40,6 +69,9 @@ for (const { path, type } of ROUTES) {
   const localeMatch = path.match(/^\/(fr|de|it)\/$/)
   const locale = localeMatch ? localeMatch[1] : null
 
+  // Same, but for any path shape — /fr/ and /fr/cards alike.
+  const nonEnglish = (path.match(/^\/(fr|de|it)(\/|$)/) ?? [])[1] ?? null
+
   const checks = [
     ['<title>', html.includes('<title>')],
     ['meta description', html.includes('name="description"')],
@@ -53,11 +85,20 @@ for (const { path, type } of ROUTES) {
     ['non-empty description', descContent.length > 0],
     // New assertion c: non-English locale titles (only for /fr/, /de/, /it/ home)
     ...(locale ? [
-      [`html lang="${locale}"`, html.includes(`<html lang="${locale}"`)],
       ...(locale === 'fr' ? [['title contains French keyword', html.includes('Échange')]] : []),
       ...(locale === 'de' ? [['title contains German keyword', html.includes('Tausch')]] : []),
       ...(locale === 'it' ? [['title contains Italian keyword', html.includes('Scambio')]] : []),
     ] : []),
+    // Body language — the check the title assertions above cannot make.
+    ...(nonEnglish ? (() => {
+      const body = bodyOf(html)
+      const marker = BODY_MARKERS[type]?.[nonEnglish]
+      return [
+        [`html lang="${nonEnglish}"`, html.includes(`<html lang="${nonEnglish}"`)],
+        ['body is not English hero copy', !body.includes(ENGLISH_HERO)],
+        ...(marker ? [[`body contains ${nonEnglish} copy`, body.includes(marker)]] : []),
+      ]
+    })() : []),
     // Set page checks: H1, non-empty description, og:image, canonical, JSON-LD CollectionPage
     ...(type === 'set' ? (() => {
       const jldMatches = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]

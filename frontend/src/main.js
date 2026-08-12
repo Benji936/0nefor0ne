@@ -9,7 +9,7 @@ import * as directives from 'vuetify/directives'
 import 'vuetify/styles' // Global CSS
 import '@mdi/font/css/materialdesignicons.css' // Icons
 
-import i18n, { SUPPORTED, setLocale } from './i18n.js'
+import { createAppI18n, persistLocale, SUPPORTED } from './i18n.js'
 import { routes, scrollBehavior } from './router/index.js'
 import { installCardImageFallback } from './lib/cardImage.js'
 import App from './views/App.vue'
@@ -69,14 +69,20 @@ export const createApp = ViteSSG(
     })
     app.use(vuetify)
 
-    // i18n — reuse the shared instance
+    // i18n — one instance per app. Sharing one across apps is what made
+    // concurrent SSG renders overwrite each other's locale; see createAppI18n.
+    const i18n = createAppI18n()
     app.use(i18n)
 
-    // Route-param locale hook — runs identically on server and client
+    // Route-param locale hook — runs identically on server and client, and is
+    // the only place the active locale is set. It writes to the instance above,
+    // which belongs to this app alone, so a render can no longer be relabelled
+    // by whatever page happens to be rendering beside it.
     router.beforeEach((to) => {
       const locale = to.params.locale
       if (locale && SUPPORTED.includes(locale)) {
-        setLocale(locale)
+        i18n.global.locale.value = locale
+        persistLocale(locale)
       }
     })
 
