@@ -8,7 +8,7 @@
     "predev": "node scripts/sync-ots-data.mjs",
     "data:ots": "node scripts/sync-ots-data.mjs",
     "community:seed-private": "node scripts/seed-community-private.mjs",
-    "build": "node scripts/generate-sitemap.mjs && node scripts/sync-ots-data.mjs && vite-ssg build && node scripts/verify-ssg-output.mjs",
+    "build": "node scripts/generate-sitemap.mjs && node scripts/sync-ots-data.mjs && vite-ssg build && node scripts/prune-sitemap.mjs && node scripts/verify-ssg-output.mjs",
     "verify:ssg": "node scripts/verify-ssg-output.mjs",
     "preview": "vite preview",
     "sitemap": "node scripts/generate-sitemap.mjs",

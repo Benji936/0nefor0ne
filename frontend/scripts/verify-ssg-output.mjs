@@ -1,4 +1,4 @@
-import { readFileSync, existsSync } from 'node:fs'
+import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -7,18 +7,32 @@ import { TOP_SET_SLUGS } from '../src/data/set-slugs.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const DIST = resolve(__dirname, '../dist')
-const SITEMAP = resolve(__dirname, '../public/sitemap.xml')
+// dist/sitemap.xml is the file that actually gets served, and the one
+// prune-sitemap.mjs rewrites. public/ is the pre-build copy, checked only when
+// verify is run on its own without a build.
+const DIST_SITEMAP = resolve(DIST, 'sitemap.xml')
+const SITEMAP = existsSync(DIST_SITEMAP) ? DIST_SITEMAP : resolve(__dirname, '../public/sitemap.xml')
 
-// Card IDs come from the build's own manifest, not a hardcoded list. The old
-// hardcoded 16 were the ones vite.config.js used to prerender; once the sitemap
-// and includedRoutes were joined to the live trending query, 11 of them stopped
-// being built and this script reported them missing when nothing was wrong.
+// Sampled from what the build actually emitted, not from a hardcoded list and
+// not from the manifest either.
+//
+// Hardcoding was the first mistake: the old sixteen were what vite.config.js
+// used to prerender, and once the prerender list followed the live trending
+// query, eleven stopped being built and this script called them missing when
+// nothing was wrong. Reading the manifest was the second: it records what the
+// build *meant* to emit, so a card legitimately skipped by vite-ssg after a
+// ygoprodeck timeout would fail the build for a third party's outage. Whether
+// every intended page exists is the sitemap invariant's job, below. These
+// checks are about the quality of the pages that do.
 function sampleCardIds(n) {
   try {
-    const ids = JSON.parse(readFileSync(resolve(__dirname, '../src/data/prerender-cards.generated.json'), 'utf8'))
-    return ids.slice(0, n)
+    return readdirSync(resolve(DIST, 'en/card')).sort().slice(0, n)
   } catch {
-    return TOP_CARD_IDS.slice(0, n)
+    try {
+      return JSON.parse(readFileSync(resolve(__dirname, '../src/data/prerender-cards.generated.json'), 'utf8')).slice(0, n)
+    } catch {
+      return TOP_CARD_IDS.slice(0, n)
+    }
   }
 }
 
