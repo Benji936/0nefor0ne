@@ -16,6 +16,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { TOP_CARD_IDS } from "../src/data/card-ids.js";
 import { TOP_SET_SLUGS } from "../src/data/set-slugs.js";
+import { ARCHETYPES } from "../src/data/archetype-slugs.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(__dirname, "../public/sitemap.xml");
@@ -70,6 +71,22 @@ function cardUrlEntry({ path, changefreq, priority }) {
     <lastmod>${TODAY}</lastmod>
     <changefreq>${changefreq}</changefreq>
     <priority>${priority}</priority>
+  </url>`;
+}
+
+// Archetype pages are English-only — same rationale as card and set pages.
+// Priority sits above sets: these are the highest-volume queries in the game
+// ("Labrynth deck", "Snake-Eye cards") and the pages have the most to say.
+function archetypeUrlEntry(slug) {
+  const loc = `${BASE}/en/archetype/${slug}`;
+  return `
+  <url>
+    <loc>${loc}</loc>
+    <lastmod>${TODAY}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="${loc}"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="${loc}"/>
   </url>`;
 }
 
@@ -188,6 +205,7 @@ async function main() {
   const setEntries     = TOP_SET_SLUGS
     .map(name => setUrlEntry({ path: '/set/' + encodeURIComponent(name) }))
     .join('');
+  const archetypeEntries = ARCHETYPES.map(a => archetypeUrlEntry(a.slug)).join('');
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <!--
@@ -196,13 +214,15 @@ async function main() {
   Static pages: ${STATIC_PAGES.length} × ${LOCALES.length} locales
   Card pages:   ${cards.length} × en only (non-English locales redirect to /en/card/:id)
   Set pages:    ${TOP_SET_SLUGS.length} × en only
-  Total <url> entries: ${STATIC_PAGES.length * LOCALES.length + cards.length + TOP_SET_SLUGS.length}
+  Archetypes:   ${ARCHETYPES.length} × en only (those under the card floor are pruned post-build)
+  Total <url> entries: ${STATIC_PAGES.length * LOCALES.length + cards.length + TOP_SET_SLUGS.length + ARCHETYPES.length}
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${staticEntries}
 ${cardEntries}
 ${setEntries}
+${archetypeEntries}
 </urlset>
 `;
 
@@ -213,7 +233,8 @@ ${setEntries}
   console.log(`  ${STATIC_PAGES.length} static pages × ${LOCALES.length} locales = ${STATIC_PAGES.length * LOCALES.length} entries`);
   console.log(`  ${cards.length} card pages × en only = ${cards.length} entries`);
   console.log(`  ${TOP_SET_SLUGS.length} set pages × en only = ${TOP_SET_SLUGS.length} entries`);
-  console.log(`  Total: ${STATIC_PAGES.length * LOCALES.length + cards.length + TOP_SET_SLUGS.length} <url> entries`);
+  console.log(`  ${ARCHETYPES.length} archetype pages × en only = ${ARCHETYPES.length} entries`);
+  console.log(`  Total: ${STATIC_PAGES.length * LOCALES.length + cards.length + TOP_SET_SLUGS.length + ARCHETYPES.length} <url> entries (before pruning)`);
 }
 
 main().catch(err => { console.error(err); process.exit(1); });

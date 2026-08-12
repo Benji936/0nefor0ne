@@ -702,7 +702,8 @@
     "priceTcg": "TCGPlayer {price}",
     "priceCm": "Cardmarket {price}",
     "showAllPrintings": "Voir les {count} éditions",
-    "showLess": "Réduire"
+    "showLess": "Réduire",
+    "seeArchetype": "Voir toutes les cartes {name}"
   },
   "setPage": {
     "title": "{setName}  Extension Yu-Gi-Oh! | One for One",
@@ -1000,6 +1001,10 @@
     "TradeCenter": {
       "title": "Centre d'échange — correspondances, propositions et annonces | One for One",
       "desc": "Voyez qui a ce que vous cherchez, répondez aux propositions et publiez vos recherches."
+    },
+    "archetype": {
+      "title": "Archétypes Yu-Gi-Oh! | One for One",
+      "desc": "Parcourez toutes les cartes d'un archétype Yu-Gi-Oh! et trouvez-les chez d'autres collectionneurs sur One for One."
     }
   },
   "deckIgnore": {
@@ -1548,5 +1553,11 @@
       "too_long": "{max} caractères maximum.",
       "duplicate": "Vous avez déjà une liste portant ce nom."
     }
+  },
+  "archetypePage": {
+    "back": "Retour aux cartes",
+    "notFound": "Archétype introuvable",
+    "heading": "Archétype {name}",
+    "cardCount": "Aucune carte | 1 carte | {count} cartes"
   }
 }
