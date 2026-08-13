@@ -8,11 +8,22 @@
         style="color: var(--c-muted)"
       >
         <v-icon icon="mdi-arrow-left" size="14" />
-        Back
+        {{ $t('privacy.back') }}
       </router-link>
-      <h1 class="text-2xl md:text-3xl font-black" style="color: var(--c-text)">Privacy Policy</h1>
-      <p class="text-sm" style="color: var(--c-muted)">Last updated: May 2026</p>
+      <h1 class="text-2xl md:text-3xl font-black" style="color: var(--c-text)">{{ $t('privacy.title') }}</h1>
+      <p class="text-sm" style="color: var(--c-muted)">{{ $t('privacy.updated') }}</p>
     </div>
+
+    <!-- Everything below the heading is English in every locale, and says so.
+         The alternative was machine-translating a GDPR notice that names a data
+         controller and states EU/EEA rights — three binding texts nobody here
+         can proofread. src/views/App.vue points the fr/de/it canonicals at the
+         English page for the same reason. -->
+    <p
+      v-if="$i18n.locale !== 'en'"
+      class="text-xs italic"
+      style="color: var(--c-muted)"
+    >{{ $t('privacy.englishNote') }}</p>
 
     <p class="text-sm leading-relaxed" style="color: var(--c-muted)">
       One for One ("we", "us", "our") is a free, peer-to-peer Yu-Gi-Oh! card trading platform
@@ -37,7 +48,7 @@
 
     <div class="h-px w-full" style="background: var(--c-border)" />
     <p class="text-xs" style="color: var(--c-muted)">
-      Questions? Email us at
+      {{ $t('privacy.contact') }}
       <a href="mailto:hello@0nefor.one" style="color: var(--c-trade)">hello@0nefor.one</a>.
     </p>
   </div>

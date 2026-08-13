@@ -82,6 +82,13 @@ Deno.serve(async (req) => {
         stripe_subscription_id: sub.id,
         subscription_status: status,
         current_period_end: periodEnd,
+        // What makes current_period_end readable. Stripe leaves status 'active'
+        // on a subscription somebody has already cancelled, so without this the
+        // date above means "next charge" and "access ends" indistinguishably.
+        // Coerced rather than passed through: the field is absent on some event
+        // shapes, and null would read as "we do not know" when what we know is
+        // that nothing is scheduled.
+        cancel_at_period_end: sub.cancel_at_period_end === true,
         // Omitted rather than nulled when unreadable, so an event that arrives
         // without a price cannot erase a plan we already recorded correctly.
         ...(billingInterval ? { billing_interval: billingInterval } : {}),

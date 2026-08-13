@@ -29,8 +29,13 @@ Deno.serve(async (req) => {
     const { data: { user } } = await admin.auth.getUser(token);
     if (!user) return json({ error: "not_authenticated" }, 401);
 
-    const { community_id } = await req.json();
+    const { community_id, locale } = await req.json();
     if (!community_id) return json({ error: "missing_community_id" }, 400);
+
+    // Whitelisted, not interpolated: return_url goes into a redirect Stripe
+    // performs, so an unchecked value from the request body would be an open
+    // redirect with our own domain in front of it.
+    const lang = ["en", "fr", "de", "it"].includes(locale) ? locale : "en";
 
     const { data: community } = await admin.from("community")
       .select("id, owner, slug").eq("id", community_id).maybeSingle();
@@ -43,10 +48,14 @@ Deno.serve(async (req) => {
 
     const portal = await stripe.billingPortal.sessions.create({
       customer: claim.stripe_customer_id,
-      return_url: `${SITE}/en/community/${community.slug}`,
+      return_url: `${SITE}/${lang}/community/${community.slug}`,
     });
     return json({ url: portal.url });
   } catch (e) {
+    // Logged as well as returned. The detail was only ever in the response body,
+    // so a failure here was invisible in function_logs and could not be
+    // diagnosed without asking the person it happened to to open DevTools.
+    console.error("claim-portal failed", String(e));
     return json({ error: "unexpected", detail: String(e) }, 500);
   }
 });

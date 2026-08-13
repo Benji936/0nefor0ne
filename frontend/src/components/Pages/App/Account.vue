@@ -5,9 +5,10 @@ import { useRoute } from "vue-router";
 import { getClient, updateTraderProfile, linkDiscordAccount, syncDiscordIdToTrader } from "@/lib/supabaseClient";
 import { COUNTRIES } from "@/lib/countries";
 import { countryByCode } from "@/lib/countries";
-import { fetchMyCommunities, fetchMyClaimSources, openBillingPortal } from "@/lib/community";
+import { fetchMyCommunities, fetchMyClaimSources, fetchMyCountryCode } from "@/lib/community";
 import { fetchFollowing, unfollow } from "@/lib/communityFollow";
 import CommunityKindIcon from "@/components/community/CommunityKindIcon.vue";
+import CommunityBillingLine from "@/components/community/CommunityBillingLine.vue";
 
 const { t } = useI18n();
 
@@ -164,9 +165,15 @@ async function resyncDiscord() {
 
 // ── My communities ───────────────────────────────────────────────────────
 const communities        = ref([]);
-// communityId -> { stripe, discord }: which subscription is paying for each.
+// communityId -> which subscription is paying for each, and where it stands.
+// Read through billingState(), never field by field: Stripe leaves a cancelled
+// subscription 'active' until its period ends, so status alone mislabels dates.
 const claimSources       = ref({});
 const loadingCommunities = ref(false);
+// The pricing fallback for a community that never filled in its own country.
+const myCountryCode      = ref(null);
+// True when the billing read itself failed. Distinct from "no subscription".
+const billingUnavailable = ref(false);
 
 const KIND_LABELS = computed(() => ({
   store:   t('community.kindStore'),
@@ -178,10 +185,18 @@ async function loadCommunities() {
   if (!props.login?.user?.id) return;
   loadingCommunities.value = true;
   try {
-    communities.value = await fetchMyCommunities();
-    // Which door each one is paid through. A Discord Guild Subscription has no
-    // Stripe customer behind it, so the billing-portal button must not appear.
-    claimSources.value = await fetchMyClaimSources();
+    const [rows, sources, cc] = await Promise.all([
+      fetchMyCommunities(),
+      fetchMyClaimSources(),
+      fetchMyCountryCode(),
+    ]);
+    communities.value  = rows;
+    // null means the billing read failed, which is not the same as "no claims".
+    // Kept apart so the panel can say it does not know instead of asserting
+    // that somebody has no subscription.
+    billingUnavailable.value = sources === null;
+    claimSources.value = sources ?? {};
+    myCountryCode.value = cc;
   } finally {
     loadingCommunities.value = false;
   }
@@ -221,20 +236,6 @@ function statusStyle(status) {
   return { color, background: `color-mix(in srgb, ${color} 12%, transparent)` };
 }
 
-const billingBusy = ref(false);
-async function manageSubscription(row) {
-  if (billingBusy.value) return;
-  billingBusy.value = true;
-  try {
-    const res = await openBillingPortal(row.id);
-    if (res?.url) { window.location.href = res.url; return; }
-    alert(t("community.manageSubBillingError"));
-  } catch {
-    alert(t("community.manageSubBillingError"));
-  } finally {
-    billingBusy.value = false;
-  }
-}
 </script>
 
 <template>
@@ -368,46 +369,47 @@ async function manageSubscription(row) {
           </p>
 
           <div v-else class="acct-rows">
-            <div v-for="row in communities" :key="row.id" class="acct-row">
-              <div class="flex flex-col min-w-0" style="gap: 2px">
-                <div class="flex items-center gap-1.5 min-w-0">
-                  <span class="font-semibold truncate" style="color: var(--c-text)">{{ row.name }}</span>
-                  <v-icon v-if="row.verified" icon="mdi-check-decagram" size="14" style="color: var(--c-mutual)" :title="t('community.verified')" />
+            <div v-for="row in communities" :key="row.id" class="acct-item">
+              <div class="acct-row">
+                <div class="flex flex-col min-w-0" style="gap: 2px">
+                  <div class="flex items-center min-w-0" style="gap: 6px">
+                    <span class="font-semibold truncate" style="color: var(--c-text)">{{ row.name }}</span>
+                    <v-icon v-if="row.verified" icon="mdi-check-decagram" size="14" style="color: var(--c-mutual)" :title="t('community.verified')" />
+                  </div>
+                  <span class="text-xs truncate" style="color: var(--c-muted)">{{ KIND_LABELS[row.kind] ?? row.kind }}</span>
                 </div>
-                <span class="text-xs truncate" style="color: var(--c-muted)">{{ KIND_LABELS[row.kind] ?? row.kind }}</span>
+
+                <span
+                  class="ml-auto shrink-0 text-xs font-semibold px-2 py-1 rounded-md"
+                  :style="{ textTransform: 'capitalize', ...statusStyle(row.status) }"
+                >{{ row.status }}</span>
+
+                <router-link :to="{ name: 'communityProfile', params: { locale, slug: row.slug } }" class="acct-linkbtn" style="color: var(--c-trade)">
+                  {{ t('community.manage') }}
+                </router-link>
+
+                <router-link
+                  :to="{ name: 'communityProfile', params: { locale, slug: row.slug }, query: { edit: '1' } }"
+                  class="acct-iconbtn"
+                  :aria-label="t('community.editTitle')"
+                  :title="t('community.editTitle')"
+                >
+                  <v-icon icon="mdi-pencil-outline" size="15" />
+                </router-link>
               </div>
 
-              <span
-                class="ml-auto shrink-0 text-xs font-semibold px-2 py-1 rounded-md"
-                :style="{ textTransform: 'capitalize', ...statusStyle(row.status) }"
-              >{{ row.status }}</span>
-
-              <button
-                v-if="row.verified && claimSources[row.id]?.stripe"
-                type="button" class="acct-linkbtn" :disabled="billingBusy"
-                @click="manageSubscription(row)"
-              >
-                {{ t('community.manageSubscription') }}
-              </button>
-              <!-- Paid inside Discord: there is nothing for us to open, and the
-                   place to cancel it is Discord's own subscription settings. -->
-              <span
-                v-else-if="row.verified && claimSources[row.id]?.discord"
-                class="acct-linkbtn" style="cursor: default"
-              >{{ t('community.billedViaDiscord') }}</span>
-
-              <router-link :to="{ name: 'communityProfile', params: { locale, slug: row.slug } }" class="acct-linkbtn" style="color: var(--c-trade)">
-                {{ t('community.manage') }}
-              </router-link>
-
-              <router-link
-                :to="{ name: 'communityProfile', params: { locale, slug: row.slug }, query: { edit: '1' } }"
-                class="acct-iconbtn"
-                :aria-label="t('community.editTitle')"
-                :title="t('community.editTitle')"
-              >
-                <v-icon icon="mdi-pencil-outline" size="15" />
-              </router-link>
+              <!-- Replaces the lone "Manage subscription" link that used to sit
+                   in the row above. That button was the entire billing surface:
+                   it said nothing and led off-site. The Discord branch it also
+                   carried now lives in billingState(), which is the only thing
+                   that knows a Guild Subscription has no Stripe side. -->
+              <CommunityBillingLine
+                :community="row"
+                :claim="claimSources[row.id] ?? null"
+                :country-code="myCountryCode"
+                :unavailable="billingUnavailable"
+                @changed="loadCommunities"
+              />
             </div>
           </div>
         </section>
@@ -651,6 +653,10 @@ async function manageSubscription(row) {
   transition: background-color 0.15s ease;
 }
 .acct-row + .acct-row { border-top: 1px solid var(--c-border); border-radius: 0; }
+/* An owned community is a row plus its billing line, so the separator moved out
+   to the pair. Without this the border would land between a community and its
+   own billing, rather than between one community and the next. */
+.acct-item + .acct-item { border-top: 1px solid var(--c-border); }
 .acct-row:hover:not(.acct-row--sk) { background: color-mix(in srgb, var(--c-surface-2) 55%, transparent); }
 .acct-empty { padding: 22px 10px; font-size: 0.875rem; color: var(--c-muted); }
 
