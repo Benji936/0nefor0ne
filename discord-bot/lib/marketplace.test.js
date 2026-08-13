@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { groupCollection, relevance, normalizeQuery } = require('./marketplace');
+const { searchListings, groupCollection, relevance, normalizeQuery } = require('./marketplace');
 
 // ── normalizeQuery ────────────────────────────────────────────────────────────
 
@@ -75,4 +75,51 @@ test('a missing name does not crash grouping', () => {
   const out = groupCollection([row({ name: null })], 'ash');
   assert.equal(out.length, 1);
   assert.equal(out[0].name, '');
+});
+
+// ── searchListings expiry ─────────────────────────────────────────────────────
+
+// Nothing flips `status` when an announce's window runs out - expiry is applied
+// at read time. A query that filters only on status therefore keeps serving
+// listings the website stopped showing a month ago, and it does so silently.
+// This asserts every announce read the bot makes carries the cut-off, for both
+// kinds - a missing one has no visible symptom on the bot's side, so only a
+// test catches it.
+function recordingSupabase(calls) {
+  return {
+    from(table) {
+      const call = { table, filters: [] };
+      calls.push(call);
+      const builder = {
+        select: () => builder,
+        eq: (col, val) => { call.filters.push(['eq', col, val]); return builder; },
+        gt: (col, val) => { call.filters.push(['gt', col, val]); return builder; },
+        ilike: (col, val) => { call.filters.push(['ilike', col, val]); return builder; },
+        in: (col, val) => { call.filters.push(['in', col, val]); return builder; },
+        limit: () => builder,
+        then: (resolve) => resolve({ data: [], error: null }),
+      };
+      return builder;
+    },
+  };
+}
+
+test('hides expired announces from Discord search, both kinds', async () => {
+  const calls = [];
+  const before = new Date().toISOString();
+  await searchListings(recordingSupabase(calls), 'Blue-Eyes');
+  const after = new Date().toISOString();
+
+  const announceCalls = calls.filter((c) => c.table === 'announce');
+  assert.ok(announceCalls.length >= 4, `expected several announce reads, got ${announceCalls.length}`);
+
+  const kinds = new Set();
+  for (const call of announceCalls) {
+    const cutoff = call.filters.find(([op, col]) => op === 'gt' && col === 'expires_at');
+    const kind = call.filters.find(([op, col]) => op === 'eq' && col === 'kind');
+    assert.ok(cutoff, `announce read without an expires_at cut-off: ${JSON.stringify(call.filters)}`);
+    assert.ok(cutoff[2] >= before && cutoff[2] <= after, 'cut-off must be now, not a stale constant');
+    if (kind) kinds.add(kind[2]);
+  }
+  assert.deepEqual([...kinds].sort(), ['looking_for', 'sell']);
 });

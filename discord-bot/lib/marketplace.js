@@ -100,13 +100,26 @@ async function searchListings(supabase, rawQuery, { limit = 8 } = {}) {
 
   const like = `%${query}%`;
   const announceCols = 'id, title, card_name, price, currency, seller, created_at';
+  // Expiry is a read-time rule (see 20260722_announce_expiry.sql): nothing flips
+  // status when the window runs out, so a query that only filters on status
+  // keeps surfacing listings the site itself stopped showing 30 days ago. Both
+  // kinds age out the same way, so both bases carry the same cut-off. There is
+  // no owner exception here the way there is in the web grid - Discord search is
+  // always someone else looking, never the seller managing their own posts.
+  const nowIso = new Date().toISOString();
   const sellBase = () =>
-    supabase.from('announce').select(announceCols).eq('status', 'active').eq('kind', SELL_KIND);
+    supabase
+      .from('announce')
+      .select(announceCols)
+      .eq('status', 'active')
+      .gt('expires_at', nowIso)
+      .eq('kind', SELL_KIND);
   const lfBase = () =>
     supabase
       .from('announce')
       .select('id, seller, created_at, title, archetype')
       .eq('status', 'active')
+      .gt('expires_at', nowIso)
       .eq('kind', LF_KIND);
 
   const [collection, byCard, byTitle, wantRows] = await Promise.all([
