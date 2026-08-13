@@ -76,7 +76,18 @@ useHead(
       ? t("meta.search.descWithQuery", { query: q }, { locale: loc })
       : meta(`meta.${page || "search"}.desc`, "meta.search.desc");
 
-    const canonical = `${BASE}${path}`;
+    // The policy pages exist at all four locale URLs and each resolves to
+    // itself, but only their chrome is translated — the legal text is English
+    // everywhere on purpose, because machine-translating a GDPR notice would be
+    // publishing binding statements nobody here can read. Declaring the four as
+    // translations of each other therefore describes four near-identical pages,
+    // which Google resolves by keeping one and dropping the rest, and a cluster
+    // of thin locale duplicates is a site-wide quality signal rather than a
+    // per-page one. Pointing every locale at the English original says the same
+    // thing deliberately, and costs nothing: nobody searches for a privacy
+    // policy. Unlike isEnglishOnly below there is no redirect involved, so the
+    // canonical has to do the work the 301 does there.
+    const isEnglishBody = /^\/[a-z]{2}\/(privacy|terms)$/.test(path);
 
     // English-only page types: card, set and archetype. All three name things
     // that exist only in English, and router/index.js 301s their /fr, /de and
@@ -87,8 +98,11 @@ useHead(
     // the same shape, hence the widened test rather than a third special case.
     const isEnglishOnly = /^\/[a-z]{2}\/(card|set|archetype)\//.test(path);
     const enPath = path.replace(new RegExp(`^/${loc}(/|$)`), `/en$1`);
+    const canonical = `${BASE}${isEnglishBody ? enPath : path}`;
     const hreflangLinks = [];
-    if (!isEnglishOnly) {
+    if (isEnglishBody) {
+      hreflangLinks.push({ rel: "alternate", hreflang: "en", href: `${BASE}${enPath}` });
+    } else if (!isEnglishOnly) {
       for (const lang of SUPPORTED) {
         const localePath = path.replace(new RegExp(`^/${loc}(/|$)`), `/${lang}$1`);
         hreflangLinks.push({ rel: "alternate", hreflang: lang, href: `${BASE}${localePath}` });

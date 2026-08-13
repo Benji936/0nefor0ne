@@ -40,6 +40,7 @@ function sampleCardIds(n) {
 const ROUTES = [
   ...['/en/', '/fr/', '/de/', '/it/'].map(p => ({ path: p, type: 'home' })),
   ...['/en/privacy', '/fr/privacy', '/de/privacy', '/it/privacy'].map(p => ({ path: p, type: 'privacy' })),
+  ...['/en/terms', '/fr/terms', '/de/terms', '/it/terms'].map(p => ({ path: p, type: 'terms' })),
   ...['/en/cards', '/fr/cards', '/de/cards', '/it/cards'].map(p => ({ path: p, type: 'cards' })),
   ...sampleCardIds(8).map(id => ({ path: `/en/card/${id}`, type: 'card' })),
   ...TOP_SET_SLUGS.slice(0, 3).map(s => ({ path: `/en/set/${encodeURIComponent(s)}`, type: 'set' })),
@@ -50,7 +51,7 @@ const ROUTES = [
 // bug these guard against rendered ~100 characters of nav chrome and no <h1>,
 // while the title, description and JSON-LD stayed perfect — so every head-based
 // check passed for as long as it existed.
-const CONTENT_TYPES = new Set(['home', 'cards', 'privacy', 'card', 'set', 'archetype'])
+const CONTENT_TYPES = new Set(['home', 'cards', 'privacy', 'terms', 'card', 'set', 'archetype'])
 const MIN_BODY_CHARS = 200
 
 // A string that must appear in the rendered <body> of each locale + page type.
@@ -60,14 +61,15 @@ const MIN_BODY_CHARS = 200
 // they were never affected by the shared-i18n leak this guards against. Only a
 // body assertion catches it. `home` and `privacy` are the two types that broke;
 // `cards` is the control that did not.
-// `privacy` matches on chrome rather than page copy on purpose: the policy text
-// is hardcoded English in all four locales — a separate gap, not this one — so
-// the surrounding navigation is the only part of that page a locale leak could
-// still corrupt. If the policy is ever translated, move this to its heading.
+// `privacy` and `terms` assert on their own <h1>, not on nav chrome. Their
+// bodies stay English by design — see the englishNote in each page — so the
+// heading and the note are the only translated copy they own, and matching
+// chrome instead would have passed even if the pages rendered no policy at all.
 const BODY_MARKERS = {
-  home:    { fr: 'Échangez vos doublons', de: 'Tausche Dubletten',  it: 'Scambia i doppioni' },
-  privacy: { fr: 'Réduire le menu',       de: 'Menü einklappen',    it: 'Comprimi menu' },
-  cards:   { fr: 'Parcourir les cartes',  de: 'Karten durchsuchen', it: 'Sfoglia carte' },
+  home:    { fr: 'Échangez vos doublons',           de: 'Tausche Dubletten',        it: 'Scambia i doppioni' },
+  privacy: { fr: 'Politique de confidentialité',    de: 'Datenschutzerklärung',     it: 'Informativa sulla privacy' },
+  terms:   { fr: "Conditions d'utilisation",        de: 'Nutzungsbedingungen',      it: 'Termini di servizio' },
+  cards:   { fr: 'Parcourir les cartes',            de: 'Karten durchsuchen',       it: 'Sfoglia carte' },
 }
 
 // The English hero copy. Its presence on a non-English page is the exact
@@ -137,6 +139,18 @@ for (const { path, type } of ROUTES) {
         [`body over ${MIN_BODY_CHARS} chars (got ${text.length})`, text.length > MIN_BODY_CHARS],
       ]
     })() : []),
+    // Policy pages: fr/de/it must canonicalise to the English original and must
+    // NOT advertise each other as alternates. Their bodies are identical English
+    // legal text, so a self-canonical would submit four near-duplicates and let
+    // Google pick which survives. This is easy to undo by accident, because the
+    // rule lives in one regex in App.vue that reads like the English-only one
+    // next to it — but that one is backed by a 301 and this one is not.
+    ...((type === 'privacy' || type === 'terms') && nonEnglish ? [
+      [`canonical points at /en/${type}`,
+        html.includes(`rel="canonical" href="https://0nefor.one/en/${type}"`)],
+      ['no fr/de/it hreflang alternates',
+        !/hreflang="(fr|de|it)"/.test(html)],
+    ] : []),
     // Archetype pages: the card list is the page, so assert the structured data
     // that describes it actually made it out.
     ...(type === 'archetype' ? (() => {

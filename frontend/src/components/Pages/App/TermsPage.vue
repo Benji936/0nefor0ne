@@ -8,11 +8,21 @@
         style="color: var(--c-muted)"
       >
         <v-icon icon="mdi-arrow-left" size="14" />
-        Back
+        {{ $t('terms.back') }}
       </router-link>
-      <h1 class="text-2xl md:text-3xl font-black" style="color: var(--c-text)">Terms of Service</h1>
-      <p class="text-sm" style="color: var(--c-muted)">Last updated: July 2026</p>
+      <h1 class="text-2xl md:text-3xl font-black" style="color: var(--c-text)">{{ $t('terms.title') }}</h1>
+      <p class="text-sm" style="color: var(--c-muted)">{{ $t('terms.updated') }}</p>
     </div>
+
+    <!-- English in every locale, deliberately — see PrivacyPage.vue. These
+         Terms carry a liability limitation and a governing-law clause, which is
+         exactly the text you do not want a machine to render into a language
+         you cannot check. -->
+    <p
+      v-if="$i18n.locale !== 'en'"
+      class="text-xs italic"
+      style="color: var(--c-muted)"
+    >{{ $t('terms.englishNote') }}</p>
 
     <p class="text-sm leading-relaxed" style="color: var(--c-muted)">
       One for One (the "Service") is a free, peer-to-peer Yu-Gi-Oh! card trading platform
@@ -37,7 +47,7 @@
 
     <div class="h-px w-full" style="background: var(--c-border)" />
     <p class="text-xs" style="color: var(--c-muted)">
-      Questions about these Terms? Email
+      {{ $t('terms.contact') }}
       <a href="mailto:benjsit@gmail.com" style="color: var(--c-trade)">benjsit@gmail.com</a>.
     </p>
   </div>
