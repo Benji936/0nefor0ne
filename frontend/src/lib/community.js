@@ -252,9 +252,13 @@ export function startClaimCheckout(communityId, interval = "year") {
 }
 
 // Open the Stripe Customer Portal for an owned community so the owner can update
-// the card or cancel. Returns a portal URL to redirect to.
-export function openBillingPortal(communityId) {
-  return invokeFunction("claim-portal", { community_id: communityId }); // { url } or { error }
+// the card or download invoices. Returns a portal URL to redirect to.
+//
+// `locale` decides where Stripe sends them back to. It used to be hardcoded to
+// /en on the server, so a French owner left a French page, paid attention to a
+// French flow, and landed on the English one.
+export function openBillingPortal(communityId, locale = "en") {
+  return invokeFunction("claim-portal", { community_id: communityId, locale }); // { url } or { error }
 }
 
 // The caller's own claim row for a community (RLS returns only their own).
@@ -295,29 +299,86 @@ export function releaseCommunity(communityId, intent) {
 }
 
 /**
- * How each of my communities is being paid for, keyed by community id.
+ * How each of my communities is being paid for, and where that stands, keyed by
+ * community id.
  *
- * The account page offers a Stripe billing portal, which is a dead button for
- * somebody whose community is verified by a Discord Guild Subscription: there
- * is no Stripe customer behind it to manage. One extra read is cheaper than a
- * button that fails.
+ * Started as two booleans answering one question: whether to show the Stripe
+ * portal button, which is dead for somebody verified by a Discord Guild
+ * Subscription because there is no Stripe customer behind it. It now carries
+ * the mirrored subscription state as well, so the account page can describe a
+ * plan instead of just linking to it. Same single read either way.
+ *
+ * Every field past the two booleans is written only by stripe-webhook and
+ * frozen against client writes by community_claim_guard(), so what comes back
+ * here is what Stripe last said rather than anything a claimer could set.
+ *
+ * Feed the result to billingState() in lib/communityBilling.js rather than
+ * reading `subscription_status` directly: status alone cannot tell a renewing
+ * subscription from a cancelling one.
+ *
+ * @returns {Promise<object|null>} the map, or **null** if the read failed. The
+ *   caller must tell those apart: `{}` means no claims exist, null means we do
+ *   not know, and saying "no subscription" for the second is a lie about money.
  */
 export async function fetchMyClaimSources() {
   const me = (await getClient().auth.getSession()).data?.session?.user?.id;
   if (!me) return {};
   const { data, error } = await getClient()
     .from("community_claim")
-    .select("community, stripe_subscription_id, discord_entitlement_at")
+    .select(
+      "community, stripe_subscription_id, stripe_customer_id, discord_entitlement_at, " +
+      "subscription_status, current_period_end, billing_interval, cancel_at_period_end, " +
+      "discord_guild_id"
+    )
     .eq("claimer", me);
-  if (error) { console.error("fetchMyClaimSources failed", error); return {}; }
+  // null, NOT {}. An empty map is a real answer - "you own communities and none
+  // of them has a claim row" - and the billing panel renders it as the sentence
+  // "No subscription." Returning it on failure made a dropped query state a
+  // fact about somebody's money: an owner paying through Discord was told they
+  // had no subscription, directly under their own verified badge. A read that
+  // did not happen has to be distinguishable from one that came back empty.
+  if (error) { console.error("fetchMyClaimSources failed", error); return null; }
   const out = {};
   for (const row of data ?? []) {
     out[row.community] = {
+      // `stripe` means "has ever subscribed", NOT "is paying". The id is never
+      // cleared on cancellation, so only subscription_status can answer the
+      // second question - which is why billingState() exists rather than
+      // callers reading these fields directly.
       stripe: !!row.stripe_subscription_id,
+      // The portal opens against a CUSTOMER, not a subscription. Separate flag
+      // because the two columns can disagree - an abandoned checkout leaves a
+      // customer with no subscription - and gating the button on the wrong one
+      // is how you ship a button that 409s.
+      customer: !!row.stripe_customer_id,
       discord: !!row.discord_entitlement_at,
+      discord_entitlement_at: row.discord_entitlement_at ?? null,
+      discord_guild_id: row.discord_guild_id ?? null,
+      subscription_status: row.subscription_status ?? null,
+      current_period_end: row.current_period_end ?? null,
+      billing_interval: row.billing_interval ?? null,
+      cancel_at_period_end: row.cancel_at_period_end === true,
     };
   }
   return out;
+}
+
+/**
+ * Schedule a community subscription to end when the paid period does, or undo
+ * that while it is still pending.
+ *
+ * The claim row is not written here or by the function behind it. Stripe is
+ * asked to flip the flag, Stripe emits customer.subscription.updated, and
+ * stripe-webhook mirrors it - the same path every other billing fact takes.
+ * The echoed values below are for settling the UI before that round trip lands.
+ *
+ * @param {number} communityId
+ * @param {'cancel'|'reactivate'} action
+ * @returns {Promise<object>} { ok, cancel_at_period_end, current_period_end }
+ *   or { error } with: not_owner, no_subscription, bad_action, not_found.
+ */
+export function setSubscriptionCancellation(communityId, action) {
+  return invokeFunction("claim-cancel", { community_id: communityId, action });
 }
 
 export async function fetchMyCommunities() {

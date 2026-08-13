@@ -717,8 +717,9 @@
   "privacy": {
     "title": "Politique de confidentialité",
     "updated": "Dernière mise à jour : mai 2026",
-    "intro": "One for One est une plateforme d'échange de cartes Yu-Gi-Oh! gratuite entre particuliers.",
-    "contact": "Des questions ? Écrivez-nous à"
+    "contact": "Des questions ? Écrivez-nous à",
+    "back": "Retour",
+    "englishNote": "Cette politique n'est publiée qu'en anglais. Le texte anglais fait foi."
   },
   "common": {
     "loading": "Chargement…",
@@ -1407,7 +1408,27 @@
     "nearUnsupported": "Ce navigateur ne peut pas partager de position.",
     "nearFailed": "La recherche n'a pas abouti. Réessayez.",
     "nearShowAll": "Afficher la liste complète à la place",
-    "billedViaDiscord": "Facturé via Discord"
+    "billingTitle": "Facturation",
+    "planYear": "Formule annuelle",
+    "planMonth": "Formule mensuelle",
+    "planUnknown": "Abonnement",
+    "billingRenews": "Renouvellement le {date}",
+    "billingEnds": "Se termine le {date}",
+    "billingEndsHint": "Réactivez avant cette date pour le conserver.",
+    "billingTrial": "Gratuit jusqu'au {date}",
+    "billingPastDue": "Le paiement a échoué — nous réessayons. Mettez votre carte à jour pour ne pas perdre le badge.",
+    "billingLapsed": "Cet abonnement est terminé.",
+    "billingNone": "Aucun abonnement.",
+    "billingDiscord": "Votre abonnement de serveur le finance. Résiliez-le ou modifiez-le dans les paramètres d'abonnement de Discord.",
+    "billingCancel": "Résilier",
+    "billingReactivate": "Conserver ma formule",
+    "billingCardsInvoices": "Carte et factures",
+    "billingCancelConfirm": "Résilier cette formule ? Elle reste active jusqu'au {date}. Rien n'est supprimé dans votre communauté, et vous pouvez annuler cette décision à tout moment avant cette date.",
+    "billingCancelError": "Impossible de modifier la formule. Veuillez réessayer.",
+    "billingDiscordActive": "Actif via Discord",
+    "billingDiscordSince": "Depuis le {date}",
+    "billingCancelInDiscord": "Résilier dans Discord",
+    "billingUnavailable": "Impossible de charger les informations de facturation. Veuillez actualiser."
   },
   "communityVerify": {
     "metaTitle": "Vérifier {name}",
@@ -1559,5 +1580,12 @@
     "notFound": "Archétype introuvable",
     "heading": "Archétype {name}",
     "cardCount": "Aucune carte | 1 carte | {count} cartes"
+  },
+  "terms": {
+    "title": "Conditions d'utilisation",
+    "back": "Retour",
+    "updated": "Dernière mise à jour : juillet 2026",
+    "contact": "Des questions ? Écrivez-nous à",
+    "englishNote": "Ces conditions ne sont publiées qu'en anglais. Le texte anglais fait foi."
   }
 }

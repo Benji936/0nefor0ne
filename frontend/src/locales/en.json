@@ -717,8 +717,9 @@
   "privacy": {
     "title": "Privacy Policy",
     "updated": "Last updated: May 2026",
-    "intro": "One for One is a free, peer-to-peer Yu-Gi-Oh! card trading platform. This policy explains what data we collect, why we collect it, and what we do with it.",
-    "contact": "Questions? Email us at"
+    "contact": "Questions? Email us at",
+    "back": "Back",
+    "englishNote": "This policy is published in English only. The English text is the binding version."
   },
   "common": {
     "loading": "Loading…",
@@ -1407,7 +1408,27 @@
     "nearUnsupported": "This browser cannot share a location.",
     "nearFailed": "That search did not go through. Try again.",
     "nearShowAll": "Show the full list instead",
-    "billedViaDiscord": "Billed through Discord"
+    "billingTitle": "Billing",
+    "planYear": "Yearly plan",
+    "planMonth": "Monthly plan",
+    "planUnknown": "Subscription",
+    "billingRenews": "Renews on {date}",
+    "billingEnds": "Ends on {date}",
+    "billingEndsHint": "Reactivate before then to keep it.",
+    "billingTrial": "Free until {date}",
+    "billingPastDue": "Payment failed — we're retrying. Update your card to avoid losing the badge.",
+    "billingLapsed": "This subscription has ended.",
+    "billingNone": "No subscription.",
+    "billingDiscord": "Your Guild Subscription pays for this. Cancel or change it in Discord's subscription settings.",
+    "billingCancel": "Cancel plan",
+    "billingReactivate": "Keep my plan",
+    "billingCardsInvoices": "Card and invoices",
+    "billingCancelConfirm": "Cancel this plan? It stays active until {date}. Nothing in your community is deleted, and you can undo this any time before then.",
+    "billingCancelError": "Could not change the plan. Please try again.",
+    "billingDiscordActive": "Active through Discord",
+    "billingDiscordSince": "Since {date}",
+    "billingCancelInDiscord": "Cancel in Discord",
+    "billingUnavailable": "Couldn't load billing details. Please refresh."
   },
   "communityVerify": {
     "metaTitle": "Verify {name}",
@@ -1559,5 +1580,12 @@
     "notFound": "Archetype not found",
     "heading": "{name} archetype",
     "cardCount": "No cards | 1 card | {count} cards"
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "back": "Back",
+    "updated": "Last updated: July 2026",
+    "contact": "Questions? Email us at",
+    "englishNote": "These terms are published in English only. The English text is the binding version."
   }
 }

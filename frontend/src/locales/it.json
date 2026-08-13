@@ -717,8 +717,9 @@
   "privacy": {
     "title": "Informativa sulla privacy",
     "updated": "Ultimo aggiornamento: maggio 2026",
-    "intro": "One for One è una piattaforma gratuita di scambio peer-to-peer di carte Yu-Gi-Oh!.",
-    "contact": "Domande? Scrivici a"
+    "contact": "Domande? Scrivici a",
+    "back": "Indietro",
+    "englishNote": "Questa informativa è pubblicata solo in inglese. Fa fede il testo inglese."
   },
   "common": {
     "loading": "Caricamento…",
@@ -1407,7 +1408,27 @@
     "nearUnsupported": "Questo browser non può condividere la posizione.",
     "nearFailed": "La ricerca non è andata a buon fine. Riprova.",
     "nearShowAll": "Mostra invece l'elenco completo",
-    "billedViaDiscord": "Fatturato tramite Discord"
+    "billingTitle": "Fatturazione",
+    "planYear": "Piano annuale",
+    "planMonth": "Piano mensile",
+    "planUnknown": "Abbonamento",
+    "billingRenews": "Si rinnova il {date}",
+    "billingEnds": "Termina il {date}",
+    "billingEndsHint": "Riattivalo prima di allora per mantenerlo.",
+    "billingTrial": "Gratis fino al {date}",
+    "billingPastDue": "Pagamento non riuscito — stiamo riprovando. Aggiorna la carta per non perdere il badge.",
+    "billingLapsed": "Questo abbonamento è terminato.",
+    "billingNone": "Nessun abbonamento.",
+    "billingDiscord": "Il tuo abbonamento al server lo finanzia. Disdicilo o modificalo nelle impostazioni di abbonamento di Discord.",
+    "billingCancel": "Disdici il piano",
+    "billingReactivate": "Mantieni il piano",
+    "billingCardsInvoices": "Carta e fatture",
+    "billingCancelConfirm": "Disdire questo piano? Resta attivo fino al {date}. Nulla nella tua community viene eliminato e puoi annullare in qualsiasi momento prima di allora.",
+    "billingCancelError": "Impossibile modificare il piano. Riprova.",
+    "billingDiscordActive": "Attivo tramite Discord",
+    "billingDiscordSince": "Dal {date}",
+    "billingCancelInDiscord": "Disdici in Discord",
+    "billingUnavailable": "Impossibile caricare i dati di fatturazione. Aggiorna la pagina."
   },
   "communityVerify": {
     "metaTitle": "Verifica {name}",
@@ -1559,5 +1580,12 @@
     "notFound": "Archetipo non trovato",
     "heading": "Archetipo {name}",
     "cardCount": "Nessuna carta | 1 carta | {count} carte"
+  },
+  "terms": {
+    "title": "Termini di servizio",
+    "back": "Indietro",
+    "updated": "Ultimo aggiornamento: luglio 2026",
+    "contact": "Domande? Scrivici a",
+    "englishNote": "Questi termini sono pubblicati solo in inglese. Fa fede il testo inglese."
   }
 }

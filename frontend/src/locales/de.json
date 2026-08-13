@@ -717,8 +717,9 @@
   "privacy": {
     "title": "Datenschutzerklärung",
     "updated": "Zuletzt aktualisiert: Mai 2026",
-    "intro": "One for One ist eine kostenlose Peer-to-Peer-Tauschplattform für Yu-Gi-Oh! Karten.",
-    "contact": "Fragen? Schreib uns an"
+    "contact": "Fragen? Schreib uns an",
+    "back": "Zurück",
+    "englishNote": "Diese Erklärung wird nur auf Englisch veröffentlicht. Maßgeblich ist die englische Fassung."
   },
   "common": {
     "loading": "Wird geladen…",
@@ -1407,7 +1408,27 @@
     "nearUnsupported": "Dieser Browser kann keinen Standort teilen.",
     "nearFailed": "Die Suche hat nicht geklappt. Versuche es noch einmal.",
     "nearShowAll": "Stattdessen die ganze Liste anzeigen",
-    "billedViaDiscord": "Abrechnung über Discord"
+    "billingTitle": "Abrechnung",
+    "planYear": "Jahresabo",
+    "planMonth": "Monatsabo",
+    "planUnknown": "Abo",
+    "billingRenews": "Verlängert sich am {date}",
+    "billingEnds": "Endet am {date}",
+    "billingEndsHint": "Vorher reaktivieren, um es zu behalten.",
+    "billingTrial": "Kostenlos bis {date}",
+    "billingPastDue": "Zahlung fehlgeschlagen — wir versuchen es erneut. Aktualisiere deine Karte, um das Abzeichen nicht zu verlieren.",
+    "billingLapsed": "Dieses Abo ist beendet.",
+    "billingNone": "Kein Abo.",
+    "billingDiscord": "Dein Server-Abo bezahlt dafür. Kündige oder ändere es in den Abo-Einstellungen von Discord.",
+    "billingCancel": "Abo kündigen",
+    "billingReactivate": "Abo behalten",
+    "billingCardsInvoices": "Karte und Rechnungen",
+    "billingCancelConfirm": "Dieses Abo kündigen? Es bleibt bis zum {date} aktiv. In deiner Community wird nichts gelöscht, und du kannst das bis dahin jederzeit rückgängig machen.",
+    "billingCancelError": "Abo konnte nicht geändert werden. Bitte versuche es erneut.",
+    "billingDiscordActive": "Aktiv über Discord",
+    "billingDiscordSince": "Seit {date}",
+    "billingCancelInDiscord": "In Discord kündigen",
+    "billingUnavailable": "Abrechnungsdaten konnten nicht geladen werden. Bitte aktualisieren."
   },
   "communityVerify": {
     "metaTitle": "{name} verifizieren",
@@ -1559,5 +1580,12 @@
     "notFound": "Archetyp nicht gefunden",
     "heading": "Archetyp {name}",
     "cardCount": "Keine Karten | 1 Karte | {count} Karten"
+  },
+  "terms": {
+    "title": "Nutzungsbedingungen",
+    "back": "Zurück",
+    "updated": "Zuletzt aktualisiert: Juli 2026",
+    "contact": "Fragen? Schreib uns an",
+    "englishNote": "Diese Bedingungen werden nur auf Englisch veröffentlicht. Maßgeblich ist die englische Fassung."
   }
 }
