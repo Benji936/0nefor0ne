@@ -262,6 +262,23 @@ let skeletons = 0
     console.error(`\nFAIL skeletons: ${bad.length} of ${pages.length} prerendered pages have no <h1> or under ${MIN_BODY_CHARS} chars of body`)
     for (const [p, n] of bad.slice(0, 10)) console.error(`  ${p} — ${n} chars`)
     if (bad.length > 10) console.error(`  … and ${bad.length - 10} more`)
+    // Say what to do about it. This check fired on `main` because ygoprodeck
+    // stopped serving the "Sennet" archetype some time after
+    // src/data/archetype-slugs.js was last generated, and the message named the
+    // symptom ("102 chars") without naming the cause or the cure — so a red
+    // build looked like a mystery in the page rather than staleness in a
+    // generated file. The card API is upstream and it changes; expect this
+    // again, and expect it to be the same fix.
+    if (bad.some(([p]) => p.includes('/archetype/'))) {
+      console.error(
+        `\n  An archetype page renders empty when the card API no longer has that\n` +
+        `  archetype. ARCHETYPES in src/data/archetype-slugs.js is the only gate on\n` +
+        `  which pages exist, and it is generated, not live. Refresh it with:\n\n` +
+        `      node scripts/build-archetype-slugs.mjs\n\n` +
+        `  then check the diff: removals are fine (that URL is dead upstream),\n` +
+        `  but a RENAMED slug breaks every inbound link and must not be committed.`,
+      )
+    }
     skeletons = bad.length
   } else {
     console.log(`Rendered: all ${pages.length} prerendered pages have a heading and body content`)
