@@ -1,7 +1,7 @@
 {
-  "last_updated": "2026-08-10T07:44:39.138979+00:00",
+  "last_updated": "2026-08-17T07:04:27.730541+00:00",
   "source": "https://www.yugioh-card.com/en/events/",
-  "count": 10,
+  "count": 9,
   "data": [
     {
       "name": "Yu-Gi-Oh! x eFootball™ Collaboration",
@@ -22,42 +22,6 @@
       "url": "https://www.yugioh-card.com/en/events/ygo_x_efootball/"
     },
     {
-      "name": "North America World Championship Qualifier 2026",
-      "type": "WCQ",
-      "date_start": "2026-07-10T00:00:00-07:00",
-      "date_end": "2026-07-12T23:59:59-07:00",
-      "date_display": "07/10/2026\t\t\t\t- 07/12/2026",
-      "venue": "Minneapolis Convention Center",
-      "address": {
-        "street": "1301 2nd Ave S",
-        "city": "Minneapolis",
-        "state": "MN",
-        "zip": "55404",
-        "country": "United States"
-      },
-      "location_text": "Minneapolis, MN",
-      "registration_link": null,
-      "url": "https://www.yugioh-card.com/en/events-item/2026-wcq-na/"
-    },
-    {
-      "name": "Comic-Con",
-      "type": "Special",
-      "date_start": "2026-07-22T00:00:00-07:00",
-      "date_end": "2026-07-26T23:59:59-07:00",
-      "date_display": "07/22/2026 - 07/26/2026",
-      "venue": "San Diego Convention Center",
-      "address": {
-        "street": "111 W. Harbor Dr.",
-        "city": "San Diego",
-        "state": "CA",
-        "zip": "92101",
-        "country": "United States"
-      },
-      "location_text": "San Diego, CA",
-      "registration_link": null,
-      "url": "https://www.yugioh-card.com/en/events-item/2026_sdcc/"
-    },
-    {
       "name": "Yu-Gi-Oh! Championship Series Montreal, Quebec 2026",
       "type": "YCS",
       "date_start": "2026-08-14T00:00:00-07:00",
@@ -74,6 +38,24 @@
       "location_text": "Montréal, Quebec",
       "registration_link": null,
       "url": "https://www.yugioh-card.com/en/events-item/2026-ycs-montreal/"
+    },
+    {
+      "name": "WORLD CHAMPIONSHIP 2026 - OTS Celebration",
+      "type": "OTS Tournament",
+      "date_start": "2026-08-29T00:00:00-07:00",
+      "date_end": "2026-09-13T23:59:59-07:00",
+      "date_display": "08/29/2026 - 09/13/2026",
+      "venue": "North &#038; Latin America",
+      "address": {
+        "street": null,
+        "city": null,
+        "state": null,
+        "zip": null,
+        "country": null
+      },
+      "location_text": "North America & Latin America",
+      "registration_link": null,
+      "url": "https://www.yugioh-card.com/en/events-item/2026_wcs-c/"
     },
     {
       "name": "Latin America Remote Duel Yu-Gi-Oh! Championship Series",

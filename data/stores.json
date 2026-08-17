@@ -1,7 +1,7 @@
 {
-  "last_updated": "2026-08-10T07:44:09.758221+00:00",
+  "last_updated": "2026-08-17T07:04:00.394217+00:00",
   "source": "https://www.yugioh-card.com/en/events/ots-locations/",
-  "count": 4524,
+  "count": 4525,
   "data": [
     {
       "id": "633469197cf87c0dbc37dda0",
@@ -12013,18 +12013,18 @@
       "id": "000014AS",
       "name": "Players' Club",
       "address": {
-        "street": "尖沙咀 I- Square 2樓 SHOP 210",
+        "street": "香港 尖沙咀 I- Square 2樓 SHOP 210 愛都中心",
         "city": null,
         "state": null,
-        "zip": null,
+        "zip": "000000",
         "country": "Hong Kong"
       },
       "region": "APAC",
       "phone": null,
       "email": null,
       "website": null,
-      "latitude": null,
-      "longitude": null,
+      "latitude": 22.297179,
+      "longitude": 114.171896,
       "remote_duel": false
     },
     {
@@ -21085,7 +21085,7 @@
       "id": "470868JP",
       "name": "ふるいち トップブックスフォレオ菖蒲店",
       "address": {
-        "street": "菖蒲町菖蒲6006-1 蔦屋書店フォレオ菖蒲店",
+        "street": "菖蒲町菖蒲６００６－１ 蔦屋書店フォレオ菖蒲店内",
         "city": "久喜市",
         "state": "埼玉県",
         "zip": "3460106",
@@ -21095,8 +21095,8 @@
       "phone": null,
       "email": null,
       "website": null,
-      "latitude": null,
-      "longitude": null,
+      "latitude": 36.071,
+      "longitude": 139.61724,
       "remote_duel": false
     },
     {
@@ -23908,6 +23908,24 @@
       "remote_duel": false
     },
     {
+      "id": "470986JP",
+      "name": "シャトル 黒部店",
+      "address": {
+        "street": "前沢堂田1927-1",
+        "city": "黒部市",
+        "state": "富山県",
+        "zip": "9380806",
+        "country": "Japan"
+      },
+      "region": "APAC",
+      "phone": null,
+      "email": null,
+      "website": null,
+      "latitude": 36.866484,
+      "longitude": 137.447406,
+      "remote_duel": false
+    },
+    {
       "id": "470611JP",
       "name": "バトロコ 富山駅前",
       "address": {
@@ -26011,24 +26029,6 @@
       "website": null,
       "latitude": 33.359239,
       "longitude": 132.516958,
-      "remote_duel": false
-    },
-    {
-      "id": "470462JP",
-      "name": "TSUTAYA 松山平井店",
-      "address": {
-        "street": "平井町２２７３－１",
-        "city": "松山市",
-        "state": "愛媛県",
-        "zip": "7910243",
-        "country": "Japan"
-      },
-      "region": "APAC",
-      "phone": null,
-      "email": null,
-      "website": null,
-      "latitude": 33.81153,
-      "longitude": 132.8215,
       "remote_duel": false
     },
     {
@@ -35194,6 +35194,24 @@
       "remote_duel": false
     },
     {
+      "id": "100318AS",
+      "name": "Buddy Connection",
+      "address": {
+        "street": "93350 Kuching, 1st Floor, SL 22, Plot 66, Jalan Tun Jugah, Sarawak Gala Street Mall",
+        "city": null,
+        "state": null,
+        "zip": null,
+        "country": "Malaysia"
+      },
+      "region": "APAC",
+      "phone": null,
+      "email": null,
+      "website": null,
+      "latitude": 1.513336,
+      "longitude": 110.351931,
+      "remote_duel": false
+    },
+    {
       "id": "100429AS",
       "name": "Classroom Cafeteria",
       "address": {
@@ -35245,24 +35263,6 @@
       "website": null,
       "latitude": 3.14848,
       "longitude": 101.616411,
-      "remote_duel": false
-    },
-    {
-      "id": "100337AS",
-      "name": "Dragontale Cafe",
-      "address": {
-        "street": "43300 Seri Kembangan 83-1, JALAN EQUINE 9, TAMAN EQUINE PARK Ericfun Games & Hobbies",
-        "city": null,
-        "state": null,
-        "zip": null,
-        "country": "Malaysia"
-      },
-      "region": "APAC",
-      "phone": null,
-      "email": null,
-      "website": null,
-      "latitude": null,
-      "longitude": null,
       "remote_duel": false
     },
     {
@@ -35356,6 +35356,24 @@
       "remote_duel": false
     },
     {
+      "id": "000106AS",
+      "name": "Green Peaks Card Shop",
+      "address": {
+        "street": "31350 Perak no.95 Jalan Wira Jaya ,Taman Ipoh Jaya Timur, Ipoh",
+        "city": null,
+        "state": null,
+        "zip": null,
+        "country": "Malaysia"
+      },
+      "region": "APAC",
+      "phone": null,
+      "email": null,
+      "website": null,
+      "latitude": 4.580075,
+      "longitude": 101.129126,
+      "remote_duel": false
+    },
+    {
       "id": "100454AS",
       "name": "HOBBY GALAXY",
       "address": {
@@ -35428,10 +35446,10 @@
       "remote_duel": false
     },
     {
-      "id": "100332AS",
-      "name": "SPACE CARD ENTERPRISE",
+      "id": "000107AS",
+      "name": "S.B Card Gamers Enterprise",
       "address": {
-        "street": "68000 Ampang L2-16, Jalan Mewah 4,Taman Ampang Mewah, 68000 Ampang, Selangor Tan Sung Lee",
+        "street": "93050 Sarawak Lot 6810, 1st Floor, Section 65 KTLD, Jalan Matang, Taman Lee Ling, Kuching",
         "city": null,
         "state": null,
         "zip": null,
@@ -35441,8 +35459,26 @@
       "phone": null,
       "email": null,
       "website": null,
-      "latitude": 3.1449,
-      "longitude": 101.76053,
+      "latitude": 1.573547,
+      "longitude": 110.29278,
+      "remote_duel": false
+    },
+    {
+      "id": "100332AS",
+      "name": "SPACE CARD ENTERPRISE",
+      "address": {
+        "street": "68000 Ampang L2-16, Jalan Mewah 4,Taman Ampang Mewah, 68000 Ampang, Selangor",
+        "city": null,
+        "state": null,
+        "zip": null,
+        "country": "Malaysia"
+      },
+      "region": "APAC",
+      "phone": null,
+      "email": null,
+      "website": null,
+      "latitude": null,
+      "longitude": null,
       "remote_duel": false
     },
     {
@@ -37069,7 +37105,7 @@
       "id": "100383AS",
       "name": "Headquarter Hobbies and Card Games",
       "address": {
-        "street": "15339 Pagedangan, Kec. Pagedangan, Kabupaten Tangerang, Banten ICE BSD, Hall 1-2, Jl. BSD Grand Boulevard No.1, Pagedangan, Kec. Pagedangan, Kabupaten Tangerang, Banten 15339 Indonesia Convention Exhibition (ICE) BSD City, Hall 1-2, Tangerang",
+        "street": "12310 Daerah Khusus Ibukota Jakarta Jl. Gedung Hijau I No.1d, RW.13, Pd. Pinang, Kec. Kby. Lama, Kota Jakarta Selatan",
         "city": null,
         "state": null,
         "zip": null,
@@ -37079,8 +37115,8 @@
       "phone": null,
       "email": null,
       "website": null,
-      "latitude": -6.300458,
-      "longitude": 106.63643,
+      "latitude": -6.276987,
+      "longitude": 106.776514,
       "remote_duel": false
     },
     {
@@ -41455,24 +41491,6 @@
       "website": null,
       "latitude": 13.74563,
       "longitude": 100.50319,
-      "remote_duel": false
-    },
-    {
-      "id": "100360AS",
-      "name": "PLAYGROUND BOARD GAME CAFE",
-      "address": {
-        "street": "143/647-648 Borommaratchachonnani Rd. Arun Amarin Bangkoknoi Bangkok 10700",
-        "city": null,
-        "state": null,
-        "zip": null,
-        "country": "Thailand"
-      },
-      "region": "APAC",
-      "phone": null,
-      "email": null,
-      "website": null,
-      "latitude": 13.78427,
-      "longitude": 100.46953,
       "remote_duel": false
     },
     {
@@ -67460,7 +67478,7 @@
         "country": "United States"
       },
       "region": "NA",
-      "phone": "7252440972",
+      "phone": "(725) 265-3575",
       "email": "littlespectacleslv@gmail.com",
       "website": null,
       "latitude": 36.0406239,
@@ -77012,7 +77030,7 @@
       "name": "956 Sports Cards Shop",
       "address": {
         "street": "2232 W Trenton RD",
-        "city": "Edinburgh",
+        "city": "Edinburg",
         "state": "Texas",
         "zip": "78539",
         "country": "United States"
