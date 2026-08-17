@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { pendingWaitKey, acceptingBlind } from "./tradePending.js";
+import { pendingWaitKey, acceptingBlind, confirmHintKey } from "./tradePending.js";
 
 const proposer = (over = {}) => ({ i_am_proposer: true, i_uploaded: false, they_uploaded: false, ...over });
 
@@ -47,5 +47,28 @@ describe("acceptingBlind", () => {
     expect(acceptingBlind({ i_uploaded: false, they_uploaded: true  })).toBe(true);
     expect(acceptingBlind({})).toBe(true);
     expect(acceptingBlind(null)).toBe(true);
+  });
+});
+
+describe("confirmHintKey", () => {
+  const accepted = (over = {}) => ({ i_confirmed: false, i_uploaded: false, they_uploaded: false, ...over });
+
+  it("says what is missing but never treats it as a block", () => {
+    expect(confirmHintKey(accepted())).toBe("confirmWithoutPhotos");
+    expect(confirmHintKey(accepted({ i_uploaded: true }))).toBe("confirmWithoutPhotos");
+    expect(confirmHintKey(accepted({ they_uploaded: true }))).toBe("confirmWithoutPhotos");
+  });
+
+  it("waits on the other side once I have confirmed, photos or not", () => {
+    // The bug this replaces: the missing-photo line outranked this one, so a
+    // confirmed user was still told to go upload something.
+    expect(confirmHintKey(accepted({ i_confirmed: true }))).toBe("waitingForConfirmDetail");
+    expect(confirmHintKey(accepted({ i_confirmed: true, i_uploaded: true, they_uploaded: true })))
+      .toBe("waitingForConfirmDetail");
+  });
+
+  it("invites the confirmation once both photos are in", () => {
+    expect(confirmHintKey(accepted({ i_uploaded: true, they_uploaded: true })))
+      .toBe("bothUploadedConfirmHint");
   });
 });

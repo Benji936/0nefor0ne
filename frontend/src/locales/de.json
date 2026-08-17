@@ -434,19 +434,22 @@
     "tabChat": "Chat"
   },
   "proposals": {
+    "done": "Erledigt",
+    "doneDesc": "Von beiden Seiten bestätigte Tausche. Die Karten haben den Besitzer gewechselt.",
+    "cancelled": "Abgebrochen",
+    "cancelledDesc": "Tausche, die nicht zustande kamen — zurückgezogen oder abgelehnt.",
     "loginRequired": "Melde dich an, um deine Vorschläge zu sehen.",
     "noProposalsTitle": "Noch keine Vorschläge",
     "noProposalsDesc": "Sende einen aus dem Matches-Tab, wenn du einen Trader gefunden hast.",
-    "all": "Alle",
     "incoming": "Eingehend",
     "incomingDesc": "Diese Trader möchten mit dir tauschen. Annehmen oder ablehnen.",
     "outgoing": "Ausgehend",
     "outgoingDesc": "Warte auf Antwort der anderen Seite.",
     "accepted": "In Bearbeitung",
-    "acceptedDesc": "Beide Seiten haben zugestimmt. Koordiniere und schließe den Tausch ab.",
-    "history": "Verlauf"
+    "acceptedDesc": "Beide Seiten haben zugestimmt. Koordiniere und schließe den Tausch ab."
   },
   "proposal": {
+    "openTradeAria": "Tausch #{id} öffnen",
     "accept": "Annehmen",
     "decline": "Ablehnen",
     "cancel": "Abbrechen",
@@ -457,8 +460,6 @@
     "completed": "Abgeschlossen",
     "declined": "Abgelehnt",
     "cancelled": "Abgebrochen",
-    "theySend": "Er/Sie sendet",
-    "youSend": "Du sendest",
     "viewProfile": "Profil anzeigen",
     "viewDetails": "Details anzeigen",
     "openTrade": "Tausch öffnen",
@@ -491,8 +492,7 @@
     "waitingAccept": "Warten auf die Antwort von {name}.",
     "viewTrade": "Tausch ansehen",
     "starLabel": "{n} Stern | {n} Sterne",
-    "viewProfileOf": "Profil von {name} ansehen",
-    "toggleCards": "Karten dieses Tauschs ein- oder ausblenden"
+    "viewProfileOf": "Profil von {name} ansehen"
   },
   "proposeDialog": {
     "title": "Tausch vorschlagen",
@@ -552,6 +552,15 @@
     "photoPreviewAlt": "Vorschau des Verifizierungsfotos"
   },
   "tradeDetail": {
+    "backToTrades": "Zurück zu den Tauschen",
+    "tradeNumber": "Tausch #{id}",
+    "whatNext": "Wie es weitergeht",
+    "settlement": "Abwicklung",
+    "signInToView": "Melde dich an, um diesen Tausch zu sehen.",
+    "notFound": "Dieser Tausch ist nicht verfügbar",
+    "notFoundBody": "Er wurde vielleicht gelöscht, oder er gehört zwei anderen Spielern.",
+    "loadFailed": "Tausch konnte nicht geladen werden",
+    "loadFailedBody": "Unterwegs ist etwas schiefgelaufen. Versuche es gleich noch einmal.",
     "you": "Du",
     "counterparty": "Gegenpartei",
     "youGive": "Du gibst",
@@ -559,18 +568,16 @@
     "nothingOnThisSide": "Nichts auf dieser Seite",
     "declineReason": "Ablehnungsgrund",
     "activityLog": "Aktivitätsprotokoll",
-    "openChat": "Tausch-Chat öffnen",
     "qty": "Anz.:",
     "tradeProposed": "Tausch vorgeschlagen",
     "proposalEdited": "Vorschlag bearbeitet",
     "noEvents": "Noch keine Ereignisse aufgezeichnet.",
     "anonymous": "Anonym",
     "cardCount": "0 Karten | 1 Karte | {count} Karten",
-    "uploadBothBeforeConfirm": "Beide Seiten müssen Fotos hochladen, bevor bestätigt werden kann.",
+    "confirmWithoutPhotos": "Auf mindestens einer Seite fehlen Fotos. Du kannst trotzdem bestätigen — sie sind ein Nachweis, keine Bedingung.",
     "waitingForConfirmDetail": "Warten auf {name}, zu bestätigen.",
     "bothUploadedConfirmHint": "Beide haben hochgeladen  bestätige, wenn du deine Karten erhalten hast.",
     "photosVerifiedCanAccept": "Fotos verifiziert  du kannst jetzt annehmen.",
-    "waitingForReview": "Warten auf {name}, zu prüfen und anzunehmen.",
     "declinePlaceholder": "Optional  teile mit, warum du ablehnst…",
     "acceptWithoutPhotos": "Noch hat keine Seite ihre Karten gezeigt. Du kannst trotzdem annehmen, aber Fotos sind der einzige Nachweis dessen, was zugesagt wurde."
   },
@@ -835,17 +842,16 @@
     "copiesLocked": "{count} Exemplare gesperrt"
   },
   "tradePhotos": {
+    "desc": "Ein Nachweis dessen, was jede Seite schickt. Ein Rat, keine Pflicht — du kannst auch ohne sie annehmen und bestätigen.",
+    "waitingOne": "Warte auf eine Seite",
+    "noPhotosYet": "Noch keine Fotos",
+    "addPhoto": "Foto hinzufügen",
+    "dropToUpload": "Zum Hochladen ablegen",
+    "notAddedYet": "Hat noch kein Foto hinzugefügt",
     "title": "Verifikationsfotos",
     "bothVerified": "Beide verifiziert",
-    "waitingBothSides": "Warten auf beide Seiten",
-    "pendingDesc": "Beide Händler müssen Fotos ihrer Karten hochladen, bevor der Tausch angenommen werden kann.",
-    "acceptedDesc": "Fotos wurden vor der Annahme verifiziert.",
-    "yourPhotos": "Deine Fotos",
-    "theirPhotos": "Ihre Fotos",
     "noneYet": "Noch keine",
-    "clickOrDrag": "Klicken oder Foto hierher ziehen",
     "uploading": "Wird hochgeladen…",
-    "waitingUpload": "Warte auf {name} zum Hochladen",
     "loading": "Lädt…",
     "openPhoto": "Foto in neuem Tab öffnen",
     "deletePhoto": "Dieses Foto löschen"
@@ -937,6 +943,10 @@
     "unrecognizedCount": "{count} unbekannt"
   },
   "meta": {
+    "tradeDetail": {
+      "title": "Tausch-Details",
+      "desc": "Sieh dir einen Tauschvorschlag an: Karten, Fotos und Abwicklung."
+    },
     "home": {
       "title": "One for One  Yu-Gi-Oh!-Kartentausch von Spieler zu Spieler",
       "desc": "Tausche Yu-Gi-Oh!-Dubletten und jage deine Zielkarten mit One for One  direkter Tausch von Spieler zu Spieler, ohne Gebühren und ohne Auktionen, dazu eine vollständige Kartensuche, ein Deck-Builder und ein Sammlungs-Tracker."

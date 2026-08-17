@@ -24,6 +24,11 @@ const localeChildren = [
   // Optional, so existing `{ name: 'TradeCenter' }` links with no tab still
   // resolve; TradeCenter rewrites the bare path to the canonical one.
   { path: "trade/:tab(matches|proposals|announces)?", name: "TradeCenter", component: () => import(/* webpackChunkName: "trade" */       "@/components/Pages/App/TradeCenter.vue") },
+  // A single trade, on its own page. The digits-only matcher is what keeps this
+  // out of the route above: `:tab` only accepts the three tab names, so
+  // /trade/26 can never be read as a tab, and /trade/proposals can never be
+  // read as a trade id.
+  { path: String.raw`trade/:id(\d+)`, name: "tradeDetail", component: () => import(/* webpackChunkName: "trade-detail" */ "@/components/Pages/App/TradeDetailPage.vue") },
   { path: 'trader/:id', name: 'trader',     component: () => import(/* webpackChunkName: "trader" */      '@/components/Pages/App/TraderPage.vue') },
   { path: "account",   name: "account",     component: () => import(/* webpackChunkName: "account" */     "@/components/Pages/App/Account.vue") },
   { path: "card/:id",  name: "card",        component: () => import(/* webpackChunkName: "card" */        "@/components/Pages/App/CardPage.vue") },

@@ -35,3 +35,29 @@ export function pendingWaitKey(proposal) {
 export function acceptingBlind(proposal) {
   return !(proposal?.i_uploaded && proposal?.they_uploaded);
 }
+
+/**
+ * What to say next to the "Confirm your side" button on an accepted trade.
+ *
+ * Photos were a hard gate here long after they had stopped being one on the
+ * Accept button, and the two sides of the trade could deadlock on it: the
+ * server recorded a confirmation and then raised on the missing photo, which
+ * rolled the confirmation back with it. The second person to confirm could
+ * never make their confirmation stick, so the trade could not complete at all.
+ *
+ * Photos are advice on this button for the same reason they are advice on
+ * Accept: the cards have already changed hands by the time anyone is here, and
+ * refusing to record that only desynchronises the app from reality.
+ *
+ * i_confirmed is checked first. Now that confirming without photos is allowed,
+ * the missing-photo line would otherwise outrank "waiting for them" and tell
+ * somebody who has already done their part to go do it.
+ *
+ * @param {{i_confirmed?:boolean, i_uploaded?:boolean, they_uploaded?:boolean}} proposal
+ * @returns {"waitingForConfirmDetail"|"confirmWithoutPhotos"|"bothUploadedConfirmHint"}
+ */
+export function confirmHintKey(proposal) {
+  if (proposal?.i_confirmed) return "waitingForConfirmDetail";
+  if (acceptingBlind(proposal)) return "confirmWithoutPhotos";
+  return "bothUploadedConfirmHint";
+}
