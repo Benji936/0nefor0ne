@@ -86,7 +86,8 @@ watch(() => props.open, (open) => {
 </script>
 
 <template>
-  <!-- Embedded mode: shown inside TradeDetailDialog with its own header/border -->
+  <!-- Embedded mode: a self-contained block with its own header and border,
+       used in the trade page's side rail. -->
   <div v-if="!standalone" class="mt-6 pt-5 px-4 " style="border-top: 1px solid var(--c-border)">
     <div class="flex items-center gap-3 mb-3">
       <v-icon icon="mdi-message-outline" size="20" color="var(--c-muted)" />

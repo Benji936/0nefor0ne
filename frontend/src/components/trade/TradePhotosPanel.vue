@@ -48,7 +48,27 @@ async function loadPhotos() {
   }
 }
 
+// ── Status ────────────────────────────────────────────────────────────────
+// Three states, not two. "Waiting for both sides" was shown whenever the pair
+// was incomplete, so it kept saying "both" to somebody who had already
+// uploaded — which reads as though their photo had not registered.
+const statusKey = computed(() => {
+  if (bothUploaded.value) return "bothVerified";
+  if (mineUploaded.value || theirsUploaded.value) return "waitingOne";
+  return "noPhotosYet";
+});
+const statusTone = computed(() =>
+  bothUploaded.value ? "var(--c-mutual)" : "var(--c-trade)");
+
 // ── Actions ───────────────────────────────────────────────────────────────
+const dragging = ref(false);
+
+function onDrop(event) {
+  dragging.value = false;
+  const file = event.dataTransfer?.files?.[0];
+  if (file) onFileSelected({ target: { files: [file] } });
+}
+
 async function onFileSelected(event) {
   const file = event.target.files?.[0];
   if (!file || !props.currentUserId) return;
@@ -92,64 +112,98 @@ watch(() => props.open, (open) => {
 </script>
 
 <template>
-  <div class="mt-6 pt-5" style="border-top: 1px solid var(--c-border)">
+  <!--
+    Two rows, one per trader, rather than two columns of dashed boxes.
 
-    <!-- Section header -->
-    <div class="flex items-center gap-3 mb-1">
-      <v-icon icon="mdi-camera-outline" size="20" color="var(--c-muted)" />
-      <span class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">{{ t('tradePhotos.title') }}</span>
+    The old layout gave a control and a status readout equal weight and dressed
+    both in a dashed border — the universal "drop a file here" signal — so half
+    the panel looked interactive and wasn't. It also spent its largest element
+    on an empty state: the box asking for a photo was bigger than the photo.
+
+    A row per side answers the only question this panel exists to answer — has
+    each trader shown their cards — in the same shape as the confirmation
+    checklist further down the page, and the asymmetry is honest: only your row
+    can be acted on.
+  -->
+  <div class="flex flex-col gap-3 !p-4">
+
+    <!-- Header -->
+    <div class="flex items-center gap-3 flex-wrap">
+      <v-icon icon="mdi-camera-outline" size="18" color="var(--c-muted)" />
+      <h3 class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">{{ t('tradePhotos.title') }}</h3>
       <span
-        class="ml-auto flex items-center gap-2 text-[11px] font-bold px-3 py-1 rounded-lg border"
-        :style="bothUploaded
-          ? { color: 'var(--c-mutual)', borderColor: 'var(--c-mutual)', backgroundColor: 'color-mix(in srgb, var(--c-mutual) 15%, transparent)' }
-          : { color: 'var(--c-trade)',  borderColor: 'var(--c-trade)',  backgroundColor: 'color-mix(in srgb, var(--c-trade)  15%, transparent)' }"
+        class="ml-auto flex items-center gap-2 text-[11px] font-bold px-3 py-1 rounded-lg border shrink-0"
+        :style="{
+          color: statusTone,
+          borderColor: `color-mix(in srgb, ${statusTone} 45%, transparent)`,
+          backgroundColor: `color-mix(in srgb, ${statusTone} 12%, transparent)`,
+        }"
       >
-        <v-icon
-          :icon="bothUploaded ? 'mdi-check-all' : 'mdi-clock-outline'"
-          size="13"
-          :color="bothUploaded ? 'var(--c-mutual)' : 'var(--c-trade)'"
-        />
-        {{ bothUploaded ? t('tradePhotos.bothVerified') : t('tradePhotos.waitingBothSides') }}
+        <v-icon :icon="bothUploaded ? 'mdi-check-all' : 'mdi-clock-outline'" size="13" :color="statusTone" />
+        {{ t(`tradePhotos.${statusKey}`) }}
       </span>
     </div>
-    <p class="text-xs mb-4" style="color: var(--c-muted)">
-      <template v-if="proposal?.status === 'pending'">
-        {{ t('tradePhotos.pendingDesc') }}
-      </template>
-      <template v-else>
-        {{ t('tradePhotos.acceptedDesc') }}
-      </template>
-    </p>
+    <p class="text-xs" style="color: var(--c-muted); line-height: 1.55">{{ t('tradePhotos.desc') }}</p>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="rounded-xl overflow-hidden" style="border: 1px solid var(--c-border)">
 
-      <!-- My uploads -->
-      <div class="flex flex-col gap-3">
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-semibold uppercase tracking-wide" style="color: var(--c-accent)">{{ t('tradePhotos.yourPhotos') }}</span>
-          <span v-if="myPhotos.length" class="text-[11px] px-2 py-1 rounded font-semibold"
-            style="background: color-mix(in srgb, var(--c-accent) 15%, transparent); color: var(--c-accent)">
-            {{ myPhotos.length }}
+      <!-- Your row. Also the drop target: dragging a file anywhere onto it
+           uploads, but the button is the path that works without a mouse. -->
+      <div
+        class="photo-row"
+        :class="{ 'is-dropping': dragging }"
+        @dragover.prevent="dragging = true"
+        @dragenter.prevent="dragging = true"
+        @dragleave="dragging = false"
+        @drop.prevent="onDrop"
+      >
+        <v-icon
+          :icon="mineUploaded ? 'mdi-check-circle' : 'mdi-circle-outline'"
+          size="16"
+          :color="mineUploaded ? 'var(--c-mutual)' : 'var(--c-muted)'"
+          class="shrink-0"
+        />
+        <span class="photo-row-name" :style="{ color: mineUploaded ? 'var(--c-text)' : 'var(--c-muted)' }">
+          {{ t('tradeDetail.you') }}
+        </span>
+
+        <div class="flex items-center gap-2 flex-wrap grow min-w-0">
+          <v-tooltip
+            v-for="photo in myPhotos"
+            :key="photo.id"
+            location="top"
+            :open-delay="140"
+            content-class="photo-preview"
+          >
+            <template #activator="{ props: tip }">
+              <div v-bind="tip" class="thumb">
+                <a :href="photo.url" target="_blank" rel="noopener noreferrer"
+                  class="block w-full h-full" :aria-label="t('tradePhotos.openPhoto')">
+                  <img :src="photo.url" loading="lazy" alt="" class="w-full h-full object-cover" />
+                </a>
+                <button
+                  type="button"
+                  class="thumb-del"
+                  :aria-label="t('tradePhotos.deletePhoto')"
+                  @click.stop.prevent="onDeletePhoto(photo)"
+                >
+                  <v-icon icon="mdi-close" size="15" />
+                </button>
+              </div>
+            </template>
+            <img :src="photo.url" alt="" class="photo-preview-img" />
+          </v-tooltip>
+          <span v-if="dragging" class="text-xs font-semibold" style="color: var(--c-trade)">
+            {{ t('tradePhotos.dropToUpload') }}
           </span>
-          <span v-else class="text-[11px]" style="color: var(--c-muted)">{{ t('common.noneYet') }}</span>
         </div>
 
-        <!-- Drop zone -->
-        <button
-          type="button"
-          class="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed py-5 px-4 transition-colors cursor-pointer"
-          :style="uploading
-            ? { borderColor: 'var(--c-trade)', backgroundColor: 'color-mix(in srgb, var(--c-trade) 8%, transparent)' }
-            : { borderColor: 'var(--c-border)', backgroundColor: 'transparent' }"
-          :disabled="uploading"
-          @click="fileInputRef?.click()"
-          @dragover.prevent
-          @drop.prevent="e => onFileSelected({ target: { files: e.dataTransfer.files } })"
-        >
-          <v-progress-circular v-if="uploading" indeterminate size="24" width="2" color="var(--c-trade)" />
-          <v-icon v-else icon="mdi-camera-plus-outline" size="24" color="var(--c-muted)" />
-          <span class="text-xs" style="color: var(--c-muted)">{{ uploading ? t('tradePhotos.uploading') : t('tradePhotos.clickOrDrag') }}</span>
+        <button type="button" class="add-btn shrink-0" :disabled="uploading" @click="fileInputRef?.click()">
+          <v-progress-circular v-if="uploading" indeterminate size="14" width="2" color="var(--c-trade)" />
+          <v-icon v-else icon="mdi-plus-circle-outline" size="15" />
+          {{ uploading ? t('tradePhotos.uploading') : t('tradePhotos.addPhoto') }}
         </button>
+
         <input
           ref="fileInputRef"
           type="file"
@@ -157,83 +211,193 @@ watch(() => props.open, (open) => {
           class="hidden"
           @change="onFileSelected"
         />
-
-        <p v-if="uploadError" class="text-xs px-1" style="color: var(--c-accent)">{{ uploadError }}</p>
-
-        <div v-if="myPhotos.length" class="flex flex-wrap gap-2">
-          <!--
-            An anchor, not a click handler on the image. `window` is not in
-            template scope, so the previous `window.open(...)` compiled to
-            `_ctx.window.open(...)` and threw on every click: your own photos
-            would not open, while theirs (already anchors, below) did.
-          -->
-          <div
-            v-for="photo in myPhotos"
-            :key="photo.id"
-            class="relative group rounded-lg overflow-hidden"
-            style="width: 80px; height: 80px; background-color: var(--c-surface-2)"
-          >
-            <a
-              :href="photo.url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="block w-full h-full"
-              :aria-label="t('tradePhotos.openPhoto')"
-            >
-              <img :src="photo.url" loading="lazy" alt="" class="w-full h-full object-cover" />
-            </a>
-            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity pointer-events-none"
-              style="background: rgba(0,0,0,0.55)">
-              <v-btn
-                icon="mdi-delete-outline" size="x-small" variant="text"
-                class="pointer-events-auto"
-                style="color: var(--c-accent)"
-                :aria-label="t('tradePhotos.deletePhoto')"
-                @click.stop.prevent="onDeletePhoto(photo)"
-              />
-            </div>
-          </div>
-        </div>
       </div>
 
-      <!-- Their uploads -->
-      <div class="flex flex-col gap-3">
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-semibold uppercase tracking-wide" style="color: var(--c-trade)">{{ t('tradePhotos.theirPhotos') }}</span>
-          <span v-if="theirPhotos.length" class="text-[11px] px-2 py-1 rounded font-semibold"
-            style="background: color-mix(in srgb, var(--c-trade) 15%, transparent); color: var(--c-trade)">
-            {{ theirPhotos.length }}
-          </span>
-          <span v-else class="text-[11px]" style="color: var(--c-muted)">{{ t('common.noneYet') }}</span>
-        </div>
+      <!-- Their row. No control, because there is nothing here you can do. -->
+      <div class="photo-row" style="border-top: 1px solid var(--c-border)">
+        <v-icon
+          :icon="theirsUploaded ? 'mdi-check-circle' : 'mdi-clock-outline'"
+          size="16"
+          :color="theirsUploaded ? 'var(--c-mutual)' : 'var(--c-muted)'"
+          class="shrink-0"
+        />
+        <span class="photo-row-name" :style="{ color: theirsUploaded ? 'var(--c-text)' : 'var(--c-muted)' }">
+          {{ proposal?.counterparty_name ?? t('common.anonymous') }}
+        </span>
 
-        <div v-if="loadingPhotos" class="flex items-center gap-2 py-4" style="color: var(--c-muted)">
-          <v-progress-circular indeterminate size="16" width="2" color="var(--c-muted)" />
-          <span class="text-xs">{{ t('tradePhotos.loading') }}</span>
-        </div>
-
-        <div v-else-if="!theirPhotos.length"
-          class="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed py-5 px-4"
-          style="border-color: var(--c-border); color: var(--c-muted)">
-          <v-icon icon="mdi-clock-outline" size="24" color="var(--c-muted)" />
-          <span class="text-xs">{{ t('tradePhotos.waitingUpload', { name: proposal?.counterparty_name ?? t('common.anonymous') }) }}</span>
-        </div>
-
-        <div v-else class="flex flex-wrap gap-2">
-          <a
-            v-for="photo in theirPhotos"
-            :key="photo.id"
-            :href="photo.url"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="rounded-lg overflow-hidden block"
-            style="width: 80px; height: 80px; background-color: var(--c-surface-2)"
-            :aria-label="t('tradePhotos.openPhoto')"
-          >
-            <img :src="photo.url" loading="lazy" alt="" class="w-full h-full object-cover" />
-          </a>
+        <div class="flex items-center gap-2 flex-wrap grow min-w-0">
+          <span v-if="loadingPhotos" class="text-xs" style="color: var(--c-muted)">{{ t('tradePhotos.loading') }}</span>
+          <template v-else-if="theirPhotos.length">
+            <v-tooltip
+              v-for="photo in theirPhotos"
+              :key="photo.id"
+              location="top"
+              :open-delay="140"
+              content-class="photo-preview"
+            >
+              <template #activator="{ props: tip }">
+                <a
+                  v-bind="tip"
+                  :href="photo.url" target="_blank" rel="noopener noreferrer"
+                  class="thumb block"
+                  :aria-label="t('tradePhotos.openPhoto')"
+                >
+                  <img :src="photo.url" loading="lazy" alt="" class="w-full h-full object-cover" />
+                </a>
+              </template>
+              <img :src="photo.url" alt="" class="photo-preview-img" />
+            </v-tooltip>
+          </template>
+          <span v-else class="text-xs" style="color: var(--c-muted)">{{ t('tradePhotos.notAddedYet') }}</span>
         </div>
       </div>
     </div>
+
+    <p v-if="uploadError" class="text-xs" style="color: var(--c-accent)">{{ uploadError }}</p>
   </div>
 </template>
+
+<style scoped>
+.photo-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--c-surface);
+  transition: background-color 0.2s ease;
+}
+.photo-row.is-dropping {
+  background: color-mix(in srgb, var(--c-trade) 10%, transparent);
+  box-shadow: inset 0 0 0 1.5px var(--c-trade);
+}
+
+.photo-row-name {
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 88px;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+  Sized so the photo is worth looking at. At 48px a phone shot of a card was a
+  smudge — you had to open every one in a new tab to learn anything, which is
+  the opposite of what a verification panel is for. One variable so this stays
+  easy to tune.
+*/
+.thumb {
+  --thumb: 88px;
+  position: relative;
+  width: var(--thumb);
+  height: var(--thumb);
+  flex-shrink: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--c-surface-2);
+  outline: 1px solid var(--c-border);
+  outline-offset: -1px;
+  transition: outline-color 0.2s ease, transform 0.2s ease;
+}
+/* Lifts rather than grows: scaling the tile would reflow the row. */
+.thumb:hover {
+  outline-color: var(--c-trade);
+  transform: translateY(-2px);
+}
+.thumb:focus-within {
+  outline: 2px solid var(--c-accent);
+}
+
+/* Always visible, not hover-only: on a touch screen there is no hover, so a
+   hover-only delete is a control that does not exist on half the devices. */
+.thumb-del {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.65);
+  transition: background-color 0.2s ease;
+}
+.thumb-del:hover { background: var(--c-accent); }
+.thumb-del:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 1px; }
+
+.add-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--c-border);
+  background: var(--c-surface-2);
+  color: var(--c-text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.add-btn:hover:not(:disabled) {
+  border-color: var(--c-trade);
+  background: color-mix(in srgb, var(--c-trade) 12%, transparent);
+}
+.add-btn:disabled { opacity: 0.6; cursor: default; }
+.add-btn:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+
+/* The row wraps before the name or the button get squeezed. */
+@media (max-width: 560px) {
+  .photo-row { flex-wrap: wrap; }
+  .photo-row-name { min-width: 0; }
+  .add-btn { margin-left: auto; }
+}
+
+/* Small screens: still much larger than the old 48px, but two per row rather
+   than one and a half. */
+@media (max-width: 400px) {
+  .thumb { --thumb: 72px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photo-row, .thumb, .thumb-del, .add-btn { transition: none; }
+  .thumb:hover { transform: none; }
+}
+</style>
+
+<!--
+  Unscoped on purpose. Vuetify teleports tooltip content to an overlay
+  container outside this component, so it never receives the scope attribute
+  and a `scoped` rule would not reach it. The class name is specific enough to
+  be safe as a global.
+-->
+<style>
+.photo-preview {
+  padding: 0 !important;
+  background: transparent !important;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+  /* Vuetify sets a narrow default; the preview is the whole point here. */
+  max-width: none !important;
+}
+
+.photo-preview-img {
+  display: block;
+  width: auto;
+  height: auto;
+  /* Big enough to read a card, capped so it can never outgrow the viewport
+     on a laptop or a narrow window. */
+  max-width: min(360px, 78vw);
+  max-height: min(360px, 60vh);
+  border-radius: 12px;
+  background: var(--c-surface-2);
+  outline: 1px solid var(--c-border);
+  outline-offset: -1px;
+}
+</style>

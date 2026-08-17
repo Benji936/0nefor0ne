@@ -434,19 +434,22 @@
     "tabChat": "Chat"
   },
   "proposals": {
+    "done": "Done",
+    "doneDesc": "Trades both sides confirmed. The cards changed hands.",
+    "cancelled": "Cancelled",
+    "cancelledDesc": "Trades that fell through — withdrawn or declined.",
     "loginRequired": "Log in to see your proposals.",
     "noProposalsTitle": "No proposals yet",
     "noProposalsDesc": "Send one from the Matches tab when you find a trader you want to deal with.",
-    "all": "All",
     "incoming": "Incoming",
     "incomingDesc": "These traders want to deal with you. Accept or decline.",
     "outgoing": "Outgoing",
     "outgoingDesc": "Waiting for the other side to respond.",
     "accepted": "In progress",
-    "acceptedDesc": "Both sides agreed. Coordinate and complete the trade.",
-    "history": "History"
+    "acceptedDesc": "Both sides agreed. Coordinate and complete the trade."
   },
   "proposal": {
+    "openTradeAria": "Open trade #{id}",
     "accept": "Accept",
     "decline": "Decline",
     "cancel": "Cancel",
@@ -457,8 +460,6 @@
     "completed": "Completed",
     "declined": "Declined",
     "cancelled": "Cancelled",
-    "theySend": "They send",
-    "youSend": "You send",
     "viewProfile": "View profile",
     "viewDetails": "View details",
     "openTrade": "Open trade",
@@ -491,8 +492,7 @@
     "waitingAccept": "Waiting for {name} to answer.",
     "viewTrade": "View trade",
     "starLabel": "{n} star | {n} stars",
-    "viewProfileOf": "View {name}'s profile",
-    "toggleCards": "Show or hide the cards in this trade"
+    "viewProfileOf": "View {name}'s profile"
   },
   "proposeDialog": {
     "title": "Propose a trade",
@@ -552,6 +552,15 @@
     "photoPreviewAlt": "Verification photo preview"
   },
   "tradeDetail": {
+    "backToTrades": "Back to trades",
+    "tradeNumber": "Trade #{id}",
+    "whatNext": "What happens next",
+    "settlement": "How it settles",
+    "signInToView": "Sign in to see this trade.",
+    "notFound": "This trade isn't available",
+    "notFoundBody": "It may have been removed, or it belongs to two other traders.",
+    "loadFailed": "Couldn't load this trade",
+    "loadFailedBody": "Something went wrong on the way. Try again in a moment.",
     "you": "You",
     "counterparty": "Counterparty",
     "youGive": "You give",
@@ -559,18 +568,16 @@
     "nothingOnThisSide": "Nothing on this side",
     "declineReason": "Reason for declining",
     "activityLog": "Activity log",
-    "openChat": "Open trade chat",
     "qty": "Qty:",
     "tradeProposed": "Trade proposed",
     "proposalEdited": "Proposal edited",
     "noEvents": "No events recorded yet.",
     "anonymous": "Anonymous",
     "cardCount": "0 cards | 1 card | {count} cards",
-    "uploadBothBeforeConfirm": "Upload photos on both sides before confirming.",
+    "confirmWithoutPhotos": "Photos are missing on at least one side. You can still confirm — they're a record, not a requirement.",
     "waitingForConfirmDetail": "Waiting for {name} to confirm.",
     "bothUploadedConfirmHint": "Both sides have uploaded  confirm when you've received your cards.",
     "photosVerifiedCanAccept": "Photos verified  you can now accept.",
-    "waitingForReview": "Waiting for {name} to review and accept.",
     "declinePlaceholder": "Optional  let them know why you're declining…",
     "acceptWithoutPhotos": "Neither side has shown their cards yet. You can accept anyway, but photos are the only record of what was promised."
   },
@@ -835,17 +842,16 @@
     "copiesLocked": "{count} copies locked"
   },
   "tradePhotos": {
+    "desc": "A record of what each side is sending. Advice, not a requirement — you can accept and confirm without them.",
+    "waitingOne": "Waiting on 1 side",
+    "noPhotosYet": "No photos yet",
+    "addPhoto": "Add photo",
+    "dropToUpload": "Drop to upload",
+    "notAddedYet": "Hasn't added a photo yet",
     "title": "Verification photos",
     "bothVerified": "Both verified",
-    "waitingBothSides": "Waiting for both sides",
-    "pendingDesc": "Both traders must upload photos of their cards before the trade can be accepted.",
-    "acceptedDesc": "Photos were verified before acceptance.",
-    "yourPhotos": "Your photos",
-    "theirPhotos": "Their photos",
     "noneYet": "None yet",
-    "clickOrDrag": "Click or drag a photo",
     "uploading": "Uploading…",
-    "waitingUpload": "Waiting for {name} to upload",
     "loading": "Loading…",
     "openPhoto": "Open photo in a new tab",
     "deletePhoto": "Delete this photo"
@@ -937,6 +943,10 @@
     "unrecognizedCount": "{count} unrecognized"
   },
   "meta": {
+    "tradeDetail": {
+      "title": "Trade detail",
+      "desc": "Review a trade proposal, its cards, photos and settlement."
+    },
     "home": {
       "title": "One for One  Peer-to-peer Yu-Gi-Oh! card trading",
       "desc": "Trade Yu-Gi-Oh! duplicates and hunt your targets with One for One  direct peer-to-peer trades with no fees and no auctions, plus a full card search engine, deck builder, and collection tracker."

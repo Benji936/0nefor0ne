@@ -2,6 +2,7 @@
 import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import ProposalRow from "@/components/trade/ProposalRow.vue";
+import { PROPOSAL_FILTERS, splitHistory, resolveFilter } from "@/lib/proposalFilters";
 
 const { t } = useI18n();
 
@@ -15,34 +16,62 @@ const props = defineProps({
   currentUserId:   { type: String,  default: null },
 });
 
-const emit = defineEmits(["accept", "decline", "cancel", "complete", "counter", "edit", "openProfile"]);
+// accept / decline / counter moved to the trade page, which performs them
+// itself; ProposalRow no longer emits them for this tab to forward.
+const emit = defineEmits(["cancel", "complete", "edit", "openProfile"]);
 
-const activeFilter = ref("all");
+// One group at a time. The old "All" chip was the default, so it was the only
+// filter most people ever used and the other four were labels on top of a list
+// you still scrolled. See lib/proposalFilters.js for what replaced it.
+const activeFilter = ref(null);
+
+const done      = computed(() => splitHistory(props.history).done);
+const cancelled = computed(() => splitHistory(props.history).cancelled);
 
 const total = computed(() =>
   props.incomingPending.length + props.outgoingPending.length + props.acceptedTrades.length + props.history.length
 );
 
-const filters = computed(() => [
-  { key: "all",      label: t("proposals.all"),      count: total.value,                  color: "var(--c-text)",   bg: "var(--c-surface-2)" },
-  { key: "incoming", label: t("proposals.incoming"), count: props.incomingPending.length, color: "var(--c-mutual)", bg: "color-mix(in srgb, var(--c-mutual) 14%, transparent)" },
-  { key: "outgoing", label: t("proposals.outgoing"), count: props.outgoingPending.length, color: "var(--c-trade)",  bg: "color-mix(in srgb, var(--c-trade) 14%, transparent)" },
-  { key: "accepted", label: t("proposals.accepted"), count: props.acceptedTrades.length,  color: "var(--c-accent)", bg: "color-mix(in srgb, var(--c-accent) 14%, transparent)" },
-  { key: "history",  label: t("proposals.history"),  count: props.history.length,         color: "var(--c-muted)",  bg: "color-mix(in srgb, var(--c-muted) 10%, transparent)" },
-]);
+const counts = computed(() => ({
+  incoming:  props.incomingPending.length,
+  outgoing:  props.outgoingPending.length,
+  accepted:  props.acceptedTrades.length,
+  done:      done.value.length,
+  cancelled: cancelled.value.length,
+}));
 
-// Reset to "all" if the active section becomes empty
-watch(
-  () => [props.incomingPending.length, props.outgoingPending.length, props.acceptedTrades.length, props.history.length],
-  () => {
-    const counts = { incoming: props.incomingPending.length, outgoing: props.outgoingPending.length, accepted: props.acceptedTrades.length, history: props.history.length };
-    if (activeFilter.value !== "all" && counts[activeFilter.value] === 0) {
-      activeFilter.value = "all";
-    }
-  }
-);
+const meta = {
+  incoming:  { color: "var(--c-mutual)", mix: 14 },
+  outgoing:  { color: "var(--c-trade)",  mix: 14 },
+  accepted:  { color: "var(--c-accent)", mix: 14 },
+  done:      { color: "var(--c-mutual)", mix: 10 },
+  cancelled: { color: "var(--c-muted)",  mix: 10 },
+};
 
-const show = (key) => activeFilter.value === "all" || activeFilter.value === key;
+const filters = computed(() => PROPOSAL_FILTERS.map(key => ({
+  key,
+  label: t(`proposals.${key}`),
+  count: counts.value[key],
+  color: meta[key].color,
+  bg: `color-mix(in srgb, ${meta[key].color} ${meta[key].mix}%, transparent)`,
+})));
+
+// Picks the opening group, and hands over when the one on screen empties —
+// with no "All" to fall back on, an emptied filter would otherwise be a blank
+// page under a chip reading 0.
+watch(counts, (c) => { activeFilter.value = resolveFilter(c, activeFilter.value); },
+  { immediate: true, deep: true });
+
+const show = (key) => activeFilter.value === key;
+
+// Filtered rather than v-show'd. These two share one v-for, and `v-if` on a
+// v-for element cannot see the loop variable in Vue 3, so v-show was the only
+// per-item switch available — and it mounts every hidden row. A trader with a
+// long history would have paid for a second list they were not looking at.
+const historyGroups = computed(() => [
+  { key: "done",      rows: done.value,      color: "var(--c-mutual)", desc: t("proposals.doneDesc") },
+  { key: "cancelled", rows: cancelled.value, color: "var(--c-muted)",  desc: t("proposals.cancelledDesc") },
+].filter(g => show(g.key) && g.rows.length > 0));
 </script>
 
 <template>
@@ -97,15 +126,15 @@ const show = (key) => activeFilter.value === "all" || activeFilter.value === key
         v-for="f in filters"
         :key="f.key"
         class="group flex items-center gap-3 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 whitespace-nowrap"
-        :class="f.count === 0 && f.key !== 'all' ? 'opacity-30 cursor-default pointer-events-none' : 'cursor-pointer'"
+        :class="f.count === 0 ? 'opacity-30 cursor-default pointer-events-none' : 'cursor-pointer'"
         :style="activeFilter === f.key
           ? { background: f.bg, color: f.color, boxShadow: `0 0 0 1.5px ${f.color}, 0 0 12px color-mix(in srgb, ${f.color} 20%, transparent)` }
           : { background: 'var(--c-surface-2)', color: 'var(--c-muted)', boxShadow: '0 0 0 1px var(--c-border)' }"
-        :disabled="f.count === 0 && f.key !== 'all'"
-        @click="f.count > 0 || f.key === 'all' ? activeFilter = f.key : null"
+        :disabled="f.count === 0"
+        :aria-pressed="String(activeFilter === f.key)"
+        @click="activeFilter = f.key"
       >
         <span
-          v-if="f.key !== 'all'"
           class="size-1.5 rounded-full shrink-0 transition-opacity duration-200"
           :style="{ background: f.color, opacity: activeFilter === f.key ? 1 : 0.5 }"
         />
@@ -130,19 +159,13 @@ const show = (key) => activeFilter.value === "all" || activeFilter.value === key
       <div class="flex flex-col gap-10">
         <ProposalRow
           v-for="p in incomingPending" :key="p.id"
-          :proposal="p" :current-user-id="currentUserId"
-          @accept="emit('accept', p)" @decline="emit('decline', $event)" @cancel="emit('cancel', p)"
-          @complete="emit('complete', p)" @counter="emit('counter', p)" @openProfile="emit('openProfile', $event)"
+          :proposal="p" :current-user-id="currentUserId" @cancel="emit('cancel', p)"
+          @complete="emit('complete', p)" @openProfile="emit('openProfile', $event)"
         />
       </div>
     </section>
 
-    <section
-      v-if="show('outgoing') && outgoingPending.length > 0"
-      class="flex flex-col gap-4"
-      :class="{ 'border-t pt-6': show('incoming') && incomingPending.length > 0 }"
-      :style="show('incoming') && incomingPending.length > 0 ? 'border-color: var(--c-border)' : ''"
-    >
+    <section v-if="show('outgoing') && outgoingPending.length > 0" class="flex flex-col gap-4">
       <div class="flex items-center gap-3 pb-3" style="border-bottom: 1px solid var(--c-border)">
         <div class="size-2 rounded-full shrink-0" style="background: var(--c-trade)" />
         <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">{{ t('proposals.outgoing') }}</h2>
@@ -159,11 +182,7 @@ const show = (key) => activeFilter.value === "all" || activeFilter.value === key
       </div>
     </section>
 
-    <section
-      v-if="show('accepted') && acceptedTrades.length > 0"
-      class="flex flex-col gap-4 border-t pt-6"
-      style="border-color: var(--c-border)"
-    >
+    <section v-if="show('accepted') && acceptedTrades.length > 0" class="flex flex-col gap-4">
       <div class="flex items-center gap-3 pb-3" style="border-bottom: 1px solid var(--c-border)">
         <div class="size-2 rounded-full shrink-0" style="background: var(--c-accent)" />
         <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">{{ t('proposals.accepted') }}</h2>
@@ -179,18 +198,23 @@ const show = (key) => activeFilter.value === "all" || activeFilter.value === key
       </div>
     </section>
 
-    <section
-      v-if="show('history') && history.length > 0"
-      class="flex flex-col gap-4 border-t pt-6"
-      style="border-color: var(--c-border)"
-    >
+    <!--
+      What used to be one "History" section. Splitting it is not just labelling:
+      a trader looking for a finished trade and a trader checking what fell
+      through are asking different questions, and the old list answered neither
+      without scrolling past the other.
+    -->
+    <section v-for="group in historyGroups" :key="group.key" class="flex flex-col gap-4">
       <div class="flex items-center gap-3 pb-3" style="border-bottom: 1px solid var(--c-border)">
-        <div class="size-2 rounded-full shrink-0" style="background: var(--c-muted)" />
-        <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-muted)">{{ t('proposals.history') }}</h2>
+        <div class="size-2 rounded-full shrink-0" :style="{ background: group.color }" />
+        <h2 class="text-sm font-bold uppercase tracking-widest grow" style="color: var(--c-text)">{{ t(`proposals.${group.key}`) }}</h2>
+        <span class="text-[11px] font-bold px-2 py-1 rounded-md tabular-nums"
+          :style="{ background: `color-mix(in srgb, ${group.color} 15%, transparent)`, color: group.color }">{{ group.rows.length }}</span>
       </div>
+      <p class="text-xs -mt-2" style="color: var(--c-muted)">{{ group.desc }}</p>
       <div class="flex flex-col gap-10">
         <ProposalRow
-          v-for="p in history" :key="p.id"
+          v-for="p in group.rows" :key="p.id"
           :proposal="p" :current-user-id="currentUserId"
           @cancel="emit('cancel', p)" @complete="emit('complete', p)" @openProfile="emit('openProfile', $event)"
         />

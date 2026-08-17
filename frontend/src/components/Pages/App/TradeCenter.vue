@@ -63,11 +63,8 @@ import AnnounceDetailDialog from "@/components/trade/AnnounceDetailDialog.vue";
       :accepted-trades="acceptedTrades"
       :history="history"
       :current-user-id="login?.user?.id"
-      @accept="onAccept"
-      @decline="onDecline"
       @cancel="onCancel"
       @complete="onComplete"
-      @counter="onCounter"
       @edit="onEdit"
       @openProfile="onOpenProfile"
     />
@@ -88,7 +85,6 @@ import AnnounceDetailDialog from "@/components/trade/AnnounceDetailDialog.vue";
       v-model="dialogOpen"
       :user="dialogUser"
       :edit-proposal="editProposal"
-      :counter-proposal="counterProposal"
       @submitted="onTradeSubmitted"
       @updated="onTradeUpdated"
       @countered="onTradeCountered"
@@ -160,7 +156,7 @@ function debounce(fn, ms) {
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
 import { fetchMatches, fetchTradersWithCard, bucketMatches } from "@/lib/matches";
-import { fetchMyProposals, acceptTradeProposal, completeTradeProposal, cancelTradeProposal, declineTradeProposal } from "@/lib/proposals";
+import { fetchMyProposals, completeTradeProposal, cancelTradeProposal } from "@/lib/proposals";
 import { tradeErrorKey, isStaleTradeError } from "@/lib/tradeErrors";
 import { fetchAnnounces } from "@/lib/announces";
 
@@ -193,7 +189,6 @@ export default {
       dialogOpen:         false,
       dialogUser:         null,
       editProposal:       null,
-      counterProposal:    null,
       snackbar:           { open: false, message: "", color: null },
       // Cancelling an accepted trade is asked about first; see onCancel.
       cancelConfirm:      { open: false, proposal: null, working: false },
@@ -343,16 +338,12 @@ export default {
       this.loadAnnounces();
     },
     onOpenTrade(user) {
-      this.editProposal = null; this.counterProposal = null;
+      this.editProposal = null;
       this.dialogUser = user; this.dialogOpen = true;
     },
     onEdit(proposal) {
-      this.dialogUser = null; this.counterProposal = null;
+      this.dialogUser = null;
       this.editProposal = proposal; this.dialogOpen = true;
-    },
-    onCounter(proposal) {
-      this.dialogUser = null; this.editProposal = null;
-      this.counterProposal = proposal; this.dialogOpen = true;
     },
     onTradeCountered(tradeId) {
       this.snackbar = { open: true, message: this.$t('tradeCenter.counterSent', { id: tradeId }), color: "var(--c-mutual)" };
@@ -395,26 +386,6 @@ export default {
       };
       if (isStaleTradeError(err)) this.loadProposals();
     },
-    async onAccept(proposal) {
-      try {
-        await acceptTradeProposal(proposal.id);
-        this.snackbar = { open: true, message: this.$t('tradeCenter.tradeAccepted'), color: "var(--c-mutual)" };
-        await this.loadProposals();
-      } catch (err) {
-        this.reportTradeError(err, 'tradeCenter.failedToAccept');
-      }
-    },
-    async onDecline(payload) {
-      const proposal = payload?.proposal ?? payload;
-      const reason   = payload?.reason   ?? null;
-      try {
-        await declineTradeProposal(proposal.id, reason);
-        this.snackbar = { open: true, message: this.$t('tradeCenter.tradeDeclined'), color: "var(--c-muted)" };
-        await this.loadProposals();
-      } catch (err) {
-        this.reportTradeError(err, 'tradeCenter.failedToDecline');
-      }
-    },
     /**
      * Cancelling a pending proposal withdraws an offer nobody has agreed to, so
      * it goes straight through. Cancelling an *accepted* trade tears up an
@@ -446,7 +417,7 @@ export default {
     },
     onProposeFromProfile(traderId) {
       const existing = this.allMatches.find(u => u.id === traderId);
-      this.editProposal = null; this.counterProposal = null;
+      this.editProposal = null;
       this.dialogUser = existing ?? { id: traderId, name: null, theyWant: [], theyHave: [] };
       this.dialogOpen = true;
     },

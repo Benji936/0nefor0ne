@@ -5,16 +5,18 @@ import { cardImage } from "@/lib/cardImage";
 import { getClient } from "@/lib/supabaseClient";
 import { timeAgo } from "@/lib/notifications";
 import { pendingWaitKey } from "@/lib/tradePending";
-import TradeDetailDialog from "@/components/trade/TradeDetailDialog.vue";
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const props = defineProps({
   proposal:      { type: Object, required: true },
   currentUserId: { type: String, default: null },
 });
 
-const emit = defineEmits(["accept", "decline", "cancel", "complete", "edit", "counter", "openProfile"]);
+// accept / decline / counter used to come out of the detail dialog this row
+// hosted. That dialog is a page now, and the page performs those itself, so the
+// row emits only the actions its own footer offers.
+const emit = defineEmits(["cancel", "complete", "edit", "openProfile"]);
 
 const statusMeta = computed(() => {
   const map = {
@@ -35,8 +37,9 @@ const initials      = computed(() => (props.proposal.counterparty_name ?? "?")[0
 // What this pending trade is actually waiting on, rather than a guess.
 const waitKey       = computed(() => pendingWaitKey(props.proposal));
 
-const detailOpen  = ref(false);
-const cardsOpen   = ref(false);
+// The trade opens as a page now, not a dialog. Built here rather than with
+// :to on each button so the three entry points below cannot drift apart.
+const detailHref = computed(() => `/${locale.value}/trade/${props.proposal.id}`);
 
 // Rating state
 const myRating       = ref(null);
@@ -160,57 +163,21 @@ function cancelRating() {
         style="color: var(--c-muted)"
         :title="t('proposal.viewDetails')"
         :aria-label="t('proposal.viewDetails')"
-        @click.stop="detailOpen = true"
+        :to="detailHref"
+        @click.stop
       />
     </div>
 
-    <!-- Card summary bar: always visible, click to expand fan.
-         A real button, not a clickable div: this is the only way to see which
-         cards are in a proposal from the list, and it was unreachable by
-         keyboard. -->
-    <button
-      type="button"
-      class="summary-bar flex items-center gap-3 px-4 py-3 w-full cursor-pointer select-none transition-colors duration-150"
-      :style="{ borderTop: '1px solid var(--c-border)', background: cardsOpen ? 'var(--c-surface-2)' : 'transparent' }"
-      :aria-expanded="String(cardsOpen)"
-      :aria-controls="`trade-cards-${proposal.id}`"
-      :aria-label="t('proposal.toggleCards')"
-      @click="cardsOpen = !cardsOpen"
-    >
-      <!-- You give: count + label -->
-      <div class="flex items-center gap-2 flex-1 min-w-0 py-1">
-        <span
-          class="text-xs font-bold tabular-nums px-2 py-1 rounded"
-          :style="{ background: 'color-mix(in srgb, var(--c-accent) 14%, transparent)', color: 'var(--c-accent)' }"
-        >{{ proposal.i_give?.length ?? 0 }}</span>
-        <span class="text-[11px] truncate" style="color: var(--c-muted)">{{ t('proposal.youSend') }}</span>
-      </div>
+    <!--
+      The cards, always open. This used to sit behind a "1 You send ⇄ They send
+      1" bar you had to click, which cost a row of chrome and a click to show
+      the one thing the card exists to show — and the counts it displayed were
+      already visible as cards the moment you opened it.
 
-      <v-icon icon="mdi-swap-horizontal" size="14" color="var(--c-muted)" class="shrink-0" />
-
-      <!-- You receive: label + count -->
-      <div class="flex items-center gap-2 flex-1 min-w-0 justify-end">
-        <span class="text-[11px] truncate" style="color: var(--c-muted)">{{ t('proposal.theySend') }}</span>
-        <span
-          class="text-xs font-bold tabular-nums px-2 py-1 rounded"
-          :style="{ background: 'color-mix(in srgb, var(--c-trade) 14%, transparent)', color: 'var(--c-trade)' }"
-        >{{ proposal.i_receive?.length ?? 0 }}</span>
-      </div>
-
-      <v-icon
-        :icon="cardsOpen ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-        size="16"
-        color="var(--c-muted)"
-        class="shrink-0"
-        style="transition: transform 0.2s cubic-bezier(0.22,1,0.36,1)"
-      />
-    </button>
-
-    <!-- Expandable card fan -->
-    <!-- Two elements on purpose: the outer one is what the grid-rows transition
-         animates, the inner one keeps the flex layout it would otherwise fight. -->
-    <Transition name="cards-expand">
-      <div v-show="cardsOpen" :id="`trade-cards-${proposal.id}`" style="border-top: 1px solid var(--c-border)">
+      The two halves are still told apart the way they always were, by tint:
+      accent (pink) is what you give, amethyst is what you receive.
+    -->
+    <router-link :to="detailHref" class="cards-link block" :aria-label="t('proposal.openTradeAria', { id: proposal.id })">
       <div class="flex flex-col md:flex-row">
 
         <!-- You give (accent/pink tint) -->
@@ -286,64 +253,17 @@ function cancelRating() {
           </div>
         </div>
       </div>
-      </div>
-    </Transition>
+    </router-link>
 
-    <!-- Settlement chips -->
-    <div
-      v-if="proposal.trade_method || proposal.cash_amount || proposal.notes || proposal.meetup_location"
-      class="flex flex-wrap gap-2 px-4 py-2"
-      style="border-top: 1px solid var(--c-border)"
-    >
-      <span
-        v-if="proposal.meetup_location"
-        class="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border truncate max-w-xs"
-        style="color: var(--c-mutual); border-color: var(--c-mutual); background-color: color-mix(in srgb, var(--c-mutual) 12%, transparent)"
-        :title="proposal.meetup_location.address || proposal.meetup_location.name"
-      >
-        <v-icon icon="mdi-map-marker" size="12" />
-        {{ t('proposal.meetupAt') }} {{ proposal.meetup_location.name }}{{ proposal.meetup_location.city ? ', ' + proposal.meetup_location.city : '' }}
-      </span>
-      <span
-        v-if="proposal.trade_method && !proposal.meetup_location"
-        class="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border"
-        style="color: var(--c-muted); border-color: var(--c-border); background-color: var(--c-surface-2)"
-      >
-        <v-icon
-          :icon="proposal.trade_method === 'in_person'
-            ? 'mdi-handshake-outline'
-            : proposal.trade_method === 'mail'
-            ? 'mdi-package-variant-closed'
-            : 'mdi-dots-horizontal'"
-          size="12"
-        />
-        {{ proposal.trade_method === 'in_person' ? t('proposal.tradeMethodInPerson') : proposal.trade_method === 'mail' ? t('proposal.tradeMethodMail') : t('proposal.tradeMethodOther') }}
-      </span>
-      <span
-        v-if="proposal.cash_amount"
-        class="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border font-semibold"
-        style="color: var(--c-mutual); border-color: var(--c-mutual); background-color: color-mix(in srgb, var(--c-mutual) 12%, transparent)"
-      >
-        <v-icon icon="mdi-currency-eur" size="12" />
-        {{ proposal.cash_payer === 'proposer'
-            ? (proposal.i_am_proposer ? t('proposal.youPay') : t('proposal.theyPay', { name: proposal.counterparty_name }))
-            : (proposal.i_am_proposer ? t('proposal.theyPay', { name: proposal.counterparty_name }) : t('proposal.youPay')) }}
-        €{{ Number(proposal.cash_amount).toFixed(2) }}
-      </span>
-      <span
-        v-if="proposal.notes"
-        class="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border truncate max-w-xs"
-        style="color: var(--c-muted); border-color: var(--c-border); background-color: var(--c-surface-2)"
-        :title="proposal.notes"
-      >
-        <v-icon icon="mdi-note-text-outline" size="12" />
-        {{ proposal.notes }}
-      </span>
-    </div>
+    <!--
+      The settlement chips (method, cash, meetup, notes) used to sit here. They
+      moved to the detail dialog rather than being deleted: this row was the
+      only place in the app that showed who owed cash and how much, and losing
+      that silently would have been a worse bug than the clutter it fixed.
+    -->
 
-    <!-- Action footer — only for actionable states -->
+    <!-- Action footer. Always rendered: even a finished trade needs a way in. -->
     <div
-      v-if="isPending || isAccepted"
       class="flex items-center gap-2 px-4 py-3 flex-wrap"
       style="border-top: 1px solid var(--c-border)"
     >
@@ -370,7 +290,7 @@ function cancelRating() {
           :prepend-icon="waitKey === 'yoursToReview' ? 'mdi-check-circle-outline'
             : waitKey === 'photoYoursMissing' ? 'mdi-camera-outline' : 'mdi-eye-outline'"
           style="background-color: var(--c-surface-2); color: var(--c-text)"
-          @click="detailOpen = true"
+          :to="detailHref"
         >{{ waitKey === 'yoursToReview' ? t('proposal.reviewAndAccept')
           : waitKey === 'photoYoursMissing' ? t('proposal.uploadPhotosBtn') : t('proposal.viewTrade') }}</v-btn>
       </template>
@@ -424,8 +344,23 @@ function cancelRating() {
               style="border-color: var(--c-accent); color: var(--c-accent)"
               @click="emit('cancel', proposal)"
             >{{ t('proposal.cancelTrade') }}</v-btn>
+            <v-btn
+              size="small" variant="outlined" prepend-icon="mdi-eye-outline"
+              style="border-color: var(--c-border); color: var(--c-text)"
+              :to="detailHref"
+            >{{ t('proposal.viewTrade') }}</v-btn>
           </div>
         </div>
+      </template>
+
+      <!-- Settled: nothing left to do here, only to look at. -->
+      <template v-else>
+        <span class="text-xs grow" style="color: var(--c-muted)">{{ statusMeta.label }}</span>
+        <v-btn
+          size="small" variant="outlined" prepend-icon="mdi-eye-outline"
+          style="border-color: var(--c-border); color: var(--c-text)"
+          :to="detailHref"
+        >{{ t('proposal.viewTrade') }}</v-btn>
       </template>
     </div>
 
@@ -510,21 +445,31 @@ function cancelRating() {
       </template>
     </div>
   </div>
-
-  <!-- Detail dialog — self-contained, re-emits actions up -->
-  <TradeDetailDialog
-    v-model="detailOpen"
-    :proposal="proposal"
-    :current-user-id="currentUserId"
-    @accept="emit('accept', $event)"
-    @decline="emit('decline', $event)"
-    @cancel="emit('cancel', $event)"
-    @complete="emit('complete', $event)"
-    @counter="emit('counter', $event)"
-  />
 </template>
 
 <style scoped>
+/*
+  The cards are the click target for the whole trade. A real <a>, not a click
+  handler on a div: the region contains only images and tooltip wrappers, so
+  there is no interactive element to nest illegally, and this way middle-click,
+  right-click → open in new tab, and tab-to-focus all behave the way a link
+  should. The footer button is the same destination said in words.
+*/
+.cards-link {
+  display: block;
+  border-top: 1px solid var(--c-border);
+  text-decoration: none;
+  color: inherit;
+  transition: background-color 0.2s ease;
+}
+.cards-link:hover {
+  background-color: color-mix(in srgb, var(--c-text) 4%, transparent);
+}
+.cards-link:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: -2px;
+}
+
 .card-fan {
   display: flex;
   align-items: flex-end;
@@ -565,20 +510,6 @@ function cancelRating() {
   outline-color: rgba(255, 255, 255, 0.3);
 }
 
-/* Was a div, now a button: strip the UA styles it brings and keep the row's
-   full-width, left-to-right layout. */
-.summary-bar {
-  background: none;
-  border: 0;
-  font: inherit;
-  color: inherit;
-  text-align: left;
-}
-.summary-bar:focus-visible {
-  outline: 2px solid var(--c-accent);
-  outline-offset: -2px;
-}
-
 /* 44px minimum target (WCAG 2.5.5), with the glyph centred inside it. */
 .star-btn {
   display: grid;
@@ -600,33 +531,7 @@ function cancelRating() {
   border-radius: 8px;
 }
 
-/*
-  Cards expand / collapse.
-
-  grid-template-rows, not max-height. The old version animated to a fixed
-  260px ceiling; stacked on mobile the two card panels come to roughly 284px,
-  so the panel snapped open at the end of its own animation. 0fr → 1fr
-  animates to the content's real height, whatever that turns out to be.
-*/
-.cards-expand-enter-active,
-.cards-expand-leave-active {
-  display: grid;
-  grid-template-rows: 1fr;
-  transition: grid-template-rows 0.26s cubic-bezier(0.22, 1, 0.36, 1),
-              opacity           0.20s ease;
-}
-.cards-expand-enter-active > *,
-.cards-expand-leave-active > * { overflow: hidden; min-height: 0; }
-
-.cards-expand-enter-from,
-.cards-expand-leave-to {
-  grid-template-rows: 0fr;
-  opacity: 0;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .cards-expand-enter-active,
-  .cards-expand-leave-active { transition: opacity 0.12s ease; }
   .star-btn { transition: none; }
 }
 

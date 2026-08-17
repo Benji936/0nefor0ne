@@ -434,19 +434,22 @@
     "tabChat": "Discussion"
   },
   "proposals": {
+    "done": "Terminés",
+    "doneDesc": "Échanges confirmés des deux côtés. Les cartes ont changé de mains.",
+    "cancelled": "Annulés",
+    "cancelledDesc": "Échanges qui n'ont pas abouti — retirés ou refusés.",
     "loginRequired": "Connectez-vous pour voir vos propositions.",
     "noProposalsTitle": "Aucune proposition pour l'instant",
     "noProposalsDesc": "Envoyez-en une depuis l'onglet Correspondances lorsque vous trouvez un joueur qui vous intéresse.",
-    "all": "Toutes",
     "incoming": "Reçues",
     "incomingDesc": "Ces joueurs souhaitent échanger avec vous. Acceptez ou refusez.",
     "outgoing": "Envoyées",
     "outgoingDesc": "En attente de réponse de l'autre côté.",
     "accepted": "En cours",
-    "acceptedDesc": "Les deux parties ont accepté. Coordonnez et finalisez l'échange.",
-    "history": "Historique"
+    "acceptedDesc": "Les deux parties ont accepté. Coordonnez et finalisez l'échange."
   },
   "proposal": {
+    "openTradeAria": "Ouvrir l'échange n°{id}",
     "accept": "Accepter",
     "decline": "Refuser",
     "cancel": "Annuler",
@@ -457,8 +460,6 @@
     "completed": "Terminée",
     "declined": "Refusée",
     "cancelled": "Annulée",
-    "theySend": "Il/elle envoie",
-    "youSend": "Vous envoyez",
     "viewProfile": "Voir le profil",
     "viewDetails": "Voir les détails",
     "openTrade": "Ouvrir l'échange",
@@ -491,8 +492,7 @@
     "waitingAccept": "En attente de la réponse de {name}.",
     "viewTrade": "Voir l'échange",
     "starLabel": "{n} étoile | {n} étoiles",
-    "viewProfileOf": "Voir le profil de {name}",
-    "toggleCards": "Afficher ou masquer les cartes de cet échange"
+    "viewProfileOf": "Voir le profil de {name}"
   },
   "proposeDialog": {
     "title": "Proposer un échange",
@@ -552,6 +552,15 @@
     "photoPreviewAlt": "Aperçu de la photo de vérification"
   },
   "tradeDetail": {
+    "backToTrades": "Retour aux échanges",
+    "tradeNumber": "Échange n°{id}",
+    "whatNext": "Prochaine étape",
+    "settlement": "Modalités",
+    "signInToView": "Connectez-vous pour voir cet échange.",
+    "notFound": "Cet échange n'est pas disponible",
+    "notFoundBody": "Il a peut-être été supprimé, ou il concerne deux autres joueurs.",
+    "loadFailed": "Impossible de charger cet échange",
+    "loadFailedBody": "Quelque chose s'est mal passé. Réessayez dans un instant.",
     "you": "Vous",
     "counterparty": "Contrepartie",
     "youGive": "Vous donnez",
@@ -559,18 +568,16 @@
     "nothingOnThisSide": "Rien de ce côté",
     "declineReason": "Raison du refus",
     "activityLog": "Journal d'activité",
-    "openChat": "Ouvrir le chat d'échange",
     "qty": "Qté :",
     "tradeProposed": "Échange proposé",
     "proposalEdited": "Proposition modifiée",
     "noEvents": "Aucun événement enregistré.",
     "anonymous": "Anonyme",
     "cardCount": "0 carte | 1 carte | {count} cartes",
-    "uploadBothBeforeConfirm": "Les deux parties doivent envoyer leurs photos avant de confirmer.",
+    "confirmWithoutPhotos": "Il manque des photos d'au moins un côté. Vous pouvez confirmer quand même — elles servent de trace, pas de condition.",
     "waitingForConfirmDetail": "En attente que {name} confirme.",
     "bothUploadedConfirmHint": "Les deux photos sont envoyées  confirmez quand vous avez reçu vos cartes.",
     "photosVerifiedCanAccept": "Photos vérifiées  vous pouvez maintenant accepter.",
-    "waitingForReview": "En attente que {name} examine et accepte.",
     "declinePlaceholder": "Optionnel  expliquez pourquoi vous refusez…",
     "acceptWithoutPhotos": "Aucune des deux parties n'a montré ses cartes. Vous pouvez accepter quand même, mais les photos sont la seule trace de ce qui a été promis."
   },
@@ -835,17 +842,16 @@
     "copiesLocked": "{count} copies verrouillées"
   },
   "tradePhotos": {
+    "desc": "Une trace de ce que chaque partie envoie. Un conseil, pas une obligation — vous pouvez accepter et confirmer sans elles.",
+    "waitingOne": "En attente d'un côté",
+    "noPhotosYet": "Aucune photo",
+    "addPhoto": "Ajouter une photo",
+    "dropToUpload": "Déposez pour envoyer",
+    "notAddedYet": "N'a pas encore ajouté de photo",
     "title": "Photos de vérification",
     "bothVerified": "Les deux vérifiés",
-    "waitingBothSides": "En attente des deux côtés",
-    "pendingDesc": "Les deux joueurs doivent envoyer des photos de leurs cartes avant d'accepter l'échange.",
-    "acceptedDesc": "Les photos ont été vérifiées avant l'acceptation.",
-    "yourPhotos": "Vos photos",
-    "theirPhotos": "Ses photos",
     "noneYet": "Aucune pour l'instant",
-    "clickOrDrag": "Cliquez ou déposez une photo",
     "uploading": "Envoi en cours…",
-    "waitingUpload": "En attente de {name} pour envoyer",
     "loading": "Chargement…",
     "openPhoto": "Ouvrir la photo dans un nouvel onglet",
     "deletePhoto": "Supprimer cette photo"
@@ -937,6 +943,10 @@
     "unrecognizedCount": "{count} inconnue(s)"
   },
   "meta": {
+    "tradeDetail": {
+      "title": "Détail de l'échange",
+      "desc": "Consultez une proposition d'échange, ses cartes, photos et modalités."
+    },
     "home": {
       "title": "One for One  Échange de cartes Yu-Gi-Oh! entre particuliers",
       "desc": "Échangez vos doublons Yu-Gi-Oh! et trouvez les cartes que vous recherchez avec One for One  des échanges directs entre particuliers, sans frais ni enchères, avec un moteur de recherche de cartes complet, un constructeur de decks et un suivi de collection."
