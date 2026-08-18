@@ -1597,5 +1597,49 @@
     "updated": "Dernière mise à jour : juillet 2026",
     "contact": "Des questions ? Écrivez-nous à",
     "englishNote": "Ces conditions ne sont publiées qu'en anglais. Le texte anglais fait foi."
+  },
+  "onboarding": {
+    "metaTitle": "Premiers pas",
+    "progressLabel": "Progression de la configuration",
+    "stepOf": "Étape {n} sur {total}",
+    "skip": "Passer pour l'instant",
+    "back": "Retour",
+    "continue": "Continuer",
+    "continueEmpty": "Passer cette étape",
+    "searchPlaceholder": "Nom de carte ou code de set…",
+    "searchGo": "Rechercher",
+    "pasteList": "Coller une liste",
+    "importDeck": "Importer un deck",
+    "added": "{count} ajoutée | {count} ajoutées",
+    "loadFailed": "Impossible de lire votre collection. Actualisez pour réessayer.",
+    "trade": {
+      "title": "Que souhaitez-vous échanger ?",
+      "blurb": "Ajoutez les cartes dont vous acceptez de vous séparer. Nous les comparons à ce que les autres recherchent — cinq suffisent pour commencer.",
+      "short": "Pile d'échange",
+      "pileLabel": "Votre pile d'échange",
+      "pileEmpty": "Rien pour l'instant. Ajoutez une carte ci-dessus."
+    },
+    "wish": {
+      "title": "Que recherchez-vous ?",
+      "blurb": "Ajoutez les cartes que vous voulez. C'est cette moitié qui indique aux autres joueurs qu'il vaut la peine de vous contacter.",
+      "short": "Liste de souhaits",
+      "pileLabel": "Votre liste de souhaits",
+      "pileEmpty": "Rien pour l'instant. Ajoutez une carte ci-dessus."
+    },
+    "done": {
+      "title": "Tout est prêt",
+      "blurb": "Votre collection est en ligne. Les correspondances se mettent à jour toutes seules à mesure que d'autres joueurs ajoutent des cartes.",
+      "short": "Terminé",
+      "matches": "{count} joueur vous correspond déjà | {count} joueurs vous correspondent déjà",
+      "noMatchesYet": "Aucune correspondance pour l'instant — elles apparaîtront dès que d'autres joueurs ajouteront des cartes.",
+      "cta": "Voir mes correspondances",
+      "toCollection": "Aller à l'application"
+    },
+    "signedOut": {
+      "title": "Connectez-vous pour créer votre collection",
+      "blurb": "One for One compare votre pile d'échange à ce que recherchent les autres joueurs : il lui faut donc un compte pour avoir quelque chose à comparer.",
+      "cta": "Se connecter ou créer un compte",
+      "browse": "Parcourir sans compte"
+    }
   }
 }

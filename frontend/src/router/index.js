@@ -42,6 +42,10 @@ const localeChildren = [
   { path: 'decks/:deckId', name: 'deckDetail', component: () => import(/* webpackChunkName: "deck-detail" */ '@/components/Pages/App/DeckDetailPage.vue') },
   { path: 'cards',     name: 'cards',       component: () => import(/* webpackChunkName: "cards" */         '@/components/Pages/App/CardsPage.vue') },
   { path: 'dashboard', name: 'dashboard',   component: () => import(/* webpackChunkName: "dashboard" */   '@/components/Pages/App/AppHome.vue') },
+  // First run. Deliberately absent from includedRoutes in vite.config.js and
+  // from STATIC_PAGES in generate-sitemap.mjs: it needs a session to show
+  // anything, so prerendering it would publish an empty shell.
+  { path: 'start',     name: 'start',       component: () => import(/* webpackChunkName: "start" */       '@/components/Pages/App/StartPage.vue') },
   // Discord / Supabase OAuth callback — Supabase JS picks up the token from the
   // URL hash automatically; we just need this route to exist so the SPA doesn't
   // 404. The component redirects straight to the locale home.

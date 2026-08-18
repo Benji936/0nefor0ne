@@ -1597,5 +1597,49 @@
     "updated": "Ultimo aggiornamento: luglio 2026",
     "contact": "Domande? Scrivici a",
     "englishNote": "Questi termini sono pubblicati solo in inglese. Fa fede il testo inglese."
+  },
+  "onboarding": {
+    "metaTitle": "Per iniziare",
+    "progressLabel": "Avanzamento della configurazione",
+    "stepOf": "Passaggio {n} di {total}",
+    "skip": "Salta per ora",
+    "back": "Indietro",
+    "continue": "Continua",
+    "continueEmpty": "Salta questo passaggio",
+    "searchPlaceholder": "Nome carta o codice set…",
+    "searchGo": "Cerca",
+    "pasteList": "Incolla una lista",
+    "importDeck": "Importa un deck",
+    "added": "{count} aggiunta | {count} aggiunte",
+    "loadFailed": "Non siamo riusciti a leggere la tua collezione. Aggiorna per riprovare.",
+    "trade": {
+      "title": "Che cosa vuoi scambiare?",
+      "blurb": "Aggiungi le carte di cui sei disposto a separarti. Le confrontiamo con quello che cercano gli altri — cinque bastano per iniziare.",
+      "short": "Mazzo di scambio",
+      "pileLabel": "Il tuo mazzo di scambio",
+      "pileEmpty": "Ancora niente qui. Aggiungi una carta qui sopra."
+    },
+    "wish": {
+      "title": "Che cosa stai cercando?",
+      "blurb": "Aggiungi le carte che vuoi. È questa metà che dice agli altri trader che vale la pena contattarti.",
+      "short": "Lista desideri",
+      "pileLabel": "La tua lista desideri",
+      "pileEmpty": "Ancora niente qui. Aggiungi una carta qui sopra."
+    },
+    "done": {
+      "title": "È tutto pronto",
+      "blurb": "La tua collezione è online. Le corrispondenze si aggiornano da sole man mano che altri trader aggiungono carte.",
+      "short": "Fatto",
+      "matches": "{count} trader corrisponde già | {count} trader corrispondono già",
+      "noMatchesYet": "Nessuna corrispondenza ancora — appariranno man mano che altri trader aggiungono carte.",
+      "cta": "Vedi le corrispondenze",
+      "toCollection": "Vai all'app"
+    },
+    "signedOut": {
+      "title": "Accedi per creare la tua collezione",
+      "blurb": "One for One confronta il tuo mazzo di scambio con quello che cercano gli altri, quindi serve un account per avere qualcosa da confrontare.",
+      "cta": "Accedi o crea un account",
+      "browse": "Esplora senza account"
+    }
   }
 }

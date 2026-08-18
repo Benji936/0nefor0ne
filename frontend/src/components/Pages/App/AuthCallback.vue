@@ -6,6 +6,7 @@
 import { onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { supabase, syncDiscordIdToTrader } from '@/lib/supabaseClient'
+import { startPathIfNeeded } from '@/lib/onboarding'
 
 const router = useRouter()
 const route  = useRoute()
@@ -23,6 +24,37 @@ function safeNext() {
   return typeof next === 'string' && /^\/[^/\\]/.test(next) ? next : null
 }
 
+/**
+ * Where to send somebody who has just come back from the provider.
+ *
+ * An account with nothing in either pile has nothing to do in the app: matches
+ * are your trade pile intersected with other people's wish lists, so it matches
+ * nobody, and the collection it would land on is the thing that is missing.
+ * Those people go to the first run instead. Everybody else keeps the behaviour
+ * they had.
+ *
+ * `next` still wins outright — community verification passes through here
+ * mid-flow and has a page of its own to get back to.
+ */
+async function destination(session, locale) {
+  const home = `/${locale}/`
+  const next = safeNext()
+  if (next) return next
+
+  const uid = session?.user?.id
+  if (!uid) return home
+
+  // Null covers both "already has cards" and "could not ask" — neither is a
+  // reason to interrogate somebody about their collection, so both fall through
+  // to the destination this page always used.
+  const start = await startPathIfNeeded(
+    uid,
+    locale,
+    typeof localStorage !== 'undefined' ? localStorage : null,
+  )
+  return start ?? home
+}
+
 onMounted(async () => {
   // Supabase JS v2 handles the hash fragment automatically on client load.
   // We wait up to 3 s for the session to be available, then sync + redirect.
@@ -34,7 +66,7 @@ onMounted(async () => {
       // Works for both new OAuth signups and linkIdentity flows.
       await syncDiscordIdToTrader()
       const locale = route.params.locale || 'en'
-      router.replace(safeNext() ?? `/${locale}/`)
+      router.replace(await destination(data.session, locale))
     } else if (attempts < 15) {
       attempts++
       setTimeout(check, 200)

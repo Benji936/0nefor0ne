@@ -1597,5 +1597,49 @@
     "updated": "Last updated: July 2026",
     "contact": "Questions? Email us at",
     "englishNote": "These terms are published in English only. The English text is the binding version."
+  },
+  "onboarding": {
+    "metaTitle": "Get started",
+    "progressLabel": "Setup progress",
+    "stepOf": "Step {n} of {total}",
+    "skip": "Skip for now",
+    "back": "Back",
+    "continue": "Continue",
+    "continueEmpty": "Skip this step",
+    "searchPlaceholder": "Card name or set code…",
+    "searchGo": "Search",
+    "pasteList": "Paste a list",
+    "importDeck": "Import a deck",
+    "added": "{count} added | {count} added",
+    "loadFailed": "We could not read your collection. Refresh to try again.",
+    "trade": {
+      "title": "What are you willing to trade?",
+      "blurb": "Add the cards you would part with. We match them against what other people are looking for, so five is already enough to start.",
+      "short": "Trade pile",
+      "pileLabel": "Your trade pile",
+      "pileEmpty": "Nothing here yet. Add a card above."
+    },
+    "wish": {
+      "title": "What are you looking for?",
+      "blurb": "Add the cards you want. This is the half that tells other traders you are worth contacting.",
+      "short": "Wishlist",
+      "pileLabel": "Your wishlist",
+      "pileEmpty": "Nothing here yet. Add a card above."
+    },
+    "done": {
+      "title": "You are set up",
+      "blurb": "Your collection is live. Matches keep updating on their own as other traders add cards.",
+      "short": "Done",
+      "matches": "{count} trader already matches you | {count} traders already match you",
+      "noMatchesYet": "No matches yet — they will appear as other traders add cards.",
+      "cta": "See your matches",
+      "toCollection": "Go to the app"
+    },
+    "signedOut": {
+      "title": "Sign in to set up your collection",
+      "blurb": "One for One matches your trade pile against what other people are looking for, so it needs an account to have anything to match.",
+      "cta": "Sign in or create an account",
+      "browse": "Browse without an account"
+    }
   }
 }

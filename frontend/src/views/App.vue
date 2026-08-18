@@ -159,7 +159,7 @@ function switchLang(lang) {
 <template>
   <!-- ── Collapsible side rail (desktop ≥ sm) — primary navigation ── -->
   <SideNav
-    v-if="page !== 'home'"
+    v-if="!chromeless"
     v-model:collapsed="railCollapsed"
     :authenticated="authenticated"
     :page="page"
@@ -170,10 +170,10 @@ function switchLang(lang) {
   />
 
   <!-- App shell: everything to the right of the rail, shifted by its width. -->
-  <div class="app-shell" :style="{ '--rail-w': page === 'home' ? '0px' : (railCollapsed ? '64px' : '210px') }">
+  <div class="app-shell" :style="{ '--rail-w': chromeless ? '0px' : (railCollapsed ? '64px' : '210px') }">
   <!-- ── Top navbar ── -->
   <nav
-    v-if="page !== 'home'"
+    v-if="!chromeless"
     class="flex flex-row py-2 px-3 md:py-3 md:px-5 gap-2 md:gap-6 shadow-xs items-center justify-between sticky top-0 z-30"
     style="background: var(--c-nav); border-bottom: 1px solid var(--c-border); transition: background 0.3s ease"
   >
@@ -263,7 +263,7 @@ function switchLang(lang) {
 
   <!-- ── Mobile bottom tab bar (authenticated only, phones < 640 px) ── -->
   <nav
-    v-if="authenticated && page !== 'home'"
+    v-if="authenticated && !chromeless"
     class="mobile-bottom-nav fixed bottom-0 left-0 right-0 z-40 flex sm:hidden items-stretch"
     style="background: var(--c-nav); border-top: 1px solid var(--c-border); touch-action: manipulation"
   >
@@ -282,12 +282,12 @@ function switchLang(lang) {
 
   <!-- Click-outside overlay for lang menu (z-20 so it doesn't block the sticky nav at z-30) -->
   <div
-    v-if="langMenuOpen && page !== 'home'"
+    v-if="langMenuOpen && !chromeless"
     class="fixed inset-0 z-20"
     @click="langMenuOpen = false"
   />
 
-  <main :class="['main-content-mobile-pb pt-5 md:pt-8 min-h-screen sm:pb-0', page === 'dashboard' ? 'dashboard-compact-horizontal' : 'px-5 md:px-16']" style="background: var(--c-bg); transition: background 0.3s ease">
+  <main :class="mainClass" style="background: var(--c-bg); transition: background 0.3s ease">
     <!-- RouterView renders the active page component; props are forwarded via slot 
      <TcgPlayerAd :ad-id="3913674" :width="1940" :height="500" />-->
     <RouterView v-slot="{ Component }">
@@ -318,10 +318,15 @@ function switchLang(lang) {
 
 <script>
 import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
+import { startPathIfNeeded, divertsFrom } from "@/lib/onboarding";
 
 // Search state, the single async writer, and the URL serialization helpers now
 // live in @/composables/useCardSearch.js and are owned exclusively by
 // CardsPage.vue (KD-1/KD-2). App.vue is navbar/shell only — it does not search.
+
+// Which routes may divert into the first run lives in @/lib/onboarding, with
+// the rest of the decisions this flow makes — and with the tests that keep a
+// later route from being added to it by accident.
 
   export default {
     computed: {
@@ -331,6 +336,21 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
         /** Current page name — derived from the active route so the URL is the source of truth. */
         page() {
           return this.$route.name ?? 'search';
+        },
+        /** Routes that own the whole viewport: no rail, no navbar, no bottom tab
+         *  bar, no shell padding. The landing page is a marketing site, and the
+         *  first run is one decision at a time — surrounding either with app
+         *  chrome invites people to leave before they have anything to leave to. */
+        chromeless() {
+          return ['home', 'start'].includes(this.page);
+        },
+        /** The shell's own padding, which /start replaces with its own. */
+        mainClass() {
+          if (this.page === 'start') return ['min-h-screen'];
+          return [
+            'main-content-mobile-pb pt-5 md:pt-8 min-h-screen sm:pb-0',
+            this.page === 'dashboard' ? 'dashboard-compact-horizontal' : 'px-5 md:px-16',
+          ];
         },
         /** Active Trade Center sub-tab, for SideNav's highlight. From the route
          *  for the same reason as `page`: it used to be mirrored in local state
@@ -368,9 +388,50 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
         openLogin() {
           this.authDialogOpen = true;
         },
-        onAuthenticated(session) {
+        async onAuthenticated(session) {
           // Called by AuthDialog after a successful sign in / sign up.
           this.authenticated = session;
+
+          // A fresh account has nothing in either pile, so every surface it
+          // could land on is empty. Send it to the first run instead.
+          //
+          // Checked on sign-in too, not just sign-up: a signup that needed
+          // email confirmation comes back through the sign-in branch days
+          // later, and that person is every bit as new. startPathIfNeeded
+          // answers null for anyone who already has cards or has skipped.
+          // Redirected from wherever they happened to be, unlike the load-time
+          // check below: signing in is an explicit "take me into the app" and
+          // carries no page the person was already reading.
+          await this.divertToOnboarding({ anywhere: true });
+        },
+
+        /**
+         * Send an account with an empty pile to the first run.
+         *
+         * Shared by sign-in and by opening the app. `startPathIfNeeded` answers
+         * null for anybody who already has cards, who has skipped, or whose
+         * collection could not be read — so this is a no-op for everyone the
+         * flow is not for.
+         *
+         * @param {{anywhere?: boolean}} opts `anywhere` ignores the route
+         *   allowlist, for the case where the person just asked to come in.
+         */
+        async divertToOnboarding({ anywhere = false } = {}) {
+          const uid = this.authenticated?.user?.id;
+          if (!uid) return;
+          if (!anywhere && !divertsFrom(this.page)) return;
+
+          const locale = this.$route.params.locale || 'en';
+          const start = await startPathIfNeeded(
+            uid,
+            locale,
+            typeof localStorage !== 'undefined' ? localStorage : null,
+          );
+          if (!start || this.$route.path === start) return;
+
+          // replace, not push: the page being left was empty, and leaving it on
+          // the stack only gives Back somewhere useless to return to.
+          this.$router.replace(start);
         },
         async logout(){
           await signOut();
@@ -430,8 +491,20 @@ import { signOut, getCurrentSession, onAuthChange } from "@/lib/supabaseClient";
 
         this.authenticated = await getCurrentSession();
 
+        // Existing accounts get the first run too, not only fresh signups.
+        // Someone who registered months ago and never filled a pile is looking
+        // at exactly the same empty app as someone who registered today, and
+        // they never pass back through the auth callback to be caught there.
+        //
+        // Waits for the router so `page` is the real destination rather than
+        // whatever the initial navigation had resolved to so far.
+        await this.$router.isReady();
+        await this.divertToOnboarding();
+
         // Stay in sync if the token refreshes or the user signs in/out from
-        // another tab.
+        // another tab. Deliberately no onboarding check here: this fires on
+        // every token refresh, and a redirect on a timer would yank people out
+        // of whatever they were doing.
         this.authUnsubscribe = onAuthChange((session) => {
           this.authenticated = session;
         });
