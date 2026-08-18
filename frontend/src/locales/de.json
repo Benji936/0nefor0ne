@@ -1641,5 +1641,41 @@
       "cta": "Anmelden oder Konto erstellen",
       "browse": "Ohne Konto stöbern"
     }
+  },
+  "phoneVerify": {
+    "title": "Bestätige deine Telefonnummer",
+    "reason": {
+      "propose": "Nötig, bevor du einen Tausch sendest",
+      "accept": "Nötig, bevor du einen Tausch annimmst",
+      "counter": "Nötig, bevor du ein Gegenangebot sendest"
+    },
+    "why": "Ein Konto pro Telefonnummer. So verhindern wir Wegwerf-Konten, mit denen Trader betrogen werden — und es heißt, dass dein Gegenüber dieselbe Prüfung durchlaufen hat.",
+    "numberLabel": "Telefonnummer",
+    "privacyNote": "Wird nur zur Bestätigung dieses Kontos verwendet. Niemals anderen Tradern gezeigt, niemals für Werbung genutzt.",
+    "sendCode": "Code senden",
+    "codeSent": "Wir haben einen 6-stelligen Code an {number} geschickt.",
+    "codeLabel": "6-stelliger Code",
+    "confirm": "Bestätigen",
+    "resend": "Code erneut senden",
+    "resendIn": "Erneut senden in {s}s",
+    "changeNumber": "Nummer ändern",
+    "notNow": "Später",
+    "inlineRetry": "Bestätige deine Nummer und sende dann erneut. Deine Auswahl bleibt erhalten.",
+    "numberError": {
+      "empty": "Gib deine Telefonnummer ein.",
+      "notDigits": "Nur Ziffern — keine Buchstaben oder Durchwahlen.",
+      "tooShort": "Diese Nummer wirkt zu kurz.",
+      "tooLong": "Diese Nummer wirkt zu lang.",
+      "noCountry": "Wähle zuerst dein Land."
+    },
+    "error": {
+      "numberTaken": "Diese Nummer gehört bereits zu einem anderen Konto. Jede Nummer kann nur ein Konto bestätigen.",
+      "badCode": "Dieser Code stimmt nicht. Prüfe ihn und versuche es erneut.",
+      "codeExpired": "Dieser Code ist abgelaufen. Fordere einen neuen an.",
+      "rateLimited": "Zu viele Versuche. Warte ein paar Minuten und versuche es erneut.",
+      "badNumber": "Wir konnten diese Nummer nicht lesen. Prüfe das Land und versuche es erneut.",
+      "smsUnavailable": "SMS-Bestätigung ist gerade nicht verfügbar. Bitte später erneut versuchen.",
+      "generic": "Etwas ist schiefgelaufen. Bitte versuche es erneut."
+    }
   }
 }

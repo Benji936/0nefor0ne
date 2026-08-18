@@ -1641,5 +1641,41 @@
       "cta": "Accedi o crea un account",
       "browse": "Esplora senza account"
     }
+  },
+  "phoneVerify": {
+    "title": "Verifica il tuo numero di telefono",
+    "reason": {
+      "propose": "Richiesto prima di inviare uno scambio",
+      "accept": "Richiesto prima di accettare uno scambio",
+      "counter": "Richiesto prima di inviare una controproposta"
+    },
+    "why": "Un account per numero di telefono. È così che impediamo la creazione di account usa e getta per truffare i trader, e significa che anche la persona dall'altra parte ha superato lo stesso controllo.",
+    "numberLabel": "Numero di telefono",
+    "privacyNote": "Usato solo per verificare questo account. Mai mostrato agli altri trader, mai usato per marketing.",
+    "sendCode": "Invia codice",
+    "codeSent": "Abbiamo inviato un codice di 6 cifre al {number}.",
+    "codeLabel": "Codice di 6 cifre",
+    "confirm": "Verifica",
+    "resend": "Invia di nuovo",
+    "resendIn": "Reinvio tra {s}s",
+    "changeNumber": "Cambia numero",
+    "notNow": "Non ora",
+    "inlineRetry": "Verifica il numero, poi premi di nuovo invia. La tua selezione è conservata.",
+    "numberError": {
+      "empty": "Inserisci il tuo numero di telefono.",
+      "notDigits": "Solo cifre — niente lettere o interni.",
+      "tooShort": "Questo numero sembra troppo corto.",
+      "tooLong": "Questo numero sembra troppo lungo.",
+      "noCountry": "Scegli prima il tuo paese."
+    },
+    "error": {
+      "numberTaken": "Questo numero è già collegato a un altro account. Ogni numero può verificare un solo account.",
+      "badCode": "Il codice non è corretto. Controllalo e riprova.",
+      "codeExpired": "Il codice è scaduto. Richiedine uno nuovo.",
+      "rateLimited": "Troppi tentativi. Aspetta qualche minuto e riprova.",
+      "badNumber": "Non siamo riusciti a leggere il numero. Controlla il paese e riprova.",
+      "smsUnavailable": "La verifica via SMS non è disponibile al momento. Riprova più tardi.",
+      "generic": "Qualcosa è andato storto. Riprova."
+    }
   }
 }

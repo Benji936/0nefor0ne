@@ -4,6 +4,8 @@ import { useI18n } from "vue-i18n";
 import { useRouter, useRoute } from "vue-router";
 import { useHead } from "@unhead/vue";
 import AuthDialog from "@/components/dialogs/AuthDialog.vue";
+import VerifyPhoneDialog from "@/components/dialogs/VerifyPhoneDialog.vue";
+import { usePhoneGate } from "@/lib/phoneGate";
 import NavItem from "@/components/nav/NavItem.vue";
 import SideNav from "@/components/nav/SideNav.vue";
 import NotificationBell from "@/components/nav/NotificationBell.vue";
@@ -135,6 +137,11 @@ useHead(
     };
   })
 );
+
+// One instance for the whole app. Any trade surface that gets refused for want
+// of a confirmed number opens this via handleIfPhoneRequired, rather than each
+// of them owning a copy of the dialog and its open state.
+const { promptOpen: phonePromptOpen, promptReason: phonePromptReason } = usePhoneGate();
 
 const LANG_LABELS = { en: "English", fr: "Français", de: "Deutsch", it: "Italiano" };
 
@@ -310,6 +317,10 @@ function switchLang(lang) {
 
   </div>
   <!-- /app-shell -->
+
+  <!-- Verify-your-number prompt. Outside the shell so it is reachable from
+       every route, including the chromeless ones. -->
+  <VerifyPhoneDialog v-model="phonePromptOpen" :reason="phonePromptReason" />
 
   <!-- Floating rich preview on card-thumbnail hover (client-only, self-installing) -->
   <CardHoverPreview />

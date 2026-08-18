@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import { cardImage } from "@/lib/cardImage";
 import { fetchMyLibrary, fetchUserWishlist, fetchUserTradePile, fetchMyWishlistNames } from "@/lib/matches";
 import { createTradeProposal, updateTradeProposal, counterTradeProposal, uploadTradePhoto } from "@/lib/proposals";
+import { handleIfPhoneRequired } from "@/lib/phoneGate";
 import { searchById } from "@/api";
 import { getClient, getCurrentSession } from "@/lib/supabaseClient";
 import AddCard from "@/components/library/AddCard.vue";
@@ -252,7 +253,16 @@ async function submit() {
     }
     close();
   } catch (err) {
-    errorMessage.value = err?.message ?? t('proposeDialog.saveFailed');
+    // The server refuses an unverified account here rather than at signup.
+    // Editing an existing proposal is not gated — it changes a trade that
+    // already passed the gate — so the reason reflects what was attempted.
+    if (handleIfPhoneRequired(err, isCountering.value ? 'counter' : 'propose')) {
+      // The prompt says what is needed; a second red error under it would be
+      // the same news twice. Their picks stay put for the retry.
+      errorMessage.value = t('phoneVerify.inlineRetry');
+    } else {
+      errorMessage.value = err?.message ?? t('proposeDialog.saveFailed');
+    }
   } finally {
     submitting.value = false;
   }
