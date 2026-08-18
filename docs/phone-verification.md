@@ -33,23 +33,47 @@ mistype numbers and ask for a second code.
 
 ## 2. Test with one real number, gate still off
 
-With the gate off the app never opens the dialog by itself, so verify by hand:
+With the gate off the app never opens the dialog by itself, so check delivery
+against the Auth API directly. The app does not expose its Supabase client on
+`window`, so there is no console shortcut.
+
+First, how many accounts are verified right now (expect 0 before you start):
 
 ```sql
--- who is verified right now (expect 0 before you start)
 select count(*) from auth.users where phone_confirmed_at is not null;
 ```
 
-Sign in, then in the browser console on the site:
+Sign in to the site, then copy your access token out of the browser console:
 
 ```js
-// sends a real SMS to your own number
-await window.supabase.auth.updateUser({ phone: '+33612345678' })
-// then, with the code you receive:
-await window.supabase.auth.verifyOtp({ phone: '+33612345678', token: '123456', type: 'phone_change' })
+JSON.parse(Object.entries(localStorage).find(([k]) => k.includes('auth-token'))[1]).access_token
+```
+
+Attach a number to your own account, which sends a real SMS:
+
+```bash
+ANON=<your anon key>            # public, same one the app ships with
+TOKEN=<the access_token above>
+
+curl -X PUT 'https://sxteuctysfiwripnaozi.supabase.co/auth/v1/user' \
+  -H "apikey: $ANON" -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"phone":"+33612345678"}'
+```
+
+Then confirm the code you receive:
+
+```bash
+curl -X POST 'https://sxteuctysfiwripnaozi.supabase.co/auth/v1/verify' \
+  -H "apikey: $ANON" -H 'Content-Type: application/json' \
+  -d '{"type":"phone_change","phone":"+33612345678","token":"123456"}'
 ```
 
 Re-run the count. If it is 1, delivery works.
+
+If you would rather not do any of that: set the provider up, flip the gate on,
+and use the app. The dialog does all of the above for you. The only reason this
+section exists is to prove delivery works *before* the gate can block anybody.
 
 ## 3. Turn the gate on
 
