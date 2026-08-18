@@ -392,6 +392,13 @@ export default {
       }
     },
 
+    /** Open from an external control. Headless only suppresses the activator
+     *  slot, so a parent that supplies its own button needs a way in. */
+    open() {
+      this.reset();
+      this.dialogOpen = true;
+    },
+
     reset() {
       this.step = 'paste';
       this.destination = this.mode === 'wish' ? 'wish' : 'trade';

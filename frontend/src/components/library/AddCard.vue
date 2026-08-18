@@ -224,6 +224,21 @@ export default {
       this.duplicates = [];
     },
 
+    /**
+     * Open at the search step, optionally with a query already typed.
+     *
+     * The other headless callers (CardPage, ProposeTradeDialog) always know
+     * which card they mean and use openWith(). The first-run flow only has what
+     * somebody typed into its own field, so it needs to hand the search over
+     * and let this dialog resolve it.
+     */
+    open(query = "") {
+      this.reset();
+      this.search = query;
+      this.dialogOpen = true;
+      if (query.trim()) this.update();
+    },
+
     openWith(card, setName = '') {
       this.selectedCard = card;
       this.extensions = (card.card_sets ?? []).map(s => `${s.set_code} | ${s.set_rarity}`);

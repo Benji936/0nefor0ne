@@ -1597,5 +1597,49 @@
     "updated": "Zuletzt aktualisiert: Juli 2026",
     "contact": "Fragen? Schreib uns an",
     "englishNote": "Diese Bedingungen werden nur auf Englisch veröffentlicht. Maßgeblich ist die englische Fassung."
+  },
+  "onboarding": {
+    "metaTitle": "Erste Schritte",
+    "progressLabel": "Einrichtungsfortschritt",
+    "stepOf": "Schritt {n} von {total}",
+    "skip": "Später",
+    "back": "Zurück",
+    "continue": "Weiter",
+    "continueEmpty": "Schritt überspringen",
+    "searchPlaceholder": "Kartenname oder Set-Code…",
+    "searchGo": "Suchen",
+    "pasteList": "Liste einfügen",
+    "importDeck": "Deck importieren",
+    "added": "{count} hinzugefügt | {count} hinzugefügt",
+    "loadFailed": "Deine Sammlung konnte nicht geladen werden. Lade die Seite neu.",
+    "trade": {
+      "title": "Was möchtest du tauschen?",
+      "blurb": "Füge die Karten hinzu, von denen du dich trennen würdest. Wir gleichen sie mit dem ab, was andere suchen — fünf reichen für den Anfang.",
+      "short": "Tauschstapel",
+      "pileLabel": "Dein Tauschstapel",
+      "pileEmpty": "Noch nichts hier. Füge oben eine Karte hinzu."
+    },
+    "wish": {
+      "title": "Wonach suchst du?",
+      "blurb": "Füge die Karten hinzu, die du haben willst. Diese Hälfte zeigt anderen Tradern, dass sich eine Anfrage bei dir lohnt.",
+      "short": "Wunschliste",
+      "pileLabel": "Deine Wunschliste",
+      "pileEmpty": "Noch nichts hier. Füge oben eine Karte hinzu."
+    },
+    "done": {
+      "title": "Alles bereit",
+      "blurb": "Deine Sammlung ist online. Matches aktualisieren sich von selbst, sobald andere Trader Karten hinzufügen.",
+      "short": "Fertig",
+      "matches": "{count} Trader passt schon zu dir | {count} Trader passen schon zu dir",
+      "noMatchesYet": "Noch keine Matches — sie erscheinen, sobald andere Trader Karten hinzufügen.",
+      "cta": "Matches ansehen",
+      "toCollection": "Zur App"
+    },
+    "signedOut": {
+      "title": "Melde dich an, um deine Sammlung anzulegen",
+      "blurb": "One for One gleicht deinen Tauschstapel mit dem ab, was andere suchen — dafür braucht es ein Konto.",
+      "cta": "Anmelden oder Konto erstellen",
+      "browse": "Ohne Konto stöbern"
+    }
   }
 }
