@@ -1647,7 +1647,8 @@
     "reason": {
       "propose": "Needed before sending a trade",
       "accept": "Needed before accepting a trade",
-      "counter": "Needed before sending a counter-offer"
+      "counter": "Needed before sending a counter-offer",
+      "account": "Verify from your account page"
     },
     "why": "One account per phone number. It is how we stop somebody spinning up throwaway accounts to scam traders, and it means the person on the other side of your trade went through the same check.",
     "numberLabel": "Phone number",
@@ -1676,6 +1677,13 @@
       "badNumber": "We could not read that number. Check the country and try again.",
       "smsUnavailable": "SMS verification is not available right now. Please try again later.",
       "generic": "Something went wrong. Please try again."
+    },
+    "account": {
+      "label": "Phone verification",
+      "checking": "Checking…",
+      "verified": "Verified",
+      "notVerified": "Not verified yet",
+      "cta": "Verify"
     }
   }
 }

@@ -1647,7 +1647,8 @@
     "reason": {
       "propose": "Richiesto prima di inviare uno scambio",
       "accept": "Richiesto prima di accettare uno scambio",
-      "counter": "Richiesto prima di inviare una controproposta"
+      "counter": "Richiesto prima di inviare una controproposta",
+      "account": "Verifica dalla pagina account"
     },
     "why": "Un account per numero di telefono. È così che impediamo la creazione di account usa e getta per truffare i trader, e significa che anche la persona dall'altra parte ha superato lo stesso controllo.",
     "numberLabel": "Numero di telefono",
@@ -1676,6 +1677,13 @@
       "badNumber": "Non siamo riusciti a leggere il numero. Controlla il paese e riprova.",
       "smsUnavailable": "La verifica via SMS non è disponibile al momento. Riprova più tardi.",
       "generic": "Qualcosa è andato storto. Riprova."
+    },
+    "account": {
+      "label": "Verifica del telefono",
+      "checking": "Controllo…",
+      "verified": "Verificato",
+      "notVerified": "Non ancora verificato",
+      "cta": "Verifica"
     }
   }
 }

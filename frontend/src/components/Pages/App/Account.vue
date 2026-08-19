@@ -9,6 +9,8 @@ import { fetchMyCommunities, fetchMyClaimSources, fetchMyCountryCode } from "@/l
 import { fetchFollowing, unfollow } from "@/lib/communityFollow";
 import CommunityKindIcon from "@/components/community/CommunityKindIcon.vue";
 import CommunityBillingLine from "@/components/community/CommunityBillingLine.vue";
+import VerifyPhoneDialog from "@/components/dialogs/VerifyPhoneDialog.vue";
+import { isMyPhoneVerified } from "@/lib/phoneVerify";
 
 const { t } = useI18n();
 
@@ -31,6 +33,21 @@ const discordLinking  = ref(false);
 const discordSyncing  = ref(false);
 const discordSynced   = ref(false); // shows ✓ briefly after re-sync
 const discordError    = ref("");
+
+// ── Phone verification ────────────────────────────────────────────────────
+// Shown here whether or not the trade gate is switched on. Two reasons: people
+// should be able to see that they are verified without being refused something
+// first, and verifying *before* the gate is switched on is the only way to
+// prove SMS delivery works without blocking everybody's trading to find out.
+const phoneVerified   = ref(false);
+const phoneChecking   = ref(true);
+const phoneDialogOpen = ref(false);
+
+async function refreshPhoneStatus() {
+  phoneChecking.value = true;
+  phoneVerified.value = await isMyPhoneVerified();
+  phoneChecking.value = false;
+}
 
 const SCOPES = computed(() => [
   { value: "local",     label: t('account.scopes.local'),     icon: "mdi-map-marker"  },
@@ -225,7 +242,12 @@ async function onUnfollow(row) {
 }
 
 watch(() => props.login?.user?.id, (id) => {
-  if (id) { loadProfile(); loadTrades(); loadCommunities(); loadFollowing(); }
+  if (id) { loadProfile(); loadTrades(); loadCommunities(); loadFollowing(); refreshPhoneStatus(); }
+  // A null id means "no session yet", which is indistinguishable from "signed
+  // out" until one arrives. Settle the row either way: the rest of this page
+  // renders blank fields rather than spinners when there is nobody signed in,
+  // and a status that checks forever is worse than one that says nothing.
+  else { phoneChecking.value = false; phoneVerified.value = false; }
 }, { immediate: true });
 
 const route = useRoute();
@@ -327,6 +349,25 @@ function statusStyle(status) {
                 {{ s.label }}
               </button>
             </div>
+          </div>
+
+          <!-- Phone verification -->
+          <div class="acct-phone">
+            <div class="acct-phone__text">
+              <span class="acct-phone__label">{{ t('phoneVerify.account.label') }}</span>
+              <span v-if="phoneChecking" class="acct-phone__state">{{ t('phoneVerify.account.checking') }}</span>
+              <span v-else-if="phoneVerified" class="acct-phone__state acct-phone__state--ok">
+                <v-icon icon="mdi-check-decagram" size="16" />
+                {{ t('phoneVerify.account.verified') }}
+              </span>
+              <span v-else class="acct-phone__state">{{ t('phoneVerify.account.notVerified') }}</span>
+            </div>
+            <button
+              v-if="!phoneChecking && !phoneVerified && login?.user?.id"
+              type="button"
+              class="acct-phone__btn"
+              @click="phoneDialogOpen = true"
+            >{{ t('phoneVerify.account.cta') }}</button>
           </div>
 
           <v-alert v-if="errorMsg" type="error" variant="tonal" density="compact">{{ errorMsg }}</v-alert>
@@ -544,6 +585,8 @@ function statusStyle(status) {
     </footer>
 
   </div>
+
+  <VerifyPhoneDialog v-model="phoneDialogOpen" reason="account" @verified="refreshPhoneStatus" />
 </template>
 
 <style scoped>
@@ -629,6 +672,24 @@ function statusStyle(status) {
 }
 
 /* Details: the single surface panel */
+.acct-phone {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 14px; border-radius: 12px;
+  border: 1px solid var(--c-border); background: var(--c-surface-2);
+}
+.acct-phone__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.acct-phone__label { font-size: 13px; font-weight: 700; color: var(--c-text); }
+.acct-phone__state { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--c-muted); }
+.acct-phone__state--ok { color: var(--c-mutual); font-weight: 600; }
+.acct-phone__btn {
+  flex-shrink: 0; min-height: 36px; padding: 0 14px; border-radius: 10px;
+  border: 1px solid var(--c-border); background: var(--c-surface);
+  font-size: 13px; font-weight: 700; color: var(--c-text); cursor: pointer;
+  transition: background 200ms ease;
+}
+.acct-phone__btn:hover { background: var(--c-surface-2); }
+.acct-phone__btn:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
+
 .acct-details {
   display: flex; flex-direction: column; gap: 16px;
   padding: 22px;

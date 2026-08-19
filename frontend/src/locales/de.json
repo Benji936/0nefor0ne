@@ -1647,7 +1647,8 @@
     "reason": {
       "propose": "Nötig, bevor du einen Tausch sendest",
       "accept": "Nötig, bevor du einen Tausch annimmst",
-      "counter": "Nötig, bevor du ein Gegenangebot sendest"
+      "counter": "Nötig, bevor du ein Gegenangebot sendest",
+      "account": "Bestätigung über dein Konto"
     },
     "why": "Ein Konto pro Telefonnummer. So verhindern wir Wegwerf-Konten, mit denen Trader betrogen werden — und es heißt, dass dein Gegenüber dieselbe Prüfung durchlaufen hat.",
     "numberLabel": "Telefonnummer",
@@ -1676,6 +1677,13 @@
       "badNumber": "Wir konnten diese Nummer nicht lesen. Prüfe das Land und versuche es erneut.",
       "smsUnavailable": "SMS-Bestätigung ist gerade nicht verfügbar. Bitte später erneut versuchen.",
       "generic": "Etwas ist schiefgelaufen. Bitte versuche es erneut."
+    },
+    "account": {
+      "label": "Telefon-Bestätigung",
+      "checking": "Wird geprüft…",
+      "verified": "Bestätigt",
+      "notVerified": "Noch nicht bestätigt",
+      "cta": "Bestätigen"
     }
   }
 }

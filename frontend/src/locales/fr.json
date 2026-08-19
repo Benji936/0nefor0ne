@@ -1647,7 +1647,8 @@
     "reason": {
       "propose": "Requis avant d'envoyer un échange",
       "accept": "Requis avant d'accepter un échange",
-      "counter": "Requis avant d'envoyer une contre-offre"
+      "counter": "Requis avant d'envoyer une contre-offre",
+      "account": "Vérification depuis votre compte"
     },
     "why": "Un compte par numéro de téléphone. C'est ainsi que nous empêchons la création de comptes jetables pour arnaquer les joueurs, et cela signifie que la personne en face de vous a passé le même contrôle.",
     "numberLabel": "Numéro de téléphone",
@@ -1676,6 +1677,13 @@
       "badNumber": "Nous n'avons pas pu lire ce numéro. Vérifiez le pays et réessayez.",
       "smsUnavailable": "La vérification par SMS est indisponible pour le moment. Réessayez plus tard.",
       "generic": "Une erreur est survenue. Veuillez réessayer."
+    },
+    "account": {
+      "label": "Vérification du téléphone",
+      "checking": "Vérification…",
+      "verified": "Vérifié",
+      "notVerified": "Pas encore vérifié",
+      "cta": "Vérifier"
     }
   }
 }
