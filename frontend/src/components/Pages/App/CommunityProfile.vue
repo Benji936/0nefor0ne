@@ -19,6 +19,7 @@ import CommunityKindIcon from "@/components/community/CommunityKindIcon.vue";
 import FollowButton from "@/components/community/FollowButton.vue";
 import CommunityEvents from "@/components/community/CommunityEvents.vue";
 import CommunityGiveUp from "@/components/community/CommunityGiveUp.vue";
+import { ldScript } from "@/lib/jsonLd";
 
 const route = useRoute();
 const router = useRouter();
@@ -230,11 +231,7 @@ const eventsJsonLd = computed(() => {
   }));
 });
 
-// Serialize a JSON-LD object to a script entry, escaping "<" so owner-typed free
-// text can never break out of the <script> block (defense-in-depth).
-function ldScript(obj) {
-  return { type: "application/ld+json", innerHTML: JSON.stringify(obj).replace(/</g, "\\u003c") };
-}
+// ldScript lives in @/lib/jsonLd now, so every page escapes the same way.
 
 // Guarded on community.value so the not-found state gets no title override
 // and no JSON-LD script.
