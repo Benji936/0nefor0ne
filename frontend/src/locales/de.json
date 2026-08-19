@@ -1678,7 +1678,7 @@
       "smsUnavailable": "SMS-Bestätigung ist gerade nicht verfügbar. Bitte später erneut versuchen.",
       "generic": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
       "regionBlocked": "Für dieses Land ist der SMS-Versand bei uns noch nicht freigeschaltet. Sag uns Bescheid, dann aktivieren wir es.",
-      "providerAuth": "Die SMS-Bestätigung ist vorübergehend nicht verfügbar. Wir sind informiert — bitte versuche es gleich noch einmal.",
+      "providerAuth": "Die SMS-Bestätigung funktioniert gerade nicht. Das liegt an uns, nicht an deiner Nummer — bitte versuche es später noch einmal.",
       "trialNumber": "Die SMS-Bestätigung ist für diese Nummer vorübergehend nicht verfügbar. Bitte versuche es gleich noch einmal.",
       "unsubscribed": "Diese Nummer hat unsere Nachrichten abbestellt. Antworte START an unsere SMS-Nummer oder nimm eine andere Nummer."
     },

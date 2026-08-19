@@ -1678,7 +1678,7 @@
       "smsUnavailable": "SMS verification is not available right now. Please try again later.",
       "generic": "Something went wrong. Please try again.",
       "regionBlocked": "This country is not enabled for SMS on our side yet. Please let us know so we can switch it on.",
-      "providerAuth": "SMS verification is temporarily unavailable. We have been notified — please try again shortly.",
+      "providerAuth": "SMS verification isn't working right now. This is a problem on our side, not with your number — please try again later.",
       "trialNumber": "SMS verification is temporarily unavailable for this number. Please try again shortly.",
       "unsubscribed": "This number has opted out of our messages. Reply START to our SMS number, or use a different number."
     },

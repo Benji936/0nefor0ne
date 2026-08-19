@@ -1678,7 +1678,7 @@
       "smsUnavailable": "La verifica via SMS non è disponibile al momento. Riprova più tardi.",
       "generic": "Qualcosa è andato storto. Riprova.",
       "regionBlocked": "Questo paese non è ancora abilitato per gli SMS da parte nostra. Segnalacelo e lo attiviamo.",
-      "providerAuth": "La verifica via SMS è temporaneamente non disponibile. Siamo stati avvisati — riprova tra poco.",
+      "providerAuth": "La verifica via SMS non funziona al momento. Il problema è dalla nostra parte, non del tuo numero — riprova più tardi.",
       "trialNumber": "La verifica via SMS è temporaneamente non disponibile per questo numero. Riprova tra poco.",
       "unsubscribed": "Questo numero ha annullato l'iscrizione ai nostri messaggi. Rispondi START al nostro numero, oppure usane un altro."
     },
