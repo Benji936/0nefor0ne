@@ -1676,7 +1676,8 @@
       "rateLimited": "Zu viele Versuche. Warte ein paar Minuten und versuche es erneut.",
       "badNumber": "Wir konnten diese Nummer nicht lesen. Prüfe das Land und versuche es erneut.",
       "smsUnavailable": "SMS-Bestätigung ist gerade nicht verfügbar. Bitte später erneut versuchen.",
-      "generic": "Etwas ist schiefgelaufen. Bitte versuche es erneut."
+      "generic": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
+      "regionBlocked": "Für dieses Land ist der SMS-Versand bei uns noch nicht freigeschaltet. Sag uns Bescheid, dann aktivieren wir es."
     },
     "account": {
       "label": "Telefon-Bestätigung",

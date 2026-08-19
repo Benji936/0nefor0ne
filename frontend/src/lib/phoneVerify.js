@@ -36,6 +36,16 @@ function digitsOnly(value) {
 }
 
 /**
+ * Dial codes whose national numbers keep their leading zero in E.164.
+ *
+ * Italy is the well-known one: Rome is +39 06 …, and the 0 is part of the
+ * number rather than a trunk prefix. Stripping it — which is right almost
+ * everywhere else — produces an unroutable number, and Italian is one of the
+ * four languages this app ships in.
+ */
+const KEEPS_LEADING_ZERO = new Set(["39"]);
+
+/**
  * Drop the trunk prefix people type out of habit.
  *
  * Most of Europe writes its own numbers with a leading 0 — a French mobile is
@@ -44,10 +54,53 @@ function digitsOnly(value) {
  * number and be told it is wrong, so it is stripped rather than rejected.
  *
  * @param {string} national
+ * @param {string} [dialCode] so the countries that keep their zero can be spared
  * @returns {string}
  */
-export function stripTrunkPrefix(national) {
-  return digitsOnly(national).replace(/^0+/, "");
+export function stripTrunkPrefix(national, dialCode = "") {
+  const digits = digitsOnly(national);
+  if (KEEPS_LEADING_ZERO.has(digitsOnly(dialCode))) return digits;
+  return digits.replace(/^0+/, "");
+}
+
+/**
+ * Undo the country code when somebody has already included it.
+ *
+ * The field shows a "+33" prefix and people paste their whole number into it
+ * anyway — "+33 6 12 34 56 78", or "0033…", or just "33…". Every one of those
+ * used to be concatenated onto the prefix and sent as +3333612345678, which
+ * Twilio rejects as an invalid number. It looked like a bad country to anybody
+ * reading the error.
+ *
+ * The two explicit international markers are unambiguous and always honoured.
+ * A bare repeated dial code is a judgement call, so it is only removed when
+ * what remains is still long enough to be a real national number — that way a
+ * genuine number which happens to begin with its own country's digits is left
+ * alone.
+ *
+ * @param {string} dialCode
+ * @param {string} national
+ * @returns {string} the national part, digits only
+ */
+export function stripCountryCode(dialCode, national) {
+  const dial = digitsOnly(dialCode);
+  const raw = String(national ?? "").trim();
+  if (!dial) return digitsOnly(raw);
+
+  // Explicit international form: "+33…" or "0033…". No ambiguity here.
+  const explicitlyInternational = raw.startsWith("+") || /^00\d/.test(digitsOnly(raw));
+  let digits = digitsOnly(raw);
+  if (digits.startsWith("00")) digits = digits.slice(2);
+
+  if (digits.startsWith(dial)) {
+    const remainder = digits.slice(dial.length);
+    // 4 digits is the shortest thing that could still be a national number.
+    // Below that, the leading digits were part of the number, not a country.
+    if (explicitlyInternational || remainder.replace(/^0+/, "").length >= 4) {
+      return remainder;
+    }
+  }
+  return digits;
 }
 
 /**
@@ -67,7 +120,8 @@ export function phoneProblem(dialCode, national) {
   // different sentence: it is usually a pasted "+33 (0)6 12 34 56 78 ext 4".
   if (/[a-z]/i.test(raw)) return "notDigits";
 
-  const total = digitsOnly(dialCode).length + stripTrunkPrefix(raw).length;
+  const total = digitsOnly(dialCode).length
+    + stripTrunkPrefix(stripCountryCode(dialCode, raw), dialCode).length;
   if (total < E164_MIN_DIGITS) return "tooShort";
   if (total > E164_MAX_DIGITS) return "tooLong";
   return null;
@@ -82,7 +136,7 @@ export function phoneProblem(dialCode, national) {
  */
 export function toE164(dialCode, national) {
   if (phoneProblem(dialCode, national)) return null;
-  return `+${digitsOnly(dialCode)}${stripTrunkPrefix(national)}`;
+  return `+${digitsOnly(dialCode)}${stripTrunkPrefix(stripCountryCode(dialCode, national), dialCode)}`;
 }
 
 /**
@@ -134,6 +188,7 @@ export function authErrorKey(err) {
   if (msg.includes("invalid") && msg.includes("token"))  return "badCode";
   if (msg.includes("expired"))                           return "codeExpired";
   if (msg.includes("rate") || msg.includes("too many"))  return "rateLimited";
+  if (msg.includes("permission") || msg.includes("region") || msg.includes("not enabled for the region")) return "regionBlocked";
   if (msg.includes("invalid") && msg.includes("phone"))  return "badNumber";
   // An unconfigured SMS provider fails here, and it is worth its own sentence
   // so the owner recognises it instead of debugging the dialog.
@@ -187,6 +242,7 @@ export async function isMyPhoneVerified() {
  */
 export async function sendPhoneCode(e164) {
   const { error } = await getClient().auth.updateUser({ phone: e164 });
+  if (error) console.error("sendPhoneCode failed for", e164, "->", error);
   return { error };
 }
 
@@ -205,5 +261,6 @@ export async function confirmPhoneCode(e164, code) {
     token: digitsOnly(code),
     type: "phone_change",
   });
+  if (error) console.error("confirmPhoneCode failed for", e164, "->", error);
   return { error };
 }

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   PHONE_REQUIRED_SQLSTATE, OTP_LENGTH,
-  stripTrunkPrefix, phoneProblem, toE164, otpProblem,
+  stripTrunkPrefix, stripCountryCode, phoneProblem, toE164, otpProblem,
   isPhoneRequiredError, authErrorKey,
 } from "./phoneVerify";
 
@@ -133,5 +133,54 @@ describe("authErrorKey", () => {
     expect(authErrorKey({ message: "something nobody predicted" })).toBe("generic");
     expect(authErrorKey(null)).toBe("generic");
     expect(authErrorKey({})).toBe("generic");
+  });
+});
+
+describe("stripCountryCode — the number people actually paste", () => {
+  // The field shows a "+33" prefix and people paste their whole number into it
+  // regardless. Every one of these used to become +3333612345678, which Twilio
+  // rejects, and which surfaced to the user as "check the country".
+  it("undoes a country code the person included themselves", () => {
+    expect(toE164("33", "+33612345678")).toBe("+33612345678");
+    expect(toE164("33", "33612345678")).toBe("+33612345678");
+    expect(toE164("33", "0033612345678")).toBe("+33612345678");
+    expect(toE164("33", "+33 6 12 34 56 78")).toBe("+33612345678");
+  });
+
+  it("leaves a plain national number alone", () => {
+    expect(toE164("33", "0612345678")).toBe("+33612345678");
+    expect(toE164("33", "612345678")).toBe("+33612345678");
+  });
+
+  it("does not eat digits that merely look like the country code", () => {
+    // +1 with a national number starting in 1: stripping would leave 9 digits
+    // and silently mangle a valid US number. The remainder guard prevents it
+    // for short cases; explicit "+" is the only unconditional trigger.
+    expect(stripCountryCode("1", "155")).toBe("155");
+    expect(stripCountryCode("44", "44")).toBe("44");
+  });
+
+  it("honours an explicit + even when the remainder is short", () => {
+    expect(stripCountryCode("44", "+4477")).toBe("77");
+  });
+});
+
+describe("Italy keeps its leading zero", () => {
+  // Rome is +39 06 …, where the 0 is part of the number rather than a trunk
+  // prefix. Stripping it — correct almost everywhere else — makes the number
+  // unroutable, and Italian is one of the four languages this app ships in.
+  it("retains the zero for +39", () => {
+    expect(toE164("39", "0612345678")).toBe("+390612345678");
+    expect(stripTrunkPrefix("0612345678", "39")).toBe("0612345678");
+  });
+
+  it("still strips it everywhere else", () => {
+    expect(toE164("33", "0612345678")).toBe("+33612345678");
+    expect(toE164("44", "07911123456")).toBe("+447911123456");
+    expect(stripTrunkPrefix("0612345678", "33")).toBe("612345678");
+  });
+
+  it("leaves Italian mobiles, which have no leading zero, untouched", () => {
+    expect(toE164("39", "3331234567")).toBe("+393331234567");
   });
 });

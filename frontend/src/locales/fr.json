@@ -1676,7 +1676,8 @@
       "rateLimited": "Trop de tentatives. Attendez quelques minutes et réessayez.",
       "badNumber": "Nous n'avons pas pu lire ce numéro. Vérifiez le pays et réessayez.",
       "smsUnavailable": "La vérification par SMS est indisponible pour le moment. Réessayez plus tard.",
-      "generic": "Une erreur est survenue. Veuillez réessayer."
+      "generic": "Une erreur est survenue. Veuillez réessayer.",
+      "regionBlocked": "Ce pays n'est pas encore activé pour les SMS de notre côté. Signalez-le-nous pour que nous l'activions."
     },
     "account": {
       "label": "Vérification du téléphone",
