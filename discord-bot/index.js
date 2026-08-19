@@ -36,6 +36,7 @@ const { isCloseCommand, closedStatusFor, canCloseAnnounce } = require('./lib/clo
 const { searchListings } = require('./lib/marketplace');
 const { commandDefinitions, buildSearchEmbed, escapeMd } = require('./lib/slashCommands');
 const { buildEventEmbed, eventAnnouncement } = require('./lib/eventPost');
+const { entitlementIsActive, syncGuildEntitlement } = require('./lib/entitlementSync');
 
 // ── Validate env ──────────────────────────────────────────────────────────────
 const {
@@ -93,13 +94,6 @@ function getConfig(guildId) {
 // Seeded on ready, mutated by entitlement events, re-synced on a timer.
 const premiumGuilds = new Set();
 
-/** An entitlement grants access when it has no end, or the end is in the future. */
-function entitlementIsActive(ent) {
-  // discord.js exposes endsTimestamp (ms) — null/undefined means indefinite.
-  const ends = ent?.endsTimestamp ?? null;
-  return ends === null || ends > Date.now();
-}
-
 // Guilds whose linked community is verified on the website. Paying either way
 // buys the same thing, so a store that subscribed on 0nefor.one gets the bot's
 // premium features here without buying a second subscription through Discord.
@@ -115,67 +109,65 @@ function isPremiumGuild(guildId) {
 }
 
 /**
- * A Discord Guild Subscription verifies the linked community on the website.
- *
- * Two things have to be true beyond the entitlement, and the second is the one
- * that matters: the guild must be linked to a community by /verify, and the
- * Discord account that **owns the guild** must be the account that owns the
- * community. Manage Server is enough to link a server; it is not enough to
- * spend the server owner's subscription on your own listing.
- *
- * Writes only `discord_entitlement_at`, then asks the database to recompute.
- * `community.verified` is derived from Stripe and Discord together, so an
- * entitlement ending can never strip the badge from somebody paying by card.
+ * Pushes a guild's entitlement onto the website's badge. The rules and the
+ * failure handling live in lib/entitlementSync.js, where they are tested; this
+ * resolves the guild and decides what is worth saying out loud.
  */
-async function syncGuildEntitlement(guildId, active) {
+async function pushGuildEntitlement(guildId, active) {
   try {
     const guild = client.guilds.cache.get(guildId);
     if (!guild) return; // not a server we are in; nothing to check ownership against
 
-    const { data, error } = await supabase.rpc('discord_entitlement_target', { p_guild_id: guildId });
-    if (error) { console.error('[entitlement→site] target lookup failed:', error); return; }
-    const target = Array.isArray(data) ? data[0] : null;
-    if (!target?.community_id) return; // never linked, or identity not proved yet
+    const out = await syncGuildEntitlement(supabase, {
+      guildId,
+      guildOwnerId: guild.ownerId,
+      active,
+    });
 
-    if (!target.owner_discord_id || target.owner_discord_id !== guild.ownerId) {
-      // Linked, but by somebody who is not the server's owner. Say so once
-      // rather than every ten minutes.
-      if (active && !entitlementOwnerWarned.has(guildId)) {
-        entitlementOwnerWarned.add(guildId);
-        console.warn(
-          `[entitlement→site] guild ${guildId} is premium but its owner is not the community owner — not verifying`,
+    switch (out.reason) {
+      case 'target-lookup-failed':
+        console.error('[entitlement→site] target lookup failed:', out.error);
+        return;
+
+      case 'owner-mismatch':
+        // Linked, but by somebody who is not the server's owner. Say so once
+        // rather than every ten minutes.
+        if (active && !entitlementOwnerWarned.has(guildId)) {
+          entitlementOwnerWarned.add(guildId);
+          console.warn(
+            `[entitlement→site] guild ${guildId} is premium but its owner is not the community owner — not verifying`,
+          );
+        }
+        return;
+
+      case 'write-failed':
+        console.error('[entitlement→site] write failed:', out.error);
+        return;
+
+      case 'recompute-failed':
+        console.error('[entitlement→site] recompute failed:', out.error);
+        if (!out.reverted) {
+          console.error(
+            `[entitlement→site] revert failed for claim ${out.claimId} — community ` +
+            `${out.communityId} is holding entitlement state its badge never saw; ` +
+            `run recompute_community_verified(${out.communityId}) by hand:`,
+            out.revertError,
+          );
+        }
+        return;
+
+      case 'synced':
+        console.log(
+          `[entitlement→site] guild ${guildId} → community ${out.communityId}: ` +
+          `entitlement ${active ? 'granted' : 'ended'}, verified=${out.verified}`,
         );
-      }
-      return;
+        return;
+
+      default:
+        return; // not-linked, no-claim, unchanged: nothing worth a line
     }
-
-    const { data: claim } = await supabase
-      .from('community_claim')
-      .select('id, discord_entitlement_at')
-      .eq('community', target.community_id)
-      .not('discord_guild_id', 'is', null)
-      .maybeSingle();
-    if (!claim) return;
-
-    const held = claim.discord_entitlement_at != null;
-    if (held === active) return; // already in the state we want; no write, no noise
-
-    const { error: writeErr } = await supabase
-      .from('community_claim')
-      .update({ discord_entitlement_at: active ? new Date().toISOString() : null })
-      .eq('id', claim.id);
-    if (writeErr) { console.error('[entitlement→site] write failed:', writeErr); return; }
-
-    const { data: verified, error: recErr } = await supabase
-      .rpc('recompute_community_verified', { p_community: target.community_id });
-    if (recErr) { console.error('[entitlement→site] recompute failed:', recErr); return; }
-
-    console.log(
-      `[entitlement→site] guild ${guildId} → community ${target.community_id}: ` +
-      `entitlement ${active ? 'granted' : 'ended'}, verified=${verified}`,
-    );
   } catch (err) {
-    console.error('syncGuildEntitlement failed:', err);
+    console.error('pushGuildEntitlement failed:', err);
   }
 }
 
@@ -228,7 +220,7 @@ async function syncEntitlements(client) {
     // was down gets cleared. syncGuildEntitlement writes nothing when the state
     // already matches, so the usual pass is all reads.
     for (const guildId of client.guilds.cache.keys()) {
-      await syncGuildEntitlement(guildId, premiumGuilds.has(guildId));
+      await pushGuildEntitlement(guildId, premiumGuilds.has(guildId));
     }
   } catch (err) {
     console.error('[entitlements] sync failed:', err);
@@ -1144,7 +1136,7 @@ client.on(Events.EntitlementCreate, (ent) => {
   if (ent.guildId && entitlementIsActive(ent)) {
     premiumGuilds.add(ent.guildId);
     console.log(`[entitlements] +premium guild ${ent.guildId}`);
-    syncGuildEntitlement(ent.guildId, true);
+    pushGuildEntitlement(ent.guildId, true);
   }
 });
 
@@ -1153,11 +1145,11 @@ client.on(Events.EntitlementUpdate, (_oldEnt, ent) => {
   if (!ent.guildId) return;
   if (entitlementIsActive(ent)) {
     premiumGuilds.add(ent.guildId);
-    syncGuildEntitlement(ent.guildId, true);
+    pushGuildEntitlement(ent.guildId, true);
   } else {
     premiumGuilds.delete(ent.guildId);
     console.log(`[entitlements] -premium guild ${ent.guildId} (ended)`);
-    syncGuildEntitlement(ent.guildId, false);
+    pushGuildEntitlement(ent.guildId, false);
   }
 });
 
@@ -1166,7 +1158,7 @@ client.on(Events.EntitlementDelete, (ent) => {
   if (ent.guildId) {
     premiumGuilds.delete(ent.guildId);
     console.log(`[entitlements] -premium guild ${ent.guildId} (removed)`);
-    syncGuildEntitlement(ent.guildId, false);
+    pushGuildEntitlement(ent.guildId, false);
   }
 });
 
