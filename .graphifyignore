@@ -1,0 +1,28 @@
+# Scope the graph to the real project, not the agent tooling around it.
+# Mirrors the corpus the graph was originally built from:
+#   frontend/ supabase/ discord-activity/ discord-bot/ scrapers/ docs/
+
+# Agent / skill tooling (anywhere in the tree)
+.agents/
+.specs/
+.claude/
+.1code/
+.superpowers/
+skills-lock.json
+
+# Environments, CI, vendored deps, generated output
+.venv/
+.github/
+node_modules/
+graphify-out/
+
+# Scratch data and root-level config dumps
+data/
+/out.json
+/DESIGN.json
+/requirements.txt
+
+# Root-level product docs (not part of the extracted corpus)
+/README.md
+/PRODUCT.md
+/DESIGN.md
