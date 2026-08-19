@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   PHONE_REQUIRED_SQLSTATE, OTP_LENGTH,
   stripTrunkPrefix, stripCountryCode, phoneProblem, toE164, otpProblem,
-  isPhoneRequiredError, authErrorKey,
+  isPhoneRequiredError, authErrorKey, twilioCode,
 } from "./phoneVerify";
 
 describe("stripTrunkPrefix", () => {
@@ -182,5 +182,50 @@ describe("Italy keeps its leading zero", () => {
 
   it("leaves Italian mobiles, which have no leading zero, untouched", () => {
     expect(toE164("39", "3331234567")).toBe("+393331234567");
+  });
+});
+
+describe("authErrorKey — regression on the real failure", () => {
+  // Verbatim from Supabase's auth logs on 2026-08-19. This was reported to the
+  // user as "We could not read that number. Check the country and try again",
+  // which sent them checking the one thing that was correct. The endpoint is
+  // called phone_change, so the old rule of "invalid AND phone" matched every
+  // single failure on this route.
+  const REAL = { message: "Error sending phone_change OTP to provider: Authentication Error - invalid username More information: https://www.twilio.com/docs/errors/20003" };
+
+  it("does NOT blame the number for a credentials rejection", () => {
+    expect(authErrorKey(REAL)).not.toBe("badNumber");
+    expect(authErrorKey(REAL)).toBe("providerAuth");
+  });
+
+  it("reads the Twilio code out of the docs URL", () => {
+    expect(twilioCode(REAL.message)).toBe(20003);
+  });
+
+  it("never lets the endpoint name stand in for the user's number", () => {
+    // Any failure on this route carries the substring "phone". None of these
+    // are about the number the person typed.
+    expect(authErrorKey({ message: "Error sending phone_change OTP to provider: quota exceeded" })).not.toBe("badNumber");
+    expect(authErrorKey({ message: "phone_change failed: invalid credentials" })).toBe("providerAuth");
+  });
+
+  it("still identifies a genuinely bad number", () => {
+    expect(authErrorKey({ message: "Invalid 'To' Phone Number: +3333612345678 https://www.twilio.com/docs/errors/21211" })).toBe("badNumber");
+  });
+
+  it("maps the other setup failures to their own messages", () => {
+    expect(authErrorKey({ message: "https://www.twilio.com/docs/errors/21408 permission not enabled for region" })).toBe("regionBlocked");
+    expect(authErrorKey({ message: "https://www.twilio.com/docs/errors/21608 unverified trial number" })).toBe("trialNumber");
+    expect(authErrorKey({ message: "https://www.twilio.com/docs/errors/21212 Invalid From number" })).toBe("providerAuth");
+    expect(authErrorKey({ message: "https://www.twilio.com/docs/errors/21610 has unsubscribed" })).toBe("unsubscribed");
+  });
+
+  it("keeps the pre-existing mappings working", () => {
+    expect(authErrorKey({ message: "Phone number already been registered" })).toBe("numberTaken");
+    expect(authErrorKey({ message: "Token has expired" })).toBe("codeExpired");
+    expect(authErrorKey({ message: "Invalid token" })).toBe("badCode");
+    expect(authErrorKey({ message: "Too many requests" })).toBe("rateLimited");
+    expect(authErrorKey(null)).toBe("generic");
+    expect(authErrorKey({ message: "something nobody predicted" })).toBe("generic");
   });
 });

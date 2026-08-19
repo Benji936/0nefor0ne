@@ -1677,7 +1677,10 @@
       "badNumber": "We could not read that number. Check the country and try again.",
       "smsUnavailable": "SMS verification is not available right now. Please try again later.",
       "generic": "Something went wrong. Please try again.",
-      "regionBlocked": "This country is not enabled for SMS on our side yet. Please let us know so we can switch it on."
+      "regionBlocked": "This country is not enabled for SMS on our side yet. Please let us know so we can switch it on.",
+      "providerAuth": "SMS verification is temporarily unavailable. We have been notified — please try again shortly.",
+      "trialNumber": "SMS verification is temporarily unavailable for this number. Please try again shortly.",
+      "unsubscribed": "This number has opted out of our messages. Reply START to our SMS number, or use a different number."
     },
     "account": {
       "label": "Phone verification",

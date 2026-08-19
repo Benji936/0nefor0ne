@@ -170,28 +170,70 @@ export function isPhoneRequiredError(err) {
 }
 
 /**
+ * Twilio's numeric error codes, which are the only unambiguous thing in a
+ * provider failure. Supabase passes Twilio's message through verbatim,
+ * including a docs URL ending in the code.
+ *
+ * Prose matching alone was actively harmful here: the endpoint is called
+ * `phone_change`, so every message contains the substring "phone", and a rule
+ * of "invalid AND phone" therefore matched *every* failure on this route. A
+ * credentials rejection was reported to users as a bad phone number, which sent
+ * them checking the one thing that was correct.
+ */
+const TWILIO_CODES = {
+  20003: "providerAuth",   // Authentication Error — Supabase's Twilio credentials rejected
+  20404: "providerAuth",   // resource not found, usually a wrong Account SID
+  21211: "badNumber",      // Invalid 'To' phone number
+  21212: "providerAuth",   // Invalid 'From' number — sender misconfigured
+  21214: "badNumber",      // 'To' number not reachable
+  21408: "regionBlocked",  // geo permissions not enabled for that country
+  21606: "providerAuth",   // 'From' number not SMS-capable
+  21608: "trialNumber",    // trial account, recipient not a verified caller ID
+  21610: "unsubscribed",   // recipient has replied STOP
+  21612: "badNumber",      // not reachable by SMS
+  30006: "badNumber",      // landline or unreachable carrier
+};
+
+/** Pull a Twilio error code out of the message, or null. */
+export function twilioCode(message) {
+  const msg = String(message ?? "");
+  const fromUrl = msg.match(/twilio\.com\/docs\/errors\/(\d{4,6})/);
+  if (fromUrl) return Number(fromUrl[1]);
+  const bare = msg.match(/\b(2\d{4}|3\d{4})\b/);
+  return bare ? Number(bare[1]) : null;
+}
+
+/**
  * Map a Supabase auth failure onto a translation key.
  *
- * The one that matters is the taken number: it is the whole feature working as
- * intended, and it has to read as "this number is already in use" rather than
- * as a bug. Supabase phrases it a few different ways depending on version, so
- * this matches loosely on purpose.
+ * Codes first, prose second. The prose pass strips the endpoint name before
+ * matching, so "phone_change" can never be mistaken for a statement about the
+ * user's phone number.
  *
  * @param {unknown} err
  * @returns {string} an i18n key under phoneVerify.error
  */
 export function authErrorKey(err) {
-  const msg = String(err?.message ?? "").toLowerCase();
-  if (!msg) return "generic";
+  const raw = String(err?.message ?? "");
+  if (!raw) return "generic";
+
+  const code = twilioCode(raw);
+  if (code && TWILIO_CODES[code]) return TWILIO_CODES[code];
+
+  // Remove the words that name the endpoint rather than the problem.
+  const msg = raw.toLowerCase().replace(/phone_change|phone change|otp/g, " ");
+
   if (msg.includes("already been registered") || msg.includes("already registered")
       || msg.includes("already exists") || msg.includes("duplicate")) return "numberTaken";
-  if (msg.includes("invalid") && msg.includes("token"))  return "badCode";
-  if (msg.includes("expired"))                           return "codeExpired";
-  if (msg.includes("rate") || msg.includes("too many"))  return "rateLimited";
-  if (msg.includes("permission") || msg.includes("region") || msg.includes("not enabled for the region")) return "regionBlocked";
-  if (msg.includes("invalid") && msg.includes("phone"))  return "badNumber";
-  // An unconfigured SMS provider fails here, and it is worth its own sentence
-  // so the owner recognises it instead of debugging the dialog.
+  if (msg.includes("expired"))                              return "codeExpired";
+  if (msg.includes("rate") || msg.includes("too many"))     return "rateLimited";
+  if (msg.includes("permission") || msg.includes("region")) return "regionBlocked";
+  if (msg.includes("invalid") && msg.includes("token"))     return "badCode";
+  if (msg.includes("authentication") || msg.includes("unauthenticated")
+      || msg.includes("credential"))                        return "providerAuth";
+  if (msg.includes("invalid") && msg.includes("number"))    return "badNumber";
+  // An unconfigured provider fails here, and it is worth its own sentence so
+  // the owner recognises a setup problem instead of debugging the dialog.
   if (msg.includes("sms") || msg.includes("provider") || msg.includes("not enabled")) return "smsUnavailable";
   return "generic";
 }

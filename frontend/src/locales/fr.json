@@ -1677,7 +1677,10 @@
       "badNumber": "Nous n'avons pas pu lire ce numéro. Vérifiez le pays et réessayez.",
       "smsUnavailable": "La vérification par SMS est indisponible pour le moment. Réessayez plus tard.",
       "generic": "Une erreur est survenue. Veuillez réessayer.",
-      "regionBlocked": "Ce pays n'est pas encore activé pour les SMS de notre côté. Signalez-le-nous pour que nous l'activions."
+      "regionBlocked": "Ce pays n'est pas encore activé pour les SMS de notre côté. Signalez-le-nous pour que nous l'activions.",
+      "providerAuth": "La vérification par SMS est temporairement indisponible. Nous sommes prévenus — réessayez dans un instant.",
+      "trialNumber": "La vérification par SMS est temporairement indisponible pour ce numéro. Réessayez dans un instant.",
+      "unsubscribed": "Ce numéro s'est désabonné de nos messages. Répondez START à notre numéro, ou utilisez un autre numéro."
     },
     "account": {
       "label": "Vérification du téléphone",
