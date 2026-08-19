@@ -1641,5 +1641,53 @@
       "cta": "Se connecter ou créer un compte",
       "browse": "Parcourir sans compte"
     }
+  },
+  "phoneVerify": {
+    "title": "Vérifiez votre numéro de téléphone",
+    "reason": {
+      "propose": "Requis avant d'envoyer un échange",
+      "accept": "Requis avant d'accepter un échange",
+      "counter": "Requis avant d'envoyer une contre-offre",
+      "account": "Vérification depuis votre compte"
+    },
+    "why": "Un compte par numéro de téléphone. C'est ainsi que nous empêchons la création de comptes jetables pour arnaquer les joueurs, et cela signifie que la personne en face de vous a passé le même contrôle.",
+    "numberLabel": "Numéro de téléphone",
+    "privacyNote": "Utilisé uniquement pour vérifier ce compte. Jamais montré aux autres joueurs, jamais utilisé à des fins commerciales.",
+    "sendCode": "Envoyer le code",
+    "codeSent": "Nous avons envoyé un code à 6 chiffres au {number}.",
+    "codeLabel": "Code à 6 chiffres",
+    "confirm": "Vérifier",
+    "resend": "Renvoyer le code",
+    "resendIn": "Renvoyer dans {s} s",
+    "changeNumber": "Changer de numéro",
+    "notNow": "Plus tard",
+    "inlineRetry": "Vérifiez votre numéro, puis renvoyez. Votre sélection est conservée.",
+    "numberError": {
+      "empty": "Saisissez votre numéro de téléphone.",
+      "notDigits": "Chiffres uniquement — pas de lettres ni d'extension.",
+      "tooShort": "Ce numéro semble trop court.",
+      "tooLong": "Ce numéro semble trop long.",
+      "noCountry": "Choisissez d'abord votre pays."
+    },
+    "error": {
+      "numberTaken": "Ce numéro est déjà lié à un autre compte. Chaque numéro ne peut vérifier qu'un seul compte.",
+      "badCode": "Ce code est incorrect. Vérifiez-le et réessayez.",
+      "codeExpired": "Ce code a expiré. Demandez-en un nouveau.",
+      "rateLimited": "Trop de tentatives. Attendez quelques minutes et réessayez.",
+      "badNumber": "Nous n'avons pas pu lire ce numéro. Vérifiez le pays et réessayez.",
+      "smsUnavailable": "La vérification par SMS est indisponible pour le moment. Réessayez plus tard.",
+      "generic": "Une erreur est survenue. Veuillez réessayer.",
+      "regionBlocked": "Ce pays n'est pas encore activé pour les SMS de notre côté. Signalez-le-nous pour que nous l'activions.",
+      "providerAuth": "La vérification par SMS ne fonctionne pas pour le moment. Le problème vient de chez nous, pas de votre numéro — réessayez plus tard.",
+      "trialNumber": "La vérification par SMS est temporairement indisponible pour ce numéro. Réessayez dans un instant.",
+      "unsubscribed": "Ce numéro s'est désabonné de nos messages. Répondez START à notre numéro, ou utilisez un autre numéro."
+    },
+    "account": {
+      "label": "Vérification du téléphone",
+      "checking": "Vérification…",
+      "verified": "Vérifié",
+      "notVerified": "Pas encore vérifié",
+      "cta": "Vérifier"
+    }
   }
 }

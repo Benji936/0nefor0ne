@@ -25,6 +25,7 @@ import {
   fetchMyProposals, fetchTradeEvents, acceptTradeProposal, declineTradeProposal,
   cancelTradeProposal, completeTradeProposal,
 } from "@/lib/proposals";
+import { handleIfPhoneRequired } from "@/lib/phoneGate";
 import TradePhotosPanel from "@/components/trade/TradePhotosPanel.vue";
 import TradeChatPanel   from "@/components/trade/TradeChatPanel.vue";
 import ProposeTradeDialog from "@/components/trade/ProposeTradeDialog.vue";
@@ -214,6 +215,11 @@ function say(message, color = "var(--c-mutual)") {
 }
 
 function reportTradeError(err, fallbackKey) {
+  // Accepting is gated the same way proposing is: both parties are exposed the
+  // moment a trade goes live. Declining and cancelling are not — those are how
+  // somebody gets out of a trade, and a person who cannot leave one is worse
+  // off than one who could never enter it.
+  if (handleIfPhoneRequired(err, 'accept')) return;
   say(t(tradeErrorKey(err, fallbackKey)), "var(--c-accent)");
   if (isStaleTradeError(err)) load({ quiet: true });
 }

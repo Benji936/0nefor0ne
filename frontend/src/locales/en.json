@@ -1641,5 +1641,53 @@
       "cta": "Sign in or create an account",
       "browse": "Browse without an account"
     }
+  },
+  "phoneVerify": {
+    "title": "Verify your phone number",
+    "reason": {
+      "propose": "Needed before sending a trade",
+      "accept": "Needed before accepting a trade",
+      "counter": "Needed before sending a counter-offer",
+      "account": "Verify from your account page"
+    },
+    "why": "One account per phone number. It is how we stop somebody spinning up throwaway accounts to scam traders, and it means the person on the other side of your trade went through the same check.",
+    "numberLabel": "Phone number",
+    "privacyNote": "Used only to verify this account. Never shown to other traders, never used for marketing.",
+    "sendCode": "Send code",
+    "codeSent": "We sent a 6-digit code to {number}.",
+    "codeLabel": "6-digit code",
+    "confirm": "Verify",
+    "resend": "Resend code",
+    "resendIn": "Resend in {s}s",
+    "changeNumber": "Change number",
+    "notNow": "Not now",
+    "inlineRetry": "Verify your number, then press send again. Your selection is kept.",
+    "numberError": {
+      "empty": "Enter your phone number.",
+      "notDigits": "Digits only — no letters or extensions.",
+      "tooShort": "That number looks too short.",
+      "tooLong": "That number looks too long.",
+      "noCountry": "Pick your country first."
+    },
+    "error": {
+      "numberTaken": "That number is already linked to another account. Each number can verify one account.",
+      "badCode": "That code is not right. Check it and try again.",
+      "codeExpired": "That code has expired. Ask for a new one.",
+      "rateLimited": "Too many attempts. Wait a few minutes and try again.",
+      "badNumber": "We could not read that number. Check the country and try again.",
+      "smsUnavailable": "SMS verification is not available right now. Please try again later.",
+      "generic": "Something went wrong. Please try again.",
+      "regionBlocked": "This country is not enabled for SMS on our side yet. Please let us know so we can switch it on.",
+      "providerAuth": "SMS verification isn't working right now. This is a problem on our side, not with your number — please try again later.",
+      "trialNumber": "SMS verification is temporarily unavailable for this number. Please try again shortly.",
+      "unsubscribed": "This number has opted out of our messages. Reply START to our SMS number, or use a different number."
+    },
+    "account": {
+      "label": "Phone verification",
+      "checking": "Checking…",
+      "verified": "Verified",
+      "notVerified": "Not verified yet",
+      "cta": "Verify"
+    }
   }
 }
