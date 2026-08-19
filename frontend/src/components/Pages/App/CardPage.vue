@@ -355,6 +355,7 @@ import { hasAnyBanlist, ensureBanlistManifest } from "@/lib/banlist";
 import { searchById, searchByArchetype, getCardsByIds, getCardArtworks, getSetReleaseDates } from "@/api";
 import { fetchTradersWithCard } from "@/lib/matches";
 import { getCurrentSession, getClient } from "@/lib/supabaseClient";
+import { ldScript }   from "@/lib/jsonLd";
 
 // Reverse of ARCHETYPE_BY_SLUG: the API gives a card's archetype by name, and
 // the link needs its slug. Built once per module load, not per card.
@@ -552,8 +553,8 @@ export default {
           { rel: "alternate", hreflang: "x-default", href: `${BASE}${enPath}` },
         ],
         script: [
-          { type: "application/ld+json", innerHTML: JSON.stringify(schema) },
-          { type: "application/ld+json", innerHTML: JSON.stringify(breadcrumb) },
+          ldScript(schema),
+          ldScript(breadcrumb),
         ],
       };
     }));

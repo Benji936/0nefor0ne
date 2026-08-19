@@ -85,6 +85,7 @@ import { useHead } from '@unhead/vue'
 import { getCardsByArchetype } from '@/api'
 import { ARCHETYPE_BY_SLUG } from '@/data/archetype-slugs.js'
 import { cardImage } from '@/lib/cardImage'
+import { ldScript } from '@/lib/jsonLd'
 
 const BASE = 'https://0nefor.one'
 
@@ -182,27 +183,24 @@ export default {
         // sets of alternate links on the same page.
         link: [{ rel: 'canonical', href: canonical }],
         script: data
-          ? [{
-              type: 'application/ld+json',
-              innerHTML: JSON.stringify({
-                '@context': 'https://schema.org',
-                '@type': 'CollectionPage',
-                name: `${name} archetype`,
-                description: truncDesc,
-                url: canonical,
-                mainEntity: {
-                  '@type': 'ItemList',
-                  name: `${name} card list`,
-                  numberOfItems: data.cards.length,
-                  itemListElement: data.cards.map((c, i) => ({
-                    '@type': 'ListItem',
-                    position: i + 1,
-                    name: c.name,
-                    url: `${BASE}/en/card/${c.id}`,
-                  })),
-                },
-              }),
-            }]
+          ? [ldScript({
+              '@context': 'https://schema.org',
+              '@type': 'CollectionPage',
+              name: `${name} archetype`,
+              description: truncDesc,
+              url: canonical,
+              mainEntity: {
+                '@type': 'ItemList',
+                name: `${name} card list`,
+                numberOfItems: data.cards.length,
+                itemListElement: data.cards.map((c, i) => ({
+                  '@type': 'ListItem',
+                  position: i + 1,
+                  name: c.name,
+                  url: `${BASE}/en/card/${c.id}`,
+                })),
+              },
+            })]
           : [],
       }
     }))

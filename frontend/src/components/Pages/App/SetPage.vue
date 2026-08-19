@@ -75,6 +75,7 @@ import { ref, computed, onServerPrefetch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import { getCardsBySet } from '@/api'
+import { ldScript } from '@/lib/jsonLd'
 
 export default {
   name: 'SetPage',
@@ -151,15 +152,12 @@ export default {
             { rel: 'canonical', href: 'https://0nefor.one/en/set/' }
           ],
           script: [
-            {
-              type: 'application/ld+json',
-              innerHTML: JSON.stringify({
-                '@context': 'https://schema.org',
-                '@type': 'CollectionPage',
-                name: decodeURIComponent(route.params.setSlug || ''),
-                url: `https://0nefor.one/${route.params.locale || 'en'}/set/${route.params.setSlug || ''}`,
-              })
-            }
+            ldScript({
+              '@context': 'https://schema.org',
+              '@type': 'CollectionPage',
+              name: decodeURIComponent(route.params.setSlug || ''),
+              url: `https://0nefor.one/${route.params.locale || 'en'}/set/${route.params.setSlug || ''}`,
+            })
           ],
         }
       }
@@ -188,27 +186,24 @@ export default {
           { rel: 'canonical', href: canonicalUrl }
         ],
         script: [
-          {
-            type: 'application/ld+json',
-            innerHTML: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'CollectionPage',
-              name: setName,
-              description: truncDesc,
-              url: canonicalUrl,
-              mainEntity: {
-                '@type': 'ItemList',
-                name: `${setName} card list`,
-                numberOfItems: cards.length,
-                itemListElement: cards.map((card, i) => ({
-                  '@type': 'ListItem',
-                  position: i + 1,
-                  name: card.name,
-                  url: `https://0nefor.one/${route.params.locale || 'en'}/card/${card.id}`,
-                }))
-              }
-            })
-          }
+          ldScript({
+            '@context': 'https://schema.org',
+            '@type': 'CollectionPage',
+            name: setName,
+            description: truncDesc,
+            url: canonicalUrl,
+            mainEntity: {
+              '@type': 'ItemList',
+              name: `${setName} card list`,
+              numberOfItems: cards.length,
+              itemListElement: cards.map((card, i) => ({
+                '@type': 'ListItem',
+                position: i + 1,
+                name: card.name,
+                url: `https://0nefor.one/${route.params.locale || 'en'}/card/${card.id}`,
+              }))
+            }
+          })
         ]
       }
     }))
