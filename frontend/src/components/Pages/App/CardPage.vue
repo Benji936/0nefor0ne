@@ -265,12 +265,12 @@
               <p class="text-sm text-center py-6" style="color: var(--c-muted)">{{ $t('cardYugi.noTraders') }}</p>
             </template>
             <template v-else>
-              <div
+              <router-link
                 v-for="trader in tradersHave"
                 :key="trader.id"
-                class="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 cursor-pointer transition-opacity hover:opacity-80"
+                :to="{ name: 'trader', params: { locale: $route.params.locale || 'en', id: trader.id } }"
+                class="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 no-underline transition-opacity hover:opacity-80"
                 style="border-color: var(--c-border)"
-                @click="proposeToTrader(trader)"
               >
                 <div
                   class="size-8 rounded-full shrink-0 flex items-center justify-center text-sm font-bold overflow-hidden"
@@ -286,7 +286,7 @@
                   </div>
                   <p class="text-xs truncate mt-1" style="color: var(--c-muted)">{{ [trader.city, trader.country].filter(Boolean).join(', ') || $t('cardPage.unknown') }}</p>
                 </div>
-              </div>
+              </router-link>
             </template>
           </div>
 
@@ -297,12 +297,12 @@
               <p class="text-sm text-center py-6" style="color: var(--c-muted)">{{ $t('cardYugi.noTradersLookingForCard') }}</p>
             </template>
             <template v-else>
-              <div
+              <router-link
                 v-for="trader in tradersWant"
                 :key="trader.id"
-                class="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 cursor-pointer transition-opacity hover:opacity-80"
+                :to="{ name: 'trader', params: { locale: $route.params.locale || 'en', id: trader.id } }"
+                class="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 no-underline transition-opacity hover:opacity-80"
                 style="border-color: var(--c-border)"
-                @click="proposeToTrader(trader)"
               >
                 <div
                   class="size-8 rounded-full shrink-0 flex items-center justify-center text-sm font-bold overflow-hidden"
@@ -318,7 +318,7 @@
                   </div>
                   <p class="text-xs truncate mt-1" style="color: var(--c-muted)">{{ [trader.city, trader.country].filter(Boolean).join(', ') || $t('cardPage.unknown') }}</p>
                 </div>
-              </div>
+              </router-link>
             </template>
             </div>
           </div>
@@ -330,10 +330,6 @@
     <AddCard ref="tradeAdd" mode="trade" :headless="true" />
     <AddCard ref="wishAdd"  mode="wish"  :headless="true" />
 
-    <ProposeTradeDialog
-      v-model="proposeOpen"
-      :user="proposingTo"
-    />
   </div>
 </template>
 
@@ -342,7 +338,6 @@ import { ref, computed, onServerPrefetch } from "vue";
 import { useRoute } from "vue-router";
 import { useHead } from "@unhead/vue";
 import AddCard           from "@/components/library/AddCard.vue";
-import ProposeTradeDialog from "@/components/trade/ProposeTradeDialog.vue";
 import CardKindIcons      from "@/components/ui/card/CardKindIcons.vue";
 import CardBanlistBadge   from "@/components/ui/card/CardBanlistBadge.vue";
 import ComboExplorerLink  from "@/components/ui/card/ComboExplorerLink.vue";
@@ -397,7 +392,7 @@ function ensureYugipediaSearchers() {
 }
 
 export default {
-  components: { AddCard, ProposeTradeDialog, CardKindIcons, CardBanlistBadge, ComboExplorerLink, CardEffectBreakdown },
+  components: { AddCard, CardKindIcons, CardBanlistBadge, ComboExplorerLink, CardEffectBreakdown },
 
   props: {
     // Passed by App.vue RouterView slot — needed for AddCard auth check
@@ -585,9 +580,6 @@ export default {
       loadingArchetype: false,
       searcherCards:    [],
       loadingSearchers: false,
-      proposeOpen:        false,
-      proposingTo:        null,
-      currentLogin:       null,
       printingsExpanded:  false,
       selectedImageId:    null, // which printing art the hero image shows (null → main id)
       artworks:           [],   // all printing artworks (fetched by name; id query returns only one)
@@ -803,13 +795,6 @@ export default {
     async openWish() {
       if (!await this._requireAuth()) return;
       this.$refs.wishAdd.openWith(this.card, "");
-    },
-    async proposeToTrader(trader) {
-      const login = await this._requireAuth();
-      if (!login) return;
-      this.currentLogin = login;
-      this.proposingTo  = trader;
-      this.proposeOpen  = true;
     },
   },
 };
