@@ -11,6 +11,7 @@ import CommunityKindIcon from "@/components/community/CommunityKindIcon.vue";
 import CommunityBillingLine from "@/components/community/CommunityBillingLine.vue";
 import VerifyPhoneDialog from "@/components/dialogs/VerifyPhoneDialog.vue";
 import { isMyPhoneVerified } from "@/lib/phoneVerify";
+import { loadAccountStats, createStatsGeneration } from "@/lib/accountStats";
 
 const { t } = useI18n();
 
@@ -73,18 +74,6 @@ const activeScope = computed(() =>
   SCOPES.value.find(s => s.value === tradeScope.value) || SCOPES.value[SCOPES.value.length - 1]
 );
 
-// ── Trade history ─────────────────────────────────────────────────────────
-const trades   = ref([]);
-const loadingTrades = ref(false);
-
-const statusMeta = computed(() => ({
-  pending:   { label: t('account.status.pending'),   color: "var(--c-trade)"  },
-  accepted:  { label: t('account.status.accepted'),  color: "var(--c-mutual)" },
-  completed: { label: t('account.status.completed'), color: "var(--c-mutual)" },
-  declined:  { label: t('account.status.declined'),  color: "var(--c-accent)" },
-  cancelled: { label: t('account.status.cancelled'), color: "var(--c-muted)"  },
-}));
-
 async function loadProfile() {
   if (!props.login?.user?.id) return;
   loading.value = true;
@@ -111,17 +100,6 @@ async function loadProfile() {
     }
   } finally {
     loading.value = false;
-  }
-}
-
-async function loadTrades() {
-  if (!props.login?.user?.id) return;
-  loadingTrades.value = true;
-  try {
-    const { data } = await getClient().rpc("fetch_my_trade_history", { p_limit: 20 });
-    trades.value = data ?? [];
-  } finally {
-    loadingTrades.value = false;
   }
 }
 
@@ -219,6 +197,34 @@ async function loadCommunities() {
   }
 }
 
+// ── Activity stats ───────────────────────────────────────────────────────
+// One ref per source, each holding { status, data } with status in
+// loading | guest | ready | error. Separate refs rather than one object is the
+// whole point: a source that fails or hangs settles only its own row.
+// `loading` is the initial value here and is never emitted by the module — a
+// group is loading exactly while its promise is unsettled.
+const deckStats       = ref({ status: "loading", data: null });
+const collectionStats = ref({ status: "loading", data: null });
+const proposalStats   = ref({ status: "loading", data: null });
+
+// The watch below runs with { immediate: true } and so fires twice on a normal
+// signed-in load. Every write is gated on still being the newest load, so a
+// slow read from a superseded one — or from a user who has since signed out —
+// cannot repaint over the current numbers.
+const statsGen = createStatsGeneration();
+
+function loadStats() {
+  const token = statsGen.next();
+  // Reset synchronously, so the previous account's numbers are gone before the
+  // new ones are asked for rather than after they arrive.
+  deckStats.value = collectionStats.value = proposalStats.value = { status: "loading", data: null };
+
+  const stats = loadAccountStats(props.login?.user?.id ?? null);
+  stats.decks.then((g)      => { if (statsGen.isCurrent(token)) deckStats.value = g; });
+  stats.collection.then((g) => { if (statsGen.isCurrent(token)) collectionStats.value = g; });
+  stats.proposals.then((g)  => { if (statsGen.isCurrent(token)) proposalStats.value = g; });
+}
+
 // ── Communities I follow ─────────────────────────────────────────────────
 const following        = ref([]);
 const loadingFollowing = ref(false);
@@ -242,12 +248,16 @@ async function onUnfollow(row) {
 }
 
 watch(() => props.login?.user?.id, (id) => {
-  if (id) { loadProfile(); loadTrades(); loadCommunities(); loadFollowing(); refreshPhoneStatus(); }
+  if (id) { loadProfile(); loadCommunities(); loadFollowing(); refreshPhoneStatus(); }
   // A null id means "no session yet", which is indistinguishable from "signed
   // out" until one arrives. Settle the row either way: the rest of this page
   // renders blank fields rather than spinners when there is nobody signed in,
   // and a status that checks forever is worse than one that says nothing.
   else { phoneChecking.value = false; phoneVerified.value = false; }
+  // Runs on both branches: with no id it asks for nothing and settles every
+  // group to the guest state, which is what keeps a signed-out visitor from
+  // watching three skeletons that will never resolve.
+  loadStats();
 }, { immediate: true });
 
 const route = useRoute();
@@ -289,7 +299,7 @@ function statusStyle(status) {
       </div>
     </header>
 
-    <!-- Body: details form (primary) + communities / history (secondary) -->
+    <!-- Body: details form (primary) + communities (secondary) -->
     <div class="acct-body">
 
       <!-- Details: the one true surface panel, because it is the editable form -->
@@ -504,38 +514,120 @@ function statusStyle(status) {
             </div>
           </div>
         </section>
-
-        <!-- Trade history -->
-        <section aria-labelledby="acct-hist-h">
-          <div class="acct-section-head">
-            <h2 id="acct-hist-h" class="acct-h2">
-              <v-icon icon="mdi-swap-horizontal" size="15" />{{ t('account.tradeHistory') }}
-            </h2>
-          </div>
-
-          <div v-if="loadingTrades" class="acct-rows">
-            <div v-for="i in 3" :key="i" class="acct-row acct-row--sk">
-              <div class="h-4 rounded w-12 animate-pulse motion-reduce:animate-none" style="background: var(--c-skeleton)" />
-              <div class="h-4 rounded w-28 animate-pulse motion-reduce:animate-none" style="background: var(--c-skeleton)" />
-              <div class="h-5 rounded w-20 ml-auto animate-pulse motion-reduce:animate-none" style="background: var(--c-skeleton)" />
-            </div>
-          </div>
-
-          <p v-else-if="trades.length === 0" class="acct-empty">{{ t('account.noHistory') }}</p>
-
-          <div v-else class="acct-rows">
-            <div v-for="trade in trades" :key="trade.trade_id" class="acct-row">
-              <span class="font-mono text-xs shrink-0" style="color: var(--c-muted)">#{{ trade.trade_id }}</span>
-              <span class="truncate" style="color: var(--c-text)">{{ trade.counterparty_name ?? t('common.anonymous') }}</span>
-              <span
-                class="ml-auto shrink-0 text-xs font-semibold px-2 py-1 rounded-md"
-                :style="{ color: (statusMeta[trade.status] ?? statusMeta.pending).color, background: `color-mix(in srgb, ${(statusMeta[trade.status] ?? statusMeta.pending).color} 12%, transparent)` }"
-              >{{ (statusMeta[trade.status] ?? statusMeta.pending).label }}</span>
-            </div>
-          </div>
-        </section>
       </div>
     </div>
+
+    <!-- Activity: what you have here, and the way into each of it. A full-width
+         strip below the body, so the page opens on who you are and then hands
+         you the ways out of it. Each card branches on its own group's state, so
+         a source that fails or lags affects only its own tile. -->
+    <section class="acct-stats-wrap" aria-labelledby="acct-stats-h">
+      <h2 id="acct-stats-h" class="acct-sub">{{ t('account.stats.title') }}</h2>
+
+      <p v-if="deckStats.status === 'guest'" class="acct-stats-guest">{{ t('account.stats.guest') }}</p>
+
+      <div v-else class="acct-stats">
+
+        <!-- Decks -->
+        <component
+          :is="deckStats.status === 'ready' ? 'router-link' : 'div'"
+          class="acct-stat"
+          :to="deckStats.status === 'ready' ? { name: 'decks', params: { locale } } : undefined"
+          :aria-label="deckStats.status === 'ready' ? t('account.stats.viewDecks') : undefined"
+        >
+          <div class="acct-stat__head">
+            <span class="acct-stat__title">{{ t('account.stats.decks') }}</span>
+            <v-icon icon="mdi-cards-outline" size="17" class="acct-stat__icon" />
+          </div>
+          <div v-if="deckStats.status === 'loading'" class="acct-stat__sk" />
+          <p v-else-if="deckStats.status === 'error'" class="acct-stat__failed">{{ t('account.stats.failed') }}</p>
+          <template v-else>
+            <p class="acct-stat__num">{{ deckStats.data.count }}</p>
+            <p class="acct-stat__sub">
+              <span v-if="deckStats.data.count === 0" class="acct-stat__cta">{{ t('account.stats.decksEmpty') }}</span>
+              <span v-else>{{ t('account.stats.decksUnit', deckStats.data.count) }}</span>
+            </p>
+          </template>
+        </component>
+
+        <!-- Trade pile -->
+        <component
+          :is="collectionStats.status === 'ready' ? 'router-link' : 'div'"
+          class="acct-stat"
+          :to="collectionStats.status === 'ready' ? { name: 'library', params: { locale } } : undefined"
+          :aria-label="collectionStats.status === 'ready' ? t('account.stats.viewTradePile') : undefined"
+        >
+          <div class="acct-stat__head">
+            <span class="acct-stat__title">{{ t('account.stats.tradePile') }}</span>
+            <v-icon icon="mdi-swap-horizontal" size="17" class="acct-stat__icon" />
+          </div>
+          <div v-if="collectionStats.status === 'loading'" class="acct-stat__sk" />
+          <p v-else-if="collectionStats.status === 'error'" class="acct-stat__failed">{{ t('account.stats.failed') }}</p>
+          <template v-else>
+            <p class="acct-stat__num">{{ collectionStats.data.tradeCount }}</p>
+            <p class="acct-stat__sub">
+              <span v-if="collectionStats.data.tradeCount === 0" class="acct-stat__cta">{{ t('account.stats.tradePileEmpty') }}</span>
+              <span v-else>{{ t('account.stats.tradePileUnit', collectionStats.data.tradeCount) }}</span>
+            </p>
+          </template>
+        </component>
+
+        <!-- Wishlist -->
+        <component
+          :is="collectionStats.status === 'ready' ? 'router-link' : 'div'"
+          class="acct-stat"
+          :to="collectionStats.status === 'ready' ? { name: 'library', params: { locale } } : undefined"
+          :aria-label="collectionStats.status === 'ready' ? t('account.stats.viewWishlist') : undefined"
+        >
+          <div class="acct-stat__head">
+            <span class="acct-stat__title">{{ t('account.stats.wishlist') }}</span>
+            <v-icon icon="mdi-heart-outline" size="17" class="acct-stat__icon" />
+          </div>
+          <div v-if="collectionStats.status === 'loading'" class="acct-stat__sk" />
+          <p v-else-if="collectionStats.status === 'error'" class="acct-stat__failed">{{ t('account.stats.failed') }}</p>
+          <template v-else>
+            <p class="acct-stat__num">{{ collectionStats.data.wishCount }}</p>
+            <p class="acct-stat__sub">
+              <span v-if="collectionStats.data.wishCount === 0" class="acct-stat__cta">{{ t('account.stats.wishlistEmpty') }}</span>
+              <span v-else>{{ t('account.stats.wishlistUnit', collectionStats.data.wishCount) }}</span>
+            </p>
+          </template>
+        </component>
+
+        <!-- Trades: two numbers, because "waiting on you" and "still open" are
+             different questions and the second never replaces the first. -->
+        <component
+          :is="proposalStats.status === 'ready' ? 'router-link' : 'div'"
+          class="acct-stat"
+          :to="proposalStats.status === 'ready' ? { name: 'TradeCenter', params: { locale, tab: 'proposals' } } : undefined"
+          :aria-label="proposalStats.status === 'ready' ? t('account.stats.viewTrades') : undefined"
+        >
+          <div class="acct-stat__head">
+            <span class="acct-stat__title">{{ t('account.stats.trades') }}</span>
+            <v-icon icon="mdi-handshake-outline" size="17" class="acct-stat__icon" />
+          </div>
+          <div v-if="proposalStats.status === 'loading'" class="acct-stat__sk" />
+          <p v-else-if="proposalStats.status === 'error'" class="acct-stat__failed">{{ t('account.stats.failed') }}</p>
+          <template v-else>
+            <div class="acct-stat__pair">
+              <div>
+                <p class="acct-stat__num" :class="{ 'acct-stat__num--live': proposalStats.data.awaiting > 0 }">
+                  {{ proposalStats.data.awaiting }}
+                </p>
+                <p class="acct-stat__pairlabel">{{ t('account.stats.awaiting') }}</p>
+              </div>
+              <div>
+                <p class="acct-stat__num">{{ proposalStats.data.open }}</p>
+                <p class="acct-stat__pairlabel">{{ t('account.stats.open') }}</p>
+              </div>
+            </div>
+            <p v-if="proposalStats.data.total === 0" class="acct-stat__sub">
+              <span class="acct-stat__cta">{{ t('account.stats.tradesEmpty') }}</span>
+            </p>
+          </template>
+        </component>
+      </div>
+    </section>
 
     <!-- Footer strip: connections + account, low emphasis -->
     <footer class="acct-footer">
@@ -655,6 +747,55 @@ function statusStyle(status) {
 }
 
 /* ── Body ────────────────────────────────────────── */
+/* Activity strip: four tiles, the one place on this page that uses card boxes
+   above the fold. They are boxed on purpose — the rest of the page is
+   rule-divided, so boxing is what makes these read as figures rather than list
+   rows. */
+.acct-stats-wrap { display: flex; flex-direction: column; gap: 12px; margin-top: 34px; }
+.acct-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+@media (max-width: 900px) { .acct-stats { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 460px) { .acct-stats { grid-template-columns: 1fr; } }
+
+.acct-stat {
+  display: flex; flex-direction: column; gap: 6px;
+  min-height: 118px; padding: 16px 18px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 16px;
+  text-decoration: none;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+/* Only the ready tiles are links, so only they get the affordance. */
+a.acct-stat:hover { border-color: var(--c-trade); transform: translateY(-1px); }
+a.acct-stat:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { a.acct-stat:hover { transform: none; } }
+
+.acct-stat__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.acct-stat__title { font-size: 0.875rem; font-weight: 600; color: var(--c-text); }
+.acct-stat__icon { color: var(--c-muted); flex-shrink: 0; }
+.acct-stat__num { margin: 0; font-size: 1.875rem; font-weight: 700; line-height: 1.15; color: var(--c-text); }
+/* Something is actually waiting on the user — the one number worth colouring. */
+.acct-stat__num--live { color: var(--c-accent); }
+.acct-stat__sub { margin: 0; font-size: 0.75rem; color: var(--c-muted); }
+.acct-stat__cta { color: var(--c-accent); font-weight: 600; }
+.acct-stat__failed { margin: 0; padding-top: 6px; font-size: 0.8125rem; color: var(--c-muted); }
+.acct-stat__pair { display: flex; gap: 26px; }
+.acct-stat__pairlabel { margin: 0; font-size: 0.6875rem; color: var(--c-muted); }
+.acct-stat__sk {
+  height: 30px; width: 60%; margin-top: 4px; border-radius: 8px;
+  background: var(--c-skeleton);
+  animation: acct-pulse 1.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) { .acct-stat__sk { animation: none; } }
+@keyframes acct-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+.acct-stats-guest {
+  margin: 0; padding: 18px;
+  font-size: 0.875rem; color: var(--c-muted);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 16px;
+}
+
 .acct-body { display: grid; grid-template-columns: 1fr; gap: 32px; }
 @media (min-width: 1024px) {
   .acct-body { grid-template-columns: 7fr 5fr; gap: 40px; align-items: start; }
