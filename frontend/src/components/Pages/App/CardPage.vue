@@ -36,17 +36,59 @@
       <!-- Image + details row -->
       <div class="flex flex-col sm:flex-row gap-6 sm:gap-10">
 
-        <!-- Card image -->
-        <img
-          :src="cardImageUrl"
-          :alt="card.name"
-          class="rounded-lg shrink-0 shadow-lg"
-          style="width: 200px; height: 291px; object-fit: cover"
-          fetchpriority="high"
-        />
+        <!-- Card image + where to buy it -->
+        <div class="flex flex-col gap-2 shrink-0" style="width: 200px">
+          <img
+            :src="cardImageUrl"
+            :alt="card.name"
+            class="rounded-lg shrink-0 shadow-lg"
+            style="width: 200px; height: 291px; object-fit: cover"
+            fetchpriority="high"
+          />
+
+          <!-- Market links, one tile each, directly under the art. -->
+          <div class="grid grid-cols-2 gap-2">
+            <a
+              v-for="link in marketLinks"
+              :key="link.label"
+              :href="link.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              :title="link.label"
+              :aria-label="link.label"
+              class="no-underline flex flex-col items-center justify-center gap-1 rounded-lg border !px-2 !py-2 transition-opacity hover:opacity-80"
+              style="border-color: var(--c-border); background: var(--c-surface-2); min-height: 46px"
+            >
+              <img
+                :src="isDarkTheme && link.logoDark ? link.logoDark : link.logo"
+                :alt="link.label"
+                loading="lazy"
+                :style="{ maxHeight: '18px', maxWidth: '100%', objectFit: 'contain', display: 'block', filter: (isDarkTheme ? link.filterDark : link.filterLight) || 'none' }"
+              />
+              <span v-if="link.label === 'TCGPlayer' && prices?.tcg" class="text-[11px] font-semibold" style="color: var(--c-text)">{{ `$${prices.tcg}` }}</span>
+              <span v-if="link.label === 'Cardmarket' && prices?.cm" class="text-[11px] font-semibold" style="color: var(--c-text)">{{ `€${prices.cm}` }}</span>
+              <span v-if="link.label === 'eBay' && prices?.ebay" class="text-[11px] font-semibold" style="color: var(--c-text)">{{ `$${prices.ebay}` }}</span>
+            </a>
+
+            <!-- Strategy tips (outbound link only — no content reproduced).
+                 Shown only when the crawler confirmed a real Card Tips page. -->
+            <a
+              v-if="yugipediaTipsUrl"
+              :href="yugipediaTipsUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              :title="$t('cardPage.yugipediaTips')"
+              class="no-underline flex flex-col items-center justify-center gap-1 rounded-lg border !px-2 !py-2 transition-opacity hover:opacity-80"
+              style="border-color: var(--c-border); background: var(--c-surface-2); min-height: 46px"
+            >
+              <v-icon icon="mdi-book-open-variant" size="16" style="color: var(--c-muted)" />
+              <span class="text-[11px] font-semibold" style="color: var(--c-text)">Yugipedia</span>
+            </a>
+          </div>
+        </div>
 
         <!-- Details -->
-        <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-3 min-w-0 flex-1">
           <h1 class="text-2xl font-bold" style="color: var(--c-text)">{{ card.name }}</h1>
 
           <div class="flex flex-wrap items-center gap-3 text-sm" style="color: var(--c-muted)">
@@ -70,111 +112,67 @@
             <CardBanlistBadge :card="card" format="ocg" variant="chip" show-format />
           </div>
 
-          <div v-if="loadingSearchers || searcherCards.length" class="flex flex-col gap-2 mt-2">
-            <p class="text-xs font-bold uppercase tracking-wide" style="color: var(--c-muted)">
-              {{ $t('cardPage.searchedBy') }}
-            </p>
-            <div v-if="loadingSearchers" class="flex gap-3 overflow-x-auto pb-1">
-              <div v-for="i in 6" :key="i" class="shrink-0 rounded-lg animate-pulse" style="width: 80px; height: 116px; background: var(--c-skeleton)" />
+          <div class="flex flex-col gap-4">
+            <div class="rounded-lg border !p-4" style="border-color: var(--c-border); background: var(--c-surface-2)">
+              <!-- Effect. The PSCT breakdown is parked behind showEffectBreakdown
+                   until the parser is good enough to trust on every card; flip that
+                   flag to bring it back. Until then every card shows its plain text. -->
+              <CardEffectBreakdown v-if="showEffectBreakdown && hasEffectBreakdown" :card-id="card.id" :original-text="card.desc" />
+              <p v-else class="text-sm leading-relaxed" style="color: var(--c-text); opacity: 0.85">{{ card.desc }}</p>
             </div>
-            <div v-else class="flex gap-3 overflow-x-auto pb-1" style="scrollbar-width: thin">
-              <router-link
-                v-for="c in searcherCards"
-                :key="c.id"
-                :to="`/${$route.params.locale || 'en'}/card/${c.id}`"
-                class="shrink-0 flex flex-col gap-1 no-underline transition-opacity hover:opacity-80"
-                style="width: 80px"
-              >
-                <img :src="cardImage(c.id)" :alt="c.name" loading="lazy" class="rounded w-full shadow-sm" style="aspect-ratio: 59/86; object-fit: cover" />
-                <span class="text-[10px] text-center leading-tight" style="color: var(--c-muted); display: -webkit-box; line-clamp: 2; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden">{{ c.name }}</span>
-              </router-link>
-            </div>
-          </div>
 
-        </div>
-      </div>
-
-      <div class="flex flex-col xl:flex-row gap-6 xl:items-start">
-        <div class="flex-1 min-w-0 flex flex-col gap-4">
-          <div class="rounded-lg border !p-4" style="border-color: var(--c-border); background: var(--c-surface-2)">
-            <!-- Effect: the normalized breakdown stands in for the plain text when the
-                 PSCT parser can segment it (the breakdown keeps a "show original"
-                 toggle); otherwise fall back to the raw effect paragraph so vanilla /
-                 unparseable cards still show their text. -->
-            <CardEffectBreakdown v-if="hasEffectBreakdown" :card-id="card.id" :original-text="card.desc" />
-            <p v-else class="text-sm leading-relaxed" style="color: var(--c-text); opacity: 0.85">{{ card.desc }}</p>
-          </div>
-
-          <div class="flex flex-col gap-3">
-            <!-- Archetype entry. Also the only internal link into /en/archetype/:slug,
-                 so it is what lets a crawler reach those 600-odd pages from the
-                 card pages that are already indexed. -->
-            <router-link
-              v-if="archetypeSlug"
-              :to="`/${$route.params.locale || 'en'}/archetype/${archetypeSlug}`"
-              class="text-sm no-underline hover:opacity-70 flex items-center gap-1"
-              style="color: var(--c-accent)"
-            >
-              <v-icon icon="mdi-shape-outline" size="16" />
-              {{ $t('cardPage.seeArchetype', { name: card.archetype }) }}
-            </router-link>
-
-            <!-- Combo Explorer entry (renders only if this card has a parsed effect) -->
-            <ComboExplorerLink :card-id="card.id" />
-
-            <!-- External links + actions -->
             <div class="flex flex-wrap items-center gap-2">
-              <a
-                v-for="link in marketLinks"
-                :key="link.label"
-                :href="link.url"
-                target="_blank"
-                rel="noopener noreferrer"
-                :title="link.label"
-                :aria-label="link.label"
-                class="no-underline flex items-center gap-2 rounded px-2 py-1 transition-opacity hover:opacity-80"
-                style="height: 28px"
-              >
-                <img
-                  :src="isDarkTheme && link.logoDark ? link.logoDark : link.logo"
-                  :alt="link.label"
-                  loading="lazy"
-                  :style="{ maxHeight: '24px', maxWidth: '90px', objectFit: 'contain', display: 'block', filter: (isDarkTheme ? link.filterDark : link.filterLight) || 'none' }"
-                />
-                <span v-if="link.label === 'TCGPlayer' && prices?.tcg" class="text-[11px] font-semibold" style="color: var(--c-text)">{{ `$${prices.tcg}` }}</span>
-                <span v-if="link.label === 'Cardmarket' && prices?.cm" class="text-[11px] font-semibold" style="color: var(--c-text)">{{ `€${prices.cm}` }}</span>
-              </a>
               <v-btn
                 variant="flat"
-                class="!min-h-[28px] !px-3"
+                class="!min-h-[36px] !px-3"
                 :style="{ backgroundColor: 'var(--c-trade)', color: 'var(--c-on-accent)' }"
                 prepend-icon="mdi-plus-box"
                 @click="openTrade"
               >{{ $t('cardPage.addToTrade') }}</v-btn>
               <v-btn
                 variant="flat"
-                class="!min-h-[28px] !px-3"
+                class="!min-h-[36px] !px-3"
                 :style="{ backgroundColor: 'var(--c-accent)', color: 'var(--c-on-accent)' }"
                 prepend-icon="mdi-heart-plus"
                 @click="openWish"
               >{{ $t('cardPage.addToWishlist') }}</v-btn>
-              <!-- Strategy tips (outbound link only — no content reproduced).
-                   Shown only when the crawler confirmed a real Card Tips page. -->
-              <a
-                v-if="yugipediaTipsUrl"
-                :href="yugipediaTipsUrl"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="text-xs no-underline flex items-center gap-1 transition-opacity hover:opacity-70"
-                style="color: var(--c-muted)"
-              >
-                <v-icon icon="mdi-open-in-new" size="13" />
-                {{ $t('cardPage.yugipediaTips') }}
-              </a>
+              <!-- Archetype entry. Also the only internal link into /en/archetype/:slug,
+                   so it is what lets a crawler reach those 600-odd pages from the card
+                   pages that are already indexed. -->
+              <v-btn
+                v-if="archetypeSlug"
+                variant="flat"
+                class="!min-h-[36px] !px-3"
+                :to="`/${$route.params.locale || 'en'}/archetype/${archetypeSlug}`"
+                :style="{ backgroundColor: 'var(--c-surface-2)', color: 'var(--c-accent)', border: '1px solid var(--c-border)' }"
+                prepend-icon="mdi-shape-outline"
+              >{{ $t('cardPage.seeArchetype', { name: card.archetype }) }}</v-btn>
             </div>
           </div>
-        </div>
 
+        </div>
+      </div>
+
+      <!-- The cards that can fetch this one. -->
+      <div v-if="loadingSearchers || searcherCards.length" class="flex flex-col gap-2">
+        <p class="text-xs font-bold uppercase tracking-wide" style="color: var(--c-muted)">
+          {{ $t('cardPage.searchedBy') }}
+        </p>
+        <div v-if="loadingSearchers" class="flex gap-3 overflow-x-auto pb-1">
+          <div v-for="i in 6" :key="i" class="shrink-0 rounded-lg animate-pulse" style="width: 80px; height: 116px; background: var(--c-skeleton)" />
+        </div>
+        <div v-else class="flex gap-3 overflow-x-auto pb-1" style="scrollbar-width: thin">
+          <router-link
+            v-for="c in searcherCards"
+            :key="c.id"
+            :to="`/${$route.params.locale || 'en'}/card/${c.id}`"
+            class="shrink-0 flex flex-col gap-1 no-underline transition-opacity hover:opacity-80"
+            style="width: 80px"
+          >
+            <img :src="cardImage(c.id)" :alt="c.name" loading="lazy" class="rounded w-full shadow-sm" style="aspect-ratio: 59/86; object-fit: cover" />
+            <span class="text-[10px] text-center leading-tight" style="color: var(--c-muted); display: -webkit-box; line-clamp: 2; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden">{{ c.name }}</span>
+          </router-link>
+        </div>
       </div>
 
       <!-- Alternate artworks: clicking a thumbnail swaps the hero image above.
@@ -236,91 +234,77 @@
         </button>
       </div>
 
-      <!-- Traders section -->
-      <div class="flex flex-col gap-4">
-        <p class="text-xs font-bold uppercase tracking-wide" style="color: var(--c-muted)">{{ $t('cardYugi.tradersWithCard') }}</p>
+      <!-- Traders. Each half is hidden outright when nobody is on that side of
+           the trade, so an unwanted card ends the page at the printings. -->
+      <div v-if="loadingTraders || tradersHave.length || tradersWant.length" class="flex flex-col gap-4">
+        <p v-if="loadingTraders || tradersHave.length" class="text-xs font-bold uppercase tracking-wide" style="color: var(--c-muted)">{{ $t('cardYugi.tradersWithCard') }}</p>
 
-        <div v-if="loadingTraders" class="grid grid-cols-2 sm:grid-cols-3 gap-3 px-3 py-3">
+        <div v-if="loadingTraders" class="flex flex-wrap gap-2">
           <div
             v-for="i in 6" :key="i"
-            class="rounded-xl border overflow-hidden animate-pulse"
-            style="border-color: var(--c-border)"
+            class="flex items-center gap-2 rounded-lg border !px-3 !py-2 animate-pulse"
+            style="border-color: var(--c-border); background: var(--c-surface-2); width: 180px"
           >
-            <div class="h-1 w-full" style="background: var(--c-skeleton)" />
-            <div class="px-3 py-3 flex flex-col gap-2" style="background: var(--c-surface-2)">
-              <div class="flex items-center gap-2">
-                <div class="size-8 rounded-full" style="background: var(--c-skeleton)" />
-                <div class="flex flex-col gap-1 grow">
-                  <div class="h-3 rounded w-3/4" style="background: var(--c-skeleton)" />
-                  <div class="h-2 rounded w-1/2" style="background: var(--c-border)" />
-                </div>
-              </div>
+            <div class="rounded-full shrink-0" style="width: 26px; height: 26px; background: var(--c-skeleton)" />
+            <div class="flex flex-col gap-1 grow">
+              <div class="h-3 rounded w-3/4" style="background: var(--c-skeleton)" />
+              <div class="h-2 rounded w-1/2" style="background: var(--c-border)" />
             </div>
           </div>
         </div>
 
-        <div v-else>
-          <div class="rounded-lg border" style="border-color: var(--c-border)">
-            <template v-if="tradersHave.length === 0">
-              <p class="text-sm text-center py-6" style="color: var(--c-muted)">{{ $t('cardYugi.noTraders') }}</p>
-            </template>
-            <template v-else>
-              <router-link
-                v-for="trader in tradersHave"
-                :key="trader.id"
-                :to="{ name: 'trader', params: { locale: $route.params.locale || 'en', id: trader.id } }"
-                class="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 no-underline transition-opacity hover:opacity-80"
-                style="border-color: var(--c-border)"
+        <div v-else class="flex flex-col gap-4">
+          <!-- Compact chips that flow along a row rather than full-width list
+               rows — a name and a location is all a trader needs here. -->
+          <div v-if="tradersHave.length" class="flex flex-wrap gap-2">
+            <router-link
+              v-for="trader in tradersHave"
+              :key="trader.id"
+              :to="{ name: 'trader', params: { locale: $route.params.locale || 'en', id: trader.id } }"
+              class="flex items-center gap-2 rounded-lg border !px-3 !py-2 no-underline transition-opacity hover:opacity-80"
+              style="border-color: var(--c-border); background: var(--c-surface-2); max-width: 220px"
+            >
+              <div
+                class="rounded-full shrink-0 flex items-center justify-center text-xs font-bold overflow-hidden"
+                :style="{ width: '26px', height: '26px', background: `color-mix(in srgb, ${kindColor(trader.kind)} 25%, transparent)`, color: kindColor(trader.kind) }"
               >
-                <div
-                  class="size-8 rounded-full shrink-0 flex items-center justify-center text-sm font-bold overflow-hidden"
-                  :style="{ width: '32px', height: '32px', background: `color-mix(in srgb, ${kindColor(trader.kind)} 18%, transparent)`, color: kindColor(trader.kind) }"
-                >
-                  <img v-if="trader.avatarUrl" :src="trader.avatarUrl" class="w-full h-full object-cover" />
-                  <span v-else>{{ (trader.name ?? '?')[0].toUpperCase() }}</span>
-                </div>
-                <div class="min-w-0">
-                  <div class="flex items-center gap-2">
-                    <span class="text-sm font-semibold truncate" style="color: var(--c-text)">{{ trader.name ?? $t('common.anonymous') }}</span>
-                    <span class="text-[10px] uppercase rounded-full px-2 py-1 font-semibold" :style="{ background: `color-mix(in srgb, ${kindColor(trader.kind)} 12%, transparent)`, color: kindColor(trader.kind) }">{{ kindLabel(trader.kind) }}</span>
-                  </div>
-                  <p class="text-xs truncate mt-1" style="color: var(--c-muted)">{{ [trader.city, trader.country].filter(Boolean).join(', ') || $t('cardPage.unknown') }}</p>
-                </div>
-              </router-link>
-            </template>
+                <img v-if="trader.avatarUrl" :src="trader.avatarUrl" class="w-full h-full object-cover" />
+                <span v-else>{{ (trader.name ?? '?')[0].toUpperCase() }}</span>
+              </div>
+              <div class="min-w-0">
+                <span class="text-xs font-semibold truncate block" style="color: var(--c-text)">{{ trader.name ?? $t('common.anonymous') }}</span>
+                <span class="text-[10px] truncate block" style="color: var(--c-muted)">
+                  <span class="uppercase font-semibold" :style="{ color: kindColor(trader.kind) }">{{ kindLabel(trader.kind) }}</span>
+                  · {{ [trader.city, trader.country].filter(Boolean).join(', ') || $t('cardPage.unknown') }}
+                </span>
+              </div>
+            </router-link>
           </div>
 
-          <div class="flex flex-col gap-4 pt-2">
-            <p class="text-xs font-bold uppercase tracking-wide" style="color: var(--c-muted)">{{ $t('cardYugi.tradersLookingForCard') }}</p>
-            <div class="rounded-lg border" style="border-color: var(--c-border)">
-            <template v-if="tradersWant.length === 0">
-              <p class="text-sm text-center py-6" style="color: var(--c-muted)">{{ $t('cardYugi.noTradersLookingForCard') }}</p>
-            </template>
-            <template v-else>
-              <router-link
-                v-for="trader in tradersWant"
-                :key="trader.id"
-                :to="{ name: 'trader', params: { locale: $route.params.locale || 'en', id: trader.id } }"
-                class="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 no-underline transition-opacity hover:opacity-80"
-                style="border-color: var(--c-border)"
+          <p v-if="tradersWant.length" class="text-xs font-bold uppercase tracking-wide" style="color: var(--c-muted)">{{ $t('cardYugi.tradersLookingForCard') }}</p>
+          <div v-if="tradersWant.length" class="flex flex-wrap gap-2">
+            <router-link
+              v-for="trader in tradersWant"
+              :key="trader.id"
+              :to="{ name: 'trader', params: { locale: $route.params.locale || 'en', id: trader.id } }"
+              class="flex items-center gap-2 rounded-lg border !px-3 !py-2 no-underline transition-opacity hover:opacity-80"
+              style="border-color: var(--c-border); background: var(--c-surface-2); max-width: 220px"
+            >
+              <div
+                class="rounded-full shrink-0 flex items-center justify-center text-xs font-bold overflow-hidden"
+                :style="{ width: '26px', height: '26px', background: `color-mix(in srgb, ${kindColor(trader.kind)} 25%, transparent)`, color: kindColor(trader.kind) }"
               >
-                <div
-                  class="size-8 rounded-full shrink-0 flex items-center justify-center text-sm font-bold overflow-hidden"
-                  :style="{ width: '32px', height: '32px', background: `color-mix(in srgb, ${kindColor(trader.kind)} 18%, transparent)`, color: kindColor(trader.kind) }"
-                >
-                  <img v-if="trader.avatarUrl" :src="trader.avatarUrl" class="w-full h-full object-cover" />
-                  <span v-else>{{ (trader.name ?? '?')[0].toUpperCase() }}</span>
-                </div>
-                <div class="min-w-0">
-                  <div class="flex items-center gap-2">
-                    <span class="text-sm font-semibold truncate" style="color: var(--c-text)">{{ trader.name ?? $t('common.anonymous') }}</span>
-                    <span class="text-[10px] uppercase rounded-full px-2 py-1 font-semibold" :style="{ background: `color-mix(in srgb, ${kindColor(trader.kind)} 12%, transparent)`, color: kindColor(trader.kind) }">{{ kindLabel(trader.kind) }}</span>
-                  </div>
-                  <p class="text-xs truncate mt-1" style="color: var(--c-muted)">{{ [trader.city, trader.country].filter(Boolean).join(', ') || $t('cardPage.unknown') }}</p>
-                </div>
-              </router-link>
-            </template>
-            </div>
+                <img v-if="trader.avatarUrl" :src="trader.avatarUrl" class="w-full h-full object-cover" />
+                <span v-else>{{ (trader.name ?? '?')[0].toUpperCase() }}</span>
+              </div>
+              <div class="min-w-0">
+                <span class="text-xs font-semibold truncate block" style="color: var(--c-text)">{{ trader.name ?? $t('common.anonymous') }}</span>
+                <span class="text-[10px] truncate block" style="color: var(--c-muted)">
+                  <span class="uppercase font-semibold" :style="{ color: kindColor(trader.kind) }">{{ kindLabel(trader.kind) }}</span>
+                  · {{ [trader.city, trader.country].filter(Boolean).join(', ') || $t('cardPage.unknown') }}
+                </span>
+              </div>
+            </router-link>
           </div>
         </div>
       </div>
@@ -340,7 +324,6 @@ import { useHead } from "@unhead/vue";
 import AddCard           from "@/components/library/AddCard.vue";
 import CardKindIcons      from "@/components/ui/card/CardKindIcons.vue";
 import CardBanlistBadge   from "@/components/ui/card/CardBanlistBadge.vue";
-import ComboExplorerLink  from "@/components/ui/card/ComboExplorerLink.vue";
 import CardEffectBreakdown from "@/components/ui/card/CardEffectBreakdown.vue";
 import { ARCHETYPES } from "@/data/archetype-slugs.js";
 import { parseCardText }  from "@/lib/psctParser";
@@ -392,7 +375,7 @@ function ensureYugipediaSearchers() {
 }
 
 export default {
-  components: { AddCard, CardKindIcons, CardBanlistBadge, ComboExplorerLink, CardEffectBreakdown },
+  components: { AddCard, CardKindIcons, CardBanlistBadge, CardEffectBreakdown },
 
   props: {
     // Passed by App.vue RouterView slot — needed for AddCard auth check
@@ -581,6 +564,10 @@ export default {
       searcherCards:    [],
       loadingSearchers: false,
       printingsExpanded:  false,
+      // The PSCT effect breakdown is finished but not trusted on every card yet,
+      // so it is switched off in favour of the plain card text. Flip to true to
+      // bring it back once the parser has been improved.
+      showEffectBreakdown: false,
       selectedImageId:    null, // which printing art the hero image shows (null → main id)
       artworks:           [],   // all printing artworks (fetched by name; id query returns only one)
       setDates:           {},   // set_name → release date, for sorting printings by recency
@@ -664,9 +651,12 @@ export default {
       const p = this.card?.card_prices?.[0];
       if (!p) return null;
       const normalize = v => (!v || v === '0.00') ? null : v;
-      const tcg = normalize(p.tcgplayer_price);
-      const cm  = normalize(p.cardmarket_price);
-      return (tcg || cm) ? { tcg, cm } : null;
+      const tcg  = normalize(p.tcgplayer_price);
+      const cm   = normalize(p.cardmarket_price);
+      // eBay's figure is an average of recent sold listings rather than a live
+      // asking price, so it can sit above the other two on widely-reprinted cards.
+      const ebay = normalize(p.ebay_price);
+      return (tcg || cm || ebay) ? { tcg, cm, ebay } : null;
     },
   },
 
