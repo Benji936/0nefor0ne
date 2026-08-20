@@ -56,7 +56,7 @@
       "eyebrowAuthed": "Willkommen zurück",
       "productName": "One for One",
       "headline": "Tausche Dubletten.<br>Jage deine Zielkarten.",
-      "subheadline": "One for One bringt Yu-Gi-Oh!-Sammler zusammen, die haben, was die anderen suchen. Keine Gebühren, keine Auktionen  nur direkter Tausch von Spieler zu Spieler, dazu eine vollständige Kartensuche, ein Deck-Builder und ein Sammlungs-Tracker.",
+      "subheadline": "One for One bringt Yu-Gi-Oh!-Sammler zusammen, die haben, was die anderen suchen. Keine Gebühren, keine Auktionen  nur direkter Tausch von Spieler zu Spieler, dazu eine vollständige Kartensuche, ein Deck-Builder und eine Wunschliste.",
       "ctaGetStarted": "Loslegen  kostenlos",
       "ctaGetStartedShort": "Loslegen",
       "ctaGoToApp": "Zur App",
@@ -107,10 +107,10 @@
         "body": "Baue Decks von Grund auf oder importiere eine Liste  sieh genau, was du besitzt und was dir fehlt.",
         "cta": "Deck bauen oder importieren"
       },
-      "collection": {
-        "title": "Sammlungs-Tracking",
-        "body": "Verfolge deinen Fortschritt über alle Sets hinweg und sieh sofort, welche Karten dir noch fehlen.",
-        "cta": "Sammlung verfolgen"
+      "piles": {
+        "title": "Wunschliste & Tauschstapel",
+        "body": "Zwei Listen: die Karten, die du suchst, und die, von denen du dich trennst. Jeder Treffer auf der Seite entsteht aus dem Vergleich der beiden.",
+        "cta": "Listen anlegen"
       },
       "trade": {
         "title": "Tauschen",
@@ -170,7 +170,7 @@
       "colMore": "Mehr",
       "search": "Karten suchen",
       "decks": "Decks",
-      "collection": "Sammlungs-Tracking",
+      "piles": "Wunschliste & Tauschstapel",
       "trade": "Tauschen",
       "about": "Über uns",
       "privacy": "Datenschutz",
@@ -961,7 +961,7 @@
     },
     "home": {
       "title": "One for One  Yu-Gi-Oh!-Kartentausch von Spieler zu Spieler",
-      "desc": "Tausche Yu-Gi-Oh!-Dubletten und jage deine Zielkarten mit One for One  direkter Tausch von Spieler zu Spieler, ohne Gebühren und ohne Auktionen, dazu eine vollständige Kartensuche, ein Deck-Builder und ein Sammlungs-Tracker."
+      "desc": "Tausche Yu-Gi-Oh!-Dubletten und jage deine Zielkarten mit One for One  direkter Tausch von Spieler zu Spieler, ohne Gebühren und ohne Auktionen, dazu eine vollständige Kartensuche, ein Deck-Builder und eine Wunschliste."
     },
     "search": {
       "title": "One for One  Yu-Gi-Oh! Karten tauschen",

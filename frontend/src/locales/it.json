@@ -56,7 +56,7 @@
       "eyebrowAuthed": "Bentornato",
       "productName": "One for One",
       "headline": "Scambia i doppioni.<br>Trova le carte che cerchi.",
-      "subheadline": "One for One mette in contatto i collezionisti Yu-Gi-Oh! che hanno ciò che gli altri cercano. Niente commissioni, niente aste  solo scambi diretti tra giocatori, con un motore di ricerca carte completo, un costruttore di deck e un tracker della collezione.",
+      "subheadline": "One for One mette in contatto i collezionisti Yu-Gi-Oh! che hanno ciò che gli altri cercano. Niente commissioni, niente aste  solo scambi diretti tra giocatori, con un motore di ricerca carte completo, un costruttore di deck e una lista desideri.",
       "ctaGetStarted": "Inizia  è gratis",
       "ctaGetStartedShort": "Inizia",
       "ctaGoToApp": "Vai all'app",
@@ -107,10 +107,10 @@
         "body": "Costruisci deck da zero o importa una lista  vedi esattamente cosa possiedi e cosa ti manca.",
         "cta": "Costruisci o importa un deck"
       },
-      "collection": {
-        "title": "Monitoraggio collezione",
-        "body": "Monitora i tuoi progressi in ogni set e scopri all'istante quali carte ti mancano ancora.",
-        "cta": "Monitora la collezione"
+      "piles": {
+        "title": "Lista desideri e mazzo di scambio",
+        "body": "Due liste: le carte che cerchi e quelle di cui ti privi. Ogni corrispondenza sul sito nasce dal loro confronto.",
+        "cta": "Crea le tue liste"
       },
       "trade": {
         "title": "Scambi",
@@ -170,7 +170,7 @@
       "colMore": "Altro",
       "search": "Cerca carte",
       "decks": "Deck",
-      "collection": "Monitoraggio collezione",
+      "piles": "Lista desideri e mazzo di scambio",
       "trade": "Scambi",
       "about": "Chi siamo",
       "privacy": "Privacy",
@@ -961,7 +961,7 @@
     },
     "home": {
       "title": "One for One  Scambio di carte Yu-Gi-Oh! tra giocatori",
-      "desc": "Scambia i doppioni Yu-Gi-Oh! e trova le carte che cerchi con One for One  scambi diretti tra giocatori, senza commissioni né aste, con un motore di ricerca carte completo, un costruttore di deck e un tracker della collezione."
+      "desc": "Scambia i doppioni Yu-Gi-Oh! e trova le carte che cerchi con One for One  scambi diretti tra giocatori, senza commissioni né aste, con un motore di ricerca carte completo, un costruttore di deck e una lista desideri."
     },
     "search": {
       "title": "One for One  Scambio Carte Yu-Gi-Oh!",

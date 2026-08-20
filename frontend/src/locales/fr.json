@@ -56,7 +56,7 @@
       "eyebrowAuthed": "Bon retour",
       "productName": "One for One",
       "headline": "Échangez vos doublons.<br>Trouvez vos cartes manquantes.",
-      "subheadline": "One for One met en relation les collectionneurs Yu-Gi-Oh! qui possèdent ce que les autres recherchent. Pas de frais, pas d'enchères juste des échanges directs entre particuliers, avec un moteur de recherche de cartes complet, un constructeur de decks et un suivi de collection.",
+      "subheadline": "One for One met en relation les collectionneurs Yu-Gi-Oh! qui possèdent ce que les autres recherchent. Pas de frais, pas d'enchères juste des échanges directs entre particuliers, avec un moteur de recherche de cartes complet, un constructeur de decks et une liste de souhaits.",
       "ctaGetStarted": "Commencer c'est gratuit",
       "ctaGetStartedShort": "Commencer",
       "ctaGoToApp": "Ouvrir l'application",
@@ -107,10 +107,10 @@
         "body": "Construisez vos decks de zéro ou importez une liste  voyez exactement ce que vous possédez et ce qu'il vous manque.",
         "cta": "Construire ou importer un deck"
       },
-      "collection": {
-        "title": "Suivi de collection",
-        "body": "Suivez votre progression dans chaque set et repérez instantanément les cartes qu'il vous manque.",
-        "cta": "Suivre ma collection"
+      "piles": {
+        "title": "Liste de souhaits et pile d'échange",
+        "body": "Deux listes : les cartes que vous cherchez et celles dont vous vous séparez. Chaque correspondance du site naît de leur comparaison.",
+        "cta": "Créez vos listes"
       },
       "trade": {
         "title": "Échanges",
@@ -170,7 +170,7 @@
       "colMore": "Plus",
       "search": "Rechercher des cartes",
       "decks": "Decks",
-      "collection": "Suivi de collection",
+      "piles": "Liste de souhaits et pile d'échange",
       "trade": "Échanges",
       "about": "À propos",
       "privacy": "Confidentialité",
@@ -961,7 +961,7 @@
     },
     "home": {
       "title": "One for One  Échange de cartes Yu-Gi-Oh! entre particuliers",
-      "desc": "Échangez vos doublons Yu-Gi-Oh! et trouvez les cartes que vous recherchez avec One for One  des échanges directs entre particuliers, sans frais ni enchères, avec un moteur de recherche de cartes complet, un constructeur de decks et un suivi de collection."
+      "desc": "Échangez vos doublons Yu-Gi-Oh! et trouvez les cartes que vous recherchez avec One for One  des échanges directs entre particuliers, sans frais ni enchères, avec un moteur de recherche de cartes complet, un constructeur de decks et une liste de souhaits."
     },
     "search": {
       "title": "One for One  Échange de Cartes Yu-Gi-Oh!",

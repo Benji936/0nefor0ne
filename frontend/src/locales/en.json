@@ -56,7 +56,7 @@
       "eyebrowAuthed": "Welcome back",
       "productName": "One for One",
       "headline": "Trade duplicates.<br>Hunt your targets.",
-      "subheadline": "One for One connects Yu-Gi-Oh! collectors who have what each other wants. No fees, no auctions  just direct peer-to-peer trades, plus a full card search engine, deck builder, and collection tracker.",
+      "subheadline": "One for One connects Yu-Gi-Oh! collectors who have what each other wants. No fees, no auctions  just direct peer-to-peer trades, plus a full card search engine, deck builder, and a wishlist.",
       "ctaGetStarted": "Get started  it's free",
       "ctaGetStartedShort": "Get started",
       "ctaGoToApp": "Go to app",
@@ -107,10 +107,10 @@
         "body": "Build decks from scratch or import a list  see exactly what you own and what you need.",
         "cta": "Build or import a deck"
       },
-      "collection": {
-        "title": "Collection tracking",
-        "body": "Track your progress across sets and instantly see which cards you're still missing.",
-        "cta": "Track your collection"
+      "piles": {
+        "title": "Wishlist & trade pile",
+        "body": "Two lists: the cards you're hunting, and the ones you'll part with. Every match on the site comes from comparing them.",
+        "cta": "Build your lists"
       },
       "trade": {
         "title": "Trade",
@@ -170,7 +170,7 @@
       "colMore": "More",
       "search": "Search cards",
       "decks": "Decks",
-      "collection": "Collection tracking",
+      "piles": "Wishlist & trade pile",
       "trade": "Trade",
       "about": "About",
       "privacy": "Privacy",
@@ -961,7 +961,7 @@
     },
     "home": {
       "title": "One for One  Peer-to-peer Yu-Gi-Oh! card trading",
-      "desc": "Trade Yu-Gi-Oh! duplicates and hunt your targets with One for One  direct peer-to-peer trades with no fees and no auctions, plus a full card search engine, deck builder, and collection tracker."
+      "desc": "Trade Yu-Gi-Oh! duplicates and hunt your targets with One for One  direct peer-to-peer trades with no fees and no auctions, plus a full card search engine, deck builder, and a wishlist."
     },
     "search": {
       "title": "One for One  Yu-Gi-Oh! Card Trading",
