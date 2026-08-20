@@ -1,6 +1,5 @@
 {
   "nav": {
-    "searchPlaceholder": "Recherche par nom de carte ou code de set…",
     "collection": "Collection",
     "tradeMatches": "Correspondances d'échange",
     "lightMode": "Mode clair",
@@ -14,7 +13,7 @@
     "decks": "Decks",
     "collapseMenu": "Réduire le menu",
     "expandMenu": "Agrandir le menu",
-    "joinDiscord": "Rejoindre notre Discord",
+    "joinDiscord": "Discord",
     "support": "Nous soutenir"
   },
   "footer": {
@@ -1063,7 +1062,8 @@
       "buttonWithCount": "Filtres ({count})",
       "activeLabel": "Filtres actifs"
     },
-    "emptyState": "Commencez à taper un nom de carte ou appliquez un filtre pour parcourir la base de données."
+    "emptyState": "Commencez à taper un nom de carte ou appliquez un filtre pour parcourir la base de données.",
+    "searchPlaceholder": "Recherche par nom de carte ou code de set…"
   },
   "combo": {
     "explore": "Explorer les combos",

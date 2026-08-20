@@ -1,6 +1,5 @@
 {
   "nav": {
-    "searchPlaceholder": "Search cards or set codes…",
     "collection": "Collection",
     "tradeMatches": "Trade matches",
     "lightMode": "Light mode",
@@ -14,7 +13,7 @@
     "decks": "Decks",
     "collapseMenu": "Collapse menu",
     "expandMenu": "Expand menu",
-    "joinDiscord": "Join our Discord",
+    "joinDiscord": "Discord",
     "support": "Support us"
   },
   "footer": {
@@ -1063,7 +1062,8 @@
       "buttonWithCount": "Filters ({count})",
       "activeLabel": "Active filters"
     },
-    "emptyState": "Start typing a card name or apply a filter to browse the database."
+    "emptyState": "Start typing a card name or apply a filter to browse the database.",
+    "searchPlaceholder": "Search cards or set codes…"
   },
   "combo": {
     "explore": "Explore combos",

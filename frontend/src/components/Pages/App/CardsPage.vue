@@ -45,6 +45,7 @@ const {
   setDensity,
   clearFilters,
   loadMore,
+  update,
   init,
 } = useCardSearch();
 
@@ -136,7 +137,37 @@ onMounted(() => {
     <!-- Page heading — present in the prerendered HTML (static, indexable). -->
     <header class="cards-page__head">
       <h1 class="cards-page__title">{{ t("cards.title") }}</h1>
+
     </header>
+
+    <!-- The card search field. It lives on this page rather than in the app
+         chrome because this is the page that owns the search state: the input
+         writes straight to the composable's `searchQuery`, so there is no second
+         copy of the query to keep in step and no navigation hop between typing
+         and seeing results. Safe to prerender — `searchQuery` is '' until init(),
+         so the field renders empty on the server and on first hydration alike.
+         Sits outside .cards-page__head, which is visually hidden for SEO. -->
+    <div class="cards-search">
+      <svg
+        class="cards-search__icon"
+        width="18" height="18" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+      >
+        <circle cx="11" cy="11" r="7" /><path d="m20 20-3.6-3.6" />
+      </svg>
+      <input
+        v-model="searchQuery"
+        class="cards-search__field"
+        type="search"
+        name="q"
+        inputmode="search"
+        autocomplete="off"
+        :aria-label="t('cards.searchPlaceholder')"
+        :placeholder="t('cards.searchPlaceholder')"
+        @input="update"
+      />
+    </div>
 
     <!-- CSS-grid shell: sidebar + results. Pure CSS — collapses to one column
          below 960px (see <style>). No Vuetify layout component (KD-8). -->
@@ -444,6 +475,38 @@ onMounted(() => {
   white-space: nowrap;
   border: 0;
 }
+
+/* Search field --------------------------------------------------------------*/
+.cards-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 560px;
+  margin-bottom: 20px;
+  padding: 0 14px;
+  border-radius: 12px;
+  background: var(--c-surface-2);
+  border: 1px solid transparent;
+  transition: border-color 0.15s ease;
+}
+.cards-search:focus-within { border-color: var(--c-accent); }
+.cards-search__icon { color: var(--c-muted); flex: none; }
+.cards-search__field {
+  width: 100%;
+  padding: 11px 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--c-text);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.cards-search__field::placeholder { color: var(--c-text); opacity: 0.5; }
+/* The type=search clear affordance ships with its own look per engine; the
+   field already has a visible border and icon, so drop it. */
+.cards-search__field::-webkit-search-cancel-button { -webkit-appearance: none; }
 
 /* Grid shell ----------------------------------------------------------------*/
 /* Desktop: fixed sidebar column + fluid results. Collapses to one column on

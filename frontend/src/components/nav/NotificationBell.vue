@@ -11,11 +11,44 @@ const router = useRouter();
 
 const props = defineProps({
   login: { type: Object, default: null },
+  // 'bar' hangs the panel under the bell, right-aligned — the top navbar.
+  // 'rail' opens it beside the bell instead, because the side rail is 64–210px
+  // wide and clips its own children; see panelStyle.
+  placement: { type: String, default: "bar" },
 });
+const isRail = computed(() => props.placement === "rail");
 const emit = defineEmits(['navigate']);
 
+// Random rather than a module counter: a `let` at the top of <script setup>
+// is per-instance, so a counter here would hand every bell the same 1.
+const instanceId = Math.random().toString(36).slice(2, 10);
+
 const containerRef  = ref(null);
+const buttonRef     = ref(null);
 const open          = ref(false);
+/**
+ * In the rail the panel is positioned in viewport coordinates rather than
+ * relative to the bell: `.side-nav` sets `overflow: hidden` to keep the labels
+ * from spilling while the rail animates its width, and that clips an absolutely
+ * positioned child. A fixed panel escapes the clip, and measuring on open
+ * rather than binding to the rail width keeps this component ignorant of the
+ * rail's collapsed state. Top is clamped so a bell near the bottom of a short
+ * window still opens a panel that fits on screen.
+ */
+const panelStyle = ref({});
+function placePanel() {
+  if (props.placement !== "rail" || !buttonRef.value) return;
+  const r = buttonRef.value.getBoundingClientRect();
+  const MAX_H = 440;
+  panelStyle.value = {
+    position: "fixed",
+    left: `${r.right + 10}px`,
+    top: `${Math.max(8, Math.min(r.top, window.innerHeight - MAX_H - 8))}px`,
+    right: "auto",
+    bottom: "auto",
+    margin: "0",
+  };
+}
 const notifications = ref([]);
 const loading       = ref(false);
 let   sub           = null;
@@ -45,6 +78,7 @@ async function markAllRead() {
 async function toggle() {
   open.value = !open.value;
   if (open.value) {
+    placePanel();
     await load();
     setTimeout(markAllRead, 1400);
   }
@@ -79,7 +113,12 @@ watch(() => props.login?.user?.id, (uid) => {
   if (!uid) return;
   load();
   sub = getClient()
-    .channel(`notif-${uid}`)
+    // The channel name carries `instanceId` because two bells are mounted at
+    // once — one in the side rail, one in the top bar, each shown at a
+    // different breakpoint. Supabase keys channels by name, so a shared name
+    // means the second bell calls .on() on an already-subscribed channel,
+    // which throws during setup and takes the whole navbar down with it.
+    .channel(`notif-${uid}-${instanceId}`)
     .on('postgres_changes', {
       event: 'INSERT', schema: 'public', table: 'notification',
       filter: `user_id=eq.${uid}`,
@@ -100,14 +139,21 @@ onBeforeUnmount(() => {
   <div ref="containerRef" class="relative">
     <!-- Bell button -->
     <button
-      class="relative flex items-center justify-center size-9 rounded-xl transition-colors cursor-pointer"
-      :style="open
-        ? { backgroundColor: 'var(--c-surface-2)', color: 'var(--c-accent)' }
-        : { backgroundColor: 'transparent', color: 'var(--c-accent)' }"
+      class="relative flex items-center justify-center transition-colors cursor-pointer"
+      :class="isRail ? 'notif-btn--rail' : 'size-9 rounded-xl'"
+      :style="isRail
+        ? { color: open ? 'var(--c-accent)' : 'var(--c-muted)' }
+        : (open
+          ? { backgroundColor: 'var(--c-surface-2)', color: 'var(--c-accent)' }
+          : { backgroundColor: 'transparent', color: 'var(--c-accent)' })"
+      ref="buttonRef"
       @click.stop="toggle"
-      :title="unreadCount > 0 ? t('notifications.bellTitleUnread', { count: unreadCount }) : t('notifications.bellTitle')"
+      :title="isRail ? undefined : (unreadCount > 0 ? t('notifications.bellTitleUnread', { count: unreadCount }) : t('notifications.bellTitle'))"
     >
-      <v-icon :icon="unreadCount > 0 ? 'mdi-bell-badge' : 'mdi-bell-outline'" size="22" />
+      <v-icon
+        :icon="unreadCount > 0 ? 'mdi-bell-badge' : 'mdi-bell-outline'"
+        :size="isRail ? 24 : 22"
+      />
       <!-- Unread badge -->
       <span
         v-if="unreadCount > 0"
@@ -134,6 +180,7 @@ onBeforeUnmount(() => {
           z-index: 200;
           box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2);
         "
+        :style="panelStyle"
         @click.stop
       >
         <!-- Header -->
@@ -199,3 +246,16 @@ onBeforeUnmount(() => {
     </Transition>
   </div>
 </template>
+
+<style scoped>
+/* In the rail the bell is one of the nav items, not a chip sitting among them.
+   It carries no background or hover of its own — the row in SideNav supplies
+   both, exactly as .sn-item does for every neighbour — and rests on the same
+   muted icon colour, so the bell reads as part of the column rather than as a
+   button parked at the top of it. */
+.notif-btn--rail {
+  width: 36px;
+  height: 36px;
+  background: transparent;
+}
+</style>

@@ -7,7 +7,13 @@ import { communityMenuTarget } from '@/lib/communityMenu';
 
 const props = defineProps({
   login: { type: Object, required: true },
+  // 'bar' is the top-right chip; 'rail' is the head of the side rail, where the
+  // chip stands in for the logo and follows the rail's collapsed state.
+  placement: { type: String, default: 'bar' },
+  // Rail only: icon-strip mode, where the name and chevron give way to the avatar.
+  collapsed: { type: Boolean, default: false },
 });
+const isRail = computed(() => props.placement === 'rail');
 
 const emit = defineEmits(['navigate', 'logout']);
 
@@ -105,7 +111,7 @@ function handleAction(action) {
 <template>
   <v-menu
     v-model="menuOpen"
-    location="bottom end"
+    :location="isRail ? 'right' : 'bottom end'"
     :offset="8"
     transition="fade-transition"
     :close-on-content-click="false"
@@ -114,11 +120,15 @@ function handleAction(action) {
     <template #activator="{ props: menuProps }">
       <button
         v-bind="menuProps"
-        class="flex items-center gap-2  px-3 py-2 cursor-pointer transition-all select-none"
-        :class="{ 'chip-open': menuOpen }"
+        class="flex items-center cursor-pointer transition-all select-none"
+        :class="[isRail ? 'chip-rail' : 'gap-2 px-3 py-2', { 'chip-open': menuOpen, 'chip-rail--collapsed': isRail && collapsed }]"
       >
-        <!-- Avatar -->
-        <div class="avatar-ring size-7 rounded-full shrink-0 overflow-hidden flex items-center justify-center text-[11px] font-bold">
+        <!-- Avatar. In the rail it is the whole control when collapsed, so it
+             takes the 40px the logo used to occupy rather than the chip's 28. -->
+        <div
+          class="avatar-ring rounded-full shrink-0 overflow-hidden flex items-center justify-center font-bold"
+          :class="isRail ? 'size-10 text-sm' : 'size-7 text-[11px]'"
+        >
           <img
             v-if="avatarUrl"
             :src="avatarUrl"
@@ -128,17 +138,23 @@ function handleAction(action) {
           <span v-else>{{ initials }}</span>
         </div>
 
-        <!-- Name — hidden on small screens -->
-        <span class="max-md:hidden inline text-sm font-semibold leading-none max-w-[96px] truncate" style="color: var(--c-text)">
+        <!-- Name — hidden on small screens in the bar, and when the rail is collapsed -->
+        <span
+          v-show="!(isRail && collapsed)"
+          class="inline font-semibold leading-none truncate"
+          :class="isRail ? 'text-[15px]' : 'max-md:hidden text-sm max-w-[96px]'"
+          style="color: var(--c-text)"
+        >
           {{ displayName }}
         </span>
 
-        <!-- Chevron — hidden on small screens -->
+        <!-- Chevron — hidden on small screens, and in the collapsed rail -->
         <v-icon
           icon="mdi-chevron-down"
           size="16"
-          class="max-md:hidden flex chip-chevron transition-transform duration-200 shrink-0"
-          :class="{ 'rotate-180': menuOpen }"
+          v-show="!(isRail && collapsed)"
+          class="flex chip-chevron transition-transform duration-200 shrink-0"
+          :class="[{ 'rotate-180': menuOpen }, isRail ? '' : 'max-md:hidden']"
           style="color: var(--c-muted)"
         />
       </button>
@@ -153,26 +169,6 @@ function handleAction(action) {
         box-shadow: 0 16px 48px rgba(0,0,0,0.36), 0 2px 8px rgba(0,0,0,0.22);
       "
     >
-      <!-- User identity header -->
-      <div class="flex items-center gap-3 px-4 py-3" style="border-bottom: 1px solid var(--c-border)">
-        <div
-          class="size-9 rounded-xl shrink-0 overflow-hidden flex items-center justify-center text-sm font-bold"
-          style="background: color-mix(in srgb, var(--c-trade) 18%, transparent); color: var(--c-trade); border: 1px solid color-mix(in srgb, var(--c-trade) 28%, transparent)"
-        >
-          <img
-            v-if="avatarUrl"
-            :src="avatarUrl"
-            alt="avatar"
-            class="w-full h-full object-cover"
-          />
-          <span v-else>{{ initials }}</span>
-        </div>
-        <div class="flex flex-col min-w-0">
-          <span class="text-sm font-semibold truncate leading-tight" style="color: var(--c-text)">{{ displayName }}</span>
-          <span class="text-[11px] truncate mt-1" style="color: var(--c-muted)">{{ login?.user?.email }}</span>
-        </div>
-      </div>
-
       <!-- Action items -->
       <div class="flex flex-col py-1">
         <button
@@ -194,8 +190,9 @@ function handleAction(action) {
         </button>
       </div>
 
-      <!-- Divider + Sign out -->
-      <div style="border-top: 1px solid var(--c-border)">
+      <!-- Divider + Sign out. Omitted in the rail, which carries its own sign-out
+           row beneath Discord; two of them in one open menu is one too many. -->
+      <div v-if="!isRail" style="border-top: 1px solid var(--c-border)">
         <button
           class="menu-item menu-item-danger flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors text-left w-full"
           @click="handleAction('logout')"
@@ -209,6 +206,18 @@ function handleAction(action) {
 </template>
 
 <style scoped>
+.chip-rail {
+  gap: 12px;
+  width: 100%;
+  height: 52px;
+  padding: 0 6px;
+  margin-bottom: 4px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+.chip-rail:hover { background: var(--c-surface-2); }
+.chip-rail--collapsed { justify-content: center; padding: 0; gap: 0; }
+
 .avatar-ring {
   background: color-mix(in srgb, var(--c-trade) 20%, transparent);
   color: var(--c-trade);
