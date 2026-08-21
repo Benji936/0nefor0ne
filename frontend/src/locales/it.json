@@ -255,13 +255,14 @@
     "tradePileEmpty": "Nessuna carta da scambiare ancora. Aggiungine alcune per iniziare.",
     "wishlistEmpty": "La tua lista desideri è vuota. Aggiungi le carte che stai cercando.",
     "searchCards": "Cerca carte da aggiungere",
-    "emptyTrade": "Niente qui ancora  aggiungi carte che hai da offrire.",
-    "emptyWish": "Niente qui ancora  aggiungi carte che stai cercando.",
+    "emptyTrade": "Niente qui ancora — aggiungi carte che hai da offrire.",
+    "emptyWish": "Niente qui ancora — aggiungi carte che stai cercando.",
     "addedToWishlist": "\"{name}\" aggiunto alla lista desideri.",
     "addedToTrade": "\"{name}\" aggiunto al mazzo di scambio.",
     "viewLabel": "Vista collezione",
     "viewList": "Vista elenco",
-    "viewGrid": "Vista griglia"
+    "viewGrid": "Vista griglia",
+    "allLists": "Tutte le liste"
   },
   "addCard": {
     "addToTrade": "Aggiungi al mazzo di scambio",

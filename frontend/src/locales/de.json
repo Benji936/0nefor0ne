@@ -255,13 +255,14 @@
     "tradePileEmpty": "Noch keine Karten zum Tauschen. Füge welche hinzu, um loszulegen.",
     "wishlistEmpty": "Deine Wunschliste ist leer. Füge Karten hinzu, die du suchst.",
     "searchCards": "Karten suchen zum Hinzufügen",
-    "emptyTrade": "Noch nichts hier  füge Karten hinzu, die du anbieten möchtest.",
-    "emptyWish": "Noch nichts hier  füge Karten hinzu, die du suchst.",
+    "emptyTrade": "Noch nichts hier — füge Karten hinzu, die du anbieten möchtest.",
+    "emptyWish": "Noch nichts hier — füge Karten hinzu, die du suchst.",
     "addedToWishlist": "\"{name}\" zur Wunschliste hinzugefügt.",
     "addedToTrade": "\"{name}\" zum Tauschstapel hinzugefügt.",
     "viewLabel": "Sammlungsansicht",
     "viewList": "Listenansicht",
-    "viewGrid": "Rasteransicht"
+    "viewGrid": "Rasteransicht",
+    "allLists": "Alle Listen"
   },
   "addCard": {
     "addToTrade": "Zum Tauschstapel hinzufügen",

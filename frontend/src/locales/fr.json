@@ -255,13 +255,14 @@
     "tradePileEmpty": "Aucune carte à échanger pour l'instant. Ajoutez-en pour commencer.",
     "wishlistEmpty": "Votre liste de souhaits est vide. Ajoutez les cartes que vous recherchez.",
     "searchCards": "Rechercher des cartes à ajouter",
-    "emptyTrade": "Rien ici pour l'instant  ajoutez des cartes que vous avez à échanger.",
-    "emptyWish": "Rien ici pour l'instant  ajoutez des cartes que vous recherchez.",
+    "emptyTrade": "Rien ici pour l'instant — ajoutez des cartes que vous avez à échanger.",
+    "emptyWish": "Rien ici pour l'instant — ajoutez des cartes que vous recherchez.",
     "addedToWishlist": "\"{name}\" ajouté à la liste de souhaits.",
     "addedToTrade": "\"{name}\" ajouté à la pile d'échange.",
     "viewLabel": "Affichage de la collection",
     "viewList": "Vue liste",
-    "viewGrid": "Vue grille"
+    "viewGrid": "Vue grille",
+    "allLists": "Toutes les listes"
   },
   "addCard": {
     "addToTrade": "Ajouter à ma pile d'échange",

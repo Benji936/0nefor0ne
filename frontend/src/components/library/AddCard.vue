@@ -4,7 +4,7 @@
       <v-btn
         density="comfortable"
         variant="flat"
-        :style="{ backgroundColor: meta.color, color: 'white' }"
+        :style="{ backgroundColor: meta.color, color: 'var(--c-on-accent)' }"
         :prepend-icon="meta.icon"
         v-bind="activatorProps"
       >
@@ -14,12 +14,15 @@
 
     <v-card style="min-height: 480px; background-color: var(--c-surface); color: var(--c-text)">
       <!-- Banner -->
-      <div class="flex flex-row items-center gap-3 px-5 py-3" :style="{ backgroundColor: meta.color, color: 'white' }">
+      <!-- Text on a brand colour is var(--c-on-accent), never a literal white:
+           the brand colours invert between themes, so a fixed white label passes
+           in one and fails in the other (DESIGN.md, The Label Contrast Rule). -->
+      <div class="flex flex-row items-center gap-3 px-5 py-3" :style="{ backgroundColor: meta.color, color: 'var(--c-on-accent)' }">
         <v-btn
           v-if="step === 'search'"
           icon="mdi-arrow-left"
           variant="text"
-          color="white"
+          color="var(--c-on-accent)"
           density="compact"
           @click="step = 'search'"
         />
@@ -28,7 +31,7 @@
           <span class="font-bold leading-tight">{{ meta.title }}</span>
           <span class="text-xs opacity-80">{{ step === 'search' ? meta.subtitle : selectedCard?.name }}</span>
         </div>
-        <v-btn icon="mdi-close" variant="text" color="white" density="compact" @click="dialogOpen = false" />
+        <v-btn icon="mdi-close" variant="text" color="var(--c-on-accent)" density="compact" @click="dialogOpen = false" />
       </div>
 
       <!-- ── Step 1: Search ── -->
@@ -150,7 +153,7 @@
               class="w-full mt-1"
               size="large"
               :prepend-icon="meta.icon"
-              :style="{ backgroundColor: meta.color, color: 'white' }"
+              :style="{ backgroundColor: meta.color, color: 'var(--c-on-accent)' }"
               variant="flat"
               type="submit"
               :loading="loading"

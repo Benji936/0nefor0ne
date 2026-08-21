@@ -255,13 +255,14 @@
     "tradePileEmpty": "No cards to trade yet. Add some to get started.",
     "wishlistEmpty": "Your wishlist is empty. Add cards you're looking for.",
     "searchCards": "Search for cards to add",
-    "emptyTrade": "Nothing here yet  add cards you have for trade.",
-    "emptyWish": "Nothing here yet  add cards you're hunting for.",
+    "emptyTrade": "Nothing here yet — add cards you have for trade.",
+    "emptyWish": "Nothing here yet — add cards you're hunting for.",
     "addedToWishlist": "\"{name}\" added to wishlist.",
     "addedToTrade": "\"{name}\" added to trade pile.",
     "viewLabel": "Collection view",
     "viewList": "List view",
-    "viewGrid": "Grid view"
+    "viewGrid": "Grid view",
+    "allLists": "All lists"
   },
   "addCard": {
     "addToTrade": "Add to trade pile",

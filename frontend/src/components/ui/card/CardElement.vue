@@ -42,7 +42,7 @@ defineEmits(['deleted', 'move']);
         <LanguageTooltip v-if="wish.language" :language="wish.language" />
         <v-tooltip v-if="wish.rarity" :text="wish.rarity" location="top">
           <template #activator="{ props: tip }">
-            <span v-bind="tip" class="!py-0.5 px-1 rounded text-[11px] h-fit bg-amber-900/50 text-amber-300 cursor-default">{{ shortenRarity(wish.rarity) }}</span>
+            <span v-bind="tip" class="ce-rarity cursor-default">{{ shortenRarity(wish.rarity) }}</span>
           </template>
         </v-tooltip>
         <a
@@ -139,7 +139,7 @@ defineEmits(['deleted', 'move']);
         <LanguageTooltip v-if="wish.language" :language="wish.language" />
         <v-tooltip v-if="wish.rarity" :text="wish.rarity" location="top">
           <template #activator="{ props: tip }">
-            <span v-bind="tip" class="py-1 px-1 rounded text-xs h-fit bg-amber-900/50 text-amber-300 cursor-default">{{ shortenRarity(wish.rarity) }}</span>
+            <span v-bind="tip" class="ce-rarity cursor-default">{{ shortenRarity(wish.rarity) }}</span>
           </template>
         </v-tooltip>
         <a
@@ -302,6 +302,23 @@ export default {
 </script>
 
 <style scoped>
+/* A rarity code is an identifier, so it is set like one: monospace, in the same
+   tinted-neutral chip the collection uses for its counts (DESIGN.md, The Mono
+   Identifier Rule). It used to be Tailwind amber — a hue outside the palette,
+   and at 1.8:1 on a light row it was not readable at all. */
+.ce-rarity {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+  height: fit-content;
+  color: var(--c-muted);
+  background: color-mix(in srgb, var(--c-muted) 14%, transparent);
+}
+
 /* Quiet until wanted: filing is a thing you do occasionally, and a button per
    card at full contrast would compete with the card itself. */
 .ce-file {
