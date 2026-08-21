@@ -197,6 +197,10 @@
       "year": "vor {n} Jahr | vor {n} Jahren"
     }
   },
+  "home": {
+    "tradedIn": "In {count} Tausch | In {count} Tauschen",
+    "alsoMoving": "Ebenfalls in Bewegung"
+  },
   "auth": {
     "signIn": "Anmelden",
     "createAccount": "Konto erstellen",
@@ -962,8 +966,8 @@
       "desc": "Sieh dir einen Tauschvorschlag an: Karten, Fotos und Abwicklung."
     },
     "home": {
-      "title": "One for One  Yu-Gi-Oh!-Kartentausch von Spieler zu Spieler",
-      "desc": "Tausche Yu-Gi-Oh!-Dubletten und jage deine Zielkarten mit One for One  direkter Tausch von Spieler zu Spieler, ohne Gebühren und ohne Auktionen, dazu eine vollständige Kartensuche, ein Deck-Builder und eine Wunschliste."
+      "title": "One for One — Yu-Gi-Oh!-Kartentausch von Spieler zu Spieler",
+      "desc": "Tausche Yu-Gi-Oh!-Dubletten und jage deine Zielkarten mit One for One — direkter Tausch von Spieler zu Spieler, ohne Gebühren und ohne Auktionen, dazu eine vollständige Kartensuche, ein Deck-Builder und eine Wunschliste."
     },
     "search": {
       "title": "One for One  Yu-Gi-Oh! Karten tauschen",

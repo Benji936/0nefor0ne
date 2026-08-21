@@ -197,6 +197,10 @@
       "year": "{n} year ago | {n} years ago"
     }
   },
+  "home": {
+    "tradedIn": "In {count} trade | In {count} trades",
+    "alsoMoving": "Also moving"
+  },
   "auth": {
     "signIn": "Sign in",
     "createAccount": "Create an account",
@@ -962,8 +966,8 @@
       "desc": "Review a trade proposal, its cards, photos and settlement."
     },
     "home": {
-      "title": "One for One  Peer-to-peer Yu-Gi-Oh! card trading",
-      "desc": "Trade Yu-Gi-Oh! duplicates and hunt your targets with One for One  direct peer-to-peer trades with no fees and no auctions, plus a full card search engine, deck builder, and a wishlist."
+      "title": "One for One — Peer-to-peer Yu-Gi-Oh! card trading",
+      "desc": "Trade Yu-Gi-Oh! duplicates and hunt your targets with One for One — direct peer-to-peer trades with no fees and no auctions, plus a full card search engine, deck builder, and a wishlist."
     },
     "search": {
       "title": "One for One  Yu-Gi-Oh! Card Trading",

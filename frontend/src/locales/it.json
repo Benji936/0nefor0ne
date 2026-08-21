@@ -197,6 +197,10 @@
       "year": "{n} anno fa | {n} anni fa"
     }
   },
+  "home": {
+    "tradedIn": "In {count} scambio | In {count} scambi",
+    "alsoMoving": "Si muove anche"
+  },
   "auth": {
     "signIn": "Accedi",
     "createAccount": "Crea un account",
@@ -962,8 +966,8 @@
       "desc": "Consulta una proposta di scambio, le carte, le foto e le modalità."
     },
     "home": {
-      "title": "One for One  Scambio di carte Yu-Gi-Oh! tra giocatori",
-      "desc": "Scambia i doppioni Yu-Gi-Oh! e trova le carte che cerchi con One for One  scambi diretti tra giocatori, senza commissioni né aste, con un motore di ricerca carte completo, un costruttore di deck e una lista desideri."
+      "title": "One for One — Scambio di carte Yu-Gi-Oh! tra giocatori",
+      "desc": "Scambia i doppioni Yu-Gi-Oh! e trova le carte che cerchi con One for One — scambi diretti tra giocatori, senza commissioni né aste, con un motore di ricerca carte completo, un costruttore di deck e una lista desideri."
     },
     "search": {
       "title": "One for One  Scambio Carte Yu-Gi-Oh!",

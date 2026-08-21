@@ -197,6 +197,10 @@
       "year": "il y a {n} an | il y a {n} ans"
     }
   },
+  "home": {
+    "tradedIn": "Dans {count} échange | Dans {count} échanges",
+    "alsoMoving": "Bouge aussi"
+  },
   "auth": {
     "signIn": "Se connecter",
     "createAccount": "Créer un compte",
@@ -962,8 +966,8 @@
       "desc": "Consultez une proposition d'échange, ses cartes, photos et modalités."
     },
     "home": {
-      "title": "One for One  Échange de cartes Yu-Gi-Oh! entre particuliers",
-      "desc": "Échangez vos doublons Yu-Gi-Oh! et trouvez les cartes que vous recherchez avec One for One  des échanges directs entre particuliers, sans frais ni enchères, avec un moteur de recherche de cartes complet, un constructeur de decks et une liste de souhaits."
+      "title": "One for One — Échange de cartes Yu-Gi-Oh! entre particuliers",
+      "desc": "Échangez vos doublons Yu-Gi-Oh! et trouvez les cartes que vous recherchez avec One for One — des échanges directs entre particuliers, sans frais ni enchères, avec un moteur de recherche de cartes complet, un constructeur de decks et une liste de souhaits."
     },
     "search": {
       "title": "One for One  Échange de Cartes Yu-Gi-Oh!",
