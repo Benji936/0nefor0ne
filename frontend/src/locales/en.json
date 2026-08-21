@@ -1062,7 +1062,7 @@
       "buttonWithCount": "Filters ({count})",
       "activeLabel": "Active filters"
     },
-    "emptyState": "Start typing a card name or apply a filter to browse the database.",
+    "emptyState": "Search by card name, or paste a set code.",
     "searchPlaceholder": "Search cards or set codes…"
   },
   "combo": {

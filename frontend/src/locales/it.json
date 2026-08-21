@@ -1062,7 +1062,7 @@
       "buttonWithCount": "Filtri ({count})",
       "activeLabel": "Filtri attivi"
     },
-    "emptyState": "Inizia a digitare il nome di una carta o applica un filtro per sfogliare il database.",
+    "emptyState": "Cerca per nome della carta, o incolla un codice set.",
     "searchPlaceholder": "Cerca carte o codici set…"
   },
   "combo": {

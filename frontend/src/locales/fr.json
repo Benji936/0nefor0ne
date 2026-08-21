@@ -1062,8 +1062,8 @@
       "buttonWithCount": "Filtres ({count})",
       "activeLabel": "Filtres actifs"
     },
-    "emptyState": "Commencez à taper un nom de carte ou appliquez un filtre pour parcourir la base de données.",
-    "searchPlaceholder": "Recherche par nom de carte ou code de set…"
+    "emptyState": "Cherchez par nom de carte, ou collez un code de set.",
+    "searchPlaceholder": "Nom de carte ou code de set…"
   },
   "combo": {
     "explore": "Explorer les combos",

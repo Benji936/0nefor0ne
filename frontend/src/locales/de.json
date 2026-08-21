@@ -1062,7 +1062,7 @@
       "buttonWithCount": "Filter ({count})",
       "activeLabel": "Aktive Filter"
     },
-    "emptyState": "Gib einen Kartennamen ein oder wende einen Filter an, um die Datenbank zu durchsuchen.",
+    "emptyState": "Suche nach Kartenname oder füge einen Set-Code ein.",
     "searchPlaceholder": "Karten oder Set-Codes suchen…"
   },
   "combo": {
