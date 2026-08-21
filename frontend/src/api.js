@@ -192,6 +192,8 @@ export const getArchetypes = async () => {
  *  @param {string}        [race]       - card race / Spell-Trap sub-type (e.g. "Dragon", "Quick-Play")
  *  @param {number|string} [link]       - link rating (e.g. 3 or "gte3")
  *  @param {number|string} [scale]      - pendulum scale (e.g. 8 or "lte4")
+ *  @param {string}        [desc]       - substring of the card's rules text (English). Combined with
+ *                                        `fname` it UNIONS rather than intersects — see the note below.
  *  @param {string}        [linkmarker] - comma-separated link arrow markers (e.g. "Top,Bottom-Left") — AND semantics
  *  @param {string}        [sort]       - server-side sort field: "name"|"atk"|"def"|"level"|"new"
  *  @param {number}        [num=40]     - max number of results
@@ -202,9 +204,14 @@ export const getArchetypes = async () => {
  *  @param {string}        [format]     - alias for `banlist` (convenience — one or the other is used,
  *                                        `banlist` takes precedence when both are supplied).
  */
-export const searchByFilters = ({ fname, type, attribute, level, race, atk, atkMin, atkMax, def, defMin, defMax, link, scale, linkmarker, sort, num = 40, offset = 0, banlist, format } = {}) => {
+export const searchByFilters = ({ fname, desc, type, attribute, level, race, atk, atkMin, atkMax, def, defMin, defMax, link, scale, linkmarker, sort, num = 40, offset = 0, banlist, format } = {}) => {
     const p = new URLSearchParams();
     if (fname)                          p.set("fname", fname);
+    // Card text search. NOTE: passing `fname` and `desc` together is a UNION,
+    // not an intersection — YGOPRODeck returns cards matching either one
+    // (verified: fname=Exodia is 7 rows, desc=Exodia is 6, both together is 11).
+    // Every other param here still narrows the result as usual.
+    if (desc)                           p.set("desc", desc);
     if (type)                           p.set("type", type);
     if (attribute)                      p.set("attribute", String(attribute).toLowerCase());
     if (level != null && level !== "")  p.set("level", level);

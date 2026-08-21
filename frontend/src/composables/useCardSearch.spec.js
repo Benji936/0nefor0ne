@@ -8,6 +8,7 @@ import {
   deserializeView,
   isFiltersDefault,
   deriveSearch,
+  tierByMatch,
   ALL_MONSTER_TYPES,
 } from './useCardSearch.js';
 
@@ -358,22 +359,33 @@ describe('init() — cold restore from a deep-link route.query', () => {
     }
   };
 
-  it('cold-restores a deep link (pg=3 + filter) in ONE searchByFilters request (KD-4 / AC-7)', async () => {
-    // Deep link: page 3 of an attribute-filtered search → filtered fetch path.
+  it('cold-restores a deep link (pg=3 + filter) in ONE window request (KD-4 / AC-7)', async () => {
+    // Deep link: page 3 of an attribute-filtered search → ranked fetch path.
     routeStub.query = { q: 'dragon', k: 'monster', a: 'dark', pg: '3' };
-    searchByFilters.mockResolvedValue({
-      data: { data: [{ id: 1 }, { id: 2 }], meta: { total_rows: 200 } },
-    });
+    // Model the API faithfully: it returns as many rows as `num` asked for.
+    // A mock that under-delivers would send the ranked reader back for more,
+    // which is exactly the behaviour this test is here to rule out.
+    searchByFilters.mockImplementation(({ num = 40, offset = 0 }) => ({
+      data: {
+        data: Array.from({ length: Math.min(num, 200 - offset) }, (_, i) => ({
+          id: offset + i + 1,
+          name: `Dragon ${offset + i + 1}`,
+        })),
+        meta: { total_rows: 200 },
+      },
+    }));
 
     await withDefaultSearch(async (s) => {
       s.init();
       await flush();
 
-      // The whole 3-page set is restored in a single request, not 3 paged calls.
-      expect(searchByFilters).toHaveBeenCalledTimes(1);
-      const [params] = searchByFilters.mock.calls[0];
-      expect(params.num).toBe(3 * 40);   // 120
-      expect(params.offset).toBe(0);
+      // The whole 3-page set is restored by a single windowed read, not by 3
+      // paged calls. The ranked path pairs it with a num=1 count probe for the
+      // union total, which is why there are two calls rather than one.
+      const windows = searchByFilters.mock.calls.map(([p]) => p).filter((p) => p.num > 1);
+      expect(windows).toHaveLength(1);
+      expect(windows[0].num).toBe(3 * 40);   // 120
+      expect(windows[0].offset).toBe(0);
       expect(s.totalRows.value).toBe(200);
     });
   });
@@ -388,6 +400,159 @@ describe('init() — cold restore from a deep-link route.query', () => {
       expect(searchByFilters).not.toHaveBeenCalled();
       expect(searchCardByName).not.toHaveBeenCalled();
       expect(s.cards.value).toEqual([]);
+    });
+  });
+});
+
+describe('tierByMatch — name-and-text first, then name, then text', () => {
+  const cards = [
+    { id: 1, name: 'Polymerization',       desc: 'Fusion Summon 1 Fusion Monster.' },
+    { id: 2, name: 'Fusion Recovery',      desc: 'Target 1 Polymerization in your GY.' },
+    { id: 3, name: 'Dragon Fusion Master', desc: 'This card can Fusion Summon.' },
+    { id: 4, name: 'Mirror Force',         desc: 'Destroy all attacking monsters.' },
+  ];
+
+  it('buckets a batch by where the query matched', () => {
+    const { both, nameOnly, textOnly } = tierByMatch(cards, 'fusion');
+    expect(both.map(c => c.id)).toEqual([3]);       // name AND text
+    expect(nameOnly.map(c => c.id)).toEqual([2]);   // "Fusion Recovery", text has none
+    expect(textOnly.map(c => c.id)).toEqual([1, 4]);
+  });
+
+  it('matches case-insensitively and ignores surrounding whitespace', () => {
+    const { both } = tierByMatch(cards, '  FuSiOn  ');
+    expect(both.map(c => c.id)).toEqual([3]);
+  });
+
+  it('keeps arrival order inside a tier, so the active sort still leads', () => {
+    const shuffled = [cards[2], { id: 5, name: 'Fusion Gate', desc: 'Fusion Summon freely.' }];
+    const { both } = tierByMatch(shuffled, 'fusion');
+    expect(both.map(c => c.id)).toEqual([3, 5]);
+  });
+
+  it('tolerates cards with no text at all', () => {
+    const { nameOnly, textOnly } = tierByMatch([{ id: 9, name: 'Fusion Token' }, { id: 10 }], 'fusion');
+    expect(nameOnly.map(c => c.id)).toEqual([9]);
+    expect(textOnly.map(c => c.id)).toEqual([10]);
+  });
+
+  it('with no query every card falls to the last bucket, preserving order', () => {
+    const { both, nameOnly, textOnly } = tierByMatch(cards, '');
+    expect(both).toEqual([]);
+    expect(nameOnly).toEqual([]);
+    expect(textOnly.map(c => c.id)).toEqual([1, 2, 3, 4]);
+  });
+});
+
+describe('runSearch — relevance ordering across the name and text streams', () => {
+  beforeEach(() => {
+    searchByFilters.mockReset();
+    searchCardByName.mockReset();
+    searchCardBySetCode.mockReset();
+    searchById.mockReset();
+    routerReplace.mockClear();
+    routeStub.query = {};
+  });
+
+  const withSearch = async (opts, fn) => {
+    const scope = effectScope();
+    let api;
+    scope.run(() => { api = useCardSearch({ routeName: 'cards', ...opts }); });
+    try { await fn(api); } finally { scope.stop(); }
+  };
+
+  // Two streams, as YGOPRODeck serves them: `fname` returns every NAME match,
+  // `desc` every TEXT match, and the two sent together return their union.
+  const NAME_ROWS = [
+    { id: 1, name: 'Fusion Recovery',      desc: 'Target 1 Polymerization.' },   // name only
+    { id: 2, name: 'Dragon Fusion Master', desc: 'This card can Fusion Summon.' }, // both
+  ];
+  const TEXT_ROWS = [
+    { id: 2, name: 'Dragon Fusion Master', desc: 'This card can Fusion Summon.' }, // also a name match
+    { id: 3, name: 'Polymerization',       desc: 'Fusion Summon 1 monster.' },   // text only
+  ];
+  const stubStreams = () => {
+    searchByFilters.mockImplementation(({ fname, desc, num = 40 }) => {
+      // fname + desc together = the union count probe.
+      if (fname && desc) return { data: { data: [], meta: { total_rows: 3 } } };
+      const rows = desc ? TEXT_ROWS : NAME_ROWS;
+      return { data: { data: rows.slice(0, num), meta: { total_rows: rows.length } } };
+    });
+  };
+
+  it('orders both-matches, then name-only, then text-only', async () => {
+    stubStreams();
+    await withSearch({ pageSize: 40 }, async (s) => {
+      s.searchQuery.value = 'fusion';
+      await s.runSearch();
+      await flush();
+
+      expect(s.cards.value.map(c => c.id)).toEqual([2, 1, 3]);
+      expect(s.totalRows.value).toBe(3);
+      expect(s.hasMore.value).toBe(false);
+    });
+  });
+
+  it('never shows the same card twice when both streams return it', async () => {
+    stubStreams();
+    await withSearch({ pageSize: 40 }, async (s) => {
+      s.searchQuery.value = 'fusion';
+      await s.runSearch();
+      await flush();
+
+      const ids = s.cards.value.map(c => c.id);
+      expect(new Set(ids).size).toBe(ids.length);
+    });
+  });
+
+  it('reads the text stream only once the name stream is spent', async () => {
+    // Which matters for correctness, not just cost: a card that matches both
+    // must be recognised as such before the text stream can offer it as a
+    // text-only result.
+    stubStreams();
+    await withSearch({ pageSize: 1 }, async (s) => {
+      s.searchQuery.value = 'fusion';
+      await s.runSearch();          // page 1 — satisfied by the name stream
+      await flush();
+
+      const askedForText = () => searchByFilters.mock.calls.some(([p]) => p.desc && !p.fname);
+      expect(askedForText()).toBe(false);
+      expect(s.cards.value.map(c => c.id)).toEqual([2]);   // the both-match leads
+
+      // Page 2 is already in hand from the same window — still no text stream.
+      s.loadMore();
+      await flush();
+      expect(askedForText()).toBe(false);
+      expect(s.cards.value.map(c => c.id)).toEqual([2, 1]);
+    });
+  });
+
+  it('searches text alongside names, so a text-only match is reachable', async () => {
+    stubStreams();
+    await withSearch({ pageSize: 2 }, async (s) => {
+      s.searchQuery.value = 'fusion';
+      await s.runSearch();
+      await flush();
+      expect(s.cards.value.map(c => c.id)).toEqual([2, 1]);
+
+      s.loadMore();                 // page 2 — now the text stream opens
+      await flush();
+      expect(s.cards.value.map(c => c.id)).toEqual([2, 1, 3]);
+    });
+  });
+
+  it('falls back to the set-code lookup when neither stream matches', async () => {
+    searchByFilters.mockResolvedValue({ data: { data: [], meta: { total_rows: 0 } } });
+    searchCardBySetCode.mockResolvedValue({ data: { id: 89631139 } });
+    searchById.mockResolvedValue({ data: { data: [{ id: 89631139, name: 'Blue-Eyes White Dragon' }] } });
+
+    await withSearch({ pageSize: 40 }, async (s) => {
+      s.searchQuery.value = 'LOB-001';
+      await s.runSearch();
+      await flush();
+
+      expect(s.cards.value.map(c => c.id)).toEqual([89631139]);
+      expect(s.totalRows.value).toBe(1);
     });
   });
 });

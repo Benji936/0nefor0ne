@@ -275,6 +275,55 @@ const DENSITY_VALUES = ['grid', 'compact'];
 // the server-paged (ascending) data. KD-3.
 const REVERSED_SORTS = new Set(['atk', 'def', 'level']);
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Relevance tiering — a text query matches card NAMES and card TEXT, and the
+// listing puts the strongest match first: name and text, then name only, then
+// text only.
+//
+// The tiering has to happen here rather than server-side: YGOPRODeck's `fname`
+// and `desc` params UNION when sent together (fname=Exodia 7 rows, desc=Exodia
+// 6, both 11) and it offers no way to ask for the intersection, nor to order by
+// relevance. So the two streams are fetched separately and ranked on arrival.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// How deep the ranking reaches per request. Tiering is only meaningful across a
+// set held in full, so the name stream is pulled this many rows at a time
+// instead of one display page at a time. Three pages is enough that a normal
+// query (a card name matches tens of cards, not hundreds) is ranked in one go,
+// while a broad query still costs one bounded request rather than the whole
+// database — `fname=a` alone is 12,016 rows.
+const RANK_WINDOW = 120;
+
+// Ceiling on how many stream reads one search may chain while topping up a
+// short page. See the top-up loop in runRankedSearch.
+const MAX_TOP_UP_READS = 8;
+
+const contains = (haystack, needle) =>
+  typeof haystack === 'string' && haystack.toLowerCase().includes(needle);
+
+/**
+ * Split a batch of cards by how the query matched them. Each bucket keeps the
+ * order it arrived in, so the server's sort still decides who leads a tier.
+ *
+ * @param {Array<{name?: string, desc?: string}>} cards
+ * @param {string} query
+ * @returns {{both: Array, nameOnly: Array, textOnly: Array}}
+ */
+export function tierByMatch(cards = [], query = '') {
+  const q = String(query ?? '').trim().toLowerCase();
+  const both = [], nameOnly = [], textOnly = [];
+  for (const card of cards) {
+    // With no query every card is here on a filter alone; treat that as the
+    // weakest tier so the buckets still concatenate to the original order.
+    const inName = q ? contains(card?.name, q) : false;
+    const inText = q ? contains(card?.desc, q) : false;
+    if (inName && inText) both.push(card);
+    else if (inName) nameOnly.push(card);
+    else textOnly.push(card);
+  }
+  return { both, nameOnly, textOnly };
+}
+
 /** Serialize the full search state (filters + sort/page/view) to a query object. */
 export function serializeView(searchQuery, activeFilters, { sort = 'name', pagesLoaded = 1, density = 'grid' } = {}) {
   const q = serialize(searchQuery, activeFilters);
@@ -325,6 +374,11 @@ export function useCardSearch({ routeName = 'cards', pageSize = 40 } = {}) {
   // (atk/def/level) are reversed ONCE over the whole merged set — keeping global
   // order correct across appended pages (FIX 1). Never reversed in place.
   let rawCards = [];
+  // Relevance-search bookkeeping, rebuilt on every cold ranked load. Tracks how
+  // far into each of the two streams we have read, and every card id the name
+  // stream has produced so the text stream can skip them. Non-reactive — only
+  // runRankedSearch reads or writes it.
+  let rank = null;
 
   // ── derived (readonly computed) ──
   const hasMore = computed(() => cards.value.length < totalRows.value);
@@ -388,6 +442,145 @@ export function useCardSearch({ routeName = 'cards', pageSize = 40 } = {}) {
   // Server already orders ascending; "high → low" fields are reversed client-side.
   const applySortDirection = (arr) => (REVERSED_SORTS.has(sort.value) ? arr.slice().reverse() : arr);
 
+
+  // ── Relevance path: the query searches card text as well as card names ─────
+  //
+  // Two streams feed it. `fname` returns every card whose NAME matches, which
+  // is tier 1 ("name and text") plus tier 2 ("name only"). `desc` returns every
+  // card whose TEXT matches, which is those same tier-1 cards plus tier 3
+  // ("text only").
+  //
+  // They are consumed in that order, and that is what makes the listing exact:
+  // the text stream is not touched until the name stream is spent, so by the
+  // time a text-only card can appear every name match is already known and
+  // nothing that belongs in tier 1 can be mistaken for tier 3.
+  //
+  // Within the name stream, tier 1 leads tier 2 across everything we hold — one
+  // RANK_WINDOW-sized read rather than a page. Past that window later batches
+  // rank among themselves and land underneath what is already on screen, so the
+  // list grows downward and never reshuffles under the reader.
+  async function runRankedSearch({ append, seq, query, serverParams, clientPredicates, reversed }) {
+    const q = query.trim();
+    // fname AND desc together is the UNION of the two streams — that is where
+    // the result count comes from. Dropping fname (below) is what isolates the
+    // text stream on its own.
+    const unionParams = { ...serverParams, desc: q };
+    const stale = () => seq !== searchSeq;
+
+    // One batch of rows → display order, with the sort direction applied inside
+    // each tier. Reversing the whole batch instead would put tier 3 on top.
+    const orderBatch = (rows) => {
+      const kept = clientPredicates.length
+        ? rows.filter((card) => clientPredicates.every((pred) => pred(card)))
+        : rows;
+      const { both, nameOnly, textOnly } = tierByMatch(kept, q);
+      if (reversed) { both.reverse(); nameOnly.reverse(); textOnly.reverse(); }
+      return [...both, ...nameOnly, ...textOnly];
+    };
+
+    // Read the next slice of a stream. Ascending sorts walk from the head;
+    // "high → low" sorts walk the ascending tail backwards, so page 1 opens on
+    // the global maximum exactly as the standard path does.
+    const readWindow = async (params, loaded, total, num) => {
+      const size = Math.max(0, Math.min(num, total - loaded));
+      if (size === 0) return [];
+      const offset = reversed ? Math.max(0, total - loaded - size) : loaded;
+      const res = await searchByFilters({ ...params, sort: sort.value, num: size, offset });
+      return stale() ? [] : (res.data?.data ?? []);
+    };
+
+    if (!append || !rank) {
+      // Cold load. The name window and the union count go out together; the
+      // union total is what the result count reports, and it is the only way to
+      // know how many cards the two streams add up to without reading both.
+      const windowSize = Math.max(RANK_WINDOW, pagesLoaded.value * pageSize);
+      const unionProbe = searchByFilters({ ...unionParams, sort: sort.value, num: 1, offset: 0 });
+
+      let nameRows = [];
+      let nameTotal = 0;
+      if (reversed) {
+        // A tail read needs the total first, so the window costs an extra hop.
+        const [nameProbe, union] = await Promise.all([
+          searchByFilters({ ...serverParams, sort: sort.value, num: 1, offset: 0 }),
+          unionProbe,
+        ]);
+        if (stale()) return false;
+        nameTotal = nameProbe.data?.meta?.total_rows ?? 0;
+        rank = { nameLoaded: 0, nameTotal, textLoaded: 0, textTotal: null, seen: new Set(),
+                 unionTotal: union.data?.meta?.total_rows ?? nameTotal };
+        nameRows = await readWindow(serverParams, 0, nameTotal, windowSize);
+        if (stale()) return false;
+      } else {
+        const [nameRes, union] = await Promise.all([
+          searchByFilters({ ...serverParams, sort: sort.value, num: windowSize, offset: 0 }),
+          unionProbe,
+        ]);
+        if (stale()) return false;
+        nameRows = nameRes.data?.data ?? [];
+        nameTotal = nameRes.data?.meta?.total_rows ?? nameRows.length;
+        rank = { nameLoaded: 0, nameTotal, textLoaded: 0, textTotal: null, seen: new Set(),
+                 unionTotal: union.data?.meta?.total_rows ?? nameTotal };
+      }
+
+      rank.nameLoaded = nameRows.length;
+      for (const card of nameRows) rank.seen.add(card.id);
+      rawCards = orderBatch(nameRows);
+    }
+
+    // Top up until the display has the rows it asked for, or both streams run
+    // dry. A window can yield less than it costs — client predicates drop rows,
+    // and the text stream skips every card the name stream already produced.
+    //
+    // Capped, because "yielded less than asked for" is also what a server that
+    // pages more tightly than we requested looks like: without the cap a stream
+    // handing back a few rows at a time would be read over and over inside a
+    // single call. Falling short here is harmless — the page shows what arrived
+    // and "Load more" picks the read back up.
+    const want = pagesLoaded.value * pageSize;
+    let reads = 0;
+    while (rawCards.length < want && reads < MAX_TOP_UP_READS) {
+      reads += 1;
+      if (rank.nameLoaded < rank.nameTotal) {
+        const rows = await readWindow(serverParams, rank.nameLoaded, rank.nameTotal, RANK_WINDOW);
+        if (stale()) return false;
+        if (!rows.length) { rank.nameLoaded = rank.nameTotal; continue; }
+        rank.nameLoaded += rows.length;
+        for (const card of rows) rank.seen.add(card.id);
+        rawCards = [...rawCards, ...orderBatch(rows)];
+        continue;
+      }
+
+      // Name stream spent — tier 3 starts here.
+      if (rank.textTotal === null) {
+        const probe = await searchByFilters({ ...serverParams, desc: q, fname: undefined, sort: sort.value, num: 1, offset: 0 });
+        if (stale()) return false;
+        rank.textTotal = probe.data?.meta?.total_rows ?? 0;
+      }
+      if (rank.textLoaded >= rank.textTotal) break;
+
+      const textOnlyParams = { ...serverParams, desc: q, fname: undefined };
+      const rows = await readWindow(textOnlyParams, rank.textLoaded, rank.textTotal, RANK_WINDOW);
+      if (stale()) return false;
+      if (!rows.length) { rank.textLoaded = rank.textTotal; continue; }
+      rank.textLoaded += rows.length;
+      const fresh = rows.filter((card) => !rank.seen.has(card.id));
+      for (const card of fresh) rank.seen.add(card.id);
+      rawCards = [...rawCards, ...orderBatch(fresh)];
+    }
+
+    // A window is read in RANK_WINDOW-sized bites, so it routinely holds more
+    // than the page asked for — show the page and keep the rest. "Load more"
+    // then costs nothing until the held rows run out.
+    cards.value = rawCards.slice(0, want);
+    // Once both streams are spent the loaded length IS the total — say so, or
+    // "Load more" would sit there offering rows that do not exist (client
+    // predicates and the tier-1 overlap both make the union count an overshoot).
+    const spent = rank.nameLoaded >= rank.nameTotal
+      && rank.textTotal !== null && rank.textLoaded >= rank.textTotal;
+    totalRows.value = spent ? rawCards.length : Math.max(rank.unionTotal, rawCards.length);
+    return true;
+  }
+
   // ── runSearch: the SOLE writer of cards.value (port of App.vue _doSearch) ──
   // Both the name search and the filtered search go through searchByFilters so the
   // server-side `sort` actually applies (fixing the old name-only path that ignored
@@ -401,6 +594,7 @@ export function useCardSearch({ routeName = 'cards', pageSize = 40 } = {}) {
     // If no query AND no filters, clear results.
     if (!query.trim() && !filtersActive) {
       rawCards = [];
+      rank = null;
       cards.value = [];
       totalRows.value = 0;
       return;
@@ -420,6 +614,39 @@ export function useCardSearch({ routeName = 'cards', pageSize = 40 } = {}) {
         activeFilters: activeFilters.value,
       });
       const reversed = REVERSED_SORTS.has(sort.value);
+
+      // ── Relevance path ──
+      // Any text query goes through the ranked reader, which searches card text
+      // as well as names. It also honours client predicates, so it supersedes
+      // the multi-attribute path below whenever a query is present.
+      if (query.trim()) {
+        const ok = await runRankedSearch({ append, seq, query, serverParams, clientPredicates, reversed });
+        if (seq !== searchSeq) return; // stale
+        if (ok && cards.value.length > 0) {
+          committed = true;
+          syncUrl();
+          return;
+        }
+        // Nothing matched either stream. A query that is not a card name at all
+        // (a set code like "LOB-001") still has one more route to try, below.
+        if (!append) {
+          const locale = route.params.locale || 'en';
+          const alt = await searchCardBySetCode(query);
+          if (seq !== searchSeq) return; // stale
+          let asc = [];
+          if (alt?.data?.id) {
+            const byId = await searchById(alt.data.id, locale);
+            if (seq !== searchSeq) return; // stale
+            asc = byId.data?.data ?? (Array.isArray(byId.data) ? byId.data : []);
+          }
+          rawCards = asc;
+          cards.value = asc;
+          totalRows.value = asc.length;
+          committed = true;
+          syncUrl();
+        }
+        return;
+      }
 
       if (clientPredicates.length) {
         // ── Multi-attribute (client-OR) path ──
@@ -556,6 +783,7 @@ export function useCardSearch({ routeName = 'cards', pageSize = 40 } = {}) {
 
   function reset() {
     clearTimeout(searchTimer);
+    rank = null;
     searchQuery.value = '';
     activeFilters.value = defaultFilters();
     rawCards = [];
