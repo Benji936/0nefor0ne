@@ -79,12 +79,21 @@ describe("brand colours clear AA as text on every surface they sit on", () => {
 });
 
 describe("no component hardcodes a label that belongs to a brand colour", () => {
-  // The UserCard failure in one assertion. `btnText` was the shape the regex
-  // sweep did not know to look for; this looks for the value instead.
-  it("UserCard uses the token for its button labels", () => {
+  // The UserCard failure, asserted as the rule rather than as the shape it
+  // happened to take. This used to grep for `btnText:`, the object property the
+  // original sweep had missed — which quietly stopped guarding anything the
+  // moment that property was refactored away. The rule survives refactors: the
+  // card paints labels on --c-trade / --c-accent / --c-mutual, so it must name
+  // the token, and no colour in it may be a literal white.
+  it("UserCard names the token and never a literal white", () => {
     const src = read("../components/trade/UserCard.vue");
-    const labels = [...src.matchAll(/btnText:\s*"([^"]+)"/g)].map((m) => m[1]);
-    expect(labels.length).toBeGreaterThan(0);
-    for (const label of labels) expect(label).toBe("var(--c-on-accent)");
+    expect(src, "a label sits on a brand colour here, so the token must appear")
+      .toContain("var(--c-on-accent)");
+
+    const whites = [
+      ...src.matchAll(/colou?r\s*[:=]\s*["']?\s*(?:#fff(?:fff)?|white)\b/gi),
+      ...src.matchAll(/\btext-white\b/g),
+    ].map((m) => m[0]);
+    expect(whites, "a label on a brand colour must be var(--c-on-accent)").toEqual([]);
   });
 });

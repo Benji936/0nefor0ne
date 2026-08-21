@@ -327,6 +327,7 @@
   },
   "matches": {
     "loginRequired": "Accedi per vedere le tue corrispondenze di scambio.",
+    "near": "Vicino a",
     "allCountries": "Tutti i paesi",
     "city": "Città",
     "clearFilters": "cancella filtri",
@@ -338,6 +339,8 @@
     "theyWant": "Vogliono ciò che hai",
     "noMatchesTitle": "Nessuna corrispondenza ancora",
     "noMatchesDesc": "Più carte aggiungi al tuo mazzo e alla lista desideri, più trader troverai qui.",
+    "noneHereTitle": "Nessuna corrispondenza lì",
+    "noneHereDesc": "Lì nessuno si sovrappone al tuo raccoglitore. Allarga la ricerca per vedere il resto.",
     "goToCollection": "Vai alla mia collezione per aggiungere carte"
   },
   "announces": {
@@ -625,12 +628,10 @@
     "proposeTrade": "Proponi scambio"
   },
   "userCard": {
-    "mutual": "Reciproco",
-    "hasYourWants": "Ha ciò che vuoi",
-    "wantsYours": "Vuole ciò che hai",
-    "match": "Match",
-    "theyHave": "Ha",
-    "theyWant": "Vuole",
+    "youGet": "Ricevi",
+    "theyGet": "Riceve",
+    "emptyYouGet": "Niente di suo è ancora nella tua lista dei desideri",
+    "emptyTheyGet": "Niente di tuo è ancora nella sua lista dei desideri",
     "propose": "Proponi",
     "anonymous": "Anonimo",
     "verifiedTrader": "Trader verificato"

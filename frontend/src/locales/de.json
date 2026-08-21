@@ -327,6 +327,7 @@
   },
   "matches": {
     "loginRequired": "Melde dich an, um deine Tauschpartner zu sehen.",
+    "near": "In der Nähe",
     "allCountries": "Alle Länder",
     "city": "Stadt",
     "clearFilters": "Filter löschen",
@@ -338,6 +339,8 @@
     "theyWant": "Wollen, was du hast",
     "noMatchesTitle": "Noch keine Matches",
     "noMatchesDesc": "Je mehr Karten du in deinen Tauschstapel und deine Wunschliste aufnimmst, desto mehr Trader findest du hier.",
+    "noneHereTitle": "Dort noch keine Matches",
+    "noneHereDesc": "Dort überschneidet sich niemand mit deinem Ordner. Erweitere die Suche, um den Rest zu sehen.",
     "goToCollection": "Zur Sammlung, um Karten hinzuzufügen"
   },
   "announces": {
@@ -625,12 +628,10 @@
     "proposeTrade": "Tausch vorschlagen"
   },
   "userCard": {
-    "mutual": "Gegenseitig",
-    "hasYourWants": "Hat, was du willst",
-    "wantsYours": "Will, was du hast",
-    "match": "Match",
-    "theyHave": "Er/Sie hat",
-    "theyWant": "Er/Sie will",
+    "youGet": "Du bekommst",
+    "theyGet": "Er/Sie bekommt",
+    "emptyYouGet": "Noch nichts von ihm/ihr steht auf deiner Wunschliste",
+    "emptyTheyGet": "Noch nichts von dir steht auf seiner/ihrer Wunschliste",
     "propose": "Vorschlagen",
     "anonymous": "Anonym",
     "verifiedTrader": "Verifizierter Trader"

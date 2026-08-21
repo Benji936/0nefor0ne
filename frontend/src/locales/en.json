@@ -327,6 +327,7 @@
   },
   "matches": {
     "loginRequired": "Log in to see your trade matches.",
+    "near": "Near",
     "allCountries": "All countries",
     "city": "City",
     "clearFilters": "clear filters",
@@ -338,6 +339,8 @@
     "theyWant": "Want what you have",
     "noMatchesTitle": "No matches yet",
     "noMatchesDesc": "The more cards you add to your trade pile and wishlist, the more traders you'll find here.",
+    "noneHereTitle": "No matches there yet",
+    "noneHereDesc": "Nobody in that place overlaps with your binder. Widen the search to see the rest.",
     "goToCollection": "Go to My Collection to add cards"
   },
   "announces": {
@@ -625,12 +628,10 @@
     "proposeTrade": "Propose trade"
   },
   "userCard": {
-    "mutual": "Mutual",
-    "hasYourWants": "Has your wants",
-    "wantsYours": "Wants yours",
-    "match": "Match",
-    "theyHave": "They have",
-    "theyWant": "They want",
+    "youGet": "You get",
+    "theyGet": "They get",
+    "emptyYouGet": "Nothing of theirs is on your wishlist yet",
+    "emptyTheyGet": "Nothing of yours is on their wishlist yet",
     "propose": "Propose",
     "anonymous": "Anonymous",
     "verifiedTrader": "Verified trader"

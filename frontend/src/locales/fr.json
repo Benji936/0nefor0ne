@@ -327,6 +327,7 @@
   },
   "matches": {
     "loginRequired": "Connectez-vous pour voir vos correspondances d'échange.",
+    "near": "Près de",
     "allCountries": "Tous les pays",
     "city": "Ville",
     "clearFilters": "effacer les filtres",
@@ -338,6 +339,8 @@
     "theyWant": "Veulent ce que vous avez",
     "noMatchesTitle": "Aucune correspondance pour l'instant",
     "noMatchesDesc": "Plus vous ajoutez de cartes à votre pile et votre liste de souhaits, plus vous trouverez de joueurs ici.",
+    "noneHereTitle": "Aucune correspondance là-bas",
+    "noneHereDesc": "Personne là-bas ne recoupe votre classeur. Élargissez la recherche pour voir le reste.",
     "goToCollection": "Aller à ma collection pour ajouter des cartes"
   },
   "announces": {
@@ -625,12 +628,10 @@
     "proposeTrade": "Proposer un échange"
   },
   "userCard": {
-    "mutual": "Mutuel",
-    "hasYourWants": "A ce que vous voulez",
-    "wantsYours": "Veut ce que vous avez",
-    "match": "Match",
-    "theyHave": "Il/elle a",
-    "theyWant": "Il/elle veut",
+    "youGet": "Vous recevez",
+    "theyGet": "Il/elle reçoit",
+    "emptyYouGet": "Rien de sa collection n'est encore sur votre liste de souhaits",
+    "emptyTheyGet": "Rien de votre pile n'est encore sur sa liste de souhaits",
     "propose": "Proposer",
     "anonymous": "Anonyme",
     "verifiedTrader": "Joueur vérifié"
