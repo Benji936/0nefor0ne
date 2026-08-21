@@ -21,7 +21,16 @@ export const hoverState = reactive({
   id: null,
   rect: null,
   card: null,
+  // Term to mark inside the panel's effect text. The search page sets this
+  // while a text query is running; everywhere else it stays empty and the
+  // panel renders the text plain.
+  highlight: "",
 });
+
+/** Set (or clear, with "") the term the preview marks in card text. */
+export function setHoverHighlight(term = "") {
+  hoverState.highlight = typeof term === "string" ? term.trim() : "";
+}
 
 const cache = new Map(); // id -> card object (or null when not found)
 

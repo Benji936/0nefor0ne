@@ -10,6 +10,7 @@ import { isSpellTrap, levelIconFor } from "@/lib/cardIcons";
 import { hasAnyBanlist, ensureBanlistManifest } from "@/lib/banlist";
 import CardKindIcons from "@/components/ui/card/CardKindIcons.vue";
 import CardBanlistBadge from "@/components/ui/card/CardBanlistBadge.vue";
+import { splitMatches } from "@/lib/highlight";
 
 const props = defineProps({
   card: { type: Object, default: null },
@@ -19,9 +20,16 @@ const props = defineProps({
   // Show the borderless artwork (cards_cropped/) instead of the bordered card.
   // Used by the hover preview only.
   cropped: { type: Boolean, default: false },
+  // A term to mark inside the effect text. Set while a text search is running,
+  // so peeking at a result shows the words that put it in the list.
+  highlight: { type: String, default: "" },
 });
 
 const { t } = useI18n();
+
+// null when the term does not occur (or there is no term) — the template then
+// renders the text as a plain string rather than a run of segments.
+const descSegments = computed(() => splitMatches(props.card?.desc, props.highlight));
 
 const imgId = computed(() => props.imageId ?? props.card?.id ?? null);
 
@@ -94,7 +102,12 @@ const statsText = computed(() => {
           <span v-if="statsText" class="cip-chip cip-stats">{{ statsText }}</span>
         </div>
 
-        <p v-if="card.desc" class="cip-desc" :class="{ 'cip-desc-clamp': clampDesc }">{{ card.desc }}</p>
+        <p v-if="card.desc" class="cip-desc" :class="{ 'cip-desc-clamp': clampDesc }"><template
+            v-for="(seg, i) in descSegments"
+            :key="i"
+          ><mark v-if="seg.hit" class="cip-mark">{{ seg.t }}</mark><template v-else>{{ seg.t }}</template></template><template
+            v-if="!descSegments"
+          >{{ card.desc }}</template></p>
       </template>
 
       <div v-else class="cip-loading">
@@ -209,6 +222,16 @@ const statsText = computed(() => {
   color: var(--c-text);
   opacity: 0.82;
   white-space: pre-wrap;
+}
+/* The text is already set at 82% opacity; the mark has to read against that
+   without turning into a block of colour, so it tints rather than fills and
+   carries the weight instead. */
+.cip-mark {
+  background: color-mix(in oklch, var(--c-trade) 38%, transparent);
+  color: var(--c-text);
+  border-radius: 2px;
+  padding: 0 1px;
+  font-weight: 700;
 }
 .cip-desc-clamp {
   display: -webkit-box;

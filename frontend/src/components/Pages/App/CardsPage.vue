@@ -19,11 +19,12 @@
 //     RESTING is also the prerendered state, so the shell hydrates unchanged.
 //   • useHead resolving meta.cards.* (aligned with App.vue's pattern).
 // ─────────────────────────────────────────────────────────────────────────────
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import { useHead } from "@unhead/vue";
 import { useCardSearch } from "@/composables/useCardSearch";
+import { setHoverHighlight } from "@/lib/cardHoverPreview";
 import CardYugi from "@/components/ui/card/CardYugi.vue";
 import SearchFiltersPanel from "./search/SearchFiltersPanel.vue";
 
@@ -165,6 +166,16 @@ useHead(
     };
   })
 );
+
+// ── Why this card matched ──
+// A search now reads card text as well as card names, so a result can be in the
+// list for a reason its artwork does not show. The hover preview already opens
+// a panel with the card's effect text beside whatever thumbnail the cursor
+// rests on; handing it the query marks the words there, which turns that panel
+// into the answer to "why is this one here?" without adding a second surface.
+// The term is global to the preview, so it has to be cleared on the way out.
+watch(searchQuery, (q) => setHoverHighlight(q), { immediate: true });
+onBeforeUnmount(() => setHoverHighlight(""));
 
 // ── Client-only bootstrap (KD-5) ──
 // init() hydrates state from route.query and fetches ONLY when a query or an
