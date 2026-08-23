@@ -48,11 +48,6 @@ const sideTotal = (cards) => sumPrices(
 );
 const money = (v) => formatMoney(v, locale.value);
 
-/** One request for both sides, whenever the proposal is (re)loaded. */
-watch(() => proposal.value?.id, async () => {
-  const cards = [...(proposal.value?.i_give ?? []), ...(proposal.value?.i_receive ?? [])];
-  prices.value = cards.length ? await fetchCardPrices(cards.map(c => c.id)) : new Map();
-});
 const route  = useRoute();
 const router = useRouter();
 
@@ -106,6 +101,19 @@ watch(() => proposal.value?.id, async (id) => {
   loadingEvents.value = true;
   try { events.value = await fetchTradeEvents(id); }
   finally { loadingEvents.value = false; }
+}, { immediate: true });
+
+/**
+ * Prices for both sides, whenever the proposal is (re)loaded.
+ *
+ * Declared down here rather than beside `prices` above, because watch() runs
+ * its source getter synchronously to capture the initial value -- reading
+ * `proposal` from above its own `const` is a temporal dead zone error, and it
+ * takes the whole page down to a blank screen rather than just this line.
+ */
+watch(() => proposal.value?.id, async () => {
+  const cards = [...(proposal.value?.i_give ?? []), ...(proposal.value?.i_receive ?? [])];
+  prices.value = cards.length ? await fetchCardPrices(cards.map(c => c.id)) : new Map();
 }, { immediate: true });
 
 // ── Photo state, lifted from the panel (it holds the realtime subscription) ──
