@@ -36,6 +36,13 @@ returns table (
 )
 language sql
 security definer
+-- Pinned, and it has to be re-pinned here. 20260823_trader_column_privacy adds
+-- this SET to the same function, and this file sorts after it, so a database
+-- rebuilt from migrations would run this one last and hand back an anon-
+-- executable definer function whose unqualified "Card", "Trade" and
+-- trader_rating resolve through the caller's search_path. The live database
+-- was patched in the other order and never showed it.
+set search_path = public
 as $function$
   SELECT
     t.id,
