@@ -9,6 +9,8 @@ import { searchById } from "@/api";
 import { getClient, getCurrentSession } from "@/lib/supabaseClient";
 import AddCard from "@/components/library/AddCard.vue";
 import LocationPicker from "@/components/trade/LocationPicker.vue";
+import CardPrice from "@/components/trade/CardPrice.vue";
+import { fetchCardPrices, sumPrices, tradeGap, formatMoney } from "@/lib/cardmarketPrice";
 
 const props = defineProps({
   modelValue:      { type: Boolean, default: false },
@@ -22,7 +24,7 @@ const props = defineProps({
 
 const emit = defineEmits(["update:modelValue", "submitted", "updated", "countered"]);
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 // Derived: the counterparty regardless of mode
 const effectiveUser = computed(() => {
@@ -57,6 +59,55 @@ const settlement = ref({ deliveryMode: 'location', meetup_location: null, hasCas
 // Selection: maps card_id -> quantity. 0 means unselected.
 const giveSelection = ref({});     // from myOffers
 const receiveSelection = ref({});  // from user.theyHave
+
+// Card id -> resolved Cardmarket price, for both columns at once.
+const prices = ref(new Map());
+
+/**
+ * What each side is worth, and how far apart they are.
+ *
+ * Selection-driven, not pile-driven: the question is what *this* trade is
+ * worth, so only the ticked cards count, at the quantity they are ticked at.
+ *
+ * Both come back as ranges whenever a card in them is one -- roughly 30% of
+ * cards resolve to a band rather than a figure, because a set can print a card
+ * at two rarities and Cardmarket labels neither product. See cardmarketPrice.js.
+ */
+const priced = (payload, pool) => payload.map(({ card_id, quantity }) => ({
+  price: prices.value.get(card_id),
+  quantity,
+  card: pool.find(c => c.id === card_id),
+}));
+
+const giveTotal    = computed(() => sumPrices(priced(givePayload.value, myOffers.value)));
+const receiveTotal = computed(() => sumPrices(priced(receivePayload.value, theirTradePile.value)));
+const gap          = computed(() => tradeGap(giveTotal.value, receiveTotal.value));
+
+/** Only worth drawing once there is something on at least one side. */
+const showValues = computed(() => giveTotal.value.priced > 0 || receiveTotal.value.priced > 0);
+
+const money = (v) => formatMoney(v, locale.value);
+
+/**
+ * Fill the cash offset from the gap.
+ *
+ * Only reachable when both sides resolved exactly -- an offset is a single
+ * number, and offering one derived from a band would put a figure in a money
+ * field that no reading of the trade supports. The button hides itself
+ * otherwise and the column says which cards are in the way.
+ */
+function applyGapAsCash() {
+  if (gap.value.amount === null || !gap.value.payer) return;
+  settlement.value.hasCash = true;
+  settlement.value.cash_payer = gap.value.payer;
+  settlement.value.cash_amount = gap.value.amount;
+}
+
+/** One request covering both columns, re-run when either pile changes. */
+watch([myOffers, theirTradePile], async () => {
+  const ids = [...myOffers.value, ...theirTradePile.value].map(c => c.id);
+  prices.value = await fetchCardPrices(ids);
+});
 
 // Must be declared BEFORE watch() — the immediate watcher fires synchronously
 // during the watch() call, so anything accessed in the callback must already
@@ -589,7 +640,13 @@ function marketLinks(name, setCode) {
                     style="background-color: var(--c-surface-2)"
                   />
                   <div class="flex flex-col grow min-w-0 gap-1">
-                    <p class="font-semibold text-sm truncate" style="color: var(--c-text)">{{ card.name }}</p>
+                    <div class="flex items-baseline gap-2 min-w-0">
+                      <p class="font-semibold text-sm truncate flex-1" style="color: var(--c-text)">{{ card.name }}</p>
+                      <!-- What this card is worth, while you are deciding whether
+                           to tick it. A price you have to leave the dialog to
+                           look up is a price nobody looks up. -->
+                      <CardPrice v-if="prices.get(card.id)" :price="prices.get(card.id)" size="sm" class="shrink-0" />
+                    </div>
                     <p class="text-xs truncate" style="color: var(--c-muted)">{{ describe(card) || "—" }}</p>
                     <div class="flex gap-2">
                       <a
@@ -732,7 +789,10 @@ function marketLinks(name, setCode) {
                       style="background-color: var(--c-surface-2)"
                     />
                     <div class="flex flex-col grow min-w-0 gap-1">
-                      <p class="font-semibold text-sm truncate" style="color: var(--c-text)">{{ card.name }}</p>
+                      <div class="flex items-baseline gap-2 min-w-0">
+                        <p class="font-semibold text-sm truncate flex-1" style="color: var(--c-text)">{{ card.name }}</p>
+                        <CardPrice v-if="prices.get(card.id)" :price="prices.get(card.id)" size="sm" class="shrink-0" />
+                      </div>
                       <p class="text-xs truncate" style="color: var(--c-muted)">{{ describe(card) || "—" }}</p>
                       <div class="flex gap-2">
                         <a
@@ -774,6 +834,55 @@ function marketLinks(name, setCode) {
           </section>
         </div><!-- /grid -->
         </template><!-- /v-else loading -->
+
+        <!-- ── What the two sides are worth ─────────────────────────────────
+             Between the columns and the settlement panel, because that is the
+             order the question arrives in: pick the cards, see what they come
+             to, then decide the cash. Neutral, not amethyst or pink — the two
+             columns already carry those, and a total is a fact about the pile
+             rather than a third role (DESIGN.md, The Three-Role Rule). -->
+        <div v-if="showValues" class="tv">
+          <div class="tv__side">
+            <span class="tv__label">{{ t('price.youGiveValue') }}</span>
+            <span class="tv__amount tabular-nums">
+              <template v-if="giveTotal.exact">{{ money(giveTotal.low) }}</template>
+              <template v-else-if="giveTotal.priced">{{ money(giveTotal.low) }} – {{ money(giveTotal.high) }}</template>
+              <template v-else>—</template>
+            </span>
+          </div>
+
+          <div class="tv__side">
+            <span class="tv__label">{{ t('price.youReceiveValue') }}</span>
+            <span class="tv__amount tabular-nums">
+              <template v-if="receiveTotal.exact">{{ money(receiveTotal.low) }}</template>
+              <template v-else-if="receiveTotal.priced">{{ money(receiveTotal.low) }} – {{ money(receiveTotal.high) }}</template>
+              <template v-else>—</template>
+            </span>
+          </div>
+
+          <div class="tv__gap">
+            <!-- An exact gap can be acted on; a straddling one cannot even name
+                 who owes whom, so it says the distance and stops there. -->
+            <p class="tv__verdict">
+              <template v-if="gap.exact && gap.payer === 'proposer'">{{ t('price.youReceiveMore', { amount: money(Math.abs(gap.low)) }) }}</template>
+              <template v-else-if="gap.exact && gap.payer === 'counterparty'">{{ t('price.youGiveMore', { amount: money(Math.abs(gap.low)) }) }}</template>
+              <template v-else-if="gap.exact">{{ t('price.evenTrade') }}</template>
+              <template v-else>{{ t('price.gapUnknown', { low: money(Math.min(Math.abs(gap.low), Math.abs(gap.high))), high: money(Math.max(Math.abs(gap.low), Math.abs(gap.high))) }) }}</template>
+            </p>
+
+            <button
+              v-if="gap.amount !== null && gap.payer && !settlement.hasCash"
+              type="button"
+              class="tv__cash"
+              @click="applyGapAsCash"
+            >{{ t('price.addAsCash') }}</button>
+
+            <!-- Says why the button is absent, and what would bring it back.
+                 The fix is in the collection, one screen away, and this is the
+                 moment somebody has a reason to go and do it. -->
+            <p v-else-if="!gap.exact" class="tv__why">{{ t('price.exactAfterPicking') }}</p>
+          </div>
+        </div>
 
         <!-- ── Settlement details ── -->
         <div class="flex flex-col sm:flex-row sm:justify-between gap-4 mt-4 rounded-xl border py-4 px-4" style="border-color: var(--c-border); background-color: var(--c-surface-2)">
@@ -949,6 +1058,52 @@ function marketLinks(name, setCode) {
   with), receive is trade-amethyst (what is coming to you). Both were raw
   Tailwind before, and the receive side was a blue that appears in no role.
 */
+/* ── Trade value bar ──────────────────────────────────────────────────────
+   Three cells on one rule: what you give, what you receive, and the distance
+   between them. Flat, with a hairline top edge rather than a panel — the
+   dialog already has a bordered settlement box under it and a second frame
+   would box a box (DESIGN.md, The Flat-By-Default Rule). */
+.tv {
+  display: flex; align-items: flex-start; flex-wrap: wrap; gap: 10px 28px;
+  margin-top: 16px; padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, var(--c-border) 55%, transparent);
+}
+.tv__side { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.tv__label {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.16em; color: var(--c-muted); white-space: nowrap;
+}
+.tv__amount { font-size: 16px; font-weight: 700; color: var(--c-text); white-space: nowrap; }
+
+/* The verdict sits at the far end, where the eye lands after reading both
+   sides left to right. */
+.tv__gap {
+  margin-left: auto; display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+  padding-top: 12px;
+}
+.tv__verdict { margin: 0; font-size: 13px; font-weight: 700; color: var(--c-text); }
+.tv__why { margin: 0; font-size: 11.5px; font-weight: 600; color: var(--c-muted); max-width: 260px; }
+
+/* Teal, because filling this is the first move toward agreed cash terms, which
+   is the agreement chain (DESIGN.md, The Agreement Rule). It is the only
+   coloured thing in this bar, and it is a button, not a number. */
+.tv__cash {
+  min-height: 34px; padding: 0 13px; border-radius: 10px;
+  background: color-mix(in srgb, var(--c-mutual) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-mutual) 45%, transparent);
+  color: var(--c-mutual); font-size: 12.5px; font-weight: 700; cursor: pointer;
+  white-space: nowrap; transition: background 0.15s ease;
+}
+.tv__cash:hover { background: color-mix(in srgb, var(--c-mutual) 18%, transparent); }
+.tv__cash:focus-visible { outline: 2px solid var(--c-mutual); outline-offset: 2px; }
+
+@media (pointer: coarse) { .tv__cash { min-height: 44px; } }
+@media (max-width: 640px) {
+  .tv__gap { margin-left: 0; width: 100%; padding-top: 4px; }
+}
+@media (prefers-reduced-motion: reduce) { .tv__cash { transition: none; } }
+
 .row-selected {
   border-color: color-mix(in srgb, var(--row-color) 50%, transparent);
   background-color: color-mix(in srgb, var(--row-color) 12%, transparent);

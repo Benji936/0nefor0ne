@@ -1739,5 +1739,22 @@
       "notVerified": "Noch nicht bestätigt",
       "cta": "Bestätigen"
     }
+  },
+  "price": {
+    "inThisSet": "{count} Druck in diesem Set | {count} Drucke in diesem Set",
+    "acrossPrintings": "über {count} Druck | über {count} Drucke",
+    "tradePileValue": "Wert des Tauschstapels",
+    "wishlistValue": "Wert der Wunschliste",
+    "unpriced": "{count} ohne Preis | {count} ohne Preis",
+    "needPrinting": "{count} Karte braucht einen Druck | {count} Karten brauchen einen Druck",
+    "youGiveValue": "Du gibst",
+    "youReceiveValue": "Du erhältst",
+    "evenTrade": "Ausgeglichener Tausch",
+    "youReceiveMore": "Du erhältst {amount} mehr",
+    "youGiveMore": "Du gibst {amount} mehr",
+    "gapUnknown": "Zwischen {low} und {high} Unterschied",
+    "addAsCash": "Als Ausgleich hinzufügen",
+    "exactAfterPicking": "Wähle oben die Drucke für einen exakten Betrag",
+    "sourceShort": "Cardmarket"
   }
 }

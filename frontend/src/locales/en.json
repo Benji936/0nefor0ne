@@ -1739,5 +1739,22 @@
       "notVerified": "Not verified yet",
       "cta": "Verify"
     }
+  },
+  "price": {
+    "inThisSet": "{count} printing in this set | {count} printings in this set",
+    "acrossPrintings": "across {count} printing | across {count} printings",
+    "tradePileValue": "Trade pile value",
+    "wishlistValue": "Wishlist value",
+    "unpriced": "{count} not priced | {count} not priced",
+    "needPrinting": "{count} card needs a printing | {count} cards need a printing",
+    "youGiveValue": "You give",
+    "youReceiveValue": "You receive",
+    "evenTrade": "Even trade",
+    "youReceiveMore": "You receive {amount} more",
+    "youGiveMore": "You give {amount} more",
+    "gapUnknown": "Between {low} and {high} apart",
+    "addAsCash": "Add as cash offset",
+    "exactAfterPicking": "Pick the printings above for an exact figure",
+    "sourceShort": "Cardmarket"
   }
 }

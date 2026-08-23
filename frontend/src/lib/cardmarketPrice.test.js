@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readPrice, sumPrices, tradeGap, EXACT, NARROWED, RANGE, NONE } from "./cardmarketPrice.js";
+import { readPrice, sumPrices, tradeGap, formatMoney, EXACT, NARROWED, RANGE, NONE } from "./cardmarketPrice.js";
 
 // Rows as card_prices returns them: numerics arrive from PostgREST as strings.
 const row = (o) => ({ card_id: 1, price: null, low_price: null, high_price: null,
@@ -128,5 +128,41 @@ describe("tradeGap only names a payer when the sign is certain", () => {
   it("reports an even trade as a zero gap with no payer", () => {
     const g = tradeGap(side(5, 5, true), side(5, 5, true));
     expect(g).toMatchObject({ low: 0, high: 0, payer: null, amount: 0 });
+  });
+});
+
+describe("formatMoney always speaks euro, in the reader's shape", () => {
+  it("keeps cents, because most cards are worth cents", () => {
+    // Rounding to whole euro would print a 300-card binder as a wall of zeroes.
+    expect(formatMoney(0.09, "en-IE")).toBe("€0.09");
+    expect(formatMoney(0.02, "en-IE")).toBe("€0.02");
+  });
+
+  it("formats the same number differently per locale", () => {
+    expect(formatMoney(1234.5, "en-IE")).toBe("€1,234.50");
+    // Intl separates the amount from the symbol with U+00A0, not a space.
+    expect(formatMoney(1234.5, "de-DE")).toBe("1.234,50\u00A0€");
+  });
+
+  it("never converts away from euro", () => {
+    // Cardmarket quotes in euro; a converted figure would not match the listing
+    // the reader opens, and would need a rate and a date we do not have.
+    expect(formatMoney(10, "en-US")).toContain("€");
+    expect(formatMoney(10, "it-IT")).toContain("€");
+  });
+
+  it("returns nothing, not zero, when there is no price", () => {
+    // Number(null) and Number("") are 0, so the naive version of this printed
+    // "0.00 EUR" for a card we simply have no price for.
+    expect(formatMoney(null)).toBe("");
+    expect(formatMoney(undefined)).toBe("");
+    expect(formatMoney("")).toBe("");
+    expect(formatMoney("abc")).toBe("");
+    expect(formatMoney(NaN)).toBe("");
+  });
+
+  it("still formats a genuine zero", () => {
+    // A card really priced at 0 is a different fact from an absent price.
+    expect(formatMoney(0, "en-IE")).toBe("€0.00");
   });
 });

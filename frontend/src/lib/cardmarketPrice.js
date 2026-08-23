@@ -136,6 +136,34 @@ export function tradeGap(give, receive) {
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 /**
+ * A Cardmarket figure, as money.
+ *
+ * Always euro. Cardmarket is a European marketplace and quotes in euro, so
+ * converting to the reader's currency would mean inventing a rate and a date to
+ * have taken it on — and the price would stop being the number they will see
+ * when they open the listing. The locale still decides the shape: 1,50 € in
+ * Berlin, €1.50 in Dublin, same number.
+ *
+ * Two decimals, unlike announce budgets which round to whole euro. Most cards
+ * in a collection are worth cents, and a wall of "€0" prices out of a 300-card
+ * binder tells you nothing.
+ */
+export function formatMoney(value, locale = undefined) {
+  // Number(null) and Number("") are both 0, so a missing price would format as
+  // "€0.00" — a claim that the card is worthless, made out of not knowing. Every
+  // caller here renders nothing instead when this returns "".
+  if (value === null || value === undefined || value === "") return "";
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "";
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(n);
+}
+
+/**
  * Prices for a set of Card ids, as a Map keyed by id.
  *
  * Returns an empty Map when the request fails, which the callers treat as "no

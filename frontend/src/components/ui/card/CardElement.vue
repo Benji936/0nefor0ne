@@ -1,6 +1,7 @@
 <script setup>
 import LanguageTooltip from '@/components/tooltips/LanguageTooltip.vue';
 import ConditionTooltip from '@/components/tooltips/ConditionTooltip.vue';
+import CardPrice from '@/components/trade/CardPrice.vue';
 import { cardImage } from '@/lib/cardImage';
 defineEmits(['deleted', 'move']);
 </script>
@@ -55,6 +56,11 @@ defineEmits(['deleted', 'move']);
       </div>
     </div>
 
+    <!-- What it is worth. Right of the meta and left of the quantity, so a
+         scrolled binder reads as a column of figures rather than a price
+         buried among the chips. -->
+    <CardPrice v-if="price" :price="price" size="sm" class="ce-price shrink-0" />
+
     <!-- Move to another wishlist -->
     <v-menu v-if="canFile" location="bottom end">
       <template #activator="{ props: menu }">
@@ -80,7 +86,7 @@ defineEmits(['deleted', 'move']);
     </v-menu>
 
     <!-- Quantity / locked status -->
-    <div class="shrink-0">
+    <div class="shrink-0 ce-qty">
       <div
         v-if="wish.status === 'locked'"
         class="flex items-center gap-1.5 rounded-md px-2 !py-1.5"
@@ -133,7 +139,10 @@ defineEmits(['deleted', 'move']);
 
     <!-- Data -->
     <div class="flex flex-col gap-2 px-3 pt-2 pb-1" style="background-color: var(--c-surface)">
-      <p class="font-semibold text-xs leading-tight truncate" style="color: var(--c-text)">{{ wish.name }}</p>
+      <div class="flex items-baseline gap-2 min-w-0">
+        <p class="font-semibold text-xs leading-tight truncate flex-1" style="color: var(--c-text)">{{ wish.name }}</p>
+        <CardPrice v-if="price" :price="price" size="sm" class="shrink-0" />
+      </div>
       <div class="flex flex-wrap gap-3">
         <ConditionTooltip v-if="wish.condition" :condition="wish.condition" />
         <LanguageTooltip v-if="wish.language" :language="wish.language" />
@@ -214,6 +223,10 @@ export default {
   props: {
     wish:   { required: true },
     layout: { default: 'list' },
+    // What Cardmarket says this printing is worth, already resolved by the
+    // page. Passed in rather than fetched here: a binder renders hundreds of
+    // these, and one request per row would be hundreds of requests.
+    price:  { type: Object, default: null },
     // Named wishlists this card could be filed under. Empty for a trade-pile
     // card, which has no lists — the control hides itself rather than offering
     // somewhere to put something that cannot go there.
@@ -302,6 +315,24 @@ export default {
 </script>
 
 <style scoped>
+/* ── Price in a list row ──────────────────────────────────────────────────
+   A column on a wide row, its own line on a narrow one. At 375px a band like
+   "€72.26 – €158.68" is a third of the row: held beside the chips it squeezed
+   the name down to "Clo…" and pushed NM/EN/SR out from under it into the
+   figure. Below 620px the row wraps and the price takes the line under the
+   name, indented past the thumbnail so it still reads as belonging to it. */
+.ce-price { margin-left: auto; }
+
+@media (max-width: 620px) {
+  .card-row { flex-wrap: wrap; row-gap: 8px; }
+  /* Thumbnail and name take the first line whole, so the name never has to
+     compete with a figure for width. Price and quantity then share the second
+     line -- the two things you act on, side by side, rather than stacked into a
+     third row that makes every card in the binder taller. */
+  .card-row > .min-w-0 { flex: 1 1 calc(100% - 62px); }
+  .ce-price { order: 5;  margin-left: 0; padding-left: 50px; }
+  .ce-qty   { order: 10; margin-left: auto; }
+}
 /* A rarity code is an identifier, so it is set like one: monospace, in the same
    tinted-neutral chip the collection uses for its counts (DESIGN.md, The Mono
    Identifier Rule). It used to be Tailwind amber — a hue outside the palette,

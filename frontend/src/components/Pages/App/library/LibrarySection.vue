@@ -18,6 +18,11 @@ defineProps({
   dense:     { type: Boolean, default: false },
   // The lists a card can be moved to. Empty for the trade pile, which has none.
   lists:     { type: Array,   default: () => [] },
+  // Card id -> resolved Cardmarket price, loaded once by the page. Empty until
+  // it arrives, which is why CardElement hides the line rather than showing a
+  // placeholder: a price that appears is better than a skeleton that resolves
+  // to nothing for the 2% of cards Cardmarket does not price at all.
+  prices:    { type: Map,     default: () => new Map() },
 });
 
 const emit = defineEmits(["deleted", "move"]);
@@ -61,6 +66,7 @@ const emit = defineEmits(["deleted", "move"]);
           v-for="card in cards"
           :key="card.id"
           :wish="card"
+          :price="prices.get(card.id) ?? null"
           :layout="view"
           :class="newCardId === card.id ? 'ls-new' : ''"
           :lists="lists"

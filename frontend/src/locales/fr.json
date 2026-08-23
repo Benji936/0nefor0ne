@@ -1739,5 +1739,22 @@
       "notVerified": "Pas encore vérifié",
       "cta": "Vérifier"
     }
+  },
+  "price": {
+    "inThisSet": "{count} impression dans ce set | {count} impressions dans ce set",
+    "acrossPrintings": "sur {count} impression | sur {count} impressions",
+    "tradePileValue": "Valeur de la pile d'échange",
+    "wishlistValue": "Valeur de la liste de souhaits",
+    "unpriced": "{count} sans prix | {count} sans prix",
+    "needPrinting": "{count} carte a besoin d'une impression | {count} cartes ont besoin d'une impression",
+    "youGiveValue": "Vous donnez",
+    "youReceiveValue": "Vous recevez",
+    "evenTrade": "Échange équilibré",
+    "youReceiveMore": "Vous recevez {amount} de plus",
+    "youGiveMore": "Vous donnez {amount} de plus",
+    "gapUnknown": "Entre {low} et {high} d'écart",
+    "addAsCash": "Ajouter en complément",
+    "exactAfterPicking": "Choisissez les impressions ci-dessus pour un montant exact",
+    "sourceShort": "Cardmarket"
   }
 }

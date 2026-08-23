@@ -98,11 +98,33 @@ const { t } = useI18n();
         />
       </div>
 
+      <!-- What the open half is worth. Above the cards rather than under them:
+           on a 300-card binder a total at the bottom is a total nobody sees.
+           Neutral, not amethyst or pink — money is a fact about the cards, not
+           a claim about who wants them (DESIGN.md, The Three-Role Rule). -->
+      <div v-if="!loading && pileValue.priced" class="lib-value">
+        <span class="lib-value__label">
+          {{ pile === 'trade' ? t('price.tradePileValue') : t('price.wishlistValue') }}
+        </span>
+        <span class="lib-value__amount tabular-nums">
+          <template v-if="pileValue.exact">{{ money(pileValue.low) }}</template>
+          <template v-else>{{ money(pileValue.low) }} – {{ money(pileValue.high) }}</template>
+        </span>
+        <span v-if="pileValue.uncertain" class="lib-value__note">
+          {{ t('price.needPrinting', { count: pileValue.uncertain }, pileValue.uncertain) }}
+        </span>
+        <span v-if="pileValue.unpriced" class="lib-value__note">
+          {{ t('price.unpriced', { count: pileValue.unpriced }, pileValue.unpriced) }}
+        </span>
+        <span class="lib-value__src">{{ t('price.sourceShort') }}</span>
+      </div>
+
       <!-- Trade pile: one pile, no dividers inside it. -->
       <LibrarySection
         v-if="pile === 'trade'"
         mode="trade"
         :view="viewMode"
+        :prices="prices"
         :cards="trade_cards"
         :loading="loading"
         :new-card-id="newCardId"
@@ -160,6 +182,7 @@ const { t } = useI18n();
             :dense="showGroupHeads"
             :lists="wishlists"
             :view="viewMode"
+            :prices="prices"
             :cards="group.cards"
             :loading="loading"
             :new-card-id="newCardId"
@@ -222,6 +245,7 @@ import {
   fetchWishlists, createWishlist, renameWishlist, deleteWishlist,
   moveCardToList, groupByList, nameProblem, MAX_NAME_LEN,
 } from "@/lib/wishlists";
+import { fetchCardPrices, sumPrices, formatMoney } from "@/lib/cardmarketPrice";
 
 /** The two halves, in order. First one is what a bare /library means. Kept in
  *  step with the route's `:pile` matcher in router/index.js. These read as URLs
@@ -249,6 +273,9 @@ export default {
       // into a prop with an [] default; asking it for a .length throws.
       wished_cards: [],
       trade_cards: [],
+      // Card id -> resolved price. Reassigned wholesale rather than mutated:
+      // Options API reactivity does not track Map writes.
+      prices: new Map(),
       loading: true,
       newCardId: null,
       snackbar: { open: false, message: '', color: '', icon: '' },
@@ -312,6 +339,23 @@ export default {
       // of saying what the pile is for.
       return this.wishlistGroups.length ? this.wishlistGroups : [{ id: null, name: null, cards: [] }];
     },
+    /**
+     * What the open half is worth.
+     *
+     * The half, not the collection: the trade pile and the wants list are two
+     * different claims -- what you could give away, and what you would have to
+     * buy -- and adding them together produces a number that answers neither.
+     * The tab you are on says which one you are asking about.
+     *
+     * Comes back as a range whenever any card in it does. Summing bands by
+     * their midpoint would invent a figure no card is worth, and across a
+     * 300-card binder the invention compounds; see sumPrices.
+     */
+    pileValue() {
+      const cards = this.pile === 'trade' ? this.trade_cards : this.wished_cards;
+      return sumPrices(cards.map(c => ({ price: this.prices.get(c.id), quantity: c.quantity })));
+    },
+
     /** Headings are what tells two lists apart. Looking at one, the chip above
      *  is already its name, and a heading under it would say it twice. */
     showGroupHeads() {
@@ -466,6 +510,7 @@ export default {
       this.trade_cards  = this.filterCovered((trades.data ?? []).filter(c => (c.quantity ?? 0) > 0 || c.status === 'locked'));
       this.wishlists = await fetchWishlists();
       this.loading = false;
+      this.loadPrices();
 
       // Guarded so a second call — the watcher firing after mounted already
       // ran — does not leave an orphaned channel behind.
@@ -486,6 +531,22 @@ export default {
       ]);
       this.wished_cards = this.filterCovered(w.data ?? []);
       this.trade_cards  = this.filterCovered(t.data ?? []);
+      this.loadPrices();
+    },
+
+    /**
+     * One request for the whole binder, both halves at once.
+     *
+     * Deliberately not awaited by the card load: prices are the last thing on
+     * the page worth waiting for, and blocking the binder on Cardmarket would
+     * trade a fast list of cards for a slow list of cards with numbers on it.
+     * They appear when they arrive.
+     */
+    money(v) { return formatMoney(v, this.$i18n.locale); },
+
+    async loadPrices() {
+      const ids = [...this.trade_cards, ...this.wished_cards].map(c => c.id);
+      this.prices = await fetchCardPrices(ids);
     },
 
     onCardDeleted(cardId) {
@@ -694,6 +755,39 @@ export default {
 }
 
 /* ── The rail of list dividers ───────────────────────────────────────────── */
+/* ── What the open half is worth ──────────────────────────────────────────
+   A rule, not a panel. The binder below is already a stack of bordered rows,
+   and boxing the total would add a fourth edge to a page that has enough of
+   them; a hairline underneath does the separating (DESIGN.md, The
+   Flat-By-Default Rule). The label is the collector's register — mono,
+   uppercase, tracked — and the figure is the only thing here at full weight. */
+.lib-value {
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 12px;
+  padding: 0 2px 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--c-border) 45%, transparent);
+  margin-bottom: 14px;
+}
+.lib-value__label {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.16em; color: var(--c-muted);
+}
+.lib-value__amount { font-size: 17px; font-weight: 700; color: var(--c-text); }
+/* Sits after the figure, not under it: "12 cards need a printing" is a caveat
+   on the number, and a caveat that scrolls away from its claim is not one. */
+.lib-value__note { font-size: 11.5px; font-weight: 600; color: var(--c-muted); }
+/* No opacity here. Muted is already the quietest colour the system has, and
+   fading it to 0.75 measured 4.22:1 against the page -- under AA -- to buy a
+   softness the token had already provided at 7.45:1. */
+.lib-value__src {
+  margin-left: auto; font-size: 10.5px; font-weight: 600;
+  color: var(--c-muted); white-space: nowrap;
+}
+@media (max-width: 560px) {
+  /* The source credit stops earning its right-hand column once the row wraps. */
+  .lib-value__src { margin-left: 0; }
+}
+
 .lib-rail {
   display: flex;
   align-items: center;
