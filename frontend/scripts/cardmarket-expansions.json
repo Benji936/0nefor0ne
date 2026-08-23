@@ -1,0 +1,12 @@
+{
+  "__doc__": "Cardmarket expansion name -> YGOPRODeck set code, for sets the card-list matcher cannot place. Keys are the name exactly as Cardmarket writes it, minus the trailing product word (Booster, Display, Structure Deck, Box, ...). The importer warns about any key that no longer appears in the catalogue. Candidates: node scripts/cardmarket-import.mjs --dry-run --report",
+
+  "Dark Revelation 1": "DR1",
+  "Dark Revelation 2": "DR2",
+  "Dark Revelation 3": "DR3",
+  "Dark Revelation 4": "DR04",
+
+  "Premium Gold": "PGLD",
+  "Premium Pack 1": "PP01",
+  "Premium Pack 2": "PP02"
+}
