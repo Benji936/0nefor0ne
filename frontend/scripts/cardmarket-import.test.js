@@ -63,6 +63,64 @@ describe("buildExpansionMap matches on card lists, not names", () => {
   });
 });
 
+describe("a set YGOPRODeck has not finished cataloguing still matches", () => {
+  it("matches on how much of the set it holds, not how much of it we know", () => {
+    // Cardmarket lists 101 cards in Duelist's Advance; YGOPRODeck knows 48.
+    // Scaled down: 24 known, expansion of 60 holding 23 of them.
+    // ofSet = 0.96, ofExp = 0.38 -- the primary rule rejects it.
+    const known = Array.from({ length: 24 }, (_, i) => card(`Known${i}`, [`NEW-EN${i}`, "Common"]));
+    const singles = [
+      ...known.slice(0, 23).map(c => single(920, c.name)),
+      ...Array.from({ length: 37 }, (_, i) => single(920, `Uncatalogued${i}`)),
+    ];
+    const { map } = buildExpansionMap(singles, [boxOf(920, "New Set Booster")], known, {});
+    expect(map.get(920)).toBe("NEW");
+  });
+
+  it("refuses an expansion wildly larger than the set it contains", () => {
+    // A 24-card set and a 300-product reprint collection holding every one of
+    // them: ofSet is a perfect 1.00 and it is still not that set. 12.5x is well
+    // past the 2.5x an under-catalogued set needs.
+    const small = Array.from({ length: 24 }, (_, i) => card(`Promo${i}`, [`TIN-EN${i}`, "Common"]));
+    const huge = [
+      ...small.map(c => single(921, c.name)),
+      ...Array.from({ length: 276 }, (_, i) => single(921, `Filler${i}`)),
+    ];
+    const { map } = buildExpansionMap(huge, [boxOf(921, "Giant Reprint Collection Booster")], small, {});
+    expect(map.get(921)).toBeUndefined();
+  });
+
+  it("ignores a stub set too small for its card list to mean anything", () => {
+    // YGOPRODeck carries a 14-card "Dark Beginning 2" beside the real 250-card
+    // one. Below 20 cards the relaxed rule does not apply, so a stub cannot
+    // claim an expansion on the strength of a handful of names.
+    // 8 known, expansion of 20 -> ofSet 1.00, ofExp 0.40: only the relaxed rule
+    // could accept it, and the size guard says no.
+    const stub = Array.from({ length: 8 }, (_, i) => card(`Stub${i}`, [`STB-EN${i}`, "Common"]));
+    const singles = [
+      ...stub.map(c => single(922, c.name)),
+      ...Array.from({ length: 12 }, (_, i) => single(922, `Other${i}`)),
+    ];
+    const { map } = buildExpansionMap(singles, [boxOf(922, "Stub Booster")], stub, {});
+    expect(map.get(922)).toBeUndefined();
+  });
+
+  it("prefers a full match over an under-catalogued one for the same set", () => {
+    // The relaxed rule ranks below any primary match, so the expansion that
+    // actually looks like the set wins even when both are candidates.
+    const known = Array.from({ length: 24 }, (_, i) => card(`Known${i}`, [`NEW-EN${i}`, "Common"]));
+    const singles = [
+      ...known.map(c => single(930, c.name)),                                  // exact: 24/24
+      ...known.slice(0, 23).map(c => single(931, c.name)),                     // partial, padded out
+      ...Array.from({ length: 37 }, (_, i) => single(931, `Uncatalogued${i}`)),
+    ];
+    const ns = [boxOf(930, "Exact Booster"), boxOf(931, "Padded Booster")];
+    const { map } = buildExpansionMap(singles, ns, known, {});
+    expect(map.get(930)).toBe("NEW");
+    expect(map.get(931)).toBeUndefined();
+  });
+});
+
 describe("an override wins outright", () => {
   const ygo = [
     card("Alpha", ["ABC-EN001", "Common"]),

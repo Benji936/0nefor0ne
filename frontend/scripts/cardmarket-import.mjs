@@ -130,9 +130,34 @@ export function buildExpansionMap(products, nonSingles, ygoCards, overrides) {
     const hits = new Map();
     for (const n of names) for (const code of byCard.get(n) ?? []) hits.set(code, (hits.get(code) ?? 0) + 1);
     for (const [code, n] of hits) {
-      const ofSet = n / setCards.get(code).size; // how much of the set this expansion holds
-      const ofExp = n / names.size;              // how much of the expansion the set explains
-      if (ofSet >= 0.5 && ofExp >= 0.5) candidates.push({ score: Math.min(ofSet, ofExp), id, code });
+      const setSize = setCards.get(code).size;
+      const ofSet = n / setSize;    // how much of the set this expansion holds
+      const ofExp = n / names.size; // how much of the expansion the set explains
+
+      if (ofSet >= 0.5 && ofExp >= 0.5) {
+        candidates.push({ score: Math.min(ofSet, ofExp), id, code });
+        continue;
+      }
+
+      // ofExp assumes YGOPRODeck has finished cataloguing the set, and for a
+      // recent one it has not. Cardmarket lists 101 cards in Duelist's Advance;
+      // YGOPRODeck knows 48 of them. That is ofSet 0.96 and ofExp 0.46, so the
+      // rule above rejected an expansion that plainly is the set -- and it would
+      // reject every new set the same way, which is the half of the catalogue
+      // people are actually trading.
+      //
+      // Two guards keep this from becoming the hole it looks like. The set has
+      // to be big enough for its card list to mean something: YGOPRODeck carries
+      // stubs, a "Dark Beginning 2" of 14 cards alongside the real 250-card one,
+      // and matching against those is matching noise. And the expansion cannot
+      // be wildly larger than the set, or a 293-card reprint collection holding
+      // all of a 12-card promo set would claim it -- 2.5x admits an
+      // under-catalogued set at 2.1x and excludes that at 24x.
+      if (setSize >= 20 && ofSet >= 0.90 && names.size <= 2.5 * setSize) {
+        // Ranked just below any full match, so a set that both rules like is
+        // never taken by the weaker evidence.
+        candidates.push({ score: ofSet * 0.99, id, code });
+      }
     }
   }
   candidates.sort((a, b) => b.score - a.score);
