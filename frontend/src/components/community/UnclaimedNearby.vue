@@ -67,26 +67,31 @@ function place(row) {
 </template>
 
 <style scoped>
+/* One tonal step under the page with a hairline and a 1px top highlight, the
+   ground every panel in this pass sits on (DESIGN.md, The Flat-By-Default
+   Rule). Fallbacks for the case where this renders outside the directory. */
 .un {
   width: 100%; max-width: 560px; margin: 0 auto;
   text-align: left;
   padding: 20px;
-  border: 1px solid var(--c-border);
+  border: 1px solid var(--cd-line, var(--c-border));
   border-radius: 16px;
-  background: var(--c-surface);
+  background: var(--cd-panel, var(--c-surface));
+  box-shadow: var(--cd-lit, none);
 }
 
 .un__title {
-  margin: 0 0 5px;
-  font-size: 15px; font-weight: 800; color: var(--c-text);
+  margin: 0 0 6px;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-size: 1.08rem; font-weight: 700; letter-spacing: -0.02em; color: var(--c-text);
 }
 .un__body {
   margin: 0 0 14px;
-  font-size: 12.5px; line-height: 1.55; color: var(--c-muted);
+  font-size: 0.8rem; line-height: 1.55; color: var(--c-muted);
 }
 
 .un__list { list-style: none; margin: 0; padding: 0; }
-.un__list li + li { border-top: 1px solid var(--c-border); }
+.un__list li + li { border-top: 1px solid var(--cd-line-soft, var(--c-border)); }
 
 .un__row {
   display: flex; align-items: center; gap: 11px;
@@ -117,7 +122,11 @@ function place(row) {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-.un__km { flex-shrink: 0; font-size: 12px; font-weight: 800; color: var(--c-text); }
+.un__km {
+  flex-shrink: 0;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 0.72rem; font-weight: 700; color: var(--c-text);
+}
 .un__go { color: var(--c-muted); flex-shrink: 0; }
 
 @media (prefers-reduced-motion: reduce) {

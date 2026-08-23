@@ -98,6 +98,78 @@ describe("no component hardcodes a label that belongs to a brand colour", () => 
   });
 });
 
+describe("teal stays on the agreement chain", () => {
+  // The Agreement Rule in DESIGN.md: --c-mutual marks the moment two people
+  // line up and every step that follows from it — matching, accepting,
+  // confirming, rating. Nothing outside that chain may borrow it.
+  //
+  // The announce board broke the rule in four places at once. A Looking For
+  // post wore teal on its badge and again on its archetype line; the kind
+  // filter turned teal when Looking For was selected; and the events strip
+  // spent it on a heading dot and a "Following" pill. None of those is an
+  // agreement — a want is pink, an offer is amethyst, and following a community
+  // is neither, so it takes the system's tinted neutral.
+  //
+  // Asserted as the rule rather than as the four selectors it happened to
+  // occupy, so it still guards after the next redesign of this page.
+  const BOARD = [
+    "../components/Pages/App/trade-center/AnnouncesTab.vue",
+    "../components/trade/AnnounceCard.vue",
+    "../components/community/UpcomingEventsRow.vue",
+  ];
+
+  it.each(BOARD)("%s paints nothing in the mutual colour", (rel) => {
+    const found = [
+      ...read(rel).matchAll(/--c-mutual|#2DD4BF|#076B82/gi),
+    ].map((m) => m[0]);
+    expect(found, "nothing on the announce board is an agreement").toEqual([]);
+  });
+});
+
+describe("teal on the community pages is the verified badge and nothing else", () => {
+  // Same rule, a page where it cannot be "none at all". The directory broke it
+  // twice: the remote-duel toggle lit teal when pressed, and a card announced
+  // "offers remote duels" in teal. Neither is agreement — pressing a filter is
+  // something the reader did, and duelling online is something a shop offers —
+  // so both are amethyst now.
+  //
+  // What is left is the verified badge, which is teal here because it is teal
+  // in the six other places the app draws it. Strictly a verified shop is a
+  // trust mark, not an agreement between two people, so this is an open
+  // question for the palette as a whole; repainting it on this page alone would
+  // have left the same badge two colours in two views, which is worse than the
+  // question. Asserted as "only where the line names the badge" so the rule
+  // still bites if teal reappears as decoration.
+  const DIRECTORY = [
+    "../components/Pages/App/CommunityDirectory.vue",
+    "../components/Pages/App/CommunityProfile.vue",
+    "../components/community/CommunityCard.vue",
+    "../components/community/NearbyEvents.vue",
+    "../components/community/UnclaimedNearby.vue",
+  ];
+
+  // A teal declaration is attributed to the rule it sits in, not to its own
+  // line: `.cp-verified { ... }` names the badge once in its selector and then
+  // spends three lines on colours, none of which repeat the word. Anything that
+  // is neither in a rule naming the badge nor on a line naming it is teal used
+  // as decoration, which is what this is here to stop.
+  const strayTeal = (src) => {
+    const TEAL = /--c-mutual|#2DD4BF|#076B82/i;
+    const NAMED = /verified/i;
+    const out = [];
+    let rule = "";
+    for (const line of src.split("\n")) {
+      if (line.includes("{")) rule = line;
+      if (TEAL.test(line) && !NAMED.test(line) && !NAMED.test(rule)) out.push(line.trim());
+    }
+    return out;
+  };
+
+  it.each(DIRECTORY)("%s spends teal only on the verified mark", (rel) => {
+    expect(strayTeal(read(rel)), "teal outside the agreement chain must name the verified badge").toEqual([]);
+  });
+});
+
 describe("a decklist holds no agreements, so the deck pages spend no teal", () => {
   // The strictest form of the rule, and the one these pages had broken worst.
   // The completion bar painted the cards you had sourced elsewhere teal and the

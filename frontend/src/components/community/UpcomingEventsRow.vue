@@ -60,11 +60,10 @@ function placeLabel(e) {
        flash and vanish for nearly everyone. The row appears once it has
        something to show. -->
   <section v-if="events.length" class="uev">
-    <div class="uev__head">
-      <span class="uev__dot" />
-      <span class="uev__label">{{ t('announces.eventsTitle') }}</span>
-      <span class="uev__count">{{ events.length }}</span>
-    </div>
+    <p class="uev__head">
+      {{ t('announces.eventsTitle') }}
+      <span class="uev__count tabular-nums">{{ events.length }}</span>
+    </p>
 
     <div class="uev__row">
       <router-link
@@ -104,35 +103,47 @@ function placeLabel(e) {
 <style scoped>
 .uev { display: flex; flex-direction: column; }
 
-.uev__head { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
-.uev__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c-mutual); flex-shrink: 0; }
-.uev__label {
-  font-size: 13px; font-weight: 800; text-transform: uppercase;
-  letter-spacing: 0.07em; color: var(--c-text);
+/* The same monospace eyebrow the board's own sections use (DESIGN.md, The Mono
+   Identifier Rule). The teal dot that used to lead it is gone: a followed
+   community is not an agreement, and teal marks nothing else (The Agreement
+   Rule). Nothing replaced it — the label was already doing that job. */
+.uev__head {
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 0 16px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--an-line-soft, var(--c-border));
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--c-muted);
 }
-.uev__count {
-  font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 99px;
-  background: var(--c-surface-2); color: var(--c-muted);
-}
+.uev__count { letter-spacing: 0; color: var(--c-text); }
 
-/* Same horizontal-scroll geometry as the My Announces row above the grid. */
+/* A rail, not a grid: events are a sidebar of the board, and a wrapping grid of
+   them would outweigh the announces underneath. */
 .uev__row {
-  display: flex; gap: 16px; overflow-x: auto; padding-bottom: 8px;
-  scrollbar-width: thin; scrollbar-color: var(--c-border) transparent;
+  display: flex; gap: 14px; overflow-x: auto; padding-bottom: 8px;
+  scrollbar-width: thin; scrollbar-color: var(--an-line, var(--c-border)) transparent;
 }
 .uev__row::-webkit-scrollbar { height: 4px; }
-.uev__row::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 99px; }
+.uev__row::-webkit-scrollbar-thumb { background: var(--an-line, var(--c-border)); border-radius: 99px; }
 
 .uev-card {
   position: relative; flex-shrink: 0; width: 240px;
   display: flex; flex-direction: column;
-  border: 1.5px solid var(--c-border); border-radius: 16px;
-  background: var(--c-surface); color: var(--c-text); text-decoration: none;
+  border: 1px solid var(--an-line, var(--c-border)); border-radius: 16px;
+  background: var(--an-panel, var(--c-surface)); box-shadow: var(--an-lit, none);
+  color: var(--c-text); text-decoration: none;
   overflow: hidden;
-  transition: border-color .15s ease, transform .15s ease;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
 }
-.uev-card:hover { border-color: var(--c-trade); transform: translateY(-2px); }
+.uev-card:hover {
+  border-color: color-mix(in srgb, var(--c-trade) 55%, transparent);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--c-trade) 18%, transparent);
+  transform: translateY(-2px);
+}
 .uev-card:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .uev-card, .uev-card:hover { transition: none; transform: none; }
+}
 
 .uev-card__cover {
   position: relative; height: 72px; width: 100%; overflow: hidden;
@@ -145,11 +156,17 @@ function placeLabel(e) {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   color: color-mix(in srgb, var(--c-trade) 55%, transparent);
 }
+/* Following is a relationship, not one of the three roles, so it gets the
+   system's tinted neutral rather than a semantic colour — it used to wear teal,
+   which belongs to the agreement chain alone. Opaque, because it sits over a
+   cover photo. */
 .uev-card__badge {
   position: absolute; top: 8px; left: 8px;
-  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
   padding: 3px 8px; border-radius: 7px;
-  background: var(--c-mutual); color: var(--c-on-accent);
+  background: var(--c-surface-2); color: var(--c-text);
+  border: 1px solid var(--an-line, var(--c-border));
 }
 
 .uev-card__body { padding: 11px 13px 13px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
@@ -165,7 +182,7 @@ function placeLabel(e) {
 .uev-card__meta .v-icon { color: var(--c-trade); flex-shrink: 0; }
 
 .uev-card__host {
-  margin: 6px 0 0; padding-top: 8px; border-top: 1px solid var(--c-border);
+  margin: 6px 0 0; padding-top: 8px; border-top: 1px solid var(--an-line-soft, var(--c-border));
   display: flex; align-items: center; gap: 6px; min-width: 0;
 }
 .uev-card__avatar {

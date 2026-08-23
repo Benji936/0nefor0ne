@@ -101,6 +101,7 @@ async function toggle() {
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
 }
 .cf:hover:not(:disabled) { opacity: 0.9; }
+.cf:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
 .cf:disabled { opacity: 0.55; pointer-events: none; }
 
 /* Following: quiet outline, so the primary action reads as "not yet following". */

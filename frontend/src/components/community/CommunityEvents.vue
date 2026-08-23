@@ -229,27 +229,33 @@ async function confirmDelete(e) {
 <style scoped>
 .cev { display: flex; flex-direction: column; gap: 16px; }
 .cev__head { display: flex; align-items: center; gap: 12px; }
+/* The section label in the collector's register, matching "Other places
+   within 40 km" and "Your community" further down the same page (DESIGN.md,
+   The Uppercase Section Rule). */
 .cev__title {
-  margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--c-text);
-  letter-spacing: -0.01em; flex: 1;
+  margin: 0; flex: 1;
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--c-muted);
 }
 .cev__add {
   display: inline-flex; align-items: center; gap: 6px;
-  min-height: 40px; padding: 0 14px; border-radius: 11px;
-  background: color-mix(in srgb, var(--c-trade) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--c-trade) 30%, transparent);
-  color: var(--c-trade); font-size: 13px; font-weight: 700; cursor: pointer;
+  min-height: 38px; padding: 0 15px; border-radius: 999px;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--c-trade) 45%, transparent);
+  color: var(--c-trade); font-size: 0.8rem; font-weight: 700; cursor: pointer;
   transition: background 0.15s ease;
 }
-.cev__add:hover { background: color-mix(in srgb, var(--c-trade) 24%, transparent); }
+.cev__add:hover { background: color-mix(in srgb, var(--c-trade) 12%, transparent); }
 .cev__add:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
 
 /* The route to earning the Add button. Quieter than it on purpose: it is a
    detour, not the action the owner came here for. */
 .cev__locked {
   display: inline-flex; align-items: center; gap: 6px;
-  min-height: 40px; padding: 0 12px; border-radius: 11px;
-  color: var(--c-muted); font-size: 12.5px; font-weight: 700; text-decoration: none;
+  min-height: 38px; padding: 0 12px; border-radius: 999px;
+  color: var(--c-muted); font-size: 0.78rem; font-weight: 700; text-decoration: none;
   transition: color 0.15s ease, background 0.15s ease;
 }
 .cev__locked:hover { color: var(--c-trade); background: var(--c-surface-2); }
@@ -264,26 +270,38 @@ async function confirmDelete(e) {
    community card read as the same object at the same size. */
 .cev-list {
   list-style: none; margin: 0; padding: 0;
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
+  gap: 12px;
 }
 .cev-list--past { margin-top: 12px; }
 
+/* --cp-panel / --cp-line / --cp-lit are declared on the profile page's root
+   and inherit through this scoped boundary, so an event card sits on the same
+   ground as the plate above it rather than a step above the page. */
 .cev-item {
   position: relative;
   display: flex; flex-direction: column;
-  border-radius: 16px; overflow: hidden;
-  background: var(--c-surface); border: 1.5px solid var(--c-border);
-  transition: border-color 0.15s ease;
+  border-radius: 18px; overflow: hidden;
+  background: var(--cp-panel, var(--c-surface));
+  border: 1px solid var(--cp-line, var(--c-border));
+  box-shadow: var(--cp-lit, none);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.cev-item:hover { border-color: var(--c-trade); }
+/* Amethyst glow, never a black drop shadow (DESIGN.md, The Flat-By-Default
+   Rule). */
+.cev-item:hover {
+  border-color: var(--c-trade);
+  box-shadow: var(--cp-lit, none), 0 10px 28px color-mix(in srgb, var(--c-trade) 16%, transparent);
+}
 .cev-item--past { opacity: 0.8; }
 /* Cover matches the directory card's banner strip. */
-.cev-item__cover { width: 100%; height: 76px; background: var(--c-surface-2); }
+.cev-item__cover { width: 100%; height: 88px; background: var(--c-surface-2); }
 .cev-item__cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .cev-item__body { padding: 12px 14px 14px; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .cev-item__title {
-  margin: 0; font-size: 14.5px; font-weight: 700; color: var(--c-text);
+  margin: 0;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-size: 0.95rem; font-weight: 700; letter-spacing: -0.015em; color: var(--c-text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .cev-item__meta { margin: 0; display: flex; flex-wrap: wrap; gap: 3px 12px; font-size: 12px; font-weight: 600; color: var(--c-muted); }
@@ -291,7 +309,11 @@ async function confirmDelete(e) {
 .cev-item__when .v-icon, .cev-item__where .v-icon { color: var(--c-trade); }
 .cev-item__where--link { color: inherit; text-decoration: none; }
 .cev-item__where--link:hover { color: var(--c-trade); text-decoration: underline; }
-.cev-item__extlink { opacity: 0.6; }
+/* Was opacity 0.6 on top of the muted token, which measured 2.59:1 against the
+   card — under the 3:1 that a graphical object owes the reader. It carries the
+   full muted colour now; it is 11px next to a line of text, which is subordinate
+   enough without dimming it. */
+.cev-item__extlink { color: var(--c-muted); }
 .cev-item__desc {
   margin: 2px 0 0; font-size: 12.5px; color: var(--c-muted); line-height: 1.5;
   white-space: pre-wrap;
@@ -304,24 +326,25 @@ async function confirmDelete(e) {
 }
 .cev-item__link:hover { text-decoration: underline; }
 .cev-item__badge {
-  font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
-  color: var(--c-muted); padding: 2px 8px; border-radius: 6px;
-  background: color-mix(in srgb, var(--c-bg) 40%, transparent);
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.63rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--c-muted); padding: 3px 9px; border-radius: 999px;
+  border: 1px solid var(--cp-line-soft, var(--c-border));
 }
 
 /* Owner controls overlay the card's top-right, readable over the cover. */
 .cev-item__ctrls {
   position: absolute; top: 8px; right: 8px; z-index: 2;
   display: flex; align-items: center; gap: 2px;
-  padding: 2px; border-radius: 10px;
-  background: color-mix(in srgb, var(--c-bg) 55%, transparent);
-  border: 1px solid color-mix(in srgb, var(--c-border) 55%, transparent);
+  padding: 2px; border-radius: 999px;
+  background: color-mix(in srgb, var(--c-bg) 62%, transparent);
+  border: 1px solid var(--cp-line, var(--c-border));
   backdrop-filter: blur(6px);
 }
 .cev-confirmbar {
   display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
   margin-top: 8px; padding-top: 10px;
-  border-top: 1px solid var(--c-border);
+  border-top: 1px solid var(--cp-line-soft, var(--c-border));
 }
 .cev-ctrl {
   display: inline-flex; align-items: center; justify-content: center;
@@ -335,7 +358,7 @@ async function confirmDelete(e) {
 
 .cev-empty { margin: 0; font-size: 13px; color: var(--c-muted); }
 
-.cev-past { border-top: 1px solid var(--c-border); padding-top: 12px; }
+.cev-past { border-top: 1px solid var(--cp-line-soft, var(--c-border)); padding-top: 12px; }
 .cev-past__toggle {
   display: inline-flex; align-items: center; gap: 6px;
   min-height: 40px; padding: 0 6px; border-radius: 8px;
@@ -345,7 +368,8 @@ async function confirmDelete(e) {
 .cev-past__toggle:hover { color: var(--c-text); }
 .cev-past__toggle .v-icon { color: var(--c-trade); }
 
-.cev__add:focus-visible, .cev-ctrl:focus-visible, .cev-past__toggle:focus-visible, .cev-item__link:focus-visible {
+.cev__add:focus-visible, .cev-ctrl:focus-visible, .cev-past__toggle:focus-visible,
+.cev-item__link:focus-visible, .cev-item__where--link:focus-visible, .cev__locked:focus-visible {
   outline: 2px solid var(--c-trade); outline-offset: 2px;
 }
 </style>

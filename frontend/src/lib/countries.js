@@ -264,6 +264,55 @@ export function canonicalCountry(name) {
   return BY_KEY.get(k) ?? countryByCode(ALIASES.get(k)) ?? null;
 }
 
+/* ── A country in the reader's own language ──────────────────────────────────
+ * Every row in the directory files its country in English, because that is what
+ * the importer and the create form both write. The finder searches that column,
+ * so a German reader typing "Deutschland" — their own country, into a box that
+ * says it takes one — got nothing back at all, and so did French and Italian.
+ *
+ * Rather than translate two hundred country names into four languages and keep
+ * them, the names are asked of the platform: Intl.DisplayNames turns each ISO
+ * code into its name in the reader's locale, and the reverse of that map is what
+ * the typed text is looked up in. It costs one pass over the code list the first
+ * time a locale is used, and it covers a language the moment the app offers it.
+ */
+const LOCALIZED = new Map();
+
+function localizedIndex(locale) {
+  const tag = String(locale || "en");
+  let index = LOCALIZED.get(tag);
+  if (index) return index;
+
+  index = new Map();
+  // Missing in an old browser or a stripped-down ICU build: an empty index just
+  // means this resolution does nothing, never that the search breaks.
+  if (typeof Intl !== "undefined" && typeof Intl.DisplayNames === "function") {
+    try {
+      const names = new Intl.DisplayNames([tag], { type: "region" });
+      for (const c of COUNTRIES) {
+        const label = names.of(c.code);
+        // Unknown codes come back as the code itself; that would make typing
+        // "de" resolve to Germany and swallow every shop with "de" in its name.
+        if (label && label !== c.code) index.set(key(label), c);
+      }
+    } catch {
+      // Bad locale tag. Same outcome as no support: an empty index.
+    }
+  }
+  LOCALIZED.set(tag, index);
+  return index;
+}
+
+/**
+ * The entry a written country name means, in English or in the reader's
+ * language. English wins, so a name that is a country in both languages
+ * resolves the way the rows are stored.
+ */
+export function resolveCountry(name, locale) {
+  if (!name) return null;
+  return canonicalCountry(name) ?? localizedIndex(locale).get(key(name)) ?? null;
+}
+
 /** Name to ISO code, for the forms that store a country by name.
  *  The community form's select carries `name` as its value (that is what the
  *  directory filters on), but pricing and currency read country_code, so the

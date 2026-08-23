@@ -38,9 +38,8 @@ function placeLabel(e) {
 <template>
   <section v-if="events.length" class="ne">
     <div class="ne__head">
-      <span class="ne__dot" />
       <h2 class="ne__label">{{ t('community.nearEventsTitle') }}</h2>
-      <span class="ne__count">{{ events.length }}</span>
+      <span class="ne__count tabular-nums">{{ events.length }}</span>
     </div>
 
     <ul class="ne__list">
@@ -82,20 +81,28 @@ function placeLabel(e) {
 <style scoped>
 .ne { display: flex; flex-direction: column; }
 
-.ne__head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.ne__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c-trade); flex-shrink: 0; }
+/* The same monospace eyebrow the directory's own header uses (DESIGN.md, The
+   Mono Identifier Rule). The amethyst dot that used to lead it is gone: the
+   label was already saying what this is. */
+.ne__head {
+  display: flex; align-items: center; gap: 9px;
+  padding-bottom: 10px; margin-bottom: 4px;
+  border-bottom: 1px solid var(--cd-line-soft, var(--c-border));
+}
 .ne__label {
   margin: 0;
-  font-size: 13px; font-weight: 800; text-transform: uppercase;
-  letter-spacing: 0.07em; color: var(--c-text);
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.16em; color: var(--c-text);
 }
 .ne__count {
-  font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 99px;
-  background: var(--c-surface-2); color: var(--c-muted);
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+  background: color-mix(in srgb, var(--c-trade) 15%, transparent); color: var(--c-trade);
 }
 
 .ne__list { list-style: none; margin: 0; padding: 0; }
-.ne__item + .ne__item { border-top: 1px solid var(--c-border); }
+.ne__item + .ne__item { border-top: 1px solid var(--cd-line-soft, var(--c-border)); }
 
 .ne__link {
   display: flex; align-items: center; gap: 16px;
@@ -104,7 +111,7 @@ function placeLabel(e) {
   border-radius: 10px;
   transition: background .15s ease;
 }
-.ne__link:hover { background: var(--c-surface); }
+.ne__link:hover { background: var(--cd-panel, var(--c-surface)); }
 .ne__link:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
 
 .ne__main { min-width: 0; display: flex; flex-direction: column; gap: 3px; flex: 1; }
