@@ -612,7 +612,6 @@
     "binderShowing": "Showing {shown} of {total}",
     "binderLoadMore": "Load {count} more",
     "binderNoResults": "No cards match.",
-    "matchTitle": "{count} card you want | {count} cards you want",
     "tabsLabel": "Trader profile sections",
     "loadFailed": "Could not load this profile.",
     "retry": "Try again",
@@ -629,7 +628,17 @@
     "noLocationSet": "No location set",
     "traderNotFound": "Trader not found.",
     "close": "Close",
-    "proposeTrade": "Propose trade"
+    "proposeTrade": "Propose trade",
+    "joined": "Joined {when}",
+    "unrated": "Not rated yet",
+    "scopeLocal": "Trades around {place} only.",
+    "scopeNational": "Trades inside {place} only.",
+    "scopeElsewhere": "Your account is in {place}.",
+    "blankTitle": "Nothing to trade yet",
+    "blankBody": "{name} hasn't put any cards up for trade.",
+    "blankBodyJoined": "{name} joined {when} and hasn't put any cards up for trade.",
+    "blankCta": "Find your matches",
+    "tableLabel": "Possible trade"
   },
   "userCard": {
     "youGet": "You get",

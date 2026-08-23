@@ -16,6 +16,9 @@ const props = defineProps({
   // A handful is context; the full list is the account page's job.
   limit: { type: Number, default: 8 },
 });
+// The parent decides whether the whole page is empty, and it cannot see inside
+// a section that fetches for itself.
+const emit = defineEmits(["count"]);
 
 const { t } = useI18n();
 const route = useRoute();
@@ -26,10 +29,11 @@ const rows = ref([]);
 let reqId = 0;
 watch(() => props.traderId, async (id) => {
   const mine = ++reqId;
-  if (!id) { rows.value = []; return; }
+  if (!id) { rows.value = []; emit("count", 0); return; }
   const data = await fetchFollowing(id);
   if (mine !== reqId) return;
   rows.value = data.slice(0, props.limit);
+  emit("count", rows.value.length);
 }, { immediate: true });
 </script>
 
@@ -55,9 +59,10 @@ watch(() => props.traderId, async (id) => {
 .tc { margin-top: 26px; }
 
 .tc__title {
-  margin: 0 0 9px;
-  font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.08em; color: var(--c-muted);
+  margin: 0 0 10px;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.16em; color: var(--c-muted);
 }
 
 .tc__list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
@@ -68,7 +73,9 @@ watch(() => props.traderId, async (id) => {
   display: inline-flex; align-items: center; gap: 7px;
   max-width: 260px; min-height: 34px; padding: 0 11px 0 6px;
   border-radius: 999px;
-  background: var(--c-surface-2); border: 1px solid var(--c-border);
+  background: var(--tpb-panel, var(--c-surface-2));
+  border: 1px solid var(--tpb-line, var(--c-border));
+  box-shadow: var(--tpb-lit, none);
   color: var(--c-text); text-decoration: none;
   font-size: 12.5px; font-weight: 600;
   transition: border-color 0.15s ease, color 0.15s ease;

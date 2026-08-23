@@ -97,3 +97,81 @@ describe("no component hardcodes a label that belongs to a brand colour", () => 
     expect(whites, "a label on a brand colour must be var(--c-on-accent)").toEqual([]);
   });
 });
+
+describe("a trader page spends teal only on the agreement itself", () => {
+  // The one place in this pass where teal is right, and the rule that says
+  // when. A trader page draws a table with two arms: their cards you want
+  // (amethyst, the pile coming toward you) and your cards they want (pink, the
+  // pile they want off you). Teal is the frame around both arms once they are
+  // both live — that is two people lining up, which is the only thing teal ever
+  // marks (DESIGN.md, The Agreement Rule).
+  //
+  // So unlike the deck pages, the count here is not zero: it is "only inside
+  // the mutual chain". A teal line is attributed to the rule it sits in, so a
+  // selector that names the mutual state covers the declarations under it.
+  const TRADER = [
+    "../components/trade/TraderProfileBody.vue",
+    "../components/trade/TraderAnnounces.vue",
+    "../components/trade/CardBinder.vue",
+    "../components/Pages/App/TraderPage.vue",
+  ];
+  const TEAL = /--c-mutual|#2DD4BF|#076B82/gi;
+  const NAMED = /mutual|agreement/i;
+  // The token itself spells "mutual", so a naive name check passes every teal
+  // line ever written and the guard becomes a no-op. Strip the tokens first:
+  // what is left is the author's own words, which is what has to name the state.
+  const nameless = (line) => line.replace(TEAL, "");
+
+  const strayTeal = (src) => {
+    const out = [];
+    let rule = "";
+    for (const line of src.split("\n")) {
+      if (line.includes("{")) rule = line;
+      if (TEAL.test(line) && !NAMED.test(nameless(line)) && !NAMED.test(nameless(rule))) {
+        out.push(line.trim());
+      }
+    }
+    return out;
+  };
+
+  it.each(TRADER)("%s reaches for teal only where it names the mutual match", (rel) => {
+    expect(strayTeal(read(rel)), "teal outside the mutual chain is decoration").toEqual([]);
+  });
+
+  // The card tiles were outlined in raw white and lifted on a raw black drop
+  // shadow, which the light theme rendered as an invisible edge over a bruise.
+  // The star is the single allowed literal, and it is a named token with a
+  // value per theme rather than a hex repeated at each use.
+  it.each(TRADER)("%s uses no raw white, black or grey", (rel) => {
+    const stray = read(rel)
+      .split("\n")
+      .filter((line) => /rgba?\(\s*(255|0|100)\s*,|color:\s*white|:\s*#fff\b|#ffffff/i.test(line))
+      .filter((line) => !/--tpb-star/.test(line));
+    expect(stray, "every colour on a trader page comes from a token").toEqual([]);
+  });
+
+  // The seam is the app's own vocabulary, drawn identically on the matches list
+  // and on a trader's page, and it has to keep pointing the same way: amethyst
+  // is what comes toward you, pink is what leaves. Swapping them would be
+  // perfectly legible and completely wrong.
+  const SIDES = [
+    ["../components/trade/UserCard.vue", "mt-side--in", "mt-side--out", "mt-axis__label"],
+    ["../components/trade/TraderProfileBody.vue", 'tpb-side[data-side="get"]', 'tpb-side[data-side="give"]', "tpb-axis__label"],
+  ];
+  it.each(SIDES)("%s keeps amethyst on the receiving side and pink on the giving one", (rel, get, give, label) => {
+    const src = read(rel);
+    const rule = (cls) => new RegExp(`\\.${cls.replace(/[[\]"]/g, "\\$&")}\\s+\\.${label}\\s*\\{\\s*color:\\s*var\\(--c-(\\w+)\\)`);
+    expect(src.match(rule(get))?.[1]).toBe("trade");
+    expect(src.match(rule(give))?.[1]).toBe("accent");
+  });
+
+  // And the arm between them, which is the half of the signal that says whether
+  // anything travels at all.
+  it.each(["../components/trade/UserCard.vue", "../components/trade/TraderProfileBody.vue"])(
+    "%s lights the incoming arm amethyst and the outgoing arm pink",
+    (rel) => {
+      const src = read(rel);
+      expect(src).toMatch(/__arm:first-child\.is-live\s*\{\s*border-top-color:\s*var\(--c-trade\)/);
+      expect(src).toMatch(/__arm:last-child\.is-live\s*\{\s*border-top-color:\s*var\(--c-accent\)/);
+    });
+});

@@ -612,7 +612,6 @@
     "binderShowing": "{shown} sur {total}",
     "binderLoadMore": "Afficher {count} de plus",
     "binderNoResults": "Aucune carte ne correspond.",
-    "matchTitle": "{count} carte que vous cherchez | {count} cartes que vous cherchez",
     "tabsLabel": "Sections du profil",
     "loadFailed": "Impossible de charger ce profil.",
     "retry": "Réessayer",
@@ -629,7 +628,17 @@
     "noLocationSet": "Localisation non renseignée",
     "traderNotFound": "Joueur introuvable.",
     "close": "Fermer",
-    "proposeTrade": "Proposer un échange"
+    "proposeTrade": "Proposer un échange",
+    "joined": "Inscrit {when}",
+    "unrated": "Pas encore noté",
+    "scopeLocal": "N'échange qu'autour de {place}.",
+    "scopeNational": "N'échange qu'à l'intérieur de {place}.",
+    "scopeElsewhere": "Votre compte est en {place}.",
+    "blankTitle": "Rien à échanger pour l'instant",
+    "blankBody": "{name} n'a encore mis aucune carte à l'échange.",
+    "blankBodyJoined": "{name} s'est inscrit {when} et n'a encore mis aucune carte à l'échange.",
+    "blankCta": "Trouver vos matchs",
+    "tableLabel": "Échange possible"
   },
   "userCard": {
     "youGet": "Vous recevez",

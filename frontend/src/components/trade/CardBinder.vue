@@ -17,8 +17,6 @@ const props = defineProps({
   cards: { type: Array, default: () => [] },
   // Shown when the collection itself is empty, as opposed to filtered to zero.
   emptyLabel: { type: String, default: "" },
-  // Wishlist cards are dimmed slightly; the pile is not.
-  dim: { type: Boolean, default: false },
 });
 
 const { t } = useI18n();
@@ -135,7 +133,7 @@ function label(c) {
               :src="cardImage(card.image_id)"
               :alt="card.name"
               class="cb__card"
-              :class="{ 'cb__card--wanted': card.matchesMyWishlist, 'cb__card--dim': dim }"
+              :class="{ 'cb__card--wanted': card.matchesMyWishlist }"
               loading="lazy"
               decoding="async"
             />
@@ -153,6 +151,13 @@ function label(c) {
 </template>
 
 <style scoped>
+/* --cb-tone is the one colour this component spends, and the host sets it: the
+   trade pile is cards you could receive (amethyst), a wishlist is cards
+   somebody wants (pink). Read through a fallback at every use rather than
+   declared with a default here — a declaration on .cb would win over the value
+   inherited from the host and the wishlist panel could never tint anything.
+   --tpb-* comes from the profile body; the fallbacks keep this right anywhere
+   else it is mounted. */
 .cb { display: flex; flex-direction: column; }
 
 .cb__controls {
@@ -173,38 +178,41 @@ function label(c) {
 .cb__input {
   width: 100%; min-height: 40px;
   padding: 0 12px 0 34px; border-radius: 11px;
-  background: var(--c-surface-2); border: 1.5px solid var(--c-border);
+  background: var(--c-surface-2); border: 1.5px solid var(--tpb-line, var(--c-border));
   color: var(--c-text); font-size: 13.5px; outline: none;
   transition: border-color 0.15s ease;
 }
 .cb__input::placeholder { color: var(--c-muted); opacity: 0.7; }
-.cb__input:focus { border-color: var(--c-trade); }
-/* The UA clear button is invisible against a dark field in some browsers. */
-.cb__input::-webkit-search-cancel-button { filter: invert(0.6); cursor: pointer; }
+.cb__input:focus { border-color: var(--cb-tone, var(--c-trade)); }
+/* The UA clear button is drawn near-black, which vanishes against a dark field.
+   Inverted only in the dark theme — on the light one it was already correct and
+   the invert was turning it white on white. */
+.cb__input::-webkit-search-cancel-button { cursor: pointer; }
+html.dark .cb__input::-webkit-search-cancel-button { filter: invert(0.7); }
 
 .cb__select {
   min-height: 40px; padding: 0 10px; border-radius: 11px;
-  background: var(--c-surface-2); border: 1.5px solid var(--c-border);
+  background: var(--c-surface-2); border: 1.5px solid var(--tpb-line, var(--c-border));
   color: var(--c-text); font-size: 13px; font-weight: 600; cursor: pointer;
   max-width: 190px;
 }
-.cb__select:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
+.cb__select:focus-visible { outline: 2px solid var(--cb-tone, var(--c-trade)); outline-offset: 2px; }
 
 .cb__toggle {
   display: inline-flex; align-items: center; gap: 6px;
   min-height: 40px; padding: 0 13px; border-radius: 11px;
-  background: transparent; border: 1.5px solid var(--c-border);
+  background: transparent; border: 1.5px solid var(--tpb-line, var(--c-border));
   color: var(--c-muted); font-size: 13px; font-weight: 700; cursor: pointer;
   white-space: nowrap;
   transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
 }
 .cb__toggle:hover { color: var(--c-text); }
 .cb__toggle--on {
-  background: color-mix(in srgb, var(--c-trade) 16%, transparent);
-  border-color: color-mix(in srgb, var(--c-trade) 45%, transparent);
-  color: var(--c-trade);
+  background: color-mix(in srgb, var(--cb-tone, var(--c-trade)) 10%, transparent);
+  border-color: color-mix(in srgb, var(--cb-tone, var(--c-trade)) 50%, transparent);
+  color: var(--cb-tone, var(--c-trade));
 }
-.cb__toggle:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
+.cb__toggle:focus-visible { outline: 2px solid var(--cb-tone, var(--c-trade)); outline-offset: 2px; }
 
 .cb__count {
   margin: 0 0 12px; font-size: 12.5px; font-weight: 600; color: var(--c-muted);
@@ -213,20 +221,24 @@ function label(c) {
 
 .cb__grid { display: flex; flex-wrap: wrap; gap: 12px; }
 
+/* The tile was outlined in raw white and lifted on a raw black drop shadow.
+   Neither is a colour this design system has: in the light theme the outline
+   was invisible and the shadow was a bruise under every card. The edge is now
+   the border token and the lift is a glow in the binder's own colour
+   (DESIGN.md, The No-Gray Rule and The Flat-By-Default Rule). */
 .cb__card {
   height: 96px; width: 68px; flex-shrink: 0; display: block;
-  border-radius: 4px; object-fit: contain; background: var(--c-surface-2);
-  outline: 1px solid rgba(255,255,255,0.07);
-  transition: transform 0.15s cubic-bezier(0.22,1,0.36,1), box-shadow 0.15s ease;
+  border-radius: 5px; object-fit: contain; background: var(--c-surface-2);
+  outline: 1px solid var(--tpb-line-soft, color-mix(in srgb, var(--c-border) 34%, transparent));
+  transition: transform 0.15s cubic-bezier(0.22,1,0.36,1), box-shadow 0.15s ease, outline-color 0.15s ease;
 }
 .cb__card:hover {
   transform: translateY(-2px) scale(1.06);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-  outline-color: rgba(255,255,255,0.2);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--cb-tone, var(--c-trade)) 26%, transparent);
+  outline-color: color-mix(in srgb, var(--cb-tone, var(--c-trade)) 55%, transparent);
 }
-.cb__card--dim { opacity: 0.85; }
-/* Repeats the match block's signal. An outline rather than a badge: 68px of
-   card leaves no room for chrome, and a ring reads across a wall of art. */
+/* Repeats the table's signal. An outline rather than a badge: 68px of card
+   leaves no room for chrome, and a ring reads across a wall of art. */
 .cb__card--wanted { outline: 2px solid var(--c-trade); }
 .cb__card--wanted:hover { outline-color: var(--c-trade); }
 
@@ -234,14 +246,14 @@ function label(c) {
 
 .cb__more {
   align-self: center; margin-top: 16px;
-  min-height: 40px; padding: 0 18px; border-radius: 11px;
-  background: color-mix(in srgb, var(--c-trade) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--c-trade) 28%, transparent);
-  color: var(--c-trade); font-size: 13px; font-weight: 700; cursor: pointer;
+  min-height: 42px; padding: 0 18px; border-radius: 12px;
+  background: color-mix(in srgb, var(--cb-tone, var(--c-trade)) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cb-tone, var(--c-trade)) 40%, transparent);
+  color: var(--cb-tone, var(--c-trade)); font-size: 13px; font-weight: 700; cursor: pointer;
   transition: background 0.15s ease;
 }
-.cb__more:hover { background: color-mix(in srgb, var(--c-trade) 22%, transparent); }
-.cb__more:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
+.cb__more:hover { background: color-mix(in srgb, var(--cb-tone, var(--c-trade)) 16%, transparent); }
+.cb__more:focus-visible { outline: 2px solid var(--cb-tone, var(--c-trade)); outline-offset: 2px; }
 
 @media (pointer: coarse) {
   .cb__input, .cb__select, .cb__toggle, .cb__more { min-height: 44px; }

@@ -3,6 +3,11 @@
 // your place mid-flow (a proposal, a match list). The same profile also lives
 // at its own route — see TraderPage.vue — which is what links elsewhere in the
 // app point at. Both render the identical body.
+//
+// The body now carries the propose action itself, inside the table where the
+// two piles meet, so the footer here is down to the two things that are
+// genuinely the dialog's own business: the way out, and the way to the
+// permanent URL.
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
@@ -14,7 +19,8 @@ const route = useRoute();
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   traderId:   { type: String,  default: null  },
-  // Optional: pass the current user's id so we can hide "Propose" on own profile
+  // Whoever is looking. The body needs it to work out which way cards would
+  // travel, and to keep the propose action off somebody's own page.
   currentUserId: { type: String, default: null },
 });
 const emit = defineEmits(['update:modelValue', 'propose']);
@@ -25,10 +31,6 @@ const open = computed({
   get: () => props.modelValue,
   set: v  => emit('update:modelValue', v),
 });
-
-const isSelf = computed(() =>
-  props.currentUserId && props.traderId && props.currentUserId === props.traderId,
-);
 
 const locale = computed(() => route.params.locale || 'en');
 
@@ -43,8 +45,6 @@ function propose() {
 <template>
   <v-dialog v-model="open" max-width="720" scrollable :scrim="true">
     <v-card class="rounded-2xl overflow-hidden" style="background: var(--c-surface); color: var(--c-text)">
-
-      <div class="h-2 w-full shrink-0" style="background: linear-gradient(90deg, var(--c-trade), var(--c-accent))" />
 
       <v-btn
         icon="mdi-close"
@@ -80,7 +80,7 @@ function propose() {
         </div>
       </v-card-text>
 
-      <div class="flex items-center justify-end gap-3 px-8 py-5 shrink-0" style="border-top: 1px solid var(--c-border)">
+      <div class="tpd-foot">
         <!-- Escape hatch to the permanent URL, so a profile found mid-flow can
              be bookmarked or shared rather than only glanced at. -->
         <router-link
@@ -95,13 +95,6 @@ function propose() {
         </router-link>
 
         <v-btn variant="text" style="color: var(--c-muted)" @click="close">{{ t('traderProfile.close') }}</v-btn>
-        <v-btn
-          v-if="!isSelf"
-          variant="flat"
-          prepend-icon="mdi-swap-horizontal"
-          style="background: var(--c-trade); color: var(--c-on-accent)"
-          @click="propose"
-        >{{ t('traderProfile.proposeTrade') }}</v-btn>
       </div>
 
     </v-card>
@@ -109,6 +102,13 @@ function propose() {
 </template>
 
 <style scoped>
+.tpd-foot {
+  display: flex; align-items: center; justify-content: flex-end; gap: 12px;
+  flex-shrink: 0; padding: 14px 32px;
+  border-top: 1px solid color-mix(in srgb, var(--c-border) 60%, transparent);
+}
+@media (max-width: 600px) { .tpd-foot { padding: 12px 18px; } }
+
 .tpd-recover {
   display: inline-flex; align-items: center;
   min-height: 40px; padding: 0 16px; border-radius: 11px;

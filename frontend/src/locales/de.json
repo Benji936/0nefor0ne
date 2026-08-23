@@ -612,7 +612,6 @@
     "binderShowing": "{shown} von {total}",
     "binderLoadMore": "{count} weitere laden",
     "binderNoResults": "Keine Karte passt.",
-    "matchTitle": "{count} Karte, die du suchst | {count} Karten, die du suchst",
     "tabsLabel": "Profilbereiche",
     "loadFailed": "Dieses Profil konnte nicht geladen werden.",
     "retry": "Erneut versuchen",
@@ -629,7 +628,17 @@
     "noLocationSet": "Kein Standort angegeben",
     "traderNotFound": "Trader nicht gefunden.",
     "close": "Schließen",
-    "proposeTrade": "Tausch vorschlagen"
+    "proposeTrade": "Tausch vorschlagen",
+    "joined": "Beigetreten {when}",
+    "unrated": "Noch nicht bewertet",
+    "scopeLocal": "Tauscht nur rund um {place}.",
+    "scopeNational": "Tauscht nur innerhalb von {place}.",
+    "scopeElsewhere": "Dein Konto liegt in {place}.",
+    "blankTitle": "Noch nichts zum Tauschen",
+    "blankBody": "{name} hat noch keine Karten zum Tausch eingestellt.",
+    "blankBodyJoined": "{name} ist {when} beigetreten und hat noch keine Karten zum Tausch eingestellt.",
+    "blankCta": "Deine Matches finden",
+    "tableLabel": "Möglicher Tausch"
   },
   "userCard": {
     "youGet": "Du bekommst",

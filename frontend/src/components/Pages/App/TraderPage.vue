@@ -4,6 +4,12 @@
 // place that names a person can now link to them without that component's
 // ancestor having to mount a dialog.
 //
+// The page owns nothing but the way back. The propose action used to live down
+// here too, in a bordered footer strip below three screens of binder — the
+// furthest possible point from the moment somebody decides to trade. It now
+// sits in the table at the top of the body, where the two piles meet, so this
+// file has no footer at all.
+//
 // noindex on purpose. The profile is public to signed-in traders, but these
 // are real people with a city and a card collection attached; being reachable
 // in-app is not the same as being crawled and indexed by name. The community
@@ -25,15 +31,19 @@ const locale = computed(() => route.params.locale || "en");
 
 const profile = ref(null);
 const currentUserId = ref(null);
+// getCurrentSession is async, so on a cold load of a pasted or shared URL the
+// body used to mount with no viewer, fetch, and never look again — which meant
+// the whole match block was invisible to anyone who arrived at the page from
+// outside the app. The body's fetch waits for the answer instead.
+const sessionKnown = ref(false);
 
 let stopAuth = null;
 onMounted(async () => {
   currentUserId.value = (await getCurrentSession())?.user?.id ?? null;
+  sessionKnown.value = true;
   stopAuth = onAuthChange((s) => { currentUserId.value = s?.user?.id ?? null; });
 });
 onUnmounted(() => stopAuth?.());
-
-const isSelf = computed(() => !!currentUserId.value && currentUserId.value === traderId.value);
 
 const displayName = computed(() => profile.value?.name || t("userCard.anonymous"));
 
@@ -99,7 +109,7 @@ function goBack() {
 
     <!-- heading-level 1: on a page the trader's name is the document's
          heading. The dialog leaves it at the default 2. -->
-    <TraderProfileBody :trader-id="traderId" :heading-level="1" :viewer-id="currentUserId" @loaded="profile = $event" @propose="proposeOpen = true" @auth-required="onAuthRequired">
+    <TraderProfileBody :trader-id="traderId" :heading-level="1" :active="sessionKnown" :viewer-id="currentUserId" @loaded="profile = $event" @propose="proposeOpen = true" @auth-required="onAuthRequired">
       <template #not-found-action>
         <router-link class="tp__recover" :to="{ name: 'TradeCenter', params: { locale } }">
           <v-icon icon="mdi-arrow-left" size="16" />
@@ -107,15 +117,6 @@ function goBack() {
         </router-link>
       </template>
     </TraderProfileBody>
-
-    <!-- Proposing needs an account, so a signed-out visitor gets no button
-         rather than one that dead-ends in the proposal dialog. -->
-    <div v-if="profile && currentUserId && !isSelf" class="tp__actions">
-      <button type="button" class="tp__propose" @click="proposeOpen = true">
-        <v-icon icon="mdi-swap-horizontal" size="18" />
-        {{ t('traderProfile.proposeTrade') }}
-      </button>
-    </div>
 
     <ProposeTradeDialog v-model="proposeOpen" :user="proposeUser" />
   </div>
@@ -126,48 +127,39 @@ function goBack() {
    wrapping the entire contents of a page it exactly matches is a border drawn
    around nothing, and the gradient strip on top of it carried no meaning at
    all. Width and rhythm do the containing instead. */
+/* The app shell already gives every page px-5 / md:px-16, and this file was
+   adding another 24px inside it — 88px of gutter each side on a desktop, paid
+   for twice. The horizontal padding is gone and the ceiling is up, so the seam
+   gets its full width and the binder fits four more cards to a row. Matches
+   CardsPage, the app's other wall-of-cards page. */
 .tp {
-  display: flex; flex-direction: column; gap: 14px;
-  padding: 24px 24px 64px; max-width: 900px; margin: 0 auto; width: 100%;
+  display: flex; flex-direction: column; gap: 16px;
+  padding: 22px 0 64px; max-width: 1280px; margin: 0 auto; width: 100%;
 }
+@media (min-width: 768px) { .tp { padding-top: 30px; } }
 
+/* In the collector's register, like every other page label in this pass. */
 .tp__back {
   display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
-  min-height: 40px; padding: 0 10px; border-radius: 10px;
+  min-height: 40px; padding: 0 10px 0 8px; border-radius: 10px;
   background: transparent; border: none; cursor: pointer;
-  font-size: 13px; font-weight: 700; color: var(--c-muted);
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--c-muted);
   transition: color .15s ease, background .15s ease;
 }
 .tp__back:hover { color: var(--c-text); background: var(--c-surface-2); }
 .tp__back:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
 
-.tp__actions {
-  display: flex; justify-content: flex-end;
-  margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--c-border);
-}
-.tp__propose {
-  display: inline-flex; align-items: center; gap: 8px;
-  min-height: 44px; padding: 0 20px; border-radius: 12px;
-  background: var(--c-trade); color: var(--c-on-accent); border: none; cursor: pointer;
-  font-size: 14px; font-weight: 700;
-  transition: opacity .15s ease, transform .15s ease;
-}
-.tp__propose:hover { opacity: .88; transform: translateY(-1px); }
-.tp__propose:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
-
 @media (max-width: 600px) {
-  .tp { padding: 16px 16px 48px; }
-  /* Full-width primary action: easier to hit one-handed than a right-aligned
-     button, which on a phone sits furthest from the thumb. */
-  .tp__actions { justify-content: stretch; }
-  .tp__propose { width: 100%; justify-content: center; }
+  .tp { padding: 16px 0 48px; }
 }
 
 /* Touch targets. The back button is 40px on a pointer device, which is fine
    for a mouse and under the mark for a thumb. */
 @media (pointer: coarse) {
-  .tp__back { min-height: 48px; padding: 0 14px; }
-  .tp__propose { min-height: 48px; }
+  .tp__back { min-height: 48px; padding: 0 12px; }
   .tp__recover { min-height: 48px; }
 }
 
@@ -176,7 +168,7 @@ function goBack() {
   display: inline-flex; align-items: center; gap: 6px;
   min-height: 40px; padding: 0 16px; border-radius: 11px;
   background: color-mix(in srgb, var(--c-trade) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--c-trade) 30%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-trade) 34%, transparent);
   color: var(--c-trade); font-size: 13px; font-weight: 700; text-decoration: none;
   transition: background 0.15s ease;
 }
@@ -187,8 +179,6 @@ function goBack() {
    `*` override. */
 @media (prefers-reduced-motion: reduce) {
   .tp__back { transition: none; }
-  .tp__propose { transition: none; }
-  .tp__propose:hover { transform: none; }
   .tp__recover { transition: none; }
 }
 </style>
