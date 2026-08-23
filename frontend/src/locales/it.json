@@ -720,8 +720,6 @@
     "backToSearch": "Torna alla ricerca",
     "cardNotFound": "Carta non trovata",
     "searchOther": "Cerca un'altra carta",
-    "traders": "Trader con questa carta",
-    "noTraders": "Nessuno sta scambiando questa carta.",
     "addToWishlist": "Aggiungi alla lista desideri",
     "addToTrade": "Aggiungi al mazzo di scambio",
     "printings": "Edizioni",
@@ -737,7 +735,20 @@
     "priceCm": "Cardmarket {price}",
     "showAllPrintings": "Mostra tutte le {count} edizioni",
     "showLess": "Mostra meno",
-    "seeArchetype": "Vedi tutte le carte {name}"
+    "seeArchetype": "Vedi tutte le carte {name}",
+    "marketTitle": "Questa carta in scambio",
+    "inTradePiles": "Pile di scambio",
+    "onWishlists": "Liste dei desideri",
+    "noneOffering": "Non ancora in nessuna pila di scambio.",
+    "noneHunting": "Non ancora in nessuna lista dei desideri.",
+    "artworkNumber": "Illustrazione {n}",
+    "findPrinting": "Trova {code} su Cardmarket",
+    "marketState": {
+      "none": "Nessuno scambia ancora questa carta qui",
+      "held": "Qualcuno qui ha questa carta",
+      "wanted": "Qualcuno qui cerca questa carta",
+      "both": "Qualcuno ce l'ha e qualcuno la cerca"
+    }
   },
   "setPage": {
     "title": "{setName}  Set Yu-Gi-Oh! | One for One",
@@ -853,15 +864,7 @@
   },
   "cardYugi": {
     "level": "Livello",
-    "tradersWithCard": "Trader con questa carta",
-    "tradersLookingForCard": "Trader in cerca di questa carta",
-    "noTraders": "Nessuno sta scambiando questa carta.",
-    "noTradersLookingForCard": "Nessuno sta cercando questa carta.",
-    "moreTraders": "+{count} altri trader",
-    "permalink": "Permalink",
-    "match": "Match",
-    "hasThisCard": "Ha questa carta",
-    "wantsYours": "Vuole le tue"
+    "permalink": "Permalink"
   },
   "cardElement": {
     "acceptedTrade": "Scambio accettato",

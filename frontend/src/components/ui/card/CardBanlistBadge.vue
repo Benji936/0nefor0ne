@@ -57,16 +57,32 @@ const title = computed(() =>
 </template>
 
 <style scoped>
+/* Red, amber and yellow are the game's own restriction colours rather than the
+   app's three trade roles, so they are the one place outside the palette — but
+   they were written once, for the dark theme, and the light theme inverts what
+   is underneath them. On white, the amber chip measured 1.6:1 against the 4.5
+   a 12px label needs, and "TCG · Limited" is the single most consequential
+   thing this component says. Each hue therefore has a light value deep enough
+   to carry text, and the bright original stays where it works. */
 .cbb {
-  --cbb-color: #ef4444;
+  --cbb-color: var(--cbb-forbidden);
+  --cbb-forbidden: #B91C1C;
+  --cbb-limited: #92400E;
+  --cbb-semi: #854D0E;
+
   display: inline-flex;
   align-items: center;
   font-weight: 800;
   line-height: 1;
 }
-.cbb--forbidden   { --cbb-color: #ef4444; } /* red */
-.cbb--limited     { --cbb-color: #f59e0b; } /* amber */
-.cbb--semiLimited { --cbb-color: #eab308; } /* yellow */
+html.dark .cbb {
+  --cbb-forbidden: #EF4444;
+  --cbb-limited: #F59E0B;
+  --cbb-semi: #EAB308;
+}
+.cbb--forbidden   { --cbb-color: var(--cbb-forbidden); }
+.cbb--limited     { --cbb-color: var(--cbb-limited); }
+.cbb--semiLimited { --cbb-color: var(--cbb-semi); }
 
 /* Overlay: a small solid circle with the copy count, sized to match the kind
    icons that sit in the opposite corner of the tile. */
@@ -79,7 +95,7 @@ const title = computed(() =>
   color: #fff;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
-  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--c-bg) 78%, transparent);
 }
 
 /* Chip: colored dot + label, matching the app's other small status pills. */
@@ -90,7 +106,7 @@ const title = computed(() =>
   font-size: 12px;
   letter-spacing: 0.02em;
   color: var(--cbb-color);
-  background: color-mix(in srgb, var(--cbb-color) 14%, transparent);
+  background: color-mix(in srgb, var(--cbb-color) 9%, transparent);
   border: 1px solid color-mix(in srgb, var(--cbb-color) 40%, transparent);
 }
 .cbb-dot {

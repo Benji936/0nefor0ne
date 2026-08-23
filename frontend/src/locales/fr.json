@@ -720,8 +720,6 @@
     "backToSearch": "Retour à la recherche",
     "cardNotFound": "Carte introuvable",
     "searchOther": "Rechercher une autre carte",
-    "traders": "Joueurs qui ont cette carte",
-    "noTraders": "Personne n'échange cette carte pour l'instant.",
     "addToWishlist": "Ajouter à ma liste de souhaits",
     "addToTrade": "Ajouter à ma pile d'échange",
     "printings": "Éditions",
@@ -737,7 +735,20 @@
     "priceCm": "Cardmarket {price}",
     "showAllPrintings": "Voir les {count} éditions",
     "showLess": "Réduire",
-    "seeArchetype": "Voir toutes les cartes {name}"
+    "seeArchetype": "Voir toutes les cartes {name}",
+    "marketTitle": "Cette carte en échange",
+    "inTradePiles": "Piles d'échange",
+    "onWishlists": "Listes de souhaits",
+    "noneOffering": "Dans aucune pile d'échange pour l'instant.",
+    "noneHunting": "Sur aucune liste de souhaits pour l'instant.",
+    "artworkNumber": "Illustration {n}",
+    "findPrinting": "Trouver {code} sur Cardmarket",
+    "marketState": {
+      "none": "Personne n'échange encore cette carte ici",
+      "held": "Quelqu'un ici possède cette carte",
+      "wanted": "Quelqu'un ici recherche cette carte",
+      "both": "Quelqu'un l'a et quelqu'un la cherche"
+    }
   },
   "setPage": {
     "title": "{setName}  Extension Yu-Gi-Oh! | One for One",
@@ -853,15 +864,7 @@
   },
   "cardYugi": {
     "level": "Niveau",
-    "tradersWithCard": "Joueurs avec cette carte",
-    "tradersLookingForCard": "Joueurs recherchant cette carte",
-    "noTraders": "Personne n'échange cette carte pour l'instant.",
-    "noTradersLookingForCard": "Personne ne recherche cette carte pour l'instant.",
-    "moreTraders": "+{count} joueurs de plus",
-    "permalink": "Permalien",
-    "match": "Match",
-    "hasThisCard": "Possède cette carte",
-    "wantsYours": "Veut les vôtres"
+    "permalink": "Permalien"
   },
   "cardElement": {
     "acceptedTrade": "Échange accepté",

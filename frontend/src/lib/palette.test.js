@@ -175,3 +175,60 @@ describe("a trader page spends teal only on the agreement itself", () => {
       expect(src).toMatch(/__arm:last-child\.is-live\s*\{\s*border-top-color:\s*var\(--c-accent\)/);
     });
 });
+
+describe("a card page spends teal only when the card is a trade waiting to happen", () => {
+  // The card page's seam is about one card rather than two people: the left
+  // side is every trade pile holding it, the right is every wishlist hunting
+  // it. Both live at once is the match condition itself — it is what
+  // find_matches would surface — so it is the one state that earns teal, and
+  // it is rare: five of the three hundred and one card names in this database
+  // have somebody on both sides.
+  const CARD = "../components/Pages/App/CardPage.vue";
+  const TEAL = /--c-mutual|#2DD4BF|#076B82/gi;
+  const NAMED = /mutual|agreement|both/i;
+  const nameless = (line) => line.replace(TEAL, "");
+
+  it("reaches for teal only where it names both sides being live", () => {
+    const stray = [];
+    let rule = "";
+    for (const line of read(CARD).split("\n")) {
+      if (line.includes("{")) rule = line;
+      if (TEAL.test(line) && !NAMED.test(nameless(line)) && !NAMED.test(nameless(rule))) stray.push(line.trim());
+    }
+    expect(stray, "teal outside the both-sides state is decoration").toEqual([]);
+  });
+
+  it("uses no raw white, black or grey", () => {
+    const stray = read(CARD)
+      .split("\n")
+      .filter((line) => /rgba?\(\s*(255|0|100)\s*,|color:\s*white|:\s*#fff\b|#ffffff/i.test(line));
+    expect(stray, "every colour on a card page comes from a token").toEqual([]);
+  });
+
+  // Same seam, same directions, drawn by a third component now. Amethyst is
+  // the side that has the card; pink is the side that wants it. The matches
+  // list is the reference, and all three have to keep agreeing.
+  it("keeps amethyst on the side holding the card and pink on the side hunting it", () => {
+    const src = read(CARD);
+    const label = (side) =>
+      new RegExp(`\\.cx__side\\[data-side="${side}"\\] \\.cx__side-label\\s*\\{\\s*color:\\s*var\\(--c-(\\w+)\\)`);
+    expect(src.match(label("have"))?.[1]).toBe("trade");
+    expect(src.match(label("want"))?.[1]).toBe("accent");
+    expect(src).toMatch(/-arm:first-child\.is-live\s*\{\s*border-top-color:\s*var\(--c-trade\)/);
+    expect(src).toMatch(/-arm:last-child\.is-live\s*\{\s*border-top-color:\s*var\(--c-accent\)/);
+  });
+
+  // The restriction badge is the one component allowed hues from outside the
+  // palette — red, amber and yellow are the game's own Forbidden/Limited
+  // colours, not a fourth trade role. What it is not allowed is one value for
+  // two themes: written for the dark page only, the amber chip measured 1.6:1
+  // on the light one, against the 4.5 a 12px label needs.
+  it("gives the banlist badge a value per theme rather than one that suits the dark page", () => {
+    const src = read("../components/ui/card/CardBanlistBadge.vue");
+    for (const token of ["--cbb-forbidden", "--cbb-limited", "--cbb-semi"]) {
+      const declared = src.match(new RegExp(`${token}:\\s*#[0-9A-Fa-f]{6}`, "g")) ?? [];
+      expect(declared, `${token} needs a light and a dark value`).toHaveLength(2);
+    }
+    expect(src, "the dark values belong under html.dark").toMatch(/html\.dark\s+\.cbb\s*\{/);
+  });
+});
