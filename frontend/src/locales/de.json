@@ -1755,6 +1755,10 @@
     "gapUnknown": "Zwischen {low} und {high} Unterschied",
     "addAsCash": "Als Ausgleich hinzufügen",
     "exactAfterPicking": "Wähle oben die Drucke für einen exakten Betrag",
-    "sourceShort": "Cardmarket"
+    "sourceShort": "Cardmarket",
+    "whichPrinting": "Welcher Druck ist deiner?",
+    "pickPrinting": "Welcher Druck?",
+    "noPrice": "Kein Preis",
+    "noPrintings": "Keine Drucke für diese Karte gefunden."
   }
 }

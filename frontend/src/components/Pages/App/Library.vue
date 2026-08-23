@@ -130,6 +130,7 @@ const { t } = useI18n();
         :new-card-id="newCardId"
         :empty-text="t('library.emptyTrade')"
         @deleted="onCardDeleted"
+        @printing-picked="onPrintingPicked"
       />
 
       <template v-else>
@@ -189,6 +190,7 @@ const { t } = useI18n();
             :empty-text="showGroupHeads ? t('wishlists.emptyList') : t('library.emptyWish')"
             @deleted="onCardDeleted"
             @move="onCardMoved"
+            @printing-picked="onPrintingPicked"
           />
         </div>
       </template>
@@ -543,6 +545,21 @@ export default {
      * They appear when they arrive.
      */
     money(v) { return formatMoney(v, this.$i18n.locale); },
+
+    /**
+     * Somebody answered "which printing is yours".
+     *
+     * Patches the row in place and re-prices, rather than reloading both piles:
+     * the answer is one column on one row, and a full reload would scroll a
+     * long binder back to the top under somebody who is working down it.
+     */
+    async onPrintingPicked({ cardId, printing }) {
+      for (const list of [this.trade_cards, this.wished_cards]) {
+        const card = list.find(c => c.id === cardId);
+        if (card) { card.extension = printing.printCode; card.rarity = printing.rarity ?? 'common'; }
+      }
+      await this.loadPrices();
+    },
 
     async loadPrices() {
       const ids = [...this.trade_cards, ...this.wished_cards].map(c => c.id);

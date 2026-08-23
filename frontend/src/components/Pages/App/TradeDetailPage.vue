@@ -30,8 +30,29 @@ import TradePhotosPanel from "@/components/trade/TradePhotosPanel.vue";
 import TradeChatPanel   from "@/components/trade/TradeChatPanel.vue";
 import ProposeTradeDialog from "@/components/trade/ProposeTradeDialog.vue";
 import TraderLink       from "@/components/trade/TraderLink.vue";
+import CardPrice        from "@/components/trade/CardPrice.vue";
+import { fetchCardPrices, sumPrices, formatMoney } from "@/lib/cardmarketPrice";
 
 const { t, locale } = useI18n();
+
+// Card id -> resolved Cardmarket price, for both sides of the proposal.
+//
+// This is the screen where somebody decides whether to accept, so it is the one
+// place the numbers most need to be present -- and the one place they must
+// agree with what the proposer saw when they built the offer. Both call
+// card_prices, so they do by construction. See cardmarketPrice.js.
+const prices = ref(new Map());
+
+const sideTotal = (cards) => sumPrices(
+  (cards ?? []).map(c => ({ price: prices.value.get(c.id), quantity: c.quantity })),
+);
+const money = (v) => formatMoney(v, locale.value);
+
+/** One request for both sides, whenever the proposal is (re)loaded. */
+watch(() => proposal.value?.id, async () => {
+  const cards = [...(proposal.value?.i_give ?? []), ...(proposal.value?.i_receive ?? [])];
+  prices.value = cards.length ? await fetchCardPrices(cards.map(c => c.id)) : new Map();
+});
 const route  = useRoute();
 const router = useRouter();
 
@@ -438,7 +459,10 @@ function goBack() {
                   class="rounded-md object-contain shrink-0 ring-1 ring-white/10"
                   style="width: 62px; height: 88px; background-color: var(--c-surface)" />
                 <div class="flex flex-col gap-2 min-w-0 grow">
-                  <p class="font-semibold text-sm leading-tight" style="color: var(--c-text)">{{ card.name }}</p>
+                  <div class="flex items-baseline gap-2 min-w-0">
+                    <p class="font-semibold text-sm leading-tight flex-1 min-w-0" style="color: var(--c-text)">{{ card.name }}</p>
+                    <CardPrice v-if="prices.get(card.id)" :price="prices.get(card.id)" size="sm" class="shrink-0" />
+                  </div>
                   <div class="flex flex-wrap gap-2">
                     <span v-if="card.extension" class="text-[11px] px-2 py-1 rounded font-mono"
                       style="background: color-mix(in srgb, var(--c-trade) 15%, transparent); color: var(--c-trade)">{{ card.extension }}</span>
@@ -462,6 +486,17 @@ function goBack() {
                     </a>
                   </div>
                 </div>
+              </div>
+
+              <!-- What this side comes to. Inside the panel it belongs to, so
+                   the two figures sit under the two piles rather than being
+                   collected somewhere else and needing to be matched back up. -->
+              <div v-if="side.cards?.length && sideTotal(side.cards).priced" class="td-total">
+                <span class="td-total__label">{{ t('price.sourceShort') }}</span>
+                <span class="td-total__amount tabular-nums">
+                  <template v-if="sideTotal(side.cards).exact">{{ money(sideTotal(side.cards).low) }}</template>
+                  <template v-else>{{ money(sideTotal(side.cards).low) }} – {{ money(sideTotal(side.cards).high) }}</template>
+                </span>
               </div>
             </section>
           </div>
@@ -720,6 +755,28 @@ function goBack() {
 </template>
 
 <style scoped>
+/* ── Side subtotal ────────────────────────────────────────────────────────
+   A rule across the foot of the panel, not another bordered box: the panel is
+   already framed and the cards inside it each are, so a third frame would be
+   the fourth edge in 40px (DESIGN.md, The Flat-By-Default Rule). Neutral --
+   the panel heading already carries the side's colour, and repeating it on the
+   figure would say the money is amethyst or pink, which is not a thing money
+   is here (The Three-Role Rule). */
+.td-total {
+  display: flex; align-items: baseline; gap: 10px;
+  margin-top: 2px; padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--c-border) 60%, transparent);
+}
+.td-total__label {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.16em; color: var(--c-muted);
+}
+.td-total__amount {
+  margin-left: auto; font-size: 15px; font-weight: 700; color: var(--c-text);
+  white-space: nowrap;
+}
+
 /*
   Wider than the app's reading pages on purpose. The two columns only earn
   their keep if the main one still fits two card lists side by side once the

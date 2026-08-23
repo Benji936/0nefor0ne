@@ -1755,6 +1755,10 @@
     "gapUnknown": "Between {low} and {high} apart",
     "addAsCash": "Add as cash offset",
     "exactAfterPicking": "Pick the printings above for an exact figure",
-    "sourceShort": "Cardmarket"
+    "sourceShort": "Cardmarket",
+    "whichPrinting": "Which printing is yours?",
+    "pickPrinting": "Which printing?",
+    "noPrice": "No price",
+    "noPrintings": "No printings found for this card."
   }
 }

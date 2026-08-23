@@ -25,7 +25,7 @@ defineProps({
   prices:    { type: Map,     default: () => new Map() },
 });
 
-const emit = defineEmits(["deleted", "move"]);
+const emit = defineEmits(["deleted", "move", "printing-picked"]);
 </script>
 
 <template>
@@ -67,6 +67,7 @@ const emit = defineEmits(["deleted", "move"]);
           :key="card.id"
           :wish="card"
           :price="prices.get(card.id) ?? null"
+          @printing-picked="$emit('printing-picked', $event)"
           :layout="view"
           :class="newCardId === card.id ? 'ls-new' : ''"
           :lists="lists"

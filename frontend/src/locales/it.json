@@ -1755,6 +1755,10 @@
     "gapUnknown": "Tra {low} e {high} di differenza",
     "addAsCash": "Aggiungi come conguaglio",
     "exactAfterPicking": "Scegli le stampe qui sopra per un importo esatto",
-    "sourceShort": "Cardmarket"
+    "sourceShort": "Cardmarket",
+    "whichPrinting": "Quale stampa è la tua?",
+    "pickPrinting": "Quale stampa?",
+    "noPrice": "Nessun prezzo",
+    "noPrintings": "Nessuna stampa trovata per questa carta."
   }
 }

@@ -2,8 +2,10 @@
 import LanguageTooltip from '@/components/tooltips/LanguageTooltip.vue';
 import ConditionTooltip from '@/components/tooltips/ConditionTooltip.vue';
 import CardPrice from '@/components/trade/CardPrice.vue';
+import PrintingPicker from '@/components/trade/PrintingPicker.vue';
+import { RANGE } from '@/lib/cardmarketPrice';
 import { cardImage } from '@/lib/cardImage';
-defineEmits(['deleted', 'move']);
+defineEmits(['deleted', 'move', 'printing-picked']);
 </script>
 
 <template>
@@ -11,6 +13,7 @@ defineEmits(['deleted', 'move']);
        parent TransitionGroup from running a leave/enter on the root (which flashed
        both layouts during a view switch). -->
   <div class="ce-root">
+  <PrintingPicker v-model="pickerOpen" :card="wish" @picked="$emit('printing-picked', $event)" />
   <!-- ── Compact list row (basic view) ── -->
   <div
     v-if="layout === 'list'"
@@ -58,8 +61,22 @@ defineEmits(['deleted', 'move']);
 
     <!-- What it is worth. Right of the meta and left of the quantity, so a
          scrolled binder reads as a column of figures rather than a price
-         buried among the chips. -->
-    <CardPrice v-if="price" :price="price" size="sm" class="ce-price shrink-0" />
+         buried among the chips.
+
+         When the printing is unknown the figure itself is the prompt: the wide
+         range is the reason to answer, so the answer is offered on it rather
+         than parked in a separate control somebody has to notice. -->
+    <button
+      v-if="price && price.kind === RANGE"
+      type="button"
+      class="ce-price ce-price--ask shrink-0"
+      :title="$t('price.whichPrinting')"
+      @click.stop="pickerOpen = true"
+    >
+      <CardPrice :price="price" size="sm" />
+      <span class="ce-ask">{{ $t('price.pickPrinting') }}</span>
+    </button>
+    <CardPrice v-else-if="price" :price="price" size="sm" class="ce-price shrink-0" />
 
     <!-- Move to another wishlist -->
     <v-menu v-if="canFile" location="bottom end">
@@ -141,7 +158,14 @@ defineEmits(['deleted', 'move']);
     <div class="flex flex-col gap-2 px-3 pt-2 pb-1" style="background-color: var(--c-surface)">
       <div class="flex items-baseline gap-2 min-w-0">
         <p class="font-semibold text-xs leading-tight truncate flex-1" style="color: var(--c-text)">{{ wish.name }}</p>
-        <CardPrice v-if="price" :price="price" size="sm" class="shrink-0" />
+        <button
+          v-if="price && price.kind === RANGE"
+          type="button"
+          class="ce-price--ask shrink-0"
+          :title="$t('price.whichPrinting')"
+          @click.stop="pickerOpen = true"
+        ><CardPrice :price="price" size="sm" /></button>
+        <CardPrice v-else-if="price" :price="price" size="sm" class="shrink-0" />
       </div>
       <div class="flex flex-wrap gap-3">
         <ConditionTooltip v-if="wish.condition" :condition="wish.condition" />
@@ -234,6 +258,7 @@ export default {
   },
   data() {
     return {
+      pickerOpen: false,
       quantityCount: this.wish.quantity,
       reservedQty: 0,
       loadingReserved: false,
@@ -322,6 +347,28 @@ export default {
    figure. Below 620px the row wraps and the price takes the line under the
    name, indented past the thumbnail so it still reads as belonging to it. */
 .ce-price { margin-left: auto; }
+
+/* The unknown-printing price is a control, so it looks like one on hover and
+   carries the question under the figure. Dashed, not solid: the number inside
+   it is provisional, and a solid button would present a range as an answer
+   rather than as the reason to give one. */
+.ce-price--ask {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 1px;
+  padding: 3px 8px; border-radius: 9px; cursor: pointer;
+  background: transparent;
+  border: 1px dashed color-mix(in srgb, var(--c-trade) 40%, transparent);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.ce-price--ask:hover {
+  background: color-mix(in srgb, var(--c-trade) 8%, transparent);
+  border-color: color-mix(in srgb, var(--c-trade) 65%, transparent);
+}
+.ce-price--ask:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
+.ce-ask {
+  font-size: 10px; font-weight: 700; color: var(--c-trade);
+  text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) { .ce-price--ask { transition: none; } }
 
 @media (max-width: 620px) {
   .card-row { flex-wrap: wrap; row-gap: 8px; }
