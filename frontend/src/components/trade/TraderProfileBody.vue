@@ -139,7 +139,8 @@ async function load(id) {
           fetchWishlistNames(props.viewerId),
           fetchTradePileNames(props.viewerId),
           // Only used to say "your account is in X" next to a trader who will
-          // not trade outside their own country.
+          // not trade outside their own country. Straight off "Trader" because
+          // this one is the viewer's own row — the only kind the table serves.
           getClient().from('Trader').select('country_code').eq('id', props.viewerId).maybeSingle(),
         ])
       : [[], [], null];
@@ -200,12 +201,15 @@ function firstFilledTab() {
  * is weak evidence; a name makes it a reference. Done as a second query rather
  * than a PostgREST embed so it does not depend on the FK constraint's
  * generated name, and it degrades to unnamed reviews rather than failing.
+ *
+ * Reads `trader_public`: a reviewer is by definition not the viewer, and
+ * "Trader" only answers for your own row now.
  */
 async function withRaters(rows) {
   const ids = [...new Set(rows.map((r) => r.rater_id).filter(Boolean))];
   if (!ids.length) return rows;
   const { data, error } = await getClient()
-    .from('Trader')
+    .from('trader_public')
     .select('id, Name, avatar_url')
     .in('id', ids);
   if (error) { console.error('review raters failed', error); return rows; }

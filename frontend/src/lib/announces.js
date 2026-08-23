@@ -48,11 +48,13 @@ export async function fetchAnnounces() {
   // 2. Fetch seller profiles.
   // Community announces have no seller, so filter the nulls out rather than
   // sending them to .in(), which would ask for a trader with a null id.
+  // `trader_public`, not "Trader": these are other people's rows, and the
+  // base table stopped answering for those in 20260823.
   const sellerIds = [...new Set(announces.map(a => a.seller).filter(Boolean))];
   let traderData = [];
   if (sellerIds.length > 0) {
     const { data, error: traderError } = await getClient()
-      .from("Trader")
+      .from("trader_public")
       .select("id, Name, City, Country, avatar_url")
       .in("id", sellerIds);
     if (traderError) console.error("fetchAnnounces (traders) failed", traderError);

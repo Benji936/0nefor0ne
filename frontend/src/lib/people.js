@@ -4,14 +4,16 @@
  * being a way to find them.
  *
  * Two questions, both public: who joined most recently, and who has put the
- * most into their trade pile. Neither exposes anything a visitor could not
- * already read from the Trader directory — it is the same rows, sorted.
+ * most into their trade pile. Both read `trader_public` rather than "Trader"
+ * itself, which since 20260823 is readable only by the row's owner — the view
+ * is the list of columns a stranger may see, and a phone number is not on it.
  *
  * Reads return [] on failure. A page that cannot reach the database should
  * quietly lose one section, never show a broken one.
  *
  * See supabase/migrations/20260811_landing_traders.sql for where these come
- * from, and why the pile count is a function rather than a client-side count.
+ * from, and why the pile count is a function rather than a client-side count,
+ * and 20260823_trader_column_privacy.sql for why they read a view.
  */
 
 import { getClient } from "@/lib/supabaseClient";
@@ -23,7 +25,7 @@ export const MIN_TO_SHOW = 3;
 /** The newest accounts, newest first. */
 export async function fetchRecentTraders(limit = 3) {
   const { data, error } = await getClient()
-    .from("Trader")
+    .from("trader_public")
     .select("id, Name, avatar_url, City, country_code, created_at")
     .not("Name", "is", null)
     .order("created_at", { ascending: false })

@@ -95,10 +95,11 @@ export async function fetchAnnounceThreads(announceId) {
   const threads = [...byUser.values()];
   if (threads.length === 0) return [];
 
-  // Attach display names/avatars for the buyers.
+  // Attach display names/avatars for the buyers. Somebody else's row, so it
+  // comes from the public view rather than from "Trader" directly.
   const ids = threads.map(t => t.userId);
   const { data: traders } = await getClient()
-    .from("Trader")
+    .from("trader_public")
     .select("id, Name, avatar_url")
     .in("id", ids);
   const byId = Object.fromEntries((traders ?? []).map(tr => [tr.id, tr]));
