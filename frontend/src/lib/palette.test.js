@@ -342,3 +342,103 @@ describe("a card page spends teal only when the card is a trade waiting to happe
     expect(src, "the dark values belong under html.dark").toMatch(/html\.dark\s+\.cbb\s*\{/);
   });
 });
+
+describe("a Looking For post is a want, and wants are pink", () => {
+  // The state that had three drawings and two colours. An announce card in the
+  // list wore a pink LF badge, with a comment saying why: "a Looking For post
+  // is a want and pink is what wanting is called here." The dialog that creates
+  // that post filled its Looking For switch with teal, and the dialog that
+  // opens it drew the same badge in teal again.
+  //
+  // Teal is the agreement chain — the moment two people line up — and a
+  // Looking For post is one person asking, with nobody on the other side yet.
+  // So the announce surfaces spend no teal at all, and the two dialogs have to
+  // agree with the card about what pink means.
+  const ANNOUNCE = [
+    "../components/trade/CreateAnnounceDialog.vue",
+    "../components/trade/AnnounceDetailDialog.vue",
+    "../components/trade/AnnounceCard.vue",
+    "../components/trade/WantListInput.vue",
+  ];
+
+  it.each(ANNOUNCE)("%s spends no teal", (rel) => {
+    const stray = read(rel)
+      .split("\n")
+      .filter((line) => /--c-mutual|#2DD4BF|#076B82/i.test(line));
+    expect(stray, "nothing on an announce is an agreement yet").toEqual([]);
+  });
+
+  // The card is the reference: it is what the poster sees afterwards, and the
+  // form should have been the same colour while they were filling it in.
+  it("the card, the switch and the badge name the same two colours", () => {
+    expect(read("../components/trade/AnnounceCard.vue"))
+      .toMatch(/isLf\.value \? "var\(--c-accent\)" : "var\(--c-trade\)"/);
+
+    const dlg = read("../components/trade/CreateAnnounceDialog.vue");
+    // Selling is the default; choosing Looking For repaints the whole form.
+    expect(dlg).toMatch(/\.dlg\s*\{[^}]*--an-kind:\s*var\(--c-trade\)/s);
+    expect(dlg).toMatch(/\.dlg\[data-kind="want"\]\s*\{\s*--an-kind:\s*var\(--c-accent\)/);
+
+    expect(read("../components/trade/AnnounceDetailDialog.vue"))
+      .toMatch(/\.lf-badge\s*\{[^}]*background:\s*var\(--c-accent\)/s);
+  });
+
+  // Narrower than the other pages' version of this rule, and deliberately so.
+  // The card and the detail dialog both lay text over a photograph the user
+  // uploaded, and a scrim on a photograph is the one place a fixed black is
+  // right: the photo is the ground, the photo is not themed, and a veil that
+  // inverted with the theme would put white text on a white wash. Those two
+  // files are exempt. The form is not — it lays nothing over a photograph
+  // except its own two chips, and those read the page's ground so they stay
+  // legible on either theme.
+  const FORM = [
+    "../components/trade/CreateAnnounceDialog.vue",
+    "../components/trade/WantListInput.vue",
+  ];
+  it.each(FORM)("%s uses no raw white, black or grey", (rel) => {
+    const stray = read(rel)
+      .split("\n")
+      .filter((line) => /rgba?\(\s*(255|0|200|100)\s*,|color:\s*white|:\s*#fff\b|#ffffff|#ef4444/i.test(line));
+    expect(stray, "every colour on the announce form comes from a token").toEqual([]);
+  });
+});
+
+describe("the support page keeps Ko-fi's blue on Ko-fi's button", () => {
+  // #72A4F2 is Ko-fi's brand colour, and the page is entitled to it on the
+  // button that goes to Ko-fi — the shop marks work the same way. What it is
+  // not entitled to is the panel's border, its gradient and its drop shadow,
+  // which is where it was: the most saturated thing on a One for One page
+  // belonged to somebody else.
+  const src = read("../components/Pages/App/BuiltWithPage.vue");
+
+  it("declares the blue once, as a token", () => {
+    const literals = src.match(/#72[aA]4[fF]2/g) ?? [];
+    expect(literals, "one declaration, read everywhere else through --sp-kofi").toHaveLength(1);
+    expect(src).toMatch(/--sp-kofi:\s*#72A4F2/i);
+  });
+
+  it("spends it on the button and nothing else", () => {
+    const users = src
+      .split("\n")
+      .filter((line) => /var\(--sp-kofi\)/.test(line));
+    expect(users).toHaveLength(1);
+    // …and that one use is the button's own background.
+    expect(src).toMatch(/\.sp__kofi\s*\{[^}]*background:\s*var\(--sp-kofi\)/s);
+  });
+
+  // White on that blue measured 2.53:1 at 15px/700, against the 4.5 the size
+  // needs — and with both values fixed it failed in the light theme and the
+  // dark one alike. The ink is the app's own deep indigo, which clears 7:1.
+  it("does not put white on it", () => {
+    expect(src).not.toMatch(/\.sp__kofi\s*\{[^}]*color:\s*(#fff|#ffffff|white)\b/is);
+    expect(src).toMatch(/\.sp__kofi\s*\{[^}]*color:\s*#1A0D45/is);
+  });
+
+  it("uses no raw white, black or grey elsewhere", () => {
+    const stray = src
+      .split("\n")
+      .filter((line) => /rgba?\(\s*(255|0|100)\s*,|color:\s*white|:\s*#fff\b|#ffffff/i.test(line))
+      .filter((line) => !/--sp-kofi|#1A0D45/.test(line));
+    expect(stray, "every other colour on the page comes from a token").toEqual([]);
+  });
+});

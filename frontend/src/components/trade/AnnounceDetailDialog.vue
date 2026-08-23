@@ -854,17 +854,22 @@ function onCardAdded() {
   font-size: 13.5px; color: var(--c-muted);
   line-height: 1.6; margin: 0; white-space: pre-wrap;
 }
+/* Pink, not teal. This badge, the badge on the announce card in the list, and
+   the switch in the dialog that creates the post are three drawings of one
+   state, and they disagreed: the card said pink and both dialogs said teal.
+   Teal is the agreement chain — two people lining up — and a Looking For post
+   is one person asking, which is what pink means here (DESIGN.md, The
+   Agreement Rule). Mono to match the card's badge, which is set that way
+   because LF is an identifier rather than a word. */
 .lf-badge {
   padding: 2px 8px;
   border-radius: 999px;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: .08em;
-  /* Dark ink, not white: --c-mutual is a bright teal in dark theme, where white
-     lands at 1.86:1. This ink clears AA in both themes (4.52 light, 10.69 dark)
-     and matches the on-mutual text colour DESIGN.md already specifies. */
   color: var(--c-on-accent);
-  background: var(--c-mutual);
+  background: var(--c-accent);
 }
 .detail-archetype {
   display: flex;
@@ -872,7 +877,7 @@ function onCardAdded() {
   gap: 6px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--c-mutual);
+  color: var(--c-accent);
 }
 /* ── Want list (Looking For posts) ─────────────────── */
 .want-list {
@@ -920,7 +925,7 @@ function onCardAdded() {
   border-radius: 8px;
   object-fit: cover;
   flex-shrink: 0;
-  border: 1px solid color-mix(in srgb, var(--c-mutual) 45%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-accent) 45%, transparent);
 }
 /* ── Expiry notice (owner only) ───────────────────── */
 .expiry {

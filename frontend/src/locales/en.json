@@ -378,6 +378,7 @@
     "currency": "Currency",
     "images": "Photos",
     "addImages": "Add photos",
+    "coverPhoto": "Cover",
     "maxImages": "Up to {max} photos",
     "create": "Post Announce",
     "edit": "Edit",
@@ -402,6 +403,9 @@
     "cardNotFound": "No card found.",
     "cardSearchFailed": "Search failed. Try again.",
     "cardLinkFailed": "Failed to link card.",
+    "cardOptional": "Card (optional)",
+    "cardAddsToPile": "Posting this adds the card to your trade pile.",
+    "removeCard": "Remove card",
     "kindSell": "Selling",
     "kindLookingFor": "Looking for",
     "kindHint": "Selling a card, or looking for one?",
@@ -416,7 +420,6 @@
     "budget": "Budget",
     "budgetOptional": "Budget (optional)",
     "budgetHint": "Leave empty if you would rather discuss it.",
-    "photosOptionalLf": "Photos (optional)",
     "createLookingFor": "Post Looking For",
     "lfBadge": "LF",
     "wantTooLong": "Too long together with the archetype name. Keep the total to 120 characters or fewer.",
@@ -1017,8 +1020,8 @@
       "desc": "See every card a Yu-Gi-Oh! effect can search, Special Summon, or send to the GY. Explore what this card's effect can fetch on One for One."
     },
     "built-with": {
-      "title": "Built with & partners | One for One",
-      "desc": "The services that power One for One, and the marketplaces where collectors buy and sell Yu-Gi-Oh! cards."
+      "title": "Support One for One — free, no trading fees",
+      "desc": "One for One takes no cut of a trade. Two ways to help keep it that way: a one-off tip, or shopping through our marketplace links at no extra cost."
     },
     "community": {
       "title": "Stores & Communities",
@@ -1252,23 +1255,26 @@
   },
   "builtWith": {
     "back": "Back",
-    "heading": "Built with & partners",
-    "intro": "One for One is built and run with these services, and partners with the marketplaces where collectors buy and sell.",
-    "disclosure": "Some links below are referral links. If you sign up or shop through them, you support One for One at no extra cost to you.",
-    "groups": {
-      "marketplace": "Where to buy",
-      "stack": "Built with"
+    "heading": "One for One takes no cut",
+    "intro": "No fee on a trade, nothing to pay to list, no subscription. Running it still costs money, and there are two ways you can help with that.",
+    "ways": {
+      "coffee": {
+        "eyebrow": "Costs you a coffee",
+        "title": "Buy me a coffee",
+        "body": "A one-off tip through Ko-fi, no account needed. It goes on hosting and the domain.",
+        "cta": "Support us on Ko-fi"
+      },
+      "shop": {
+        "eyebrow": "Costs you nothing",
+        "title": "Shop through these links",
+        "body": "These marketplaces pay us a small commission when you buy through the links below. You pay the same price either way."
+      }
     },
-    "visit": "Visit {name}",
+    "runsOn": "What it pays for",
     "tools": {
       "tcgplayer": "Buy and sell single cards from thousands of trusted sellers.",
       "ebay": "Sealed product, singles, and collectibles from sellers worldwide.",
       "railway": "Cloud hosting that runs our Discord bot around the clock."
-    },
-    "support": {
-      "title": "Support One for One",
-      "body": "One for One is free and takes no trading fees. If you'd like to help cover hosting and keep it running, you can buy me a coffee.",
-      "cta": "Support us on Ko-fi"
     }
   },
   "wantList": {

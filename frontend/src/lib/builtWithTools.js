@@ -4,7 +4,9 @@
 //
 // Logos are inline brand SVG paths (Railway, eBay from Simple Icons, CC0). Tools
 // not in an icon set use `wordmark: true` and render their name as styled text.
-// `group` maps to a heading key under i18n `builtWith.groups.*`.
+// `group` sorts a tool into one of the support page's two sections:
+// "marketplace" is a link you can shop through, "stack" is something the
+// money pays for.
 
 export const BUILT_WITH_TOOLS = [
   {

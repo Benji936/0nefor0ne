@@ -378,6 +378,7 @@
     "currency": "Devise",
     "images": "Photos",
     "addImages": "Ajouter photos",
+    "coverPhoto": "Couverture",
     "maxImages": "Jusqu'à {max} photos",
     "create": "Publier l'annonce",
     "edit": "Modifier",
@@ -402,6 +403,9 @@
     "cardNotFound": "Aucune carte trouvée.",
     "cardSearchFailed": "Recherche échouée. Réessayez.",
     "cardLinkFailed": "Impossible de lier la carte.",
+    "cardOptional": "Carte (facultatif)",
+    "cardAddsToPile": "Publier ajoute aussi la carte à votre pile d'échange.",
+    "removeCard": "Retirer la carte",
     "kindSell": "Je vends",
     "kindLookingFor": "Je recherche",
     "kindHint": "Vous vendez une carte, ou vous en cherchez une ?",
@@ -416,7 +420,6 @@
     "budget": "Budget",
     "budgetOptional": "Budget (facultatif)",
     "budgetHint": "Laissez vide si vous préférez en discuter.",
-    "photosOptionalLf": "Photos (facultatif)",
     "createLookingFor": "Publier ma recherche",
     "lfBadge": "LF",
     "wantTooLong": "Trop long une fois combiné au nom de l'archétype. Restez sous 120 caractères au total.",
@@ -1017,8 +1020,8 @@
       "desc": "Découvrez toutes les cartes qu'un effet Yu-Gi-Oh! peut rechercher, Invoquer Spécialement ou envoyer au Cimetière. Explorez ce que l'effet de cette carte peut récupérer sur One for One."
     },
     "built-with": {
-      "title": "Conçu avec & partenaires | One for One",
-      "desc": "Les services qui font tourner One for One, et les marketplaces où les collectionneurs achètent et vendent des cartes Yu-Gi-Oh!."
+      "title": "Soutenir One for One — gratuit, sans frais d'échange",
+      "desc": "One for One ne prend aucune commission sur un échange. Deux façons d'aider : un don ponctuel, ou vos achats via nos liens partenaires, sans frais supplémentaires."
     },
     "community": {
       "title": "Boutiques & communautés",
@@ -1252,23 +1255,26 @@
   },
   "builtWith": {
     "back": "Retour",
-    "heading": "Conçu avec & partenaires",
-    "intro": "One for One est développé et hébergé grâce à ces services, et s'associe aux marketplaces où les collectionneurs achètent et vendent.",
-    "disclosure": "Certains liens ci-dessous sont des liens de parrainage. Si vous vous inscrivez ou achetez via ces liens, vous soutenez One for One sans frais supplémentaires.",
-    "groups": {
-      "marketplace": "Où acheter",
-      "stack": "Conçu avec"
+    "heading": "One for One ne prend aucune commission",
+    "intro": "Aucun frais sur un échange, rien à payer pour publier, pas d'abonnement. Le faire tourner coûte quand même de l'argent — vous pouvez aider de deux façons.",
+    "ways": {
+      "coffee": {
+        "eyebrow": "Vous coûte un café",
+        "title": "Offrez-moi un café",
+        "body": "Un don ponctuel via Ko-fi, sans créer de compte. Cela paie l'hébergement et le domaine.",
+        "cta": "Soutenez-nous sur Ko-fi"
+      },
+      "shop": {
+        "eyebrow": "Ne vous coûte rien",
+        "title": "Achetez via ces liens",
+        "body": "Ces boutiques nous versent une petite commission quand vous achetez via les liens ci-dessous. Le prix reste le même pour vous."
+      }
     },
-    "visit": "Visiter {name}",
+    "runsOn": "Ce que cela paie",
     "tools": {
       "tcgplayer": "Achetez et vendez des cartes à l'unité auprès de milliers de vendeurs de confiance.",
       "ebay": "Produits scellés, cartes à l'unité et objets de collection du monde entier.",
       "railway": "Hébergement cloud qui fait tourner notre bot Discord en continu."
-    },
-    "support": {
-      "title": "Soutenez One for One",
-      "body": "One for One est gratuit et sans frais d'échange. Si vous souhaitez aider à couvrir l'hébergement et à faire vivre le projet, vous pouvez m'offrir un café.",
-      "cta": "Nous soutenir sur Ko-fi"
     }
   },
   "wantList": {
