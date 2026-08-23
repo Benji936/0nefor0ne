@@ -11,6 +11,10 @@
 // with no rarity at all. So the printings come from YGOPRODeck and the prices
 // are matched onto them by set code, which the nightly import resolved once for
 // all 86,507 products. See scripts/cardmarket-import.mjs.
+//
+// `low` is deliberately not read here, matching card_prices: on a product with
+// no trend and no rolling average it is one speculative listing rather than a
+// market, and 10% of the catalogue is in exactly that state.
 import { getClient } from "@/lib/supabaseClient";
 import { readPrice } from "@/lib/cardmarketPrice";
 
@@ -59,10 +63,15 @@ export function mergePrintings(cardSets, products) {
     );
     const use = exact.length === 1 ? exact : candidates;
 
+    // Null-check before Number(), not after: `null ?? null ?? null` is null and
+    // Number(null) is 0, so the obvious spelling of this turned a product with
+    // no sales history into a printing worth nothing.
     const values = use
       .map((p) => p.cardmarket_price)
       .filter(Boolean)
-      .map((v) => Number(v.trend ?? v.avg7 ?? v.avg30 ?? v.low))
+      .map((v) => v.trend ?? v.avg7 ?? v.avg30)
+      .filter((v) => v !== null && v !== undefined && v !== "")
+      .map(Number)
       .filter((n) => Number.isFinite(n));
 
     out.push({
@@ -115,7 +124,7 @@ export async function fetchPrintings(cardName) {
 
   const { data, error } = await getClient()
     .from("cardmarket_product")
-    .select("id_product, set_code, rarity, cardmarket_price(trend, low, avg7, avg30)")
+    .select("id_product, set_code, rarity, cardmarket_price(trend, avg7, avg30)")
     .ilike("name", cardName);
 
   if (error) {

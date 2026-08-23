@@ -5,7 +5,12 @@ import { EXACT, NARROWED } from "./cardmarketPrice.js";
 const ygo = (set_code, set_rarity, set_name = "Set") => ({ set_code, set_rarity, set_name });
 const prod = (set_code, rarity, trend) => ({
   id_product: Math.random(), set_code, rarity,
-  cardmarket_price: trend === null ? null : { trend, low: null, avg7: null, avg30: null },
+  cardmarket_price: trend === null ? null : { trend, avg7: null, avg30: null },
+});
+/** A product with a listing but no sales history at all. */
+const onlyListed = (set_code, low) => ({
+  id_product: Math.random(), set_code, rarity: null,
+  cardmarket_price: { trend: null, avg7: null, avg30: null, low },
 });
 
 describe("setCodeOf takes the set out of a print code", () => {
@@ -94,6 +99,23 @@ describe("mergePrintings prices the printings the app can name", () => {
   it("ignores a product row whose price is missing", () => {
     const out = mergePrintings([ygo("POTE-EN012", "Common")], [prod("POTE", "Common", null)]);
     expect(out[0].price).toBeNull();
+  });
+
+  it("refuses to price a product that has only a listing", () => {
+    // 10% of the catalogue has no trend and no average -- one person asking a
+    // number rather than a market. A Dark Magical Curtain printing in that
+    // state carried a lone 18,995 EUR listing and set a whole collection's
+    // ceiling to 76,298 EUR before this was pinned down.
+    const out = mergePrintings([ygo("MAMO-EN003", "Ultra Rare")], [onlyListed("MAMO", 18995)]);
+    expect(out[0].price).toBeNull();
+  });
+
+  it("still prices a set where one product has sales and another only a listing", () => {
+    const out = mergePrintings(
+      [ygo("MAMO-EN003", "Ultra Rare")],
+      [prod("MAMO", null, 3.39), onlyListed("MAMO", 18995)],
+    );
+    expect(out[0].price).toMatchObject({ kind: EXACT, value: 3.39 });
   });
 
   it("matches set codes case-insensitively", () => {
