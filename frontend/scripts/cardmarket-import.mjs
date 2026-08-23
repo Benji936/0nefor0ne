@@ -151,10 +151,22 @@ export function buildExpansionMap(products, nonSingles, ygoCards, overrides) {
   // an expansion through something you can buy out of it, so every name arrives
   // as "Dark Revelation 1 Booster" or "Zombie World Structure Deck", and asking
   // the file to spell that out would make it a list of packaging.
+  //
+  // An override is authoritative, which means taking the set code off whichever
+  // expansion the card-list match gave it to. Without that step the file could
+  // only ever add a second claimant, and two expansions holding one set code is
+  // the ambiguity the 1:1 rule exists to prevent -- the override would appear to
+  // work while the wrong printing still answered half the lookups.
   const usedOverride = new Set();
   for (const [id, name] of expName) {
     const key = name.replace(CATEGORY_WORD, "");
-    if (overrides[key]) { map.set(id, overrides[key]); usedOverride.add(key); }
+    const code = overrides[key];
+    if (!code) continue;
+    for (const [otherId, otherCode] of map) {
+      if (otherCode === code && otherId !== id) map.delete(otherId);
+    }
+    map.set(id, code);
+    usedOverride.add(key);
   }
 
   // A key that matches nothing is a correction for a set Cardmarket has since
