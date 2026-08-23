@@ -777,7 +777,8 @@
     "anonymous": "Anonimo",
     "unknownLocation": "Posizione sconosciuta",
     "unknown": "Sconosciuto",
-    "noneYet": "Ancora nessuno"
+    "noneYet": "Ancora nessuno",
+    "save": "Salva"
   },
   "search": {
     "results": "Risultati",
@@ -927,50 +928,45 @@
     "error": "Impossibile leggere il file deck"
   },
   "deckDetail": {
-    "title": "Deck: {name}",
-    "backToDecks": "Back to Decks",
     "notFound": "Deck not found.",
-    "loading": "Loading deck…",
     "mainDeck": "Main Deck",
     "extraDeck": "Extra Deck",
     "sideDeck": "Side Deck",
-    "addMissingToWishlist": "Add missing to wishlist",
-    "allOwned": "You own all cards in this deck!",
-    "summary": "{total} cards · {owned} owned · {missing} missing",
-    "unrecognized": "{count} unrecognized",
-    "completionPct": "{pct}% completato",
-    "completionAria": "{owned} di {total} carte possedute, {pct}% completato",
-    "ownedSegment": "Posseduta",
-    "sourcedSegment": "Ottenuta",
-    "missingSegment": "Mancante",
-    "typeBreakdown": "Ripartizione per tipo",
-    "estimatedValue": "Valore stimato: {value}",
-    "estimatedApprox": "Approssimativo, basato sui prezzi più bassi elencati",
-    "priceUnavailable": "Prezzo non disponibile"
+    "allOwned": "Non manca nulla — questo deck è giocabile.",
+    "wishlistMissing": "Aggiungi le {n} mancanti alla wishlist",
+    "costToFinish": "circa {value} per finire",
+    "deckValue": "valore del deck {value}"
   },
   "decks": {
-    "title": "I miei Deck",
-    "empty": "Nessun deck ancora. Importa un file .ydk per iniziare.",
-    "importButton": "Importa deck (.ydk)",
+    "title": "I miei deck",
+    "importButton": "Importa un .ydk",
     "confirmName": "Nome del deck",
     "confirmImport": "Salva deck",
-    "sortByMissing": "Ordina per mancanti",
-    "totalCards": "{total} carte",
-    "ownedCount": "{owned} possedute",
-    "missingCount": "{missing} mancanti",
-    "addMissing": "Aggiungi {count} carta mancante alla lista desideri | Aggiungi {count} carte mancanti alla lista desideri",
     "migratePartialFail": "Non è stato possibile salvare {errors} deck.",
-    "allOwned": "Possiedi tutte le carte di questo deck",
-    "openDeck": "Apri il deck",
     "rename": "Rinomina",
     "delete": "Elimina deck",
     "deleteConfirm": "Eliminare questo deck?",
-    "guestBanner": "I tuoi deck sono salvati nel browser. Accedi per salvarli in modo permanente.",
+    "guestBanner": "Salvati in questo browser. Accedi per conservarli.",
     "migratePrompt": "Hai {count} deck salvato/i nel browser. Salvarli nel tuo account?",
     "migrateSave": "Salva nell'account",
     "migrateDiscard": "Scarta",
     "manageLink": "Salva e gestisci tutti i deck →",
-    "unrecognizedCount": "{count} sconosciuta/e"
+    "summaryDecks": "nessun deck | 1 deck | {n} deck",
+    "summaryCards": "niente più da trovare | 1 carta da trovare | {n} carte da trovare",
+    "imported": "{name} salvato",
+    "migrated": "Deck salvati sul tuo account",
+    "orderLabel": "Ordine",
+    "orderMissing": "Più mancanti",
+    "orderNewest": "Più recenti",
+    "emptyTitle": "Ancora nessun deck",
+    "emptyBody": "Trascina un file .ydk in un punto qualsiasi di questa pagina — esportato da EDOPro, YGOPRODeck o Master Duel — e ogni carta verrà confrontata con quelle che possiedi già.",
+    "wishlistMissing": "Wishlist {n}",
+    "tallyOwned": "{n} possedute",
+    "tallySourced": "{n} trovate altrove",
+    "tallyMissing": "{n} mancanti",
+    "tallyUnknown": "{n} illeggibili",
+    "tallyAria": "{owned} carte su {total} possedute, {missing} ancora mancanti",
+    "dropNow": "Rilascialo in un punto qualsiasi della pagina"
   },
   "meta": {
     "tradeDetail": {
@@ -1049,10 +1045,8 @@
     }
   },
   "deckIgnore": {
-    "ignore": "Ignora",
-    "unignore": "Ripristina",
-    "skippedBadge": "OTTENUTO",
-    "ignoredCount": "{n} ignorata/e"
+    "markSourced": "Segna {name} come trovata altrove",
+    "countAgain": "Conta di nuovo {name} come mancante"
   },
   "cards": {
     "title": "Sfoglia carte",

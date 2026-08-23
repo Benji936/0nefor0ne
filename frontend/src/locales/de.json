@@ -777,7 +777,8 @@
     "anonymous": "Anonym",
     "unknownLocation": "Unbekannter Ort",
     "unknown": "Unbekannt",
-    "noneYet": "Noch keine"
+    "noneYet": "Noch keine",
+    "save": "Speichern"
   },
   "search": {
     "results": "Ergebnisse",
@@ -927,50 +928,45 @@
     "error": "Deck-Datei konnte nicht gelesen werden"
   },
   "deckDetail": {
-    "title": "Deck: {name}",
-    "backToDecks": "Back to Decks",
     "notFound": "Deck not found.",
-    "loading": "Loading deck…",
     "mainDeck": "Main Deck",
     "extraDeck": "Extra Deck",
     "sideDeck": "Side Deck",
-    "addMissingToWishlist": "Add missing to wishlist",
-    "allOwned": "You own all cards in this deck!",
-    "summary": "{total} cards · {owned} owned · {missing} missing",
-    "unrecognized": "{count} unrecognized",
-    "completionPct": "{pct}% abgeschlossen",
-    "completionAria": "{owned} von {total} Karten besessen, {pct}% abgeschlossen",
-    "ownedSegment": "Besessen",
-    "sourcedSegment": "Besorgt",
-    "missingSegment": "Fehlend",
-    "typeBreakdown": "Aufschlüsselung nach Typ",
-    "estimatedValue": "Geschätzter Wert: {value}",
-    "estimatedApprox": "Ungefähr, basierend auf den niedrigsten gelisteten Preisen",
-    "priceUnavailable": "Preis nicht verfügbar"
+    "allOwned": "Nichts fehlt — dieses Deck ist spielbar.",
+    "wishlistMissing": "Die {n} fehlenden auf die Wunschliste",
+    "costToFinish": "etwa {value} bis fertig",
+    "deckValue": "Deckwert {value}"
   },
   "decks": {
     "title": "Meine Decks",
-    "empty": "Noch keine Decks. Importiere eine .ydk-Datei, um zu beginnen.",
-    "importButton": "Deck importieren (.ydk)",
+    "importButton": ".ydk importieren",
     "confirmName": "Deck-Name",
     "confirmImport": "Deck speichern",
-    "sortByMissing": "Nach fehlenden sortieren",
-    "totalCards": "{total} Karten",
-    "ownedCount": "{owned} besessen",
-    "missingCount": "{missing} fehlend",
-    "addMissing": "{count} fehlende Karte zur Wunschliste hinzufügen | {count} fehlende Karten zur Wunschliste hinzufügen",
     "migratePartialFail": "{errors} Deck(s) konnten nicht gespeichert werden.",
-    "allOwned": "Du besitzt alle Karten in diesem Deck",
-    "openDeck": "Deck öffnen",
     "rename": "Umbenennen",
     "delete": "Deck löschen",
     "deleteConfirm": "Dieses Deck löschen?",
-    "guestBanner": "Deine Decks sind in deinem Browser gespeichert. Melde dich an, um sie dauerhaft zu speichern.",
+    "guestBanner": "In diesem Browser gespeichert. Melde dich an, um sie zu behalten.",
     "migratePrompt": "Du hast {count} Deck(s) in deinem Browser gespeichert. In deinem Konto speichern?",
     "migrateSave": "Im Konto speichern",
     "migrateDiscard": "Verwerfen",
     "manageLink": "Alle Decks speichern & verwalten →",
-    "unrecognizedCount": "{count} unbekannt"
+    "summaryDecks": "keine Decks | 1 Deck | {n} Decks",
+    "summaryCards": "nichts mehr zu finden | 1 Karte zu finden | {n} Karten zu finden",
+    "imported": "{name} gespeichert",
+    "migrated": "Decks im Konto gespeichert",
+    "orderLabel": "Reihenfolge",
+    "orderMissing": "Meiste fehlend",
+    "orderNewest": "Neueste",
+    "emptyTitle": "Noch keine Decks",
+    "emptyBody": "Zieh eine .ydk-Datei irgendwo auf diese Seite — aus EDOPro, YGOPRODeck oder Master Duel — und jede Karte darin wird mit deinen eigenen abgeglichen.",
+    "wishlistMissing": "Wunschliste {n}",
+    "tallyOwned": "{n} vorhanden",
+    "tallySourced": "{n} besorgt",
+    "tallyMissing": "{n} fehlen",
+    "tallyUnknown": "{n} unlesbar",
+    "tallyAria": "{owned} von {total} Karten vorhanden, {missing} fehlen noch",
+    "dropNow": "Lass sie irgendwo auf dieser Seite los"
   },
   "meta": {
     "tradeDetail": {
@@ -1049,10 +1045,8 @@
     }
   },
   "deckIgnore": {
-    "ignore": "Ignorieren",
-    "unignore": "Wiederherstellen",
-    "skippedBadge": "BESORGT",
-    "ignoredCount": "{n} ignoriert"
+    "markSourced": "{name} als anderweitig beschafft markieren",
+    "countAgain": "{name} wieder als fehlend zählen"
   },
   "cards": {
     "title": "Karten durchsuchen",

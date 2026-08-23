@@ -777,7 +777,8 @@
     "anonymous": "Anonymous",
     "unknownLocation": "Unknown location",
     "unknown": "Unknown",
-    "noneYet": "None yet"
+    "noneYet": "None yet",
+    "save": "Save"
   },
   "search": {
     "results": "Results",
@@ -927,50 +928,45 @@
     "error": "Failed to parse deck file"
   },
   "deckDetail": {
-    "title": "Deck: {name}",
-    "backToDecks": "Back to Decks",
     "notFound": "Deck not found.",
-    "loading": "Loading deck…",
     "mainDeck": "Main Deck",
     "extraDeck": "Extra Deck",
     "sideDeck": "Side Deck",
-    "addMissingToWishlist": "Add missing to wishlist",
-    "allOwned": "You own all cards in this deck!",
-    "summary": "{total} cards · {owned} owned · {missing} missing",
-    "unrecognized": "{count} unrecognized",
-    "completionPct": "{pct}% complete",
-    "completionAria": "{owned} of {total} cards owned, {pct}% complete",
-    "ownedSegment": "Owned",
-    "sourcedSegment": "Sourced",
-    "missingSegment": "Missing",
-    "typeBreakdown": "Type breakdown",
-    "estimatedValue": "Estimated value: {value}",
-    "estimatedApprox": "Approximate, based on lowest listed prices",
-    "priceUnavailable": "Price unavailable"
+    "allOwned": "Nothing missing — this deck is playable.",
+    "wishlistMissing": "Wishlist the {n} missing",
+    "costToFinish": "about {value} to finish",
+    "deckValue": "deck value {value}"
   },
   "decks": {
-    "title": "My Decks",
-    "empty": "No decks yet. Import a .ydk file to get started.",
-    "importButton": "Import Deck (.ydk)",
+    "title": "My decks",
+    "importButton": "Import a .ydk",
     "confirmName": "Deck name",
     "confirmImport": "Save deck",
-    "sortByMissing": "Sort by missing",
-    "totalCards": "{total} cards",
-    "ownedCount": "{owned} owned",
-    "missingCount": "{missing} missing",
-    "addMissing": "Add {count} missing card to wishlist | Add {count} missing cards to wishlist",
     "migratePartialFail": "{errors} deck(s) could not be saved.",
-    "allOwned": "You own all cards in this deck",
     "rename": "Rename",
     "delete": "Delete deck",
-    "openDeck": "Open deck",
     "deleteConfirm": "Delete this deck?",
-    "guestBanner": "Your decks are saved in your browser. Log in to save them permanently.",
+    "guestBanner": "Saved in this browser. Sign in to keep them.",
     "migratePrompt": "You have {count} deck(s) saved in your browser. Save them to your account?",
     "migrateSave": "Save to account",
     "migrateDiscard": "Discard",
     "manageLink": "Save & manage all decks →",
-    "unrecognizedCount": "{count} unrecognized"
+    "summaryDecks": "no decks | 1 deck | {n} decks",
+    "summaryCards": "nothing left to find | 1 card to find | {n} cards to find",
+    "imported": "{name} saved",
+    "migrated": "Decks saved to your account",
+    "orderLabel": "Order",
+    "orderMissing": "Most missing",
+    "orderNewest": "Newest",
+    "emptyTitle": "No decks yet",
+    "emptyBody": "Drop a .ydk file anywhere on this page — exported from EDOPro, YGOPRODeck or Master Duel — and every card in it gets checked against the cards you already own.",
+    "wishlistMissing": "Wishlist {n}",
+    "tallyOwned": "{n} owned",
+    "tallySourced": "{n} sourced",
+    "tallyMissing": "{n} missing",
+    "tallyUnknown": "{n} unreadable",
+    "tallyAria": "{owned} of {total} cards owned, {missing} still missing",
+    "dropNow": "Drop it anywhere on this page"
   },
   "meta": {
     "tradeDetail": {
@@ -1049,10 +1045,8 @@
     }
   },
   "deckIgnore": {
-    "ignore": "Ignore",
-    "unignore": "Unignore",
-    "skippedBadge": "SOURCED",
-    "ignoredCount": "{n} ignored"
+    "markSourced": "Mark {name} as coming from elsewhere",
+    "countAgain": "Count {name} as missing again"
   },
   "cards": {
     "title": "Browse Cards",

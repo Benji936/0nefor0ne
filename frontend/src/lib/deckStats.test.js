@@ -4,6 +4,13 @@ import {
   computeCompletionPct,
   computeTypeBreakdown,
   computeEstimatedValue,
+  cardState,
+  deckTally,
+  completionRuns,
+  OWNED,
+  MISSING,
+  SOURCED,
+  UNKNOWN,
 } from './deckStats.js'
 
 // ---------------------------------------------------------------------------
@@ -170,5 +177,86 @@ describe('computeEstimatedValue', () => {
     const value = computeEstimatedValue([], cardMap)
     expect(value).toBe(0)
     expect(Number.isNaN(value)).toBe(false)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Card state, tally and the completion strip.
+// ---------------------------------------------------------------------------
+describe('cardState', () => {
+  const ctx = {
+    cardMap,
+    ownedIds: new Set([1, 10]),
+    ignoredIds: new Set([2, 999]),
+  }
+
+  it('reads an id the card database does not know as unknown, whatever else is set', () => {
+    // 999 is marked ignored, but an id we cannot resolve is not "sourced" — it
+    // is unreadable, and pretending otherwise would count it toward completion.
+    expect(cardState(999, ctx)).toBe(UNKNOWN)
+  })
+
+  it('lets owning beat being marked sourced', () => {
+    expect(cardState(1, { ...ctx, ignoredIds: new Set([1]) })).toBe(OWNED)
+  })
+
+  it('calls a recognized card you neither own nor sourced missing', () => {
+    expect(cardState(3, ctx)).toBe(MISSING)
+  })
+
+  it('reports sourced only for a recognized, unowned, ignored card', () => {
+    expect(cardState(2, ctx)).toBe(SOURCED)
+  })
+
+  it('survives being handed nothing', () => {
+    expect(cardState(1)).toBe(UNKNOWN)
+    expect(cardState(1, { cardMap })).toBe(MISSING)
+  })
+})
+
+describe('deckTally', () => {
+  const ctx = { cardMap, ownedIds: new Set([1]), ignoredIds: new Set([10]) }
+
+  // A deck needing three copies is missing three cards, not one card.
+  it('counts cards, not distinct ids', () => {
+    const entries = [{ id: 1, qty: 3 }, { id: 2, qty: 2 }, { id: 10, qty: 1 }, { id: 999, qty: 2 }]
+    expect(deckTally(entries, ctx)).toEqual({
+      total: 8, owned: 3, missing: 2, sourced: 1, unknown: 2,
+    })
+  })
+
+  it('has the four states sum to the total, always', () => {
+    const entries = [{ id: 1, qty: 3 }, { id: 2, qty: 2 }, { id: 10, qty: 1 }, { id: 999, qty: 2 }]
+    const t = deckTally(entries, ctx)
+    expect(t.owned + t.missing + t.sourced + t.unknown).toBe(t.total)
+  })
+
+  it('is all zeroes for an empty deck rather than NaN', () => {
+    expect(deckTally([], ctx)).toEqual({ total: 0, owned: 0, missing: 0, sourced: 0, unknown: 0 })
+    expect(deckTally(null, ctx).total).toBe(0)
+  })
+})
+
+describe('completionRuns', () => {
+  const ctx = { cardMap, ownedIds: new Set([1]), ignoredIds: new Set([10]) }
+
+  it('orders the strip settled-first, outstanding-last', () => {
+    const entries = [{ id: 2, qty: 2 }, { id: 999, qty: 1 }, { id: 1, qty: 3 }, { id: 10, qty: 1 }]
+    expect(completionRuns(entries, ctx)).toEqual([
+      { state: 'owned', count: 3 },
+      { state: 'sourced', count: 1 },
+      { state: 'missing', count: 2 },
+      { state: 'unknown', count: 1 },
+    ])
+  })
+
+  // A finished deck should read as one unbroken run, not four with three of
+  // them zero-width.
+  it('drops empty runs', () => {
+    expect(completionRuns([{ id: 1, qty: 40 }], ctx)).toEqual([{ state: 'owned', count: 40 }])
+  })
+
+  it('is an empty strip for an empty deck', () => {
+    expect(completionRuns([], ctx)).toEqual([])
   })
 })

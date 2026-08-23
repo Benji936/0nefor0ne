@@ -98,6 +98,44 @@ describe("no component hardcodes a label that belongs to a brand colour", () => 
   });
 });
 
+describe("a decklist holds no agreements, so the deck pages spend no teal", () => {
+  // The strictest form of the rule, and the one these pages had broken worst.
+  // The completion bar painted the cards you had sourced elsewhere teal and the
+  // ones you own pink; the type breakdown beside it spent all three semantic
+  // colours at once, on Monster, Spell and Trap — categories, not roles.
+  //
+  // A deck measured against your collection splits into exactly two of the
+  // system's meanings and neither of them is agreement: the cards you hold are
+  // cards you could offer (amethyst) and the cards you lack are cards you want
+  // (pink). Nothing here is two people lining up, so unlike the community pages
+  // there is no badge to make an exception for: the count must be zero.
+  const DECKS = [
+    "../components/Pages/App/DecksPage.vue",
+    "../components/Pages/App/DeckDetailPage.vue",
+    "../components/library/DeckTicks.vue",
+    "../components/library/DeckSection.vue",
+  ];
+
+  it.each(DECKS)("%s never reaches for the agreement colour", (rel) => {
+    const found = [...read(rel).matchAll(/--c-mutual|#2DD4BF|#076B82/gi)].map((m) => m[0]);
+    expect(found, "teal marks agreement and a decklist has none").toEqual([]);
+  });
+
+  // The other half of the same fix: these pages were carrying raw green, raw
+  // red and a flat grey for the missing / sourced / unrecognized badges, none of
+  // which the palette has (DESIGN.md, The No-Gray Rule), plus white labels on
+  // brand-coloured chips (The Label Contrast Rule).
+  it.each(DECKS)("%s uses no raw green, grey or white label", (rel) => {
+    const stray = read(rel)
+      .split("\n")
+      .filter((line) => /rgba?\(\s*(34|100|0)\s*,|color:\s*white|:\s*#fff\b|#ffffff/i.test(line))
+      // The one allowed literal is the page-scoped danger role, which the design
+      // system has no token for; it is declared once and named --dk-danger.
+      .filter((line) => !/--dk-danger/.test(line));
+    expect(stray, "every colour on a deck page comes from a token").toEqual([]);
+  });
+});
+
 describe("a trader page spends teal only on the agreement itself", () => {
   // The one place in this pass where teal is right, and the rule that says
   // when. A trader page draws a table with two arms: their cards you want

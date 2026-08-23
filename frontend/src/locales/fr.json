@@ -777,7 +777,8 @@
     "anonymous": "Anonyme",
     "unknownLocation": "Lieu inconnu",
     "unknown": "Inconnu",
-    "noneYet": "Aucun pour l'instant"
+    "noneYet": "Aucun pour l'instant",
+    "save": "Enregistrer"
   },
   "search": {
     "results": "Résultats",
@@ -927,50 +928,45 @@
     "error": "Impossible de lire le fichier deck"
   },
   "deckDetail": {
-    "title": "Deck: {name}",
-    "backToDecks": "Back to Decks",
     "notFound": "Deck not found.",
-    "loading": "Loading deck…",
     "mainDeck": "Main Deck",
     "extraDeck": "Extra Deck",
     "sideDeck": "Side Deck",
-    "addMissingToWishlist": "Add missing to wishlist",
-    "allOwned": "You own all cards in this deck!",
-    "summary": "{total} cards · {owned} owned · {missing} missing",
-    "unrecognized": "{count} unrecognized",
-    "completionPct": "{pct} % terminé",
-    "completionAria": "{owned} sur {total} cartes possédées, {pct} % terminé",
-    "ownedSegment": "Possédée",
-    "sourcedSegment": "Obtenue",
-    "missingSegment": "Manquante",
-    "typeBreakdown": "Répartition par type",
-    "estimatedValue": "Valeur estimée : {value}",
-    "estimatedApprox": "Approximatif, basé sur les prix les plus bas",
-    "priceUnavailable": "Prix indisponible"
+    "allOwned": "Rien ne manque — ce deck est jouable.",
+    "wishlistMissing": "Ajouter les {n} manquantes à la wishlist",
+    "costToFinish": "environ {value} pour finir",
+    "deckValue": "valeur du deck {value}"
   },
   "decks": {
-    "title": "Mes Decks",
-    "empty": "Aucun deck pour l'instant. Importez un fichier .ydk pour commencer.",
-    "importButton": "Importer un deck (.ydk)",
+    "title": "Mes decks",
+    "importButton": "Importer un .ydk",
     "confirmName": "Nom du deck",
     "confirmImport": "Enregistrer le deck",
-    "sortByMissing": "Trier par manquantes",
-    "totalCards": "{total} cartes",
-    "ownedCount": "{owned} possédées",
-    "missingCount": "{missing} manquantes",
-    "addMissing": "Ajouter {count} carte manquante à la liste de souhaits | Ajouter {count} cartes manquantes à la liste de souhaits",
     "migratePartialFail": "{errors} deck(s) n'ont pas pu être sauvegardé(s).",
-    "allOwned": "Vous possédez toutes les cartes de ce deck",
-    "openDeck": "Ouvrir le deck",
     "rename": "Renommer",
     "delete": "Supprimer le deck",
     "deleteConfirm": "Supprimer ce deck ?",
-    "guestBanner": "Vos decks sont sauvegardés dans votre navigateur. Connectez-vous pour les sauvegarder définitivement.",
+    "guestBanner": "Enregistrés dans ce navigateur. Connecte-toi pour les garder.",
     "migratePrompt": "Vous avez {count} deck(s) sauvegardé(s) dans votre navigateur. Les enregistrer sur votre compte ?",
     "migrateSave": "Enregistrer sur le compte",
     "migrateDiscard": "Ignorer",
     "manageLink": "Enregistrer et gérer tous les decks →",
-    "unrecognizedCount": "{count} inconnue(s)"
+    "summaryDecks": "aucun deck | 1 deck | {n} decks",
+    "summaryCards": "plus rien à trouver | 1 carte à trouver | {n} cartes à trouver",
+    "imported": "{name} enregistré",
+    "migrated": "Decks enregistrés sur ton compte",
+    "orderLabel": "Ordre",
+    "orderMissing": "Plus de manquantes",
+    "orderNewest": "Plus récents",
+    "emptyTitle": "Aucun deck pour l'instant",
+    "emptyBody": "Dépose un fichier .ydk n'importe où sur cette page — exporté d'EDOPro, YGOPRODeck ou Master Duel — et chaque carte sera comparée à celles que tu possèdes déjà.",
+    "wishlistMissing": "Wishlist {n}",
+    "tallyOwned": "{n} possédées",
+    "tallySourced": "{n} trouvées ailleurs",
+    "tallyMissing": "{n} manquantes",
+    "tallyUnknown": "{n} illisibles",
+    "tallyAria": "{owned} cartes sur {total} possédées, {missing} encore manquantes",
+    "dropNow": "Lâche-le n'importe où sur cette page"
   },
   "meta": {
     "tradeDetail": {
@@ -1049,10 +1045,8 @@
     }
   },
   "deckIgnore": {
-    "ignore": "Ignorer",
-    "unignore": "Rétablir",
-    "skippedBadge": "OBTENU",
-    "ignoredCount": "{n} ignorée(s)"
+    "markSourced": "Marquer {name} comme trouvée ailleurs",
+    "countAgain": "Recompter {name} comme manquante"
   },
   "cards": {
     "title": "Parcourir les cartes",
