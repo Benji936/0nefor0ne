@@ -349,7 +349,7 @@
   },
   "announces": {
     "noAnnouncesTitle": "Nessun annuncio ancora",
-    "noAnnouncesDesc": "Sii il primo a pubblicare un annuncio!",
+    "noAnnouncesDesc": "Pubblica una carta che scambi, o una che stai cercando. Gli annunci restano {days} giorni.",
     "newAnnounce": "Nuovo annuncio",
     "search": "Cerca annunci...",
     "filterAll": "Tutti",
@@ -361,11 +361,12 @@
     "unknownSeller": "Venditore sconosciuto",
     "yourAnnounce": "Il tuo annuncio",
     "yourAnnounceHint": "Solo tu puoi eliminare o segnare come venduto",
-    "allAnnounces": "Tutti gli annunci",
+    "onTheBoard": "In bacheca",
     "noSearchResults": "Nessun annuncio corrisponde alla tua ricerca.",
     "onlyYours": "Nessun altro annuncio ancora, il tuo è il primo!",
     "noLookingForTitle": "Nessuna ricerca al momento",
     "noLookingForDesc": "Pubblica cosa stai cercando e lascia che siano i venditori a contattarti.",
+    "noSellingTitle": "Niente in vendita al momento",
     "newLookingFor": "Nuova ricerca"
   },
   "announce": {

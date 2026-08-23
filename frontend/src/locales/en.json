@@ -349,7 +349,7 @@
   },
   "announces": {
     "noAnnouncesTitle": "No announces yet",
-    "noAnnouncesDesc": "Be the first to post a listing!",
+    "noAnnouncesDesc": "Post a card you're trading, or one you're hunting. Announces stay up for {days} days.",
     "newAnnounce": "New Announce",
     "search": "Search announces...",
     "filterAll": "All",
@@ -361,11 +361,12 @@
     "unknownSeller": "Unknown seller",
     "yourAnnounce": "Your listing",
     "yourAnnounceHint": "Only you can see the delete & mark as sold options",
-    "allAnnounces": "All announces",
+    "onTheBoard": "On the board",
     "noSearchResults": "No announces match your search.",
     "onlyYours": "No other announces yet, yours is the first!",
     "noLookingForTitle": "No Looking For posts yet",
     "noLookingForDesc": "Post what you are hunting for and let sellers come to you.",
+    "noSellingTitle": "Nothing for sale right now",
     "newLookingFor": "New Looking For"
   },
   "announce": {

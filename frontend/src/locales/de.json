@@ -349,7 +349,7 @@
   },
   "announces": {
     "noAnnouncesTitle": "Noch keine Anzeigen",
-    "noAnnouncesDesc": "Erstelle als Erster eine Anzeige!",
+    "noAnnouncesDesc": "Stell eine Karte ein, die du abgibst, oder eine, die du suchst. Anzeigen bleiben {days} Tage stehen.",
     "newAnnounce": "Neue Anzeige",
     "search": "Anzeigen suchen...",
     "filterAll": "Alle",
@@ -361,11 +361,12 @@
     "unknownSeller": "Unbekannter Verkäufer",
     "yourAnnounce": "Ihre Anzeige",
     "yourAnnounceHint": "Nur Sie können löschen oder als verkauft markieren",
-    "allAnnounces": "Alle Anzeigen",
+    "onTheBoard": "Am schwarzen Brett",
     "noSearchResults": "Keine Anzeigen entsprechen Ihrer Suche.",
     "onlyYours": "Noch keine anderen Anzeigen, Ihre ist die erste!",
     "noLookingForTitle": "Noch keine Gesuche",
     "noLookingForDesc": "Sag, was du suchst, und lass die Verkäufer zu dir kommen.",
+    "noSellingTitle": "Gerade nichts zu verkaufen",
     "newLookingFor": "Neues Gesuch"
   },
   "announce": {

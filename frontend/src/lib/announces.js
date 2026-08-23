@@ -112,6 +112,33 @@ export async function fetchAnnouncesBySeller(sellerId, { limit = 6 } = {}) {
 }
 
 /**
+ * How many live listings a community has posted.
+ *
+ * The profile page used to carry a "View listings" link that went to the whole
+ * Trade Center, unfiltered, on every one of the 4,451 profiles — a link that
+ * promised this shop's listings and delivered the global feed. Counting first
+ * means the link appears only where there is something behind it, and can say
+ * how much.
+ *
+ * head:true, so this costs a count and no rows. Returns 0 rather than throwing:
+ * a failed count must not take down a page whose job is the address.
+ */
+export async function countCommunityAnnounces(communityId) {
+  if (!communityId) return 0;
+  const { count, error } = await getClient()
+    .from("announce")
+    .select("id", { count: "exact", head: true })
+    .eq("community", communityId)
+    .eq("status", "active")
+    .gt("expires_at", new Date().toISOString());
+  if (error) {
+    console.error("countCommunityAnnounces failed", error);
+    return 0;
+  }
+  return count ?? 0;
+}
+
+/**
  * Fetch announces for the current user (all statuses).
  * @returns {Promise<Array>}
  */

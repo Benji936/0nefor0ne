@@ -349,7 +349,7 @@
   },
   "announces": {
     "noAnnouncesTitle": "Aucune annonce",
-    "noAnnouncesDesc": "Soyez le premier à publier une annonce !",
+    "noAnnouncesDesc": "Publiez une carte que vous échangez, ou une que vous cherchez. Les annonces restent {days} jours.",
     "newAnnounce": "Nouvelle annonce",
     "search": "Rechercher des annonces...",
     "filterAll": "Tout",
@@ -361,11 +361,12 @@
     "unknownSeller": "Vendeur inconnu",
     "yourAnnounce": "Votre annonce",
     "yourAnnounceHint": "Vous seul pouvez supprimer ou marquer comme vendu",
-    "allAnnounces": "Toutes les annonces",
+    "onTheBoard": "Sur le tableau",
     "noSearchResults": "Aucune annonce ne correspond à votre recherche.",
     "onlyYours": "Pas encore d’autres annonces, la vôtre est la première !",
     "noLookingForTitle": "Aucune recherche pour l'instant",
     "noLookingForDesc": "Publiez ce que vous cherchez et laissez les vendeurs venir à vous.",
+    "noSellingTitle": "Rien en vente pour l'instant",
     "newLookingFor": "Nouvelle recherche"
   },
   "announce": {
