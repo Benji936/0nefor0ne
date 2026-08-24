@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
-  idProductFromImage, parseAlt, readRow, readExpansionPage, slugKey,
+  idProductFromImage, isPlaceholderImage, parseAlt, readRow,
+  readExpansionPage, slugKey,
 } from "./cardmarket-expansion-page.mjs";
 
 const IMG = (id, set = "MZMU") =>
@@ -99,6 +100,24 @@ describe("readRow reads both attributes and refuses on disagreement", () => {
       .toMatchObject({ ok: false });
   });
 
+  it("keeps a no-artwork row, with its identity and no id", () => {
+    // Real CORI row: Cardmarket has no picture for this product, so every
+    // un-illustrated product on the page shares one image. The alt is still
+    // correct, and dropping the row hides a product that exists.
+    const out = readRow({
+      imageUrl: "//static.cardmarket.com/img/3660af732e89ee7bfadc4b521fe525c1/cardImage",
+      alt: "Celtic Mystic (V.2 - Starlight Rare)",
+    });
+    expect(out).toMatchObject({
+      ok: true, placeholder: true, idProduct: null,
+      cardName: "Celtic Mystic", versionNo: 2, rarity: "Starlight Rare",
+    });
+  });
+
+  it("marks a pictured row as not a placeholder", () => {
+    expect(readRow(good).placeholder).toBe(false);
+  });
+
   it("marks a single-version product as single", () => {
     expect(readRow({ imageUrl: IMG(873245), alt: "Santa Claws" }))
       .toMatchObject({ ok: true, single: true, versionNo: null, rarity: null });
@@ -106,19 +125,35 @@ describe("readRow reads both attributes and refuses on disagreement", () => {
 });
 
 describe("readExpansionPage keeps the failures visible", () => {
-  it("separates products from skipped rows", () => {
-    const { products, skipped } = readExpansionPage([
+  it("separates products from placeholders from skipped rows", () => {
+    const { products, placeholders, skipped } = readExpansionPage([
       { imageUrl: IMG(873125), alt: "Pumpking the King of Grave Ghosts (V.1 - Secret Rare)" },
       { imageUrl: "/img/logo.svg", alt: "not a product" },
       { imageUrl: IMG(873245), alt: "Santa Claws" },
+      { imageUrl: "//static.cardmarket.com/img/3660af732e89ee7bfadc4b521fe525c1/cardImage",
+        alt: "Celtic Mystic (V.2 - Starlight Rare)" },
     ]);
     expect(products.map(p => p.idProduct)).toEqual([873125, 873245]);
+    expect(placeholders.map(p => p.cardName)).toEqual(["Celtic Mystic"]);
     expect(skipped).toHaveLength(1);
   });
 
   it("survives empty input", () => {
-    expect(readExpansionPage([])).toEqual({ products: [], skipped: [] });
-    expect(readExpansionPage(null)).toEqual({ products: [], skipped: [] });
+    expect(readExpansionPage([])).toEqual({ products: [], placeholders: [], skipped: [] });
+    expect(readExpansionPage(null)).toEqual({ products: [], placeholders: [], skipped: [] });
+  });
+});
+
+describe("isPlaceholderImage tells no-artwork apart from broken markup", () => {
+  it("recognises the shared no-artwork image", () => {
+    expect(isPlaceholderImage("//static.cardmarket.com/img/3660af732e89ee7bfadc4b521fe525c1/cardImage")).toBe(true);
+  });
+
+  it("does not treat an unexpected image as a placeholder", () => {
+    // A markup change must stay a refusal, not become a silently kept row.
+    for (const u of ["/img/logo.svg", "/img/transparent.gif", "", null, IMG(1)]) {
+      expect(isPlaceholderImage(u)).toBe(false);
+    }
   });
 });
 
