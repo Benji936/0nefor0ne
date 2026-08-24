@@ -142,13 +142,27 @@ export function parseIdentity({ h1Text, rarityLabel = null, title = null } = {})
  * expansion have to line up with the catalogue row before an identity is
  * written against it.
  */
-export function validatePage({ parsed, expectedName, expectedSetCode, finalUrl, pageText = "" }) {
+export function validatePage({
+  parsed, expectedName, finalUrl, pageText = "",
+  expansionName = null, expectedExpansionName = null,
+} = {}) {
   if (!parsed?.ok) return { ok: false, reason: parsed?.reason ?? "unparsed" };
 
   if (nameKey(parsed.cardName) !== nameKey(expectedName)) {
     return {
       ok: false,
       reason: `page card "${parsed.cardName}" is not "${expectedName}"`,
+    };
+  }
+
+  // Every product of one printing is in one expansion, by definition. If a
+  // redirect lands somewhere else this is what catches it -- the card name
+  // alone would not, because the same card exists in many sets.
+  if (expectedExpansionName && expansionName
+      && nameKey(expansionName) !== nameKey(expectedExpansionName)) {
+    return {
+      ok: false,
+      reason: `page expansion "${expansionName}" is not "${expectedExpansionName}"`,
     };
   }
 

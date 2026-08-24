@@ -110,6 +110,31 @@ describe("validatePage guards what gets written", () => {
     })).toEqual({ ok: true });
   });
 
+  it("refuses a page whose expansion is not the printing's", () => {
+    // The guard that catches a redirect landing on the right card in the wrong
+    // set -- which the name check alone cannot, since cards recur across sets.
+    expect(validatePage({
+      parsed: good, expectedName: "Card Trooper", finalUrl: url,
+      expansionName: "Maze of Muertos - Singles",
+      expectedExpansionName: "Battle Pack 2: War of the Giants - Singles",
+    }).ok).toBe(false);
+  });
+
+  it("passes when the expansion matches", () => {
+    expect(validatePage({
+      parsed: good, expectedName: "Card Trooper", finalUrl: url,
+      expansionName: "Battle Pack 2: War of the Giants - Singles",
+      expectedExpansionName: "Battle Pack 2: War of the Giants - Singles",
+    })).toEqual({ ok: true });
+  });
+
+  it("skips the expansion check when there is nothing to compare against", () => {
+    expect(validatePage({
+      parsed: good, expectedName: "Card Trooper", finalUrl: url,
+      expansionName: "Battle Pack 2: War of the Giants - Singles",
+    })).toEqual({ ok: true });
+  });
+
   it("refuses a challenge page even if something parsed", () => {
     expect(validatePage({
       parsed: good, expectedName: "Card Trooper", finalUrl: url,
