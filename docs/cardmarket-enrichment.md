@@ -109,3 +109,60 @@ A printing is written whole or not at all. Half of one is worse than none: the
 price ladder treats a printing carrying rarities as authoritative, so a
 partially enriched group would let it answer confidently from an incomplete
 set.
+
+## Which evidence wins
+
+Four mechanisms can state an identity, and they are not equally good:
+
+| | source | what it means |
+|---|---|---|
+| 1 | `manual` | a person decided |
+| 2 | `cardmarket_page` | the product's own page stated it |
+| 3 | `cardmarket_expansion_page` | a listing row stated it |
+| 4 | `cardmarket_expansion_elimination` | nothing else it could have been |
+
+Ordered by how directly Cardmarket said the thing. Elimination is last not
+because it is unreliable -- it is deterministic -- but because it is
+*conditional*: it holds only if the printing was complete when read, so a
+product added later invalidates it while a directly-read row still stands.
+
+**A weaker source never overwrites a stronger one.** If it agrees, the stronger
+provenance is kept and the run log records the agreement. If it disagrees, the
+write is refused: two mechanisms contradicting each other is a fact to look at,
+not a race to settle.
+
+Enforced by a trigger, not by convention, because the convention had already
+failed. The daily import upserts `rarity` and `rarity_source` for all 86,507
+products, resolving to null for ambiguous printings -- so the next import would
+have erased every rarity the enrichment established, silently, with the ladder
+falling quietly back to bands. A rule kept in the scripts protects only the
+scripts that remember it.
+
+Correcting provenance that was recorded wrong is not a downgrade, and the
+trigger cannot tell them apart from values alone, so a correction says so:
+
+```sql
+SET LOCAL cardmarket.allow_provenance_correction = 'on';
+```
+
+## Expansions that do not behave
+
+`cardmarket_expansion_route.enrichment_status` is `normal`, `listing_anomaly`,
+or `manual_review`. Anything but `normal` is excluded from automatic
+enrichment, and a single printing inside it may still be written when
+positively proven complete.
+
+The flag lives on the expansion rather than in the extractor on purpose. RA05
+renders far fewer listing rows than it holds products and its search filter
+under-returns unpredictably; a special case in the parser would encode today's
+symptom of a mechanism nobody has explained, while a flag says only "this one
+does not behave" and leaves the parser honest.
+
+## Run log
+
+`cardmarket_enrichment_run` records what each run did: rows read, identities by
+mechanism, what it left to a stronger source, conflicts, product-page
+fallbacks, and whether it swept the expansion or targeted one printing.
+Identities say what we concluded; this says how, which is the part that goes
+stale. `cardmarket_enrichment_metrics` aggregates it, keeping full-sweep and
+targeted figures in separate columns so neither flatters the other.

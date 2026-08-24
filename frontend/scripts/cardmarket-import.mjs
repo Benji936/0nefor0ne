@@ -237,6 +237,38 @@ export function buildSetRarities(cards) {
   return seen;
 }
 
+/**
+ * One catalogue product as a row of ours.
+ *
+ * Pure, and exported so the mapping can be tested without a network or a
+ * database -- it is the only place the file's field names meet our column
+ * names, which is exactly where a field quietly stops being carried. Both of
+ * the ones we lost were lost here.
+ *
+ * `date_added` and `category_name` are copied, never derived. `?? null` is
+ * there so a field the catalogue omits arrives as an explicit null rather than
+ * `undefined`: PostgREST drops undefined keys from an upsert, which leaves a
+ * stale value in place and looks like success.
+ */
+export function buildProductRow(p, expansions, resolved) {
+  const r = resolved.get(p.idProduct) ?? { rarity: null, source: null };
+  return {
+    id_product:    p.idProduct,
+    name:          p.name,
+    id_expansion:  p.idExpansion,
+    id_metacard:   p.idMetacard ?? null,
+    set_code:      expansions.get(p.idExpansion) ?? null,
+    rarity:        r.rarity,
+    rarity_source: r.source,
+    date_added:    p.dateAdded ?? null,
+    category_name: p.categoryName ?? null,
+  };
+}
+
+export function buildProductRows(products, expansions, resolved) {
+  return products.map((p) => buildProductRow(p, expansions, resolved));
+}
+
 async function main() {
   if (!DRY && !SERVICE_KEY) {
     console.error("Set SUPABASE_SERVICE_ROLE_KEY, or pass --dry-run to resolve without writing.");
@@ -283,22 +315,13 @@ async function main() {
   // the catalogue carries no field that could. See cardmarket-rarity.mjs.
   const resolved = resolvePrintings(products, expansions, rarities);
 
-  const productRows = products.map((p) => {
-    const r = resolved.get(p.idProduct) ?? { rarity: null, source: null };
-    return {
-      id_product:    p.idProduct,
-      name:          p.name,
-      id_expansion:  p.idExpansion,
-      id_metacard:   p.idMetacard ?? null,
-      set_code:      expansions.get(p.idExpansion) ?? null,
-      rarity:        r.rarity,
-      rarity_source: r.source,
-    };
-  });
+  const productRows = buildProductRows(products, expansions, resolved);
 
   const withSet     = productRows.filter((r) => r.set_code).length;
   const withRarity  = productRows.filter((r) => r.rarity).length;
   const withMeta    = productRows.filter((r) => r.id_metacard).length;
+  const withAdded   = productRows.filter((r) => r.date_added).length;
+  const withCat     = productRows.filter((r) => r.category_name).length;
 
   // How many printings resolve to exactly one product, which is the only way a
   // single figure is reached without asking the owner. Keyed on the printing
@@ -317,6 +340,8 @@ async function main() {
   log(`  products with set   ${withSet.toLocaleString()} (${(withSet / productRows.length * 100).toFixed(1)}%)`);
   log(`  products w/ metacard ${withMeta.toLocaleString()} (${(withMeta / productRows.length * 100).toFixed(1)}%)`);
   log(`  products w/ rarity  ${withRarity.toLocaleString()} (${(withRarity / productRows.length * 100).toFixed(1)}%)`);
+  log(`  products w/ dateAdded ${withAdded.toLocaleString()} (${(withAdded / productRows.length * 100).toFixed(1)}%)`);
+  log(`  products w/ category  ${withCat.toLocaleString()} (${(withCat / productRows.length * 100).toFixed(1)}%)`);
   log(`  printings alone     ${alone.toLocaleString()} of ${perPrinting.size.toLocaleString()} (${(alone / perPrinting.size * 100).toFixed(1)}% resolve to one price)`);
   log(`  printings to pick   ${multi.toLocaleString()} carry several products and need their owner to choose`);
 

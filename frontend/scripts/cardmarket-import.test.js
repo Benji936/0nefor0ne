@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildExpansionMap, buildSetRarities } from "./cardmarket-import.mjs";
+import { buildExpansionMap, buildSetRarities, buildProductRow, buildProductRows } from "./cardmarket-import.mjs";
 
 // A YGOPRODeck card with one or more printings.
 const card = (name, ...printings) => ({
@@ -180,5 +180,77 @@ describe("buildSetRarities keeps the whole list, not a verdict", () => {
 
   it("survives a card with no printings at all", () => {
     expect(buildSetRarities([{ name: "Alpha" }]).size).toBe(0);
+  });
+});
+
+
+describe("buildProductRow carries the catalogue through unchanged", () => {
+  // Verbatim from products_singles_3.json, all seven fields as the file states
+  // them.
+  const PRODUCT = {
+    idProduct: 101788,
+    name: '""A"" Cell Breeding Device',
+    idCategory: 5,
+    categoryName: "Yugioh Single",
+    idExpansion: 1011,
+    idMetacard: 101779,
+    dateAdded: "2007-01-01 00:00:00",
+  };
+  const expansions = new Map([[1011, "DR1"]]);
+  const resolved = new Map([[101788, { rarity: "Common", source: "unique" }]]);
+
+  it("preserves dateAdded and categoryName", () => {
+    expect(buildProductRow(PRODUCT, expansions, resolved)).toMatchObject({
+      date_added: "2007-01-01 00:00:00",
+      category_name: "Yugioh Single",
+    });
+  });
+
+  it("leaves the identity keys exactly as they were", () => {
+    // The two new columns must not disturb what the pricing chain hangs off.
+    expect(buildProductRow(PRODUCT, expansions, resolved)).toMatchObject({
+      id_product: 101788,
+      id_metacard: 101779,
+      id_expansion: 1011,
+      set_code: "DR1",
+      rarity: "Common",
+      rarity_source: "unique",
+    });
+  });
+
+  it("writes an explicit null when the catalogue omits a field", () => {
+    // Not undefined: PostgREST drops undefined keys from an upsert, so a
+    // missing field would silently keep whatever was already stored.
+    const { dateAdded, categoryName, ...bare } = PRODUCT;
+    const row = buildProductRow(bare, expansions, resolved);
+    expect(row.date_added).toBeNull();
+    expect(row.category_name).toBeNull();
+    expect("date_added" in row).toBe(true);
+    expect("category_name" in row).toBe(true);
+  });
+
+  it("keeps a product with no metacard resolvable", () => {
+    const { idMetacard, ...noMeta } = PRODUCT;
+    expect(buildProductRow(noMeta, expansions, resolved).id_metacard).toBeNull();
+  });
+
+  it("is idempotent -- the same file twice gives the same rows", () => {
+    // The import upserts on id_product, so a re-run must not depend on what is
+    // already stored or on the order it saw things.
+    const once = buildProductRows([PRODUCT], expansions, resolved);
+    const twice = buildProductRows([PRODUCT], expansions, resolved);
+    expect(twice).toEqual(once);
+    expect(buildProductRows([PRODUCT], expansions, resolved)).toEqual(once);
+  });
+
+  it("does not carry idCategory, which we deliberately do not store", () => {
+    expect(buildProductRow(PRODUCT, expansions, resolved)).not.toHaveProperty("idCategory");
+  });
+
+  it("emits exactly the columns the table has", () => {
+    expect(Object.keys(buildProductRow(PRODUCT, expansions, resolved)).sort()).toEqual([
+      "category_name", "date_added", "id_expansion", "id_metacard",
+      "id_product", "name", "rarity", "rarity_source", "set_code",
+    ]);
   });
 });
