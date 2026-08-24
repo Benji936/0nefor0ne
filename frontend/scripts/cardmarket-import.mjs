@@ -34,6 +34,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
+import { resolvePrintings } from "./cardmarket-rarity.mjs";
 
 const DRY    = process.argv.includes("--dry-run");
 const REPORT = process.argv.includes("--report");
@@ -209,23 +210,28 @@ export function buildExpansionMap(products, nonSingles, ygoCards, overrides) {
 }
 
 /**
- * Build (card name, set code) -> rarity, keeping only the unambiguous ones.
+ * Build (card name, set code) -> every rarity YGOPRODeck lists for it.
  *
- * 11% of (card, set) pairs were printed at more than one rarity -- a set with
- * an Ultra and a Starlight of the same card. Cardmarket holds several products
- * for those and labels none of them, so there is no honest way to say which is
- * which. Those pairs are dropped, not guessed.
+ * This used to collapse to a single rarity and store null whenever a set
+ * printed a card at two, on the grounds that there was no honest way to say
+ * which product was which. That was true of what it knew at the time, and it
+ * made the column useless for exactly the cards that needed it: the value was a
+ * function of (name, set code), so every product sharing that key got the same
+ * answer and no tie could ever be broken by it.
+ *
+ * Keeping the whole list is what lets resolveVariants line the rarities up
+ * against the versions Cardmarket actually files. The collapsing still happens,
+ * but one level down and per product, where it can be right.
  */
-export function buildRarityMap(cards) {
+export function buildSetRarities(cards) {
   const seen = new Map();
   for (const card of cards) {
     for (const s of card.card_sets ?? []) {
       const code = String(s.set_code ?? "").split("-")[0];
       if (!code) continue;
       const key = `${card.name.toLowerCase()} ${code}`;
-      const prev = seen.get(key);
-      if (prev === undefined) seen.set(key, s.set_rarity);
-      else if (prev !== s.set_rarity) seen.set(key, null); // ambiguous, stays null
+      if (!seen.has(key)) seen.set(key, []);
+      seen.get(key).push(s.set_rarity);
     }
   }
   return seen;
@@ -270,32 +276,49 @@ async function main() {
 
   // -- Resolve --------------------------------------------------------------
   const { map: expansions, unmatched } = buildExpansionMap(products, nonSingles.products ?? [], ygoCards, overrides);
-  const rarities = buildRarityMap(ygoCards);
+  const rarities = buildSetRarities(ygoCards);
+
+  // A rarity for the printings where YGOPRODeck lists exactly one, and null
+  // everywhere else. Nothing here distinguishes one version from another --
+  // the catalogue carries no field that could. See cardmarket-rarity.mjs.
+  const resolved = resolvePrintings(products, expansions, rarities);
 
   const productRows = products.map((p) => {
-    const setCode = expansions.get(p.idExpansion) ?? null;
-    const rarity  = setCode ? rarities.get(`${p.name.toLowerCase()} ${setCode}`) ?? null : null;
-    return { id_product: p.idProduct, name: p.name, id_expansion: p.idExpansion, set_code: setCode, rarity };
+    const r = resolved.get(p.idProduct) ?? { rarity: null, source: null };
+    return {
+      id_product:    p.idProduct,
+      name:          p.name,
+      id_expansion:  p.idExpansion,
+      id_metacard:   p.idMetacard ?? null,
+      set_code:      expansions.get(p.idExpansion) ?? null,
+      rarity:        r.rarity,
+      rarity_source: r.source,
+    };
   });
 
-  const withSet    = productRows.filter((r) => r.set_code).length;
-  const withRarity = productRows.filter((r) => r.rarity).length;
+  const withSet     = productRows.filter((r) => r.set_code).length;
+  const withRarity  = productRows.filter((r) => r.rarity).length;
+  const withMeta    = productRows.filter((r) => r.id_metacard).length;
 
-  // How often a printing the app can name resolves to exactly one product,
-  // which is the only rung of the ladder that produces a single price.
+  // How many printings resolve to exactly one product, which is the only way a
+  // single figure is reached without asking the owner. Keyed on the printing
+  // itself -- (expansion, metacard) -- rather than on the name, because that is
+  // what the pricing function now treats as one printing.
   const perPrinting = new Map();
-  for (const r of productRows) {
-    if (!r.set_code) continue;
-    const k = `${r.set_code} ${r.name.toLowerCase()}`;
+  for (const p of products) {
+    const k = `${p.idExpansion}:${p.idMetacard}`;
     perPrinting.set(k, (perPrinting.get(k) ?? 0) + 1);
   }
   const alone = [...perPrinting.values()].filter((n) => n === 1).length;
+  const multi = perPrinting.size - alone;
 
   log(`\nResolved:`);
   log(`  expansions placed   ${expansions.size} of ${expansions.size + unmatched.length}`);
   log(`  products with set   ${withSet.toLocaleString()} (${(withSet / productRows.length * 100).toFixed(1)}%)`);
+  log(`  products w/ metacard ${withMeta.toLocaleString()} (${(withMeta / productRows.length * 100).toFixed(1)}%)`);
   log(`  products w/ rarity  ${withRarity.toLocaleString()} (${(withRarity / productRows.length * 100).toFixed(1)}%)`);
   log(`  printings alone     ${alone.toLocaleString()} of ${perPrinting.size.toLocaleString()} (${(alone / perPrinting.size * 100).toFixed(1)}% resolve to one price)`);
+  log(`  printings to pick   ${multi.toLocaleString()} carry several products and need their owner to choose`);
 
   if (REPORT && unmatched.length) {
     log(`\nUnplaced expansions, largest first -- add a set code for any of these`);
@@ -312,6 +335,7 @@ async function main() {
       return {
         id_product: r.id_product,
         trend: num(g.trend), low: num(g.low),
+        avg: num(g.avg), avg1: num(g.avg1),
         avg7: num(g.avg7), avg30: num(g.avg30),
         as_of: asOf,
       };

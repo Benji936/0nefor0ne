@@ -12,9 +12,24 @@
 // name they may never have learned -- a 40 cent Common and a 30 euro Collector's
 // Rare are obviously different objects, where "Maze of Millennia" and "Rarity
 // Collection II" are two phrases.
-import { ref, watch } from "vue";
+//
+// The second question, when there is one
+// --------------------------------------
+// Picking the printing gets a card to one set. That is the whole answer for
+// 55,121 of 66,829 printings, which hold a single Cardmarket product. The other
+// 11,708 hold several -- RA04 files nine products for Aleister the Invoker, all
+// named "Aleister the Invoker" -- and Cardmarket's catalogue carries no rarity
+// and no version number to tell them apart. So the app asks.
+//
+// The list is deliberately just prices and product ids. There is no "V.1", no
+// rarity guess and no ordering claim: Cardmarket publishes none of that, and
+// the only way to produce it would be to read meaning into id_product order.
+// What is real is that these are nine distinct products with nine distinct
+// prices, and the person holding the card is the one who can say which.
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { fetchPrintings, setCardPrinting } from "@/lib/printings";
+import { fetchPrintings, needsVersionChoice, setCardPrinting } from "@/lib/printings";
+import { formatMoney } from "@/lib/cardmarketPrice";
 import CardPrice from "@/components/trade/CardPrice.vue";
 
 const props = defineProps({
@@ -29,7 +44,17 @@ const printings = ref([]);
 const loading = ref(false);
 const saving = ref(null);
 
+/** The printing chosen in step one, while step two asks which of its products. */
+const chosen = ref(null);
+
+const search = computed(
+  () => `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${encodeURIComponent(props.card?.name ?? "")}`,
+);
+
 watch(() => props.modelValue, async (open) => {
+  // Reset on both edges: reopening the dialog on a different card must not
+  // show the previous card's second step.
+  chosen.value = null;
   if (!open || !props.card?.name) return;
   loading.value = true;
   printings.value = [];
@@ -40,16 +65,35 @@ watch(() => props.modelValue, async (open) => {
   }
 });
 
-async function pick(printing) {
+/**
+ * Step one. A printing holding one product is the whole answer; one holding
+ * several becomes the second question rather than a guess.
+ */
+function pickPrinting(printing) {
   if (saving.value) return;
-  saving.value = printing.printCode;
-  const ok = await setCardPrinting(props.card.id, printing);
+  if (needsVersionChoice(printing)) {
+    chosen.value = printing;
+    return;
+  }
+  save(printing, printing.productId ?? null);
+}
+
+/** Step two. The owner names the product, which is the best evidence there is. */
+function pickProduct(product) {
+  if (saving.value) return;
+  save(chosen.value, product.idProduct);
+}
+
+async function save(printing, productId) {
+  saving.value = productId ?? printing.printCode;
+  const ok = await setCardPrinting(props.card.id, { ...printing, productId });
   saving.value = null;
   if (!ok) return;
-  emit("picked", { cardId: props.card.id, printing });
+  emit("picked", { cardId: props.card.id, printing: { ...printing, productId } });
   emit("update:modelValue", false);
 }
 
+const back = () => { chosen.value = null; };
 const close = () => emit("update:modelValue", false);
 </script>
 
@@ -62,9 +106,20 @@ const close = () => emit("update:modelValue", false);
   >
     <div class="pp">
       <header class="pp__head">
+        <button
+          v-if="chosen"
+          type="button"
+          class="pp__back"
+          :aria-label="t('common.back')"
+          :disabled="saving !== null"
+          @click="back"
+        >
+          <v-icon icon="mdi-arrow-left" size="18" />
+        </button>
         <div class="min-w-0">
-          <p class="pp__eyebrow">{{ t('price.whichPrinting') }}</p>
-          <h2 class="pp__title">{{ card?.name }}</h2>
+          <p class="pp__eyebrow">{{ chosen ? t('price.whichVersion') : t('price.whichPrinting') }}</p>
+          <h2 class="pp__title">{{ chosen ? chosen.printCode : card?.name }}</h2>
+          <p v-if="chosen" class="pp__sub">{{ chosen.setName }}</p>
         </div>
         <button type="button" class="pp__close" :aria-label="t('common.close')" @click="close">
           <v-icon icon="mdi-close" size="18" />
@@ -74,6 +129,38 @@ const close = () => emit("update:modelValue", false);
       <div v-if="loading" class="pp__body">
         <div v-for="i in 4" :key="i" class="pp__sk" />
       </div>
+
+      <!-- Step two: the printing is settled, the version is not. -->
+      <template v-else-if="chosen">
+        <!-- Says why the list has no labels on it. Without this the rows read
+             as a bug rather than as the honest shape of the source data. -->
+        <p class="pp__note">
+          {{ t('price.versionsUnlabelled', { count: chosen.products.length }) }}
+          <a :href="search" target="_blank" rel="noopener noreferrer" class="pp__link">
+            {{ t('price.checkOnCardmarket') }}
+            <v-icon icon="mdi-open-in-new" size="12" />
+          </a>
+        </p>
+
+        <div class="pp__body" role="list">
+          <button
+            v-for="p in chosen.products"
+            :key="p.idProduct"
+            type="button"
+            role="listitem"
+            class="pp__row"
+            :disabled="saving !== null"
+            @click="pickProduct(p)"
+          >
+            <span class="pp__code">#{{ p.idProduct }}</span>
+            <span class="pp__meta">
+              <span class="pp__set">{{ t('price.cardmarketProduct') }}</span>
+            </span>
+            <span v-if="p.value !== null" class="pp__amount tabular-nums">{{ formatMoney(p.value) }}</span>
+            <span v-else class="pp__noprice">{{ t('price.noPrice') }}</span>
+          </button>
+        </div>
+      </template>
 
       <!-- Neither catalogue knows this card. Saying so beats a list of blanks
            that implies the answer is in there somewhere. -->
@@ -87,7 +174,7 @@ const close = () => emit("update:modelValue", false);
           role="listitem"
           class="pp__row"
           :disabled="saving !== null"
-          @click="pick(p)"
+          @click="pickPrinting(p)"
         >
           <span class="pp__code">{{ p.printCode }}</span>
           <span class="pp__meta">
@@ -96,6 +183,15 @@ const close = () => emit("update:modelValue", false);
           </span>
           <CardPrice v-if="p.price" :price="p.price" size="sm" class="shrink-0" />
           <span v-else class="pp__noprice">{{ t('price.noPrice') }}</span>
+          <!-- A printing with several products is a question, not an answer.
+               Saying so before the click stops the second step feeling like a
+               dead end the dialog walked into. -->
+          <v-icon
+            v-if="needsVersionChoice(p)"
+            icon="mdi-chevron-right"
+            size="16"
+            class="pp__chev"
+          />
         </button>
       </div>
     </div>
@@ -121,6 +217,32 @@ const close = () => emit("update:modelValue", false);
   letter-spacing: 0.16em; color: var(--c-muted);
 }
 .pp__title { margin: 0; font-size: 17px; font-weight: 700; line-height: 1.25; }
+.pp__sub { margin: 2px 0 0; font-size: 12px; color: var(--c-muted); }
+
+.pp__back {
+  flex-shrink: 0; margin-top: 2px;
+  width: 32px; height: 32px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: 1px solid transparent;
+  color: var(--c-muted); cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.pp__back:hover:not(:disabled) { background: var(--c-surface-2); color: var(--c-text); }
+.pp__back:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
+.pp__back:disabled { opacity: 0.5; cursor: default; }
+
+/* Why the rows below carry no rarity: the catalogue does not publish one. */
+.pp__note {
+  margin: 0; padding: 10px 16px 2px;
+  font-size: 11.5px; line-height: 1.5; color: var(--c-muted);
+}
+.pp__link {
+  color: var(--c-trade); font-weight: 600; text-decoration: none;
+  white-space: nowrap;
+}
+.pp__link:hover { text-decoration: underline; }
+.pp__link:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; border-radius: 3px; }
+
 .pp__close {
   margin-left: auto; flex-shrink: 0;
   width: 32px; height: 32px; border-radius: 9px;
@@ -160,6 +282,10 @@ const close = () => emit("update:modelValue", false);
 .pp__set    { font-size: 12px; color: var(--c-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pp__rarity { font-size: 10.5px; font-weight: 600; color: var(--c-muted); }
 .pp__noprice { font-size: 11px; font-weight: 600; color: var(--c-muted); white-space: nowrap; }
+/* Step two's figure. Same weight as CardPrice's own so moving between the two
+   steps does not look like moving between two different apps. */
+.pp__amount { font-size: 13px; font-weight: 700; color: var(--c-text); white-space: nowrap; flex-shrink: 0; }
+.pp__chev { color: var(--c-muted); flex-shrink: 0; margin-left: -4px; }
 
 .pp__empty { margin: 0; padding: 28px 16px; text-align: center; font-size: 13px; color: var(--c-muted); }
 
@@ -169,9 +295,12 @@ const close = () => emit("update:modelValue", false);
 }
 @keyframes pp-pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.55 } }
 
-@media (pointer: coarse) { .pp__row { min-height: 52px; } .pp__close { width: 44px; height: 44px; } }
+@media (pointer: coarse) {
+  .pp__row { min-height: 52px; }
+  .pp__close, .pp__back { width: 44px; height: 44px; }
+}
 @media (prefers-reduced-motion: reduce) {
-  .pp__row, .pp__close { transition: none; }
+  .pp__row, .pp__close, .pp__back { transition: none; }
   .pp__sk { animation: none; }
 }
 </style>

@@ -556,7 +556,15 @@ export default {
     async onPrintingPicked({ cardId, printing }) {
       for (const list of [this.trade_cards, this.wished_cards]) {
         const card = list.find(c => c.id === cardId);
-        if (card) { card.extension = printing.printCode; card.rarity = printing.rarity ?? 'common'; }
+        if (card) {
+          card.extension = printing.printCode;
+          card.rarity    = printing.rarity ?? 'common';
+          // Mirror every column setCardPrinting wrote, not just the visible
+          // two: loadPrices() re-reads from the server anyway, but a local row
+          // that disagrees with the database is a bug waiting for the first
+          // caller that trusts it.
+          card.cardmarket_product_id = printing.productId ?? null;
+        }
       }
       await this.loadPrices();
     },

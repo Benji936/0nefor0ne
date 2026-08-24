@@ -1759,6 +1759,10 @@
     "whichPrinting": "Quelle impression avez-vous ?",
     "pickPrinting": "Quelle impression ?",
     "noPrice": "Pas de prix",
-    "noPrintings": "Aucune impression trouvée pour cette carte."
+    "noPrintings": "Aucune impression trouvée pour cette carte.",
+    "whichVersion": "Laquelle est la vôtre ?",
+    "versionsUnlabelled": "Cardmarket répertorie {count} versions de cette édition sans publier laquelle est laquelle. Choisissez la vôtre d'après le prix.",
+    "cardmarketProduct": "Produit Cardmarket",
+    "checkOnCardmarket": "Vérifier sur Cardmarket"
   }
 }

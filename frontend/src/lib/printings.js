@@ -26,15 +26,43 @@ export function setCodeOf(printCode) {
 }
 
 /**
+ * Things YGOPRODeck files under set_rarity that are not rarities.
+ *
+ * Picking a printing writes its rarity onto the Card row, so these end up in
+ * the collection and on screen: one card in this database reads "Jurrac Megalo
+ * · New" because "New" came back as a set_rarity and was written through
+ * unchallenged. Taken from the 48 distinct values in cardinfo.php on
+ * 2026-08-24 -- printing notes, release notes, bare numbers, and two one-offs.
+ *
+ * Same list as NOT_A_RARITY in scripts/cardmarket-rarity.mjs, which cannot be
+ * imported from here: one runs in the bundle, the other under node.
+ */
+const NOT_A_RARITY = new Set([
+  "2", "3", "new", "reprint", "newartwork",
+  "europeandebut", "oceaniandebut", "europeanoceaniandebut",
+  "cr", "forcesmw",
+]);
+
+/** The rarity to record for a printing, or null when the source gave us a note. */
+export function printingRarity(raw) {
+  const key = String(raw ?? "").normalize("NFKC").toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (!key || NOT_A_RARITY.has(key)) return null;
+  return String(raw).normalize("NFKC").replace(/\s+/g, " ").trim();
+}
+
+/**
  * Fold Cardmarket products into YGOPRODeck printings.
  *
  * Pure, so the matching rules are testable without a network: a printing keeps
- * its own rarity from YGOPRODeck, and takes a price only when exactly one
- * Cardmarket product sits under that set code for that card. Where a set
- * printed the card at several rarities Cardmarket holds several unlabelled
- * products, and there is no honest way to say which is which -- those printings
- * are still offered, priced as a band, because picking the right *set* still
- * narrows the answer a long way even when the rarity cannot be pinned.
+ * its own rarity from YGOPRODeck, and takes a single price only when exactly
+ * one Cardmarket product sits under that set code for that card.
+ *
+ * Where a set printed the card at several rarities Cardmarket holds several
+ * products and labels none of them -- its files carry no rarity and no version
+ * number at all. Those printings are still offered and priced as a band,
+ * because picking the right *set* narrows the answer a long way even when the
+ * version cannot be pinned: sixteen printings down to seven, 0.21-30.47 down to
+ * 0.21-6.52.
  */
 export function mergePrintings(cardSets, products) {
   const bySet = new Map();
@@ -55,30 +83,54 @@ export function mergePrintings(cardSets, products) {
     const code = setCodeOf(printCode);
     const candidates = bySet.get(code?.toLowerCase()) ?? [];
 
-    // Prefer the product whose resolved rarity matches this printing's: it is
-    // the one case where Cardmarket's ambiguity can be broken honestly, because
-    // the import already worked out that rarity from the same YGOPRODeck data.
-    const exact = candidates.filter(
-      (p) => p.rarity && s.set_rarity && p.rarity.toLowerCase() === s.set_rarity.toLowerCase(),
-    );
-    const use = exact.length === 1 ? exact : candidates;
+    // Every product of this printing, and no attempt to pick between them.
+    //
+    // There used to be a filter here preferring the product whose rarity
+    // matched. It could never fire: cardmarket_product.rarity is only set when
+    // YGOPRODeck lists one rarity for the card in that set, so it holds the
+    // same value on every product of a printing and filtering by it returns all
+    // or nothing. card_prices dropped its equivalent rung for the same reason,
+    // and the two have to agree -- a picker quoting a tighter range than the
+    // collection does is two answers to one question.
+    const use = candidates;
 
+    // Every product of the printing with its own figure, kept rather than
+    // reduced, because the picker's second step is a list of exactly these:
+    // when a printing holds nine products and Cardmarket labels none of them,
+    // the price is the only thing telling them apart.
+    //
     // Null-check before Number(), not after: `null ?? null ?? null` is null and
     // Number(null) is 0, so the obvious spelling of this turned a product with
     // no sales history into a printing worth nothing.
-    const values = use
-      .map((p) => p.cardmarket_price)
-      .filter(Boolean)
-      .map((v) => v.trend ?? v.avg7 ?? v.avg30)
-      .filter((v) => v !== null && v !== undefined && v !== "")
-      .map(Number)
-      .filter((n) => Number.isFinite(n));
+    const products = use
+      .map((p) => {
+        const row = p.cardmarket_price;
+        const raw = row ? row.trend ?? row.avg7 ?? row.avg30 : null;
+        const n = raw === null || raw === undefined || raw === "" ? NaN : Number(raw);
+        return { idProduct: p.id_product, value: Number.isFinite(n) ? n : null };
+      })
+      .sort((a, b) => (a.value ?? Infinity) - (b.value ?? Infinity));
+
+    const values = products.map((p) => p.value).filter((v) => v !== null);
 
     out.push({
       printCode,
       setCode: code,
       setName: s.set_name ?? "",
-      rarity: s.set_rarity ?? null,
+      rarity: printingRarity(s.set_rarity),
+
+      // The Cardmarket product this printing *is*, when the printing holds
+      // exactly one. Recording it stops the price being matched at all -- see
+      // rung 0 of card_prices -- so the answer survives Cardmarket renaming a
+      // set or the expansion map being rebuilt.
+      //
+      // Null when the printing holds several, which is 11,708 of 66,829 of
+      // them. Nothing in the catalogue says which is which, so picking the
+      // printing narrows the card to one set and leaves a band; `products`
+      // below is what the picker's second step asks about to close it.
+      productId: use.length === 1 ? use[0].id_product ?? null : null,
+      products,
+
       price: values.length
         ? readPrice({
             printings: values.length,
@@ -102,6 +154,18 @@ export function mergePrintings(cardSets, products) {
 }
 
 /**
+ * Does choosing this printing still leave a question?
+ *
+ * True when Cardmarket files more than one product for it, which is 11,708 of
+ * 66,829 printings. Lives here rather than in the picker because it is a fact
+ * about the data, and because the picker's branch and the chevron that warns
+ * about it must not be able to disagree.
+ */
+export function needsVersionChoice(printing) {
+  return (printing?.products?.length ?? 0) > 1;
+}
+
+/**
  * The printings of one card, priced, ready for a picker.
  *
  * Returns [] on any failure. An empty list closes the picker with nothing to
@@ -122,10 +186,32 @@ export async function fetchPrintings(cardName) {
   }
   if (!cardSets.length) return [];
 
-  const { data, error } = await getClient()
+  // Two queries, because a printing is (id_expansion, id_metacard) and not a
+  // name. The first finds a way into each printing by the name the app knows;
+  // the second collects every product of those printings, including the ones
+  // Cardmarket spells differently -- CORI files "Magician of Dark Chaos –
+  // Black Chaos" beside two hyphenated siblings, and a name query returns two
+  // of the three. Stopping at the name would quote a narrower band here than
+  // card_prices quotes on the same card.
+  const db = getClient();
+  const { data: seeds, error: seedError } = await db
     .from("cardmarket_product")
-    .select("id_product, set_code, rarity, cardmarket_price(trend, avg7, avg30)")
-    .ilike("name", cardName);
+    .select("id_metacard")
+    .ilike("name", cardName)
+    .not("id_metacard", "is", null);
+
+  if (seedError) {
+    console.error("fetchPrintings: printing lookup failed", seedError);
+    return mergePrintings(cardSets, []);
+  }
+
+  const metacards = [...new Set((seeds ?? []).map((r) => r.id_metacard))];
+  if (!metacards.length) return mergePrintings(cardSets, []);
+
+  const { data, error } = await db
+    .from("cardmarket_product")
+    .select("id_product, id_expansion, id_metacard, set_code, rarity, cardmarket_price(trend, avg7, avg30)")
+    .in("id_metacard", metacards);
 
   if (error) {
     console.error("fetchPrintings: product lookup failed", error);
@@ -142,11 +228,23 @@ export async function fetchPrintings(cardName) {
  * that wrote a bare set code would leave two spellings of the same fact in one
  * column. The price then resolves through the same path as a row that was
  * added carefully in the first place.
+ *
+ * It also writes the Cardmarket product id when the printing resolved to one,
+ * and that is the part that makes the answer durable. extension and rarity have
+ * to be re-matched against the catalogue on every read, through an expansion
+ * map that is rebuilt nightly and a rarity that may or may not have been
+ * established; cardmarket_product_id is looked up directly and cannot drift.
+ * Both are written because both are true, and because the columns the rest of
+ * the app reads should not quietly disagree with the one pricing reads.
  */
 export async function setCardPrinting(cardId, printing) {
   const { error } = await getClient()
     .from("Card")
-    .update({ extension: printing.printCode, rarity: printing.rarity ?? "common" })
+    .update({
+      extension: printing.printCode,
+      rarity: printing.rarity ?? "common",
+      cardmarket_product_id: printing.productId ?? null,
+    })
     .eq("id", cardId);
   if (error) {
     console.error("setCardPrinting failed", error);

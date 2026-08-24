@@ -1759,6 +1759,10 @@
     "whichPrinting": "Welcher Druck ist deiner?",
     "pickPrinting": "Welcher Druck?",
     "noPrice": "Kein Preis",
-    "noPrintings": "Keine Drucke für diese Karte gefunden."
+    "noPrintings": "Keine Drucke für diese Karte gefunden.",
+    "whichVersion": "Welche Version ist deine?",
+    "versionsUnlabelled": "Cardmarket führt {count} Versionen dieser Auflage, ohne zu veröffentlichen, welche welche ist. Wähle deine anhand des Preises.",
+    "cardmarketProduct": "Cardmarket-Produkt",
+    "checkOnCardmarket": "Auf Cardmarket prüfen"
   }
 }

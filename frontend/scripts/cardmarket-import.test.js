@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildExpansionMap, buildRarityMap } from "./cardmarket-import.mjs";
+import { buildExpansionMap, buildSetRarities } from "./cardmarket-import.mjs";
 
 // A YGOPRODeck card with one or more printings.
 const card = (name, ...printings) => ({
@@ -152,31 +152,33 @@ describe("an override wins outright", () => {
   });
 });
 
-describe("buildRarityMap keeps only what it can say for certain", () => {
-  it("records a rarity when a set printed the card at exactly one", () => {
-    const m = buildRarityMap([card("Alpha", ["ABC-EN001", "Common"])]);
-    expect(m.get("alpha ABC")).toBe("Common");
+describe("buildSetRarities keeps the whole list, not a verdict", () => {
+  it("records the rarity when a set printed the card at exactly one", () => {
+    const m = buildSetRarities([card("Alpha", ["ABC-EN001", "Common"])]);
+    expect(m.get("alpha ABC")).toEqual(["Common"]);
   });
 
-  it("records null when a set printed the card at two", () => {
-    // Cardmarket files two unlabelled products for these, so there is no
-    // honest way to say which product is which rarity.
-    const m = buildRarityMap([card("Alpha", ["ABC-EN001", "Ultra Rare"], ["ABC-EN001", "Secret Rare"])]);
-    expect(m.get("alpha ABC")).toBeNull();
+  it("records both when a set printed the card at two", () => {
+    // This used to collapse to null on the grounds that neither could be
+    // proven. That threw away the only input capable of telling the two
+    // products apart -- resolveVariants lines this list up against the
+    // versions Cardmarket files, and a verdict here forecloses that.
+    const m = buildSetRarities([card("Alpha", ["ABC-EN001", "Ultra Rare"], ["ABC-EN001", "Secret Rare"])]);
+    expect(m.get("alpha ABC")).toEqual(["Ultra Rare", "Secret Rare"]);
   });
 
   it("keeps rarities from different sets apart", () => {
-    const m = buildRarityMap([card("Alpha", ["ABC-EN001", "Common"], ["XYZ-EN050", "Secret Rare"])]);
-    expect(m.get("alpha ABC")).toBe("Common");
-    expect(m.get("alpha XYZ")).toBe("Secret Rare");
+    const m = buildSetRarities([card("Alpha", ["ABC-EN001", "Common"], ["XYZ-EN050", "Secret Rare"])]);
+    expect(m.get("alpha ABC")).toEqual(["Common"]);
+    expect(m.get("alpha XYZ")).toEqual(["Secret Rare"]);
   });
 
   it("ignores printings with no set code", () => {
-    const m = buildRarityMap([card("Alpha", ["", "Common"], [null, "Rare"])]);
+    const m = buildSetRarities([card("Alpha", ["", "Common"], [null, "Rare"])]);
     expect(m.size).toBe(0);
   });
 
   it("survives a card with no printings at all", () => {
-    expect(buildRarityMap([{ name: "Alpha" }]).size).toBe(0);
+    expect(buildSetRarities([{ name: "Alpha" }]).size).toBe(0);
   });
 });

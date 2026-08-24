@@ -1759,6 +1759,10 @@
     "whichPrinting": "Which printing is yours?",
     "pickPrinting": "Which printing?",
     "noPrice": "No price",
-    "noPrintings": "No printings found for this card."
+    "noPrintings": "No printings found for this card.",
+    "whichVersion": "Which version is yours?",
+    "versionsUnlabelled": "Cardmarket lists {count} versions of this printing and does not publish which is which. Pick yours by price.",
+    "cardmarketProduct": "Cardmarket product",
+    "checkOnCardmarket": "Check on Cardmarket"
   }
 }
