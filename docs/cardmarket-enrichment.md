@@ -68,6 +68,36 @@ report, not a value to replace: the write aborts.
 
 What survives all of the above. `cardmarket_unresolved_printing` lists it.
 
+## What the advertised card count is, and is not
+
+`cardmarket_expansion_route.advertised_card_count` is the number the expansion
+index prints beside a set. It is a **diagnostic**, never a write gate.
+
+It is worth watching because it usually agrees with us, and a sudden divergence
+means something changed. It is not worth obeying, because we do not know what
+it counts. One measurement, across all 1,169 routed expansions:
+
+    advertised == locally priced products     1169 / 1169
+    advertised == local products              1168 / 1169
+
+Suggestive, and not enough. Every expansion but one holds the same number of
+priced products as products, so the two hypotheses are only distinguishable in
+a single case -- RA05, whose 13 unpriced products are the only ones in the
+whole catalogue. One disagreeing row cannot settle what a number means, so the
+architecture does not assume it.
+
+**Printing-level completeness is the authoritative gate.** An expansion-wide
+count mismatch does not block a printing that is itself positively proven
+complete: page rows equal to that printing's products, every id one of ours,
+none repeated, each row stating a distinct variant. That is a property of the
+printing and does not become less true because a number elsewhere on the site
+disagrees.
+
+The converse also holds and matters more. An expansion whose counts agree
+perfectly proves nothing about any individual printing inside it, and a
+printing that cannot show its own completeness is refused however tidy the
+expansion looks.
+
 ## Writing
 
 Per printing, never per expansion. Completeness is a property of a printing, so
