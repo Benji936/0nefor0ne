@@ -18,6 +18,11 @@ describe("idProductFromImage takes the id from the path, or nothing", () => {
     expect(idProductFromImage("https://product-images.s3.cardmarket.com/5/MZMU/873125/999.jpg")).toBeNull();
   });
 
+  it("reads a hyphenated OCG set code", () => {
+    expect(idProductFromImage("https://product-images.s3.cardmarket.com/5/UT01-JP/902618/902618.jpg"))
+      .toEqual({ set: "UT01-JP", idProduct: 902618 });
+  });
+
   it("accepts other image extensions", () => {
     expect(idProductFromImage(IMG(1).replace(".jpg", ".webp"))?.idProduct).toBe(1);
   });

@@ -33,9 +33,16 @@
  * it is testable against captured samples without a browser.
  */
 
-/** `.../{n}/{SET}/{idProduct}/{idProduct}.jpg` — the id must appear twice. */
+/**
+ * `.../{n}/{SET}/{idProduct}/{idProduct}.jpg` — the id must appear twice.
+ *
+ * The set segment allows hyphens. Cardmarket's OCG expansions are coded
+ * "UT01-JP", "26GE-JP" and so on, and a class of [A-Za-z0-9] silently dropped
+ * 220 of 1,183 populated expansions — they looked like rows with no product
+ * image rather than like a pattern that did not match.
+ */
 const PRODUCT_IMAGE =
-  /product-images\.s3\.cardmarket\.com\/\d+\/([A-Za-z0-9]+)\/(\d+)\/\2\.(?:jpg|png|webp)/;
+  /product-images\.s3\.cardmarket\.com\/\d+\/([A-Za-z0-9-]+)\/(\d+)\/\2\.(?:jpg|png|webp)/;
 
 const TRAILING_PAREN = /^(.*?)\s*\(([^()]*)\)\s*$/;
 const VERSION_AND_RARITY = /^V\.(\d{1,3})\s*[-–—]\s*(.+)$/i;

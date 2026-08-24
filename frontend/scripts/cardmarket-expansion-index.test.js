@@ -59,6 +59,14 @@ describe("sampleProductId is the joinable key", () => {
   it("is null for the transparent placeholder an unpopulated row uses", () => {
     expect(sampleProductId("/img/transparent.gif")).toBeNull();
   });
+
+  it("reads a hyphenated OCG set code", () => {
+    // Real: Utility Selection is coded UT01-JP. A set-segment class without the
+    // hyphen silently dropped 220 of 1,183 populated expansions, which looked
+    // like rows missing an image rather than like a pattern that did not match.
+    expect(sampleProductId("https://product-images.s3.cardmarket.com/5/UT01-JP/902618/902618.jpg")).toBe(902618);
+    expect(sampleProductId("https://product-images.s3.cardmarket.com/5/26GE-JP/900001/900001.jpg")).toBe(900001);
+  });
 });
 
 describe("readExpansionRow", () => {
