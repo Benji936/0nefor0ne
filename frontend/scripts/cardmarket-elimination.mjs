@@ -154,57 +154,74 @@ export function planPrinting({ idMetacard, localIds, rows }) {
 }
 
 /**
- * Attach page rows to printings by card name.
+ * Attach page rows to printings.
  *
- * The page does not publish id_metacard, so the name is the only bridge -- but
- * it is checked rather than trusted. A name that folds onto two printings, or a
- * printing two separate name groups claim, is reported instead of assigned,
- * because either means the fold is losing a distinction the catalogue keeps.
+ * By idProduct wherever the row has one, because the id *is* the identity and
+ * needs no interpretation. Only a row with no id -- a no-artwork row -- falls
+ * back to matching on the card name.
  *
- * Names are folded with slugKey, which is what makes "Inferno of the Sacred
- * Beasts – Uria" and "...Beasts - Uria" the same card: Cardmarket writes the
- * dash both ways inside one printing.
+ * That ordering is not a preference, it is the difference between reading and
+ * guessing, and BLZD proved it costs real answers to get backwards. Cardmarket
+ * had renamed four products since our catalogue import while keeping their ids:
+ * "Nervado the Shadebeast Power Patron" is "Nervedo" on the page today. Both of
+ * its rows named their ids, both ids are ours, and the printing was complete --
+ * yet a name-first bridge could not see it and reported it ambiguous.
+ *
+ * The name bridge that remains is checked rather than trusted. A folded name
+ * two printings answer to cannot place a no-artwork row, so those rows are
+ * reported instead of assigned, and the printing then fails the count gate
+ * rather than being completed from a name that was never distinct.
+ *
+ * Folding is by slugKey, which is what makes "Inferno of the Sacred Beasts –
+ * Uria" and "...Beasts - Uria" one card: Cardmarket writes the dash both ways
+ * inside a single printing.
  */
 export function assignRows({ localProducts, pageRows }) {
   const byMetacard = new Map();
+  const metacardOfProduct = new Map();
   for (const p of localProducts) {
-    const g = byMetacard.get(p.id_metacard) ?? { idMetacard: p.id_metacard, ids: [], keys: new Set(), name: p.name };
+    const g = byMetacard.get(p.id_metacard)
+      ?? { idMetacard: p.id_metacard, ids: [], keys: new Set(), name: p.name, rows: [] };
     g.ids.push(p.id_product);
     g.keys.add(slugKey(p.name));
     byMetacard.set(p.id_metacard, g);
+    metacardOfProduct.set(p.id_product, p.id_metacard);
   }
 
-  const rowsByKey = new Map();
-  for (const r of pageRows) {
-    const k = slugKey(r.cardName);
-    if (!rowsByKey.has(k)) rowsByKey.set(k, []);
-    rowsByKey.get(k).push(r);
-  }
-
-  // A folded name that more than one printing answers to cannot be assigned to
-  // either of them.
+  // A folded name more than one printing answers to can place nothing.
   const claimants = new Map();
   for (const g of byMetacard.values()) {
     for (const k of g.keys) claimants.set(k, (claimants.get(k) ?? 0) + 1);
   }
 
-  const assigned = [];
+  const orphanRows = [];
   const conflicts = [];
-  for (const g of byMetacard.values()) {
-    const keys = [...g.keys];
-    const contested = keys.filter((k) => claimants.get(k) > 1);
-    if (contested.length) {
-      conflicts.push({ idMetacard: g.idMetacard, name: g.name, reason: "name shared with another printing" });
+  const contestedGroups = new Set();
+
+  for (const r of pageRows) {
+    if (r.idProduct != null) {
+      const m = metacardOfProduct.get(r.idProduct);
+      if (m == null) { orphanRows.push({ ...r, reason: "id not in this expansion" }); continue; }
+      byMetacard.get(m).rows.push(r);
       continue;
     }
-    const rows = keys.flatMap((k) => rowsByKey.get(k) ?? []);
-    assigned.push({ idMetacard: g.idMetacard, name: g.name, localIds: g.ids, rows });
+    // No id: the name is all that is left, so it has to be unambiguous.
+    const k = slugKey(r.cardName);
+    const owner = [...byMetacard.values()].find((g) => g.keys.has(k));
+    if (!owner) { orphanRows.push({ ...r, reason: "no local card of that name" }); continue; }
+    if (claimants.get(k) > 1) {
+      conflicts.push({ idMetacard: owner.idMetacard, name: owner.name, cardName: r.cardName,
+                       reason: "no-artwork row, and the name is shared with another printing" });
+      contestedGroups.add(owner.idMetacard);
+      continue;
+    }
+    owner.rows.push(r);
   }
 
-  const localKeys = new Set([...byMetacard.values()].flatMap((g) => [...g.keys]));
-  const orphanRows = [...rowsByKey.entries()]
-    .filter(([k]) => !localKeys.has(k))
-    .flatMap(([, rows]) => rows);
+  const assigned = [...byMetacard.values()].map((g) => ({
+    idMetacard: g.idMetacard, name: g.name, localIds: g.ids, rows: g.rows,
+    contested: contestedGroups.has(g.idMetacard),
+  }));
 
   return { assigned, conflicts, orphanRows };
 }

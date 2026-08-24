@@ -120,22 +120,50 @@ describe("planPrinting resolves a printing only when the whole set closes", () =
   });
 });
 
-describe("assignRows bridges page to catalogue on name, and checks the bridge", () => {
-  it("folds the dash Cardmarket writes two ways inside one printing", () => {
-    // Real CORI rows: the catalogue holds both an en dash and a hyphen for the
-    // same printing, so an unfolded comparison splits one card into two.
+describe("assignRows bridges on the id where there is one, on the name only where there is not", () => {
+  it("places a row Cardmarket has since renamed", () => {
+    // Real BLZD: the page now says "Nervedo", our catalogue says "Nervado",
+    // and both rows carry their true ids. A name-first bridge called this
+    // printing ambiguous while the page was in fact naming both products.
+    const { assigned, orphanRows } = assignRows({
+      localProducts: [
+        { id_product: 885402, id_metacard: 900, name: "Nervado the Shadebeast Power Patron" },
+        { id_product: 885403, id_metacard: 900, name: "Nervado the Shadebeast Power Patron" },
+      ],
+      pageRows: [
+        row(885402, 1, "Ultra Rare", "Nervedo the Shadebeast Power Patron"),
+        row(885403, 2, "Starlight Rare", "Nervedo the Shadebeast Power Patron"),
+      ],
+    });
+    expect(assigned[0].rows).toHaveLength(2);
+    expect(orphanRows).toEqual([]);
+  });
+
+  it("still folds the dash Cardmarket writes two ways, for a row with no id", () => {
     const { assigned } = assignRows({
       localProducts: [
         { id_product: 894706, id_metacard: 464802, name: "Inferno of the Sacred Beasts – Uria, Lord of Searing Flames" },
         { id_product: 894707, id_metacard: 464802, name: "Inferno of the Sacred Beasts - Uria, Lord of Searing Flames" },
       ],
-      pageRows: [row(894706, 1, "Secret", "Inferno of the Sacred Beasts - Uria, Lord of Searing Flames")],
+      pageRows: [row(null, 2, "Starlight", "Inferno of the Sacred Beasts - Uria, Lord of Searing Flames")],
     });
-    expect(assigned).toHaveLength(1);
     expect(assigned[0].rows).toHaveLength(1);
   });
 
-  it("refuses a name two printings answer to", () => {
+  it("refuses to place a no-artwork row on a name two printings answer to", () => {
+    const { assigned, conflicts } = assignRows({
+      localProducts: [
+        { id_product: 1, id_metacard: 100, name: "Twin Card" },
+        { id_product: 2, id_metacard: 200, name: "Twin Card" },
+      ],
+      pageRows: [row(null, 1, "Secret", "Twin Card")],
+    });
+    expect(conflicts).toHaveLength(1);
+    expect(assigned.every((g) => g.rows.length === 0)).toBe(true);
+  });
+
+  it("places an id-bearing row even when its name is shared", () => {
+    // The id is unambiguous whatever the name does.
     const { assigned, conflicts } = assignRows({
       localProducts: [
         { id_product: 1, id_metacard: 100, name: "Twin Card" },
@@ -143,16 +171,24 @@ describe("assignRows bridges page to catalogue on name, and checks the bridge", 
       ],
       pageRows: [row(1, 1, "Secret", "Twin Card")],
     });
-    expect(assigned).toEqual([]);
-    expect(conflicts).toHaveLength(2);
+    expect(conflicts).toEqual([]);
+    expect(assigned.find((g) => g.idMetacard === 100).rows).toHaveLength(1);
   });
 
-  it("reports rows for cards we do not hold rather than dropping them", () => {
+  it("reports rows for products we do not hold rather than dropping them", () => {
     const { orphanRows } = assignRows({
       localProducts: [{ id_product: 1, id_metacard: 100, name: "Known" }],
       pageRows: [row(1, 1, "Secret", "Known"), row(2, 1, "Secret", "Unknown Card")],
     });
-    expect(orphanRows.map((r) => r.cardName)).toEqual(["Unknown Card"]);
+    expect(orphanRows.map((r) => r.reason)).toEqual(["id not in this expansion"]);
+  });
+
+  it("reports a no-artwork row for a card we do not hold", () => {
+    const { orphanRows } = assignRows({
+      localProducts: [{ id_product: 1, id_metacard: 100, name: "Known" }],
+      pageRows: [row(null, 2, "Starlight", "Unknown Card")],
+    });
+    expect(orphanRows.map((r) => r.reason)).toEqual(["no local card of that name"]);
   });
 });
 
