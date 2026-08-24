@@ -105,7 +105,7 @@ describe("readRow reads both attributes and refuses on disagreement", () => {
     // un-illustrated product on the page shares one image. The alt is still
     // correct, and dropping the row hides a product that exists.
     const out = readRow({
-      imageUrl: "//static.cardmarket.com/img/3660af732e89ee7bfadc4b521fe525c1/cardImage",
+      imageUrl: "//static.cardmarket.com/img/3660af732e89ee7bfadc4b521fe525c1/cardImageNotAvailable.png",
       alt: "Celtic Mystic (V.2 - Starlight Rare)",
     });
     expect(out).toMatchObject({
@@ -130,7 +130,7 @@ describe("readExpansionPage keeps the failures visible", () => {
       { imageUrl: IMG(873125), alt: "Pumpking the King of Grave Ghosts (V.1 - Secret Rare)" },
       { imageUrl: "/img/logo.svg", alt: "not a product" },
       { imageUrl: IMG(873245), alt: "Santa Claws" },
-      { imageUrl: "//static.cardmarket.com/img/3660af732e89ee7bfadc4b521fe525c1/cardImage",
+      { imageUrl: "//static.cardmarket.com/img/3660af732e89ee7bfadc4b521fe525c1/cardImageNotAvailable.png",
         alt: "Celtic Mystic (V.2 - Starlight Rare)" },
     ]);
     expect(products.map(p => p.idProduct)).toEqual([873125, 873245]);
@@ -146,7 +146,8 @@ describe("readExpansionPage keeps the failures visible", () => {
 
 describe("isPlaceholderImage tells no-artwork apart from broken markup", () => {
   it("recognises the shared no-artwork image", () => {
-    expect(isPlaceholderImage("//static.cardmarket.com/img/3660af732e89ee7bfadc4b521fe525c1/cardImage")).toBe(true);
+    // Verbatim from CORI: all 18 un-illustrated products share this exact URL.
+    expect(isPlaceholderImage("//static.cardmarket.com/img/3660af732e89ee7bfadc4b521fe525c1/cardImageNotAvailable.png")).toBe(true);
   });
 
   it("does not treat an unexpected image as a placeholder", () => {
