@@ -1,7 +1,7 @@
 {
-  "last_updated": "2026-08-17T07:04:27.730541+00:00",
+  "last_updated": "2026-08-24T07:05:22.064810+00:00",
   "source": "https://www.yugioh-card.com/en/events/",
-  "count": 9,
+  "count": 10,
   "data": [
     {
       "name": "Yu-Gi-Oh! x eFootball™ Collaboration",
@@ -22,22 +22,22 @@
       "url": "https://www.yugioh-card.com/en/events/ygo_x_efootball/"
     },
     {
-      "name": "Yu-Gi-Oh! Championship Series Montreal, Quebec 2026",
-      "type": "YCS",
-      "date_start": "2026-08-14T00:00:00-07:00",
-      "date_end": "2026-08-16T23:59:59-07:00",
-      "date_display": "08/14/2026 - 08/16/2026",
-      "venue": "Montréal Convention Centre",
+      "name": "OTS Championship - Chaos Origin Season",
+      "type": "OTS Tournament",
+      "date_start": null,
+      "date_end": null,
+      "date_display": "08/22/2026 - 08/23/2026",
+      "venue": null,
       "address": {
-        "street": "1001 Pl. Jean-Paul-Riopelle",
-        "city": "Montréal",
-        "state": "QC",
-        "zip": "H2Y 0A3",
-        "country": "Canada"
+        "street": null,
+        "city": null,
+        "state": null,
+        "zip": null,
+        "country": null
       },
-      "location_text": "Montréal, Quebec",
+      "location_text": "North America & Latin America",
       "registration_link": null,
-      "url": "https://www.yugioh-card.com/en/events-item/2026-ycs-montreal/"
+      "url": "https://www.yugioh-card.com/en/events/otschampionship/"
     },
     {
       "name": "WORLD CHAMPIONSHIP 2026 - OTS Celebration",
@@ -92,6 +92,24 @@
       "location_text": "Guayaquil, Ecuador",
       "registration_link": null,
       "url": "https://www.yugioh-card.com/en/events-item/2026-ycs-ecuador/"
+    },
+    {
+      "name": "New York Comic Con 2026",
+      "type": "Special",
+      "date_start": "2026-10-08T00:00:00-07:00",
+      "date_end": "2026-10-11T23:59:59-07:00",
+      "date_display": "10/08/2026 - 10/11/2026",
+      "venue": "Jacob K. Javits Convention Center",
+      "address": {
+        "street": "429 11th Ave",
+        "city": "New York",
+        "state": "NY",
+        "zip": "10001",
+        "country": null
+      },
+      "location_text": "New York, NY",
+      "registration_link": null,
+      "url": "https://www.yugioh-card.com/en/events-item/2026_nycc/"
     },
     {
       "name": "Yu-Gi-Oh! Championship Series Houston, Texas 2026",
