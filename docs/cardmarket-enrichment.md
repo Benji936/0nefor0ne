@@ -262,3 +262,64 @@ The pattern that makes elimination necessary is a recent one: 25LP accounts for
 served no placeholder rows at all. Elimination is not becoming less reliable as
 coverage grows -- it is becoming less *needed*, which is a different thing and
 should not be read as the rung earning its retirement.
+
+## How far this can go, and where it stops
+
+Measured 2026-08-25 against the two live catalogues (86,507 Cardmarket
+singles, 14,005 YGOPRODeck cards with printings). Across the 38,410 printings
+the card page can render:
+
+| | printings | |
+|---|---:|---|
+| exact figure | 30,271 | 78.8% |
+| price band | 7,667 | 20.0% |
+| no price at all | 472 | 1.2% |
+
+The 20% is not one problem. It is two, and only one of them is enrichment's.
+
+**4,181 bands (54.5%) a rarity can split.** YGOPRODeck lists the card in that
+set at two or more rarities, so reading a rarity per product names one of
+them. 3,848 would resolve to a single figure and 333 to a tighter band. These
+concentrate: RA01-RA05, BP01-BP03, MVP1, HAC1, SP13-SP18.
+
+**3,486 bands (45.5%) nothing can split.** These are the old sets, and their
+products are not rarity variants at all:
+
+    MRD "7 Colored Fish"  ->  101795 [Common] 0.29
+                              579073 [Common] 0.17
+                              579288 [Common] --
+
+Three products, all Common -- first edition, unlimited, and a reprint run.
+YGOPRODeck has one row for that printing. No fact in either catalogue maps one
+to the other, so no page anyone fetches will resolve it. MRD (390), LOB (311),
+PSV (279), LON (276), MRL (208), DCR (196), LOD (188), IOC (186), SRL (180).
+
+So the ceiling for the whole enrichment effort is **78.8% -> 88.8% exact**.
+The missing nine points are a property of the sources, not of how much work
+gets done, and a design that promises to close them is promising something
+the data cannot supply.
+
+Cost, counted in listing pages against only the sets a rarity can split:
+
+| coverage of the fixable half | sets | listing pages |
+|---|---:|---:|
+| 25% | 8 | 73 |
+| 50% | 25 | 189 |
+| 75% | 64 | 400 |
+| 100% | 178 | 912 |
+
+Best value first, in bands recovered per page: MVP1 (184/7), BP01 (220/15),
+BP02 (212/15), BP03 (220/16), SP13-SP18 (~50/4 each), HAC1 (137/11).
+
+### Two shortcuts that do not exist
+
+The public product file carries `idProduct, name, idCategory, idExpansion,
+idMetacard, dateAdded` and nothing else -- no rarity, no version, no URL slug.
+There is no cheaper source than the pages.
+
+40,753 of 86,507 products carry no set code, which looks like a large free win
+until you read the expansion names. They are OCG and non-English releases --
+"Expert Edition Volume 1" is the Japanese printing of DR1, "Metal Raiders
+(PMT)" is the German one, "Metal Raiders (Korean)" the Korean. The importer's
+1:1 expansion rule is what keeps an -EN set code off them, and relaxing it to
+recover the products would price a Japanese card as an English one.
