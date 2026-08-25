@@ -51,6 +51,20 @@ export function printingRarity(raw) {
 }
 
 /**
+ * Two spellings of one rarity, compared.
+ *
+ * "Quarter Century Secret Rare" and "Quarter-Century Secret Rare" are the same
+ * claim, and the two catalogues do not agree on the punctuation. This must stay
+ * the same rule as rarity_key() in 20260824_cardmarket_product_identity.sql:
+ * the collection prices through that function and the picker prices through
+ * this one, and a printing they disagree about is one card quoted two ways on
+ * two screens.
+ */
+export function rarityKey(raw) {
+  return String(raw ?? "").normalize("NFKC").toLowerCase().replace(/[^a-z0-9]/g, "") || null;
+}
+
+/**
  * Fold Cardmarket products into YGOPRODeck printings.
  *
  * Pure, so the matching rules are testable without a network: a printing keeps
@@ -58,11 +72,21 @@ export function printingRarity(raw) {
  * one Cardmarket product sits under that set code for that card.
  *
  * Where a set printed the card at several rarities Cardmarket holds several
- * products and labels none of them -- its files carry no rarity and no version
- * number at all. Those printings are still offered and priced as a band,
- * because picking the right *set* narrows the answer a long way even when the
- * version cannot be pinned: sixteen printings down to seven, 0.21-30.47 down to
- * 0.21-6.52.
+ * products and its own files label none of them -- they carry no rarity and no
+ * version number at all. Two things narrow that:
+ *
+ *   The set. Picking the right one takes Albion the Sanctifire Dragon from
+ *   sixteen printings to seven, 0.21-30.47 down to 0.21-6.52, without knowing
+ *   anything about the version.
+ *
+ *   The rarity, where enrichment has read one off Cardmarket's expansion pages
+ *   for every product of the printing. On the 345 printings read so far that
+ *   turns two thirds of the remaining bands into a single figure and pulls the
+ *   rest from an average 10.4x spread to 1.8x.
+ *
+ * A printing nothing narrows is still offered, priced as a band. That is the
+ * honest reading of a catalogue that does not say which product is which, and
+ * `products` below is what the picker's second step asks about to close it.
  */
 export function mergePrintings(cardSets, products) {
   const bySet = new Map();
@@ -83,16 +107,38 @@ export function mergePrintings(cardSets, products) {
     const code = setCodeOf(printCode);
     const candidates = bySet.get(code?.toLowerCase()) ?? [];
 
-    // Every product of this printing, and no attempt to pick between them.
+    // Narrow the printing by the rarity, when the rarity was actually read.
     //
-    // There used to be a filter here preferring the product whose rarity
-    // matched. It could never fire: cardmarket_product.rarity is only set when
-    // YGOPRODeck lists one rarity for the card in that set, so it holds the
-    // same value on every product of a printing and filtering by it returns all
-    // or nothing. card_prices dropped its equivalent rung for the same reason,
-    // and the two have to agree -- a picker quoting a tighter range than the
-    // collection does is two answers to one question.
-    const use = candidates;
+    // This filter was removed once, and correctly: cardmarket_product.rarity was
+    // then only ever set where YGOPRODeck lists a single rarity for the card in
+    // that set, so it held the same value on every product of a printing and
+    // filtering by it returned all of them or none. Enrichment changed that. A
+    // product whose rarity was read off Cardmarket's own expansion page differs
+    // from its siblings, and that difference picks one product out of several.
+    //
+    // Same two rules as rung 1 of card_prices, deliberately -- the collection
+    // and the picker quoting one card two ways is the bug this file exists to
+    // avoid, so the rules are mirrored rather than reinvented:
+    //
+    //   Every product must carry a rarity. On a half-enriched printing the
+    //   sibling nobody has fetched yet might hold the same rarity as the one
+    //   that matched, so narrowing there would be a confident wrong answer
+    //   produced by missing data -- worse than the band it replaced.
+    //
+    //   The match must find something. When YGOPRODeck and Cardmarket disagree
+    //   about what a printing's rarities even are -- MVP1's Obelisk is Ultra
+    //   Rare to one and Gold Secret / Gold Rare to the other -- nothing matches,
+    //   and the honest answer is the whole band rather than an empty list.
+    //
+    // 'unique' rarities pass the first rule and cannot narrow anything, which is
+    // the point: they exist only where the set printed the card at one rarity,
+    // so they match every product of the printing and leave the band untouched.
+    const rkey = rarityKey(printingRarity(s.set_rarity));
+    const complete = candidates.length > 0 && candidates.every((p) => p.rarity);
+    const matched = rkey && complete
+      ? candidates.filter((p) => rarityKey(p.rarity) === rkey)
+      : [];
+    const use = matched.length ? matched : candidates;
 
     // Every product of the printing with its own figure, kept rather than
     // reduced, because the picker's second step is a list of exactly these:
@@ -185,6 +231,22 @@ export async function fetchPrintings(cardName) {
     return [];
   }
   if (!cardSets.length) return [];
+  return fetchPrintingPrices(cardName, cardSets);
+}
+
+/**
+ * The same list, for a caller that already holds the card's printings.
+ *
+ * The card page reads card_sets from YGOPRODeck for its own printings ledger,
+ * and would otherwise fetch them a second time just to price them. Split out
+ * rather than reimplemented there, so the ledger and the picker put the same
+ * figure against the same printing: two answers to one question is the bug
+ * this file exists to avoid.
+ *
+ * The name is still needed -- it is how the Cardmarket side is found at all.
+ */
+export async function fetchPrintingPrices(cardName, cardSets) {
+  if (!cardName || !cardSets?.length) return [];
 
   // Two queries, because a printing is (id_expansion, id_metacard) and not a
   // name. The first finds a way into each printing by the name the app knows;

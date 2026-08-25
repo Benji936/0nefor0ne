@@ -273,6 +273,12 @@
             <router-link class="cx__print-set" :to="'/en/set/' + encodeURIComponent(s.set_name)">{{ s.set_name }}</router-link>
             <span class="cx__print-year tabular-nums">{{ releaseYear(s.set_name) }}</span>
             <span class="cx__print-rarity">{{ s.set_rarity }}</span>
+            <CardPrice
+              v-if="printingPrice(s)"
+              class="cx__print-price"
+              :price="printingPrice(s)"
+            />
+            <span v-else-if="loadingPrintingPrices" class="cx__print-price-sk" aria-hidden="true" />
             <a
               class="cx__print-buy"
               :href="`https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${encodeURIComponent(s.set_code)}`"
@@ -310,6 +316,7 @@ import AddCard           from "@/components/library/AddCard.vue";
 import CardKindIcons      from "@/components/ui/card/CardKindIcons.vue";
 import CardBanlistBadge   from "@/components/ui/card/CardBanlistBadge.vue";
 import CardEffectBreakdown from "@/components/ui/card/CardEffectBreakdown.vue";
+import CardPrice           from "@/components/trade/CardPrice.vue";
 import { ARCHETYPES } from "@/data/archetype-slugs.js";
 import { parseCardText }  from "@/lib/psctParser";
 import { cardImage }      from "@/lib/cardImage";
@@ -318,6 +325,7 @@ import { hasAnyBanlist, ensureBanlistManifest } from "@/lib/banlist";
 import { searchById, searchByArchetype, getCardsByIds, getCardArtworks, getSetReleaseDates } from "@/api";
 import { fetchTradersWithCard } from "@/lib/matches";
 import { fetchCardMarket } from "@/lib/cardMarket";
+import { fetchPrintingPrices } from "@/lib/printings";
 import { getCurrentSession } from "@/lib/supabaseClient";
 import { ldScript }   from "@/lib/jsonLd";
 
@@ -361,7 +369,7 @@ function ensureYugipediaSearchers() {
 }
 
 export default {
-  components: { AddCard, CardKindIcons, CardBanlistBadge, CardEffectBreakdown },
+  components: { AddCard, CardKindIcons, CardBanlistBadge, CardEffectBreakdown, CardPrice },
 
   props: {
     // Passed by App.vue RouterView slot — needed for AddCard auth check
@@ -564,6 +572,11 @@ export default {
       selectedImageId:    null, // which printing art the hero image shows (null → main id)
       artworks:           [],   // all printing artworks (fetched by name; id query returns only one)
       setDates:           {},   // set_name → release date, for sorting printings by recency
+      // print code → the price band Cardmarket holds for that printing, from
+      // fetchPrintingPrices. Client-only: this page is prerendered, and a build
+      // that read the price table would bake yesterday's figures into the HTML.
+      printingPrices:     {},
+      loadingPrintingPrices: false,
     };
   },
 
@@ -724,6 +737,8 @@ export default {
       this.artworks          = [];
       this.market            = null;
       this.loadingMarket     = true;
+      this.printingPrices    = {};
+      this.loadingPrintingPrices = false;
 
       try {
         const locale = this.$route.params.locale || 'en';
@@ -736,6 +751,7 @@ export default {
         this.loadArtworks(data); // fire-and-forget: alternate artworks (fetched by name)
         this.loadSetDates();     // fire-and-forget: release dates to sort printings
         this.loadMarket(data);   // fire-and-forget: how many piles and wishlists this card is in
+        this.loadPrintingPrices(data); // fire-and-forget: what each printing is worth
 
         this.loadTraders(data); // fire-and-forget: who the holders are, when we may know
       } catch (err) {
@@ -802,6 +818,44 @@ export default {
       } finally {
         if (this.card?.id === card.id) this.loadingMarket = false;
       }
+    },
+
+    /** Fire-and-forget: what Cardmarket holds for each of this card's printings.
+     *
+     *  Keyed by print code rather than by row, because that is the identity
+     *  mergePrintings returns and the only one that survives the ledger being
+     *  re-sorted by release date.
+     *
+     *  Runs on the client only -- it is called from load(), which only mounted()
+     *  and the route watcher reach, never onServerPrefetch. Prices move daily
+     *  and this page is prerendered; baking them into the HTML would ship a
+     *  figure that is stale the moment the build finishes. */
+    async loadPrintingPrices(card) {
+      const sets = card?.card_sets ?? [];
+      if (!sets.length) return;
+      this.loadingPrintingPrices = true;
+      try {
+        const priced = await fetchPrintingPrices(card.name_en ?? card.name, sets);
+        if (this.card?.id !== card.id) return; // navigated away mid-flight
+        this.printingPrices = Object.fromEntries(
+          priced.filter((p) => p.price).map((p) => [p.printCode, p.price]),
+        );
+      } catch {
+        this.printingPrices = {}; // no price beats a wrong one; the row just omits it
+      } finally {
+        if (this.card?.id === card.id) this.loadingPrintingPrices = false;
+      }
+    },
+
+    /** The price for one ledger row, or null when Cardmarket has none.
+     *
+     *  Rows are keyed by set_code + set_rarity but priced by set_code alone, so
+     *  a card its set printed at two rarities shows the same band on both rows.
+     *  That is the honest answer rather than a rounding of one: Cardmarket's
+     *  files carry no rarity, and nothing in either catalogue says which of the
+     *  set's products is the Ultra and which the Secret. */
+    printingPrice(s) {
+      return this.printingPrices[s?.set_code] ?? null;
     },
 
     /** The year a printing came out. The list has always been sorted by this
@@ -1279,6 +1333,19 @@ export default {
   font-size: 0.72rem; color: var(--c-muted);
 }
 .cx__print-rarity { flex: 0 0 auto; font-size: 0.72rem; color: var(--c-muted); }
+/* Last before the outbound link, and never given a fixed width: an exact
+   figure and a two-ended band are different lengths, and padding the short one
+   out to match would imply a precision the band does not have. The set name is
+   what flexes, so the money sits against the link on every row. */
+.cx__print-price { flex: 0 0 auto; }
+/* Holds the money's place while the prices load, so the ledger settles once
+   rather than twitching row by row as they arrive. */
+.cx__print-price-sk {
+  flex: 0 0 auto;
+  width: 52px; height: 12px; border-radius: 4px;
+  background: var(--c-skeleton);
+  animation: cx-pulse 1.4s ease-in-out infinite;
+}
 .cx__print-buy {
   flex: 0 0 auto;
   display: grid; place-items: center;
@@ -1363,7 +1430,7 @@ export default {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cx__sk { animation: none; }
+  .cx__sk, .cx__print-price-sk { animation: none; }
   .cx__face img, .cx__fetch img { transition: outline-color 0.15s ease; }
   .cx__face:hover img, .cx__fetch:hover img { transform: none; }
 }

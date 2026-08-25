@@ -38,17 +38,66 @@ describe("mergePrintings prices the printings the app can name", () => {
     expect(out[0].price).toMatchObject({ kind: EXACT, value: 0.09 });
   });
 
-  it("stays a band even when a product carries a matching rarity", () => {
-    // rarity cannot break this tie and must not appear to. It is only ever set
-    // when YGOPRODeck lists one rarity for the card in the set, so it holds the
-    // same value on every product of a printing -- these two rows cannot both
-    // occur in real data, and if they did, preferring one would be a coin flip
-    // on a 300 euro difference.
+  it("picks the product whose read rarity matches the printing", () => {
+    // Real CORI printing: Cardmarket files Magician of Dark Chaos - Black Chaos
+    // three times, and enrichment read a different rarity off each. Before that
+    // read these rows could not occur -- rarity was derived from (card, set) and
+    // so was identical across a printing -- and the band was the honest answer.
+    // Now the rarity is a fact about the product, and it names one of the three.
     const out = mergePrintings(
       [ygo("CORI-EN027", "Ultra Rare")],
-      [prod("CORI", "Ultra Rare", 57.82), prod("CORI", "Secret Rare", 368.69)],
+      [prod("CORI", "Ultra Rare", 57.45), prod("CORI", "Secret Rare", 5.10),
+       prod("CORI", "Starlight Rare", 368.69)],
     );
-    expect(out[0].price).toMatchObject({ kind: NARROWED, low: 57.82, high: 368.69 });
+    expect(out[0].price).toMatchObject({ kind: EXACT, value: 57.45 });
+    expect(needsVersionChoice(out[0])).toBe(false);
+  });
+
+  it("matches a rarity the two catalogues spell differently", () => {
+    // YGOPRODeck writes "Quarter Century Secret Rare", Cardmarket has been seen
+    // to hyphenate it. Same claim, and rarityKey is what makes them comparable.
+    const out = mergePrintings(
+      [ygo("RA04-EN001", "Quarter Century Secret Rare")],
+      [prod("RA04", "Quarter-Century Secret Rare", 28.18), prod("RA04", "Ultra Rare", 1.41)],
+    );
+    expect(out[0].price).toMatchObject({ kind: EXACT, value: 28.18 });
+  });
+
+  it("stays a band when only some of the printing has been read", () => {
+    // The guard that keeps a half-finished enrichment honest. The unread sibling
+    // may well be Ultra Rare too, so narrowing to the one product that happens
+    // to carry the label would be a confident wrong answer made out of missing
+    // data -- worse than the band it replaced.
+    const out = mergePrintings(
+      [ygo("CORI-EN027", "Ultra Rare")],
+      [prod("CORI", "Ultra Rare", 57.45), prod("CORI", null, 368.69)],
+    );
+    expect(out[0].price).toMatchObject({ kind: NARROWED, low: 57.45, high: 368.69 });
+  });
+
+  it("stays a band when the catalogues disagree about the rarities themselves", () => {
+    // MVP1 Obelisk: YGOPRODeck says Ultra Rare, Cardmarket's own pages say Gold
+    // Secret Rare and Gold Rare. Nothing matches, and the whole band is the
+    // honest answer -- an empty filtered list would price the printing at
+    // nothing at all.
+    const out = mergePrintings(
+      [ygo("MVP1-EN055", "Ultra Rare")],
+      [prod("MVP1", "Gold Secret Rare", 12.00), prod("MVP1", "Gold Rare", 3.00)],
+    );
+    expect(out[0].price).toMatchObject({ kind: NARROWED, low: 3.00, high: 12.00 });
+  });
+
+  it("leaves a single-rarity printing exactly as wide as it was", () => {
+    // Every product of a 'unique' printing carries the same rarity, because it
+    // was derived from the card and the set rather than read off a product. It
+    // passes the completeness guard, matches all three, and narrows nothing --
+    // which is the whole reason the guard can be about completeness alone.
+    const out = mergePrintings(
+      [ygo("MRD-EN000", "Common")],
+      [prod("MRD", "Common", 0.29), prod("MRD", "Common", 0.17), prod("MRD", "Common", 1.49)],
+    );
+    expect(out[0].price).toMatchObject({ kind: NARROWED, low: 0.17, high: 1.49 });
+    expect(needsVersionChoice(out[0])).toBe(true);
   });
 
   it("stays a band when the set's products carry no rarity to match on", () => {
