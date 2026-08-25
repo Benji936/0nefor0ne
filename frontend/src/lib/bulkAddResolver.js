@@ -8,10 +8,23 @@
 //   - `isSetCode` / `parseBulkLines` from `./bulkAddParser` (Step 2)
 //   - `searchCardByName` / `searchCardBySetCode` / `searchById` from `@/api`
 //
-// IMPORTANT (R1 / data integrity): every built row carries `extension: ''` and
-// `rarity: 'common'` — never null. The `Card` table has both columns NOT NULL
-// and PostgREST forwards explicit JS nulls, so a null would silently reject the
-// entire insert batch (the latent DeckImport.vue bug this flow diverges from).
+// IMPORTANT (R1 / data integrity): no built row carries a null `extension` or
+// `rarity`. The `Card` table has both columns NOT NULL and PostgREST forwards
+// explicit JS nulls, so a null would silently reject the entire insert batch
+// (the latent DeckImport.vue bug this flow diverges from). Absent means `''`,
+// which satisfies NOT NULL without asserting anything.
+//
+// A line pasted as a set code carries its set code through to `extension`, and
+// the rarity YGOPRODeck reports for that printing through to `rarity`. Both
+// used to be discarded, and discarding the set code is what made a bulk-added
+// card unpriceable: `cardmarket_match_state` derives its set code as
+// `split_part(extension, '-', 1)`, so a blank extension leaves every product of
+// that card in play and the match comes back `ambiguous`. One paste of 225
+// cards produced 224 such rows.
+//
+// A line pasted as a card *name* names no printing, so `extension` stays `''`.
+// That is a real absence and not a gap to fill: the card exists in many sets and
+// nothing in the line says which one the owner holds.
 
 import { isSetCode } from './bulkAddParser'
 import { searchCardByName, searchCardBySetCode, searchById } from '@/api'
@@ -76,7 +89,8 @@ function isTransientNetworkError(err) {
  * @returns {Promise<{ status:'matched'|'ambiguous'|'unmatched', qty:number, query:string, candidates:Array, selected:Object|null, card:Object|null }>}
  */
 export async function resolveLine({ qty, query }, { onRetry } = {}) {
-  const base = { qty, query, candidates: [], selected: null, card: null }
+  const base = { qty, query, candidates: [], selected: null, card: null,
+    setCode: '', setRarity: '' }
 
   // Run an async lookup with a single transient-error retry (R2).
   const withRetry = async (fn) => {
@@ -104,7 +118,16 @@ export async function resolveLine({ qty, query }, { onRetry } = {}) {
         return { ...base, status: 'unmatched' }
       }
       const card = cards[0]
-      return { ...base, status: 'matched', selected: card, card }
+      // cardsetsinfo.php answers with the printing it actually matched:
+      // { id, name, set_name, set_code, set_rarity, set_price }. Prefer its
+      // set_code over the pasted query, because the lookup normalises a code
+      // before sending it (LOB-001 -> LOB-EN001) and the reply says which
+      // printing was found rather than which one was asked for.
+      return {
+        ...base, status: 'matched', selected: card, card,
+        setCode: setRes?.data?.set_code ?? query,
+        setRarity: setRes?.data?.set_rarity ?? '',
+      }
     }
 
     // Name route.
@@ -164,24 +187,26 @@ export async function resolveLines(parsedLines, { onProgress, onRetry } = {}) {
 }
 
 /**
- * buildRow({ card, qty, isWish, userId })
+ * buildRow({ card, qty, isWish, userId, setCode, setRarity })
  *
  * Build a single `Card` insert row per the Component & Data Contracts.
- * Always sets `extension: ''` and `rarity: 'common'` (never null) to satisfy
- * the NOT NULL columns.
+ * Never writes null into `extension` or `rarity`; a line that named no
+ * printing writes `''`, which satisfies NOT NULL without claiming a set or a
+ * rarity the paste never stated.
  *
- * @param {{ card: Object, qty: number, isWish: boolean, userId: string }} args
+ * @param {{ card: Object, qty: number, isWish: boolean, userId: string,
+ *          setCode?: string, setRarity?: string }} args
  * @returns {Object} Card insert row.
  */
-export function buildRow({ card, qty, isWish, userId }) {
+export function buildRow({ card, qty, isWish, userId, setCode, setRarity }) {
   const canonicalName = card.name_en ?? card.name
   return {
     wish: isWish,
     game: 'YGO',
     url: `https://db.ygoprodeck.com/api/v7/cardinfo.php?name=${canonicalName}`,
     name: canonicalName,
-    extension: '',
-    rarity: 'common',
+    extension: setCode ?? '',
+    rarity: setRarity ?? '',
     quantity: qty,
     trader: userId,
     image_id: card.id,
@@ -197,13 +222,17 @@ export function buildRow({ card, qty, isWish, userId }) {
  * Defensive pre-insert guard (R1): repair any null `extension`/`rarity` in
  * place before the rows reach PostgREST, then return the same array.
  *
+ * Repairs to `''` rather than to a plausible-looking value. This runs on rows
+ * something else already failed to populate, so the one thing it must not do is
+ * make that failure look like data.
+ *
  * @param {Array} rows
  * @returns {Array} the same array, mutated so no NOT-NULL column is null.
  */
 export function sanitizeRows(rows) {
   rows.forEach((r) => {
     if (r.extension == null) r.extension = ''
-    if (r.rarity == null) r.rarity = 'common'
+    if (r.rarity == null) r.rarity = ''
   })
   return rows
 }

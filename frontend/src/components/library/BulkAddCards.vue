@@ -368,7 +368,14 @@ export default {
           included
             .map((row) => {
               const card = this.rowCard(row);
-              return card ? buildRow({ card, qty: row.qty, isWish, userId }) : null;
+              // setCode/setRarity are populated only for a line pasted as a set
+              // code; a name line leaves them '' and the row says so.
+              return card
+                ? buildRow({
+                    card, qty: row.qty, isWish, userId,
+                    setCode: row.setCode, setRarity: row.setRarity,
+                  })
+                : null;
             })
             .filter((r) => r != null),
         );
