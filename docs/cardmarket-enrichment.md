@@ -31,6 +31,17 @@ A row whose image names its own id resolves itself, recorded as
 `cardmarket_expansion_page`. This settles the large majority: 113 of 131 rows
 on CORI, 142 of 142 on MZMU.
 
+**The rarity comes from the alt. The URL slug is corroboration for the card
+name and nothing else.** A slug is fixed when the product is first published
+and is not rewritten when the product changes, so it goes stale: 20 of 25LP's
+82 rows sit at `...-V2-Secret-Rare` while the alt, the H1 and the rarity field
+all say Ultra Rare. Product pages 845461 and 845521 settled it in both
+directions -- the alt is right.
+
+So a slug that disagrees about rarity is neither a reason to refuse the row nor
+a value to prefer. Only a slug naming a different *card* is a refusal, because
+that means the row was assembled from two different products.
+
 ## 4. Elimination, for rows with no artwork
 
 Products Cardmarket has no picture for share one placeholder image, so their
@@ -46,6 +57,12 @@ chooses between them.
 
 Nothing at this rung reads idProduct order, row order, `dateAdded`, version
 order or price.
+
+**A row that is missing is not a row with no picture.** Elimination needs the
+page to serve one row per product; a placeholder row is still a row, and still
+states a variant. Where the listing simply does not render a product there is
+nothing to eliminate against, and the printing fails the count gate instead --
+see DLCS below.
 
 > **CORI is not the rule.** All 18 of its placeholders happened to be a single
 > un-illustrated Starlight per printing, so all 25 printings closed. That is an
@@ -145,6 +162,28 @@ trigger cannot tell them apart from values alone, so a correction says so:
 SET LOCAL cardmarket.allow_provenance_correction = 'on';
 ```
 
+## The one rarity source that is an inference
+
+`rarity_source` is `cardmarket_page` where a rarity was read off Cardmarket,
+and `unique` where it was not. `unique` means the import found exactly one
+rarity listed for that card in that set on YGOPRODeck and applied it to *every
+product of the printing* -- which `cardmarket-rarity.mjs` states plainly is "a
+statement about the card, not about any individual product".
+
+That inference is right far more often than not: all 76 of DL17's `unique`
+rarities matched Cardmarket exactly. But it can be **positively wrong**, not
+merely incomplete. MVP1's Obelisk the Tormentor holds three products, all
+stored Ultra Rare; the product pages say Gold Secret Rare, Gold Rare and Ultra
+Rare. YGOPRODeck knew about one of the three printings, and the rule spread its
+rarity over the other two.
+
+It fails only where a printing holds several products, since a single-product
+printing has one rarity by construction. **5,187 products sit in that
+configuration with an unchecked `unique` rarity.** Enrichment overwrites them
+with what Cardmarket says, so every expansion swept is 5,187 smaller; until
+then, treat `unique` on a multi-product printing as a guess the ladder is
+currently repeating with confidence.
+
 ## Expansions that do not behave
 
 `cardmarket_expansion_route.enrichment_status` is `normal`, `listing_anomaly`,
@@ -158,6 +197,24 @@ under-returns unpredictably; a special case in the parser would encode today's
 symptom of a mechanism nobody has explained, while a flag says only "this one
 does not behave" and leaves the parser honest.
 
+Two are flagged, and they fail differently:
+
+**RA05 (6424)** renders "Page 1 of 10" for 725 products, and its in-expansion
+search filter under-returns unpredictably -- 1 row for a card holding 7
+products, but a correct 7 for another. Mechanism not understood.
+
+**DLCS (3234)** is irregular in a perfectly regular way. Its listing serves 240
+of 269 products and omits **exactly one product from every one of its 29
+multi-product printings**: 28 show 4 rows for 5, one shows 8 for 9. 240 is 8
+full pages of 30 and `?site=9` answers "Page 9 of 8" with no rows, so the
+listing ends there rather than being cut short mid-page. Every omitted product
+carries a live price in the daily file, so none of them is delisted or merged.
+
+DLCS is the case that shows what the listing rung cannot do. A full sweep of
+all 8 pages resolves **nothing at all**: each printing's fifth id is known by
+difference, but no row states its version, so there is no identity to write.
+Its sole-product printings are unaffected and need no identity.
+
 ## Run log
 
 `cardmarket_enrichment_run` records what each run did: rows read, identities by
@@ -166,3 +223,42 @@ fallbacks, and whether it swept the expansion or targeted one printing.
 Identities say what we concluded; this says how, which is the part that goes
 stale. `cardmarket_enrichment_metrics` aggregates it, keeping full-sweep and
 targeted figures in separate columns so neither flatters the other.
+
+## What has been swept
+
+Priority 1 (every printing touching a user-visible `Card` row) is complete: 22
+groups across MZMU, CORI, BLZD, RA04 and RA05.
+
+Priority 2 ran as an 8-expansion pilot, chosen for a spread of era and group
+shape rather than for size -- 2007 sets beside a 2025 one, 2-product printings
+beside a 9-product one.
+
+| | rows / products | printings | direct | elimination | refused |
+|---|---|---|---|---|---|
+| 25LP 6212 | 82 / 82 | 21/21 | 62 | 20 | 0 |
+| GLAS 1021 | 113 / 113 | 16/16 | 32 | 0 | 0 |
+| STON 1022 | 97 / 97 | 26/26 | 52 | 0 | 0 |
+| DL17 1480 | 80 / 80 | 19/20 | 75 | 1 | 1 |
+| MVP1 1711 | 187 / 187 | 60/60 | 187 | 0 | 0 |
+| LDS2 3535 | 221 / 221 | 30/30 | 120 | 0 | 0 |
+| LODT 1057 | 225 / 225 | 99/100 | 221 | 0 | 1 |
+| DLCS 3234 | **240 / 269** | 0/29 | 0 | 0 | 29 |
+
+770 identities from 46 listing navigations and 2 product-page navigations. No
+conflict was left standing.
+
+Two printings refused for reasons worth keeping:
+
+- **DL17, Summon Limit** -- two unnamed products against two unnamed rows. The
+  counts match and the mapping does not follow.
+- **LODT, Arcana Force XIV - Temperance** -- both products picture themselves,
+  but one row's alt is the bare card name while the other states V.2. Calling
+  the bare one V.1 would be an assumption.
+
+The rest of the refusals are all DLCS, above.
+
+The pattern that makes elimination necessary is a recent one: 25LP accounts for
+20 of the pilot's 21 eliminated identities, and GLAS, STON, MVP1 and LDS2
+served no placeholder rows at all. Elimination is not becoming less reliable as
+coverage grows -- it is becoming less *needed*, which is a different thing and
+should not be read as the rung earning its retirement.
