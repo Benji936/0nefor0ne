@@ -70,6 +70,27 @@ describe("planPrinting resolves a printing only when the whole set closes", () =
     expect(out.reason).toMatch(/2 rows for 3 products/);
   });
 
+  it("refuses a short page even when every row it does serve names its own id", () => {
+    // Real DLCS shape. The listing serves 4 rows for a 5-product printing, and
+    // all four picture themselves -- there is no no-artwork row to eliminate
+    // against, and the fifth product simply is not rendered. Its id is known
+    // by difference, but nothing on the page states its version, so there is
+    // no identity to write. Every one of DLCS's 29 multi-product printings
+    // looks like this, which is why a full 8-page sweep resolved nothing.
+    const out = planPrinting({
+      idMetacard: 1, localIds: [493729, 496885, 496890, 496895, 496900],
+      rows: [
+        row(496885, 1, "Ultra Rare", "Legendary Knight Timaeus"),
+        row(496890, 2, "Ultra Rare", "Legendary Knight Timaeus"),
+        row(496895, 3, "Ultra Rare", "Legendary Knight Timaeus"),
+        row(496900, 4, "Ultra Rare", "Legendary Knight Timaeus"),
+      ],
+    });
+    expect(out.status).toBe("unresolved");
+    expect(out.reason).toMatch(/4 rows for 5 products/);
+    expect(out.identities).toEqual([]);
+  });
+
   it("refuses when the page names an id we do not hold", () => {
     const out = planPrinting({
       idMetacard: 1, localIds: [10, 11],
@@ -95,6 +116,25 @@ describe("planPrinting resolves a printing only when the whole set closes", () =
     });
     expect(out.status).toBe("unresolved");
     expect(out.reason).toMatch(/no version or rarity/);
+  });
+
+  it("refuses a mute row that names its own id, not just a no-artwork one", () => {
+    // Real LODT shape. 101969 pictures itself, so its id is not in doubt --
+    // but its alt is the bare card name, with no version and no rarity, while
+    // its sibling states V.2 - Rare. The arithmetic closes and there is still
+    // nothing to write for it. Calling it V.1 because the other one is V.2 is
+    // the assumption these gates exist to refuse.
+    const out = planPrinting({
+      idMetacard: 101901, localIds: [101969, 782065],
+      rows: [
+        row(782065, 2, "Rare", "Arcana Force XIV - Temperance"),
+        { idProduct: 101969, cardName: "Arcana Force XIV - Temperance",
+          versionNo: null, versionLabel: null, rarity: null },
+      ],
+    });
+    expect(out.status).toBe("unresolved");
+    expect(out.reason).toMatch(/no version or rarity/);
+    expect(out.identities).toEqual([]);
   });
 
   it("refuses when two rows describe the same variant", () => {

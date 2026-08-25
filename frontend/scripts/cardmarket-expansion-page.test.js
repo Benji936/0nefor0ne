@@ -91,6 +91,26 @@ describe("readRow reads both attributes and refuses on disagreement", () => {
     expect(out).toMatchObject({ ok: true, confidence: 0.9, idProduct: 873125 });
   });
 
+  it("takes the rarity from the alt when the slug disagrees with it", () => {
+    // Real 25LP row. Cardmarket changed this product's rarity and kept the
+    // slug it was first published under, so the URL still says Secret Rare
+    // while the alt, the H1 and the rarity field all say Ultra Rare. 20 of
+    // 25LP's 82 rows look like this.
+    //
+    // The slug is corroboration for the card *name* and nothing else. Reading
+    // a rarity out of it, or refusing the row over the mismatch, would both be
+    // wrong: product page 845461 confirms the alt.
+    const out = readRow({
+      imageUrl: IMG(845461, "25LP"),
+      alt: "Diabellstar the Black Witch (V.2 - Ultra Rare)",
+      href: "Diabellstar-the-Black-Witch-V2-Secret-Rare",
+    });
+    expect(out).toMatchObject({
+      ok: true, idProduct: 845461, versionNo: 2,
+      versionLabel: "V.2 - Ultra Rare", rarity: "Ultra Rare", confidence: 1.0,
+    });
+  });
+
   it("refuses when the href is for a different card", () => {
     expect(readRow({ ...good, href: ".../Some-Other-Card-V1-Secret-Rare" }).ok).toBe(false);
   });
