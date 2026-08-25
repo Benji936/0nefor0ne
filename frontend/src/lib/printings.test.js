@@ -38,6 +38,27 @@ describe("mergePrintings prices the printings the app can name", () => {
     expect(out[0].price).toMatchObject({ kind: EXACT, value: 0.09 });
   });
 
+  it("keeps both rarities when one set code covers two of them", () => {
+    // Real BP01 row. YGOPRODeck gives Graceful Charity's Rare and Starfoil Rare
+    // printings the same code, BP01-EN036. Deduplicating on the code alone
+    // dropped the second and quoted the Rare's 7.47 against both.
+    const out = mergePrintings(
+      [ygo("BP01-EN036", "Rare"), ygo("BP01-EN036", "Starfoil Rare")],
+      [prod("BP01", "Rare", 7.47), prod("BP01", "Starfoil Rare", 10.11)],
+    );
+    expect(out).toHaveLength(2);
+    expect(out.find((p) => p.rarity === "Rare").price).toMatchObject({ kind: EXACT, value: 7.47 });
+    expect(out.find((p) => p.rarity === "Starfoil Rare").price).toMatchObject({ kind: EXACT, value: 10.11 });
+  });
+
+  it("still collapses a print code repeated at one rarity", () => {
+    const out = mergePrintings(
+      [ygo("POTE-EN012", "Common"), ygo("POTE-EN012", "Common")],
+      [prod("POTE", "Common", 0.09)],
+    );
+    expect(out).toHaveLength(1);
+  });
+
   it("picks the product whose read rarity matches the printing", () => {
     // Real CORI printing: Cardmarket files Magician of Dark Chaos - Black Chaos
     // three times, and enrichment read a different rarity off each. Before that

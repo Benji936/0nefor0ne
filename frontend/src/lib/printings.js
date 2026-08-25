@@ -101,8 +101,18 @@ export function mergePrintings(cardSets, products) {
   const out = [];
   for (const s of cardSets ?? []) {
     const printCode = s.set_code;
-    if (!printCode || seen.has(printCode)) continue;
-    seen.add(printCode);
+    if (!printCode) continue;
+
+    // Keyed on the print code *and* the rarity, because a set that printed the
+    // card at two rarities gives both rows the same code: BP01-EN036 is Graceful
+    // Charity as both Rare and Starfoil Rare. Deduplicating on the code alone
+    // dropped the second row, and once rarity started narrowing the price that
+    // stopped being harmless -- the ledger showed the Rare figure against both,
+    // quoting 7.47 for a Starfoil worth 10.11.
+    const rarity = printingRarity(s.set_rarity);
+    const dedupe = `${printCode}|${rarityKey(rarity) ?? ""}`;
+    if (seen.has(dedupe)) continue;
+    seen.add(dedupe);
 
     const code = setCodeOf(printCode);
     const candidates = bySet.get(code?.toLowerCase()) ?? [];
@@ -133,7 +143,7 @@ export function mergePrintings(cardSets, products) {
     // 'unique' rarities pass the first rule and cannot narrow anything, which is
     // the point: they exist only where the set printed the card at one rarity,
     // so they match every product of the printing and leave the band untouched.
-    const rkey = rarityKey(printingRarity(s.set_rarity));
+    const rkey = rarityKey(rarity);
     const complete = candidates.length > 0 && candidates.every((p) => p.rarity);
     const matched = rkey && complete
       ? candidates.filter((p) => rarityKey(p.rarity) === rkey)
@@ -163,7 +173,7 @@ export function mergePrintings(cardSets, products) {
       printCode,
       setCode: code,
       setName: s.set_name ?? "",
-      rarity: printingRarity(s.set_rarity),
+      rarity,
 
       // The Cardmarket product this printing *is*, when the printing holds
       // exactly one. Recording it stops the price being matched at all -- see

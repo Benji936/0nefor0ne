@@ -325,9 +325,13 @@ import { hasAnyBanlist, ensureBanlistManifest } from "@/lib/banlist";
 import { searchById, searchByArchetype, getCardsByIds, getCardArtworks, getSetReleaseDates } from "@/api";
 import { fetchTradersWithCard } from "@/lib/matches";
 import { fetchCardMarket } from "@/lib/cardMarket";
-import { fetchPrintingPrices } from "@/lib/printings";
+import { fetchPrintingPrices, printingRarity, rarityKey } from "@/lib/printings";
 import { getCurrentSession } from "@/lib/supabaseClient";
 import { ldScript }   from "@/lib/jsonLd";
+
+/** How a ledger row finds its price: the print code alone does not identify one,
+ *  because a set that printed the card at two rarities uses one code for both. */
+const priceKey = (printCode, rarity) => `${printCode}|${rarityKey(rarity) ?? ""}`;
 
 // Reverse of ARCHETYPE_BY_SLUG: the API gives a card's archetype by name, and
 // the link needs its slug. Built once per module load, not per card.
@@ -822,9 +826,11 @@ export default {
 
     /** Fire-and-forget: what Cardmarket holds for each of this card's printings.
      *
-     *  Keyed by print code rather than by row, because that is the identity
-     *  mergePrintings returns and the only one that survives the ledger being
-     *  re-sorted by release date.
+     *  Keyed by print code and rarity together, which is what identifies a row:
+     *  a set that printed the card at two rarities gives both rows the same
+     *  code, and BP01-EN036 is Graceful Charity as both Rare (7.47) and
+     *  Starfoil Rare (10.11). The key survives the ledger being re-sorted by
+     *  release date, which a row index would not.
      *
      *  Runs on the client only -- it is called from load(), which only mounted()
      *  and the route watcher reach, never onServerPrefetch. Prices move daily
@@ -838,7 +844,7 @@ export default {
         const priced = await fetchPrintingPrices(card.name_en ?? card.name, sets);
         if (this.card?.id !== card.id) return; // navigated away mid-flight
         this.printingPrices = Object.fromEntries(
-          priced.filter((p) => p.price).map((p) => [p.printCode, p.price]),
+          priced.filter((p) => p.price).map((p) => [priceKey(p.printCode, p.rarity), p.price]),
         );
       } catch {
         this.printingPrices = {}; // no price beats a wrong one; the row just omits it
@@ -849,13 +855,13 @@ export default {
 
     /** The price for one ledger row, or null when Cardmarket has none.
      *
-     *  Rows are keyed by set_code + set_rarity but priced by set_code alone, so
-     *  a card its set printed at two rarities shows the same band on both rows.
-     *  That is the honest answer rather than a rounding of one: Cardmarket's
-     *  files carry no rarity, and nothing in either catalogue says which of the
-     *  set's products is the Ultra and which the Secret. */
+     *  Where the printing has not been enriched, both rarities of one print code
+     *  resolve to the same band -- Cardmarket's files carry no rarity, and
+     *  nothing in either catalogue says which product is the Ultra and which the
+     *  Secret. That is the honest answer, and it stops being the answer for a
+     *  printing somebody has read. */
     printingPrice(s) {
-      return this.printingPrices[s?.set_code] ?? null;
+      return this.printingPrices[priceKey(s?.set_code, printingRarity(s?.set_rarity))] ?? null;
     },
 
     /** The year a printing came out. The list has always been sorted by this
