@@ -395,8 +395,8 @@
     "saveChanges": "Änderungen speichern",
     "viewOnDiscord": "Auf Discord ansehen",
     "replyOnDiscord": "Auf Discord antworten",
-    "addToTradeList": "Zur Tausch-Liste hinzufügen",
-    "addToWishList": "Zur Wunschliste hinzufügen",
+    "addToTradeList": "Zum Tauschstapel",
+    "addToWishList": "Auf die Wunschliste",
     "addedToList": "Zur Liste hinzugefügt",
     "linkCard": "Karte verknüpfen",
     "cardSearchPlaceholder": "Nach Name oder Code suchen (LOB-EN001)",
@@ -446,18 +446,13 @@
   },
   "proposals": {
     "done": "Erledigt",
-    "doneDesc": "Von beiden Seiten bestätigte Tausche. Die Karten haben den Besitzer gewechselt.",
-    "cancelled": "Abgebrochen",
-    "cancelledDesc": "Tausche, die nicht zustande kamen — zurückgezogen oder abgelehnt.",
     "loginRequired": "Melde dich an, um deine Vorschläge zu sehen.",
     "noProposalsTitle": "Noch keine Vorschläge",
     "noProposalsDesc": "Sende einen aus dem Matches-Tab, wenn du einen Trader gefunden hast.",
-    "incoming": "Eingehend",
-    "incomingDesc": "Diese Trader möchten mit dir tauschen. Annehmen oder ablehnen.",
-    "outgoing": "Ausgehend",
-    "outgoingDesc": "Warte auf Antwort der anderen Seite.",
-    "accepted": "In Bearbeitung",
-    "acceptedDesc": "Beide Seiten haben zugestimmt. Koordiniere und schließe den Tausch ab."
+    "closed": "Beendet",
+    "waitingOnYou": "{count} Tausch wartet auf dich. | {count} Tausche warten auf dich.",
+    "nothingWaiting": "Gerade wartet nichts auf dich.",
+    "findTraders": "Trader finden"
   },
   "proposal": {
     "openTradeAria": "Tausch #{id} öffnen",
@@ -503,10 +498,21 @@
     "waitingAccept": "Warten auf die Antwort von {name}.",
     "viewTrade": "Tausch ansehen",
     "starLabel": "{n} Stern | {n} Sterne",
-    "viewProfileOf": "Profil von {name} ansehen"
+    "viewProfileOf": "Profil von {name} ansehen",
+    "yourMove": "Du bist dran",
+    "theirMove": "Andere dran",
+    "rate": "{name} bewerten",
+    "youRated": "Du hast {name} bewertet.",
+    "notChosenYet": "Noch nicht gewählt"
   },
   "proposeDialog": {
     "title": "Tausch vorschlagen",
+    "requestCards": "Aus {name}s Ordner wählen",
+    "requestHelp": "Wähle die Karten aus, die dich interessieren. Danach sieht sich {name} deinen Ordner an.",
+    "returnHelp": "{name} hat Karten aus deinem Ordner angefragt. Wähle, was du dafür möchtest.",
+    "theirBinder": "{name}s Ordner",
+    "sendRequest": "Anfrage senden",
+    "sendSelection": "Meine Auswahl senden",
     "editProposal": "Vorschlag bearbeiten",
     "counterPropose": "Gegenangebot machen",
     "with": "mit",
@@ -560,7 +566,18 @@
     "cardsToChooseFrom": "{count} zur Auswahl",
     "youPayAmount": "Du zahlst €{amount}",
     "saveFailed": "Dein Vorschlag konnte nicht gespeichert werden. Bitte versuche es erneut.",
-    "photoPreviewAlt": "Vorschau des Verifizierungsfotos"
+    "photoPreviewAlt": "Vorschau des Verifizierungsfotos",
+    "whichBinder": "Geöffneter Ordner",
+    "onTheTable": "Auf dem Tisch",
+    "nothingPickedYet": "Noch nichts gewählt. Klicke eine Karte an, um sie herauszunehmen.",
+    "pointAtACard": "Zeige auf eine Karte, um die Anzahl zu ändern oder sie zurückzulegen.",
+    "putBack": "Zurücklegen",
+    "putBackAria": "{name} zurück in den Ordner legen",
+    "oneMore": "Ein {name} mehr",
+    "oneFewer": "Ein {name} weniger",
+    "pickedCardAria": "{name}, {count} ausgewählt",
+    "checkThePrice": "Sieh nach, was diese Auflage kostet.",
+    "locked": "Im Tausch"
   },
   "tradeDetail": {
     "backToTrades": "Zurück zu den Tauschen",
@@ -588,9 +605,31 @@
     "confirmWithoutPhotos": "Auf mindestens einer Seite fehlen Fotos. Du kannst trotzdem bestätigen — sie sind ein Nachweis, keine Bedingung.",
     "waitingForConfirmDetail": "Warten auf {name}, zu bestätigen.",
     "bothUploadedConfirmHint": "Beide haben hochgeladen  bestätige, wenn du deine Karten erhalten hast.",
+    "chooseReturnCards": "Karten aus ihrem Ordner wählen",
+    "chooseReturnCardsHelp": "{name} hat Karten aus deinem Ordner gewählt. Wähle jetzt aus dem anderen Ordner.",
+    "waitingForReturnSelection": "Warten, bis {name} deinen Ordner durchsieht und Karten auswählt.",
+    "confirmAgreement": "Vereinbarung bestätigen",
+    "changeCardsIWant": "Gewünschte Karten ändern",
+    "suggestTerms": "Bedingungen vorschlagen",
+    "tradeMethod": "Tauschmethode",
+    "cashPayer": "Wer zahlt den Unterschied?",
+    "termsSuggested": "Bedingungen aktualisiert. Beide müssen die neue Revision bestätigen.",
+    "confirmRevisionHelp": "Bestätige die Karten und Bedingungen in Revision {revision}.",
+    "waitingAgreement": "Deine Bestätigung ist gespeichert. Warten auf {name}.",
+    "agreementConfirmed": "Vereinbarung bestätigt.",
+    "agreementComplete": "Beide Seiten sind einverstanden. Der Tausch läuft jetzt.",
+    "valueDifference": "Wertunterschied",
     "photosVerifiedCanAccept": "Fotos verifiziert  du kannst jetzt annehmen.",
     "declinePlaceholder": "Optional  teile mit, warum du ablehnst…",
-    "acceptWithoutPhotos": "Noch hat keine Seite ihre Karten gezeigt. Du kannst trotzdem annehmen, aber Fotos sind der einzige Nachweis dessen, was zugesagt wurde."
+    "acceptWithoutPhotos": "Noch hat keine Seite ihre Karten gezeigt. Du kannst trotzdem annehmen, aber Fotos sind der einzige Nachweis dessen, was zugesagt wurde.",
+    "phaseSelection": "Karten wählen",
+    "phaseAgreement": "Einigung",
+    "phaseExchange": "Tausch",
+    "phaseDone": "Fertig",
+    "tradeProgress": "Stand dieses Tauschs",
+    "gapEven": "Ausgeglichen",
+    "gapYouAhead": "Zu deinen Gunsten",
+    "gapTheyAhead": "Zu {name}s Gunsten"
   },
   "tradeError": {
     "stale": "Dieser Tausch hat sich geändert, seit du ihn geöffnet hast. Er wurde gerade aktualisiert.",
@@ -613,8 +652,6 @@
     "binderCount": "{count} Karte | {count} Karten",
     "binderSearch": "Karten suchen",
     "binderWantedOnly": "Nur was ich suche",
-    "binderShowing": "{shown} von {total}",
-    "binderLoadMore": "{count} weitere laden",
     "binderNoResults": "Keine Karte passt.",
     "tabsLabel": "Profilbereiche",
     "loadFailed": "Dieses Profil konnte nicht geladen werden.",
@@ -642,7 +679,11 @@
     "blankBody": "{name} hat noch keine Karten zum Tausch eingestellt.",
     "blankBodyJoined": "{name} ist {when} beigetreten und hat noch keine Karten zum Tausch eingestellt.",
     "blankCta": "Deine Matches finden",
-    "tableLabel": "Möglicher Tausch"
+    "tableLabel": "Möglicher Tausch",
+    "binderPageOf": "Seite {page} von {total}",
+    "binderPagesOf": "Seiten {first}–{last} von {total}",
+    "binderPrevPage": "Vorherige Seite",
+    "binderNextPage": "Nächste Seite"
   },
   "userCard": {
     "youGet": "Du bekommst",
@@ -912,7 +953,12 @@
     "visibleToBoth": "Für beide Händler sichtbar",
     "noMessages": "Noch keine Nachrichten. Sag etwas!",
     "typeMessage": "Nachricht eingeben…",
-    "readOnly": "Chat ist schreibgeschützt."
+    "readOnly": "Chat ist schreibgeschützt.",
+    "openWith": "Mit {name} schreiben",
+    "readOnlyWith": "Nachrichten mit {name}",
+    "closeChat": "Unterhaltung schließen",
+    "newCount": "{count} neu",
+    "sinceOpened": "Neu, seit du die Seite geöffnet hast"
   },
   "deckImport": {
     "title": "Deck importieren (.ydk)",
@@ -1756,6 +1802,10 @@
     "addAsCash": "Als Ausgleich hinzufügen",
     "exactAfterPicking": "Wähle oben die Drucke für einen exakten Betrag",
     "sourceShort": "Cardmarket",
+    "trendMetric": "Cardmarket-Trendpreis",
+    "lowMetric": "Niedrigstes Cardmarket-Angebot",
+    "mixedMetric": "Cardmarket-Spanne aus Trendpreis und niedrigstem Angebot",
+    "unavailable": "Preis nicht verfügbar",
     "whichPrinting": "Welcher Druck ist deiner?",
     "pickPrinting": "Welcher Druck?",
     "noPrice": "Kein Preis",
@@ -1763,6 +1813,7 @@
     "whichVersion": "Welche Version ist deine?",
     "versionsUnlabelled": "Cardmarket führt {count} Versionen dieser Auflage, ohne zu veröffentlichen, welche welche ist. Wähle deine anhand des Preises.",
     "cardmarketProduct": "Cardmarket-Produkt",
-    "checkOnCardmarket": "Auf Cardmarket prüfen"
+    "checkOnCardmarket": "Auf Cardmarket prüfen",
+    "cardmarketTrend": "Cardmarket-Trend"
   }
 }

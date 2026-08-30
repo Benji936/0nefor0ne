@@ -395,8 +395,8 @@
     "saveChanges": "Enregistrer",
     "viewOnDiscord": "Voir sur Discord",
     "replyOnDiscord": "Répondre sur Discord",
-    "addToTradeList": "Ajouter à ma liste d'échange",
-    "addToWishList": "Ajouter à ma liste de souhaits",
+    "addToTradeList": "Ajouter à la pile d'échange",
+    "addToWishList": "Ajouter à la liste de souhaits",
     "addedToList": "Ajouté à la liste",
     "linkCard": "Lier une carte",
     "cardSearchPlaceholder": "Rechercher par nom ou code (LOB-EN001)",
@@ -446,18 +446,13 @@
   },
   "proposals": {
     "done": "Terminés",
-    "doneDesc": "Échanges confirmés des deux côtés. Les cartes ont changé de mains.",
-    "cancelled": "Annulés",
-    "cancelledDesc": "Échanges qui n'ont pas abouti — retirés ou refusés.",
     "loginRequired": "Connectez-vous pour voir vos propositions.",
     "noProposalsTitle": "Aucune proposition pour l'instant",
     "noProposalsDesc": "Envoyez-en une depuis l'onglet Correspondances lorsque vous trouvez un joueur qui vous intéresse.",
-    "incoming": "Reçues",
-    "incomingDesc": "Ces joueurs souhaitent échanger avec vous. Acceptez ou refusez.",
-    "outgoing": "Envoyées",
-    "outgoingDesc": "En attente de réponse de l'autre côté.",
-    "accepted": "En cours",
-    "acceptedDesc": "Les deux parties ont accepté. Coordonnez et finalisez l'échange."
+    "closed": "Clos",
+    "waitingOnYou": "{count} échange vous attend. | {count} échanges vous attendent.",
+    "nothingWaiting": "Rien ne vous attend pour le moment.",
+    "findTraders": "Trouver des traders"
   },
   "proposal": {
     "openTradeAria": "Ouvrir l'échange n°{id}",
@@ -503,10 +498,21 @@
     "waitingAccept": "En attente de la réponse de {name}.",
     "viewTrade": "Voir l'échange",
     "starLabel": "{n} étoile | {n} étoiles",
-    "viewProfileOf": "Voir le profil de {name}"
+    "viewProfileOf": "Voir le profil de {name}",
+    "yourMove": "Votre tour",
+    "theirMove": "Leur tour",
+    "rate": "Évaluer {name}",
+    "youRated": "Vous avez évalué {name}.",
+    "notChosenYet": "Pas encore choisies"
   },
   "proposeDialog": {
     "title": "Proposer un échange",
+    "requestCards": "Choisir dans le classeur de {name}",
+    "requestHelp": "Choisissez les cartes qui vous intéressent. {name} consultera ensuite votre classeur.",
+    "returnHelp": "{name} a demandé des cartes de votre classeur. Choisissez ce que vous souhaitez en retour.",
+    "theirBinder": "Classeur de {name}",
+    "sendRequest": "Envoyer la demande",
+    "sendSelection": "Envoyer ma sélection",
     "editProposal": "Modifier la proposition",
     "counterPropose": "Contre-proposer",
     "with": "avec",
@@ -560,7 +566,18 @@
     "cardsToChooseFrom": "{count} au choix",
     "youPayAmount": "Vous payez €{amount}",
     "saveFailed": "Impossible d'enregistrer votre proposition. Veuillez réessayer.",
-    "photoPreviewAlt": "Aperçu de la photo de vérification"
+    "photoPreviewAlt": "Aperçu de la photo de vérification",
+    "whichBinder": "Classeur ouvert",
+    "onTheTable": "Sur la table",
+    "nothingPickedYet": "Rien de choisi. Cliquez sur une carte pour la sortir du classeur.",
+    "pointAtACard": "Pointez une carte pour changer la quantité ou la remettre.",
+    "putBack": "Remettre",
+    "putBackAria": "Remettre {name} dans le classeur",
+    "oneMore": "Un {name} de plus",
+    "oneFewer": "Un {name} de moins",
+    "pickedCardAria": "{name}, {count} sélectionné(s)",
+    "checkThePrice": "Voir le prix de cette impression.",
+    "locked": "Déjà en échange"
   },
   "tradeDetail": {
     "backToTrades": "Retour aux échanges",
@@ -588,9 +605,31 @@
     "confirmWithoutPhotos": "Il manque des photos d'au moins un côté. Vous pouvez confirmer quand même — elles servent de trace, pas de condition.",
     "waitingForConfirmDetail": "En attente que {name} confirme.",
     "bothUploadedConfirmHint": "Les deux photos sont envoyées  confirmez quand vous avez reçu vos cartes.",
+    "chooseReturnCards": "Choisir dans son classeur",
+    "chooseReturnCardsHelp": "{name} a choisi des cartes dans votre classeur. Choisissez maintenant dans le sien.",
+    "waitingForReturnSelection": "En attente que {name} consulte votre classeur et choisisse des cartes.",
+    "confirmAgreement": "Confirmer cet accord",
+    "changeCardsIWant": "Modifier les cartes souhaitées",
+    "suggestTerms": "Proposer des conditions",
+    "tradeMethod": "Mode d'échange",
+    "cashPayer": "Qui paie la différence ?",
+    "termsSuggested": "Conditions mises à jour. Les deux personnes doivent confirmer la nouvelle révision.",
+    "confirmRevisionHelp": "Confirmez les cartes et les conditions de la révision {revision}.",
+    "waitingAgreement": "Votre confirmation est enregistrée. En attente de {name}.",
+    "agreementConfirmed": "Accord confirmé.",
+    "agreementComplete": "Les deux parties sont d'accord. L'échange est en cours.",
+    "valueDifference": "Différence de valeur",
     "photosVerifiedCanAccept": "Photos vérifiées  vous pouvez maintenant accepter.",
     "declinePlaceholder": "Optionnel  expliquez pourquoi vous refusez…",
-    "acceptWithoutPhotos": "Aucune des deux parties n'a montré ses cartes. Vous pouvez accepter quand même, mais les photos sont la seule trace de ce qui a été promis."
+    "acceptWithoutPhotos": "Aucune des deux parties n'a montré ses cartes. Vous pouvez accepter quand même, mais les photos sont la seule trace de ce qui a été promis.",
+    "phaseSelection": "Choix des cartes",
+    "phaseAgreement": "Accord",
+    "phaseExchange": "Échange",
+    "phaseDone": "Terminé",
+    "tradeProgress": "Où en est cet échange",
+    "gapEven": "Équilibré",
+    "gapYouAhead": "À votre avantage",
+    "gapTheyAhead": "À l'avantage de {name}"
   },
   "tradeError": {
     "stale": "Cet échange a évolué depuis que vous l'avez ouvert. Il vient d'être actualisé.",
@@ -613,8 +652,6 @@
     "binderCount": "{count} carte | {count} cartes",
     "binderSearch": "Rechercher des cartes",
     "binderWantedOnly": "Seulement ce que je cherche",
-    "binderShowing": "{shown} sur {total}",
-    "binderLoadMore": "Afficher {count} de plus",
     "binderNoResults": "Aucune carte ne correspond.",
     "tabsLabel": "Sections du profil",
     "loadFailed": "Impossible de charger ce profil.",
@@ -642,7 +679,11 @@
     "blankBody": "{name} n'a encore mis aucune carte à l'échange.",
     "blankBodyJoined": "{name} s'est inscrit {when} et n'a encore mis aucune carte à l'échange.",
     "blankCta": "Trouver vos matchs",
-    "tableLabel": "Échange possible"
+    "tableLabel": "Échange possible",
+    "binderPageOf": "Page {page} sur {total}",
+    "binderPagesOf": "Pages {first}–{last} sur {total}",
+    "binderPrevPage": "Page précédente",
+    "binderNextPage": "Page suivante"
   },
   "userCard": {
     "youGet": "Vous recevez",
@@ -912,7 +953,12 @@
     "visibleToBoth": "Visible par les deux échangeurs",
     "noMessages": "Aucun message pour l'instant. Dites quelque chose !",
     "typeMessage": "Tapez un message…",
-    "readOnly": "Le chat est en lecture seule."
+    "readOnly": "Le chat est en lecture seule.",
+    "openWith": "Parler à {name}",
+    "readOnlyWith": "Messages avec {name}",
+    "closeChat": "Fermer la conversation",
+    "newCount": "{count} nouveau | {count} nouveau | {count} nouveaux",
+    "sinceOpened": "Nouveaux depuis votre arrivée sur la page"
   },
   "deckImport": {
     "title": "Importer un deck (.ydk)",
@@ -1756,6 +1802,10 @@
     "addAsCash": "Ajouter en complément",
     "exactAfterPicking": "Choisissez les impressions ci-dessus pour un montant exact",
     "sourceShort": "Cardmarket",
+    "trendMetric": "Prix tendance Cardmarket",
+    "lowMetric": "Offre la moins chère sur Cardmarket",
+    "mixedMetric": "Fourchette Cardmarket entre tendance et offre minimale",
+    "unavailable": "Prix indisponible",
     "whichPrinting": "Quelle impression avez-vous ?",
     "pickPrinting": "Quelle impression ?",
     "noPrice": "Pas de prix",
@@ -1763,6 +1813,7 @@
     "whichVersion": "Laquelle est la vôtre ?",
     "versionsUnlabelled": "Cardmarket répertorie {count} versions de cette édition sans publier laquelle est laquelle. Choisissez la vôtre d'après le prix.",
     "cardmarketProduct": "Produit Cardmarket",
-    "checkOnCardmarket": "Vérifier sur Cardmarket"
+    "checkOnCardmarket": "Vérifier sur Cardmarket",
+    "cardmarketTrend": "Tendance Cardmarket"
   }
 }

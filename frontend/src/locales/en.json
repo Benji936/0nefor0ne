@@ -395,8 +395,8 @@
     "saveChanges": "Save changes",
     "viewOnDiscord": "View on Discord",
     "replyOnDiscord": "Reply on Discord",
-    "addToTradeList": "Add to Trade List",
-    "addToWishList": "Add to Wish List",
+    "addToTradeList": "Add to trade pile",
+    "addToWishList": "Add to wishlist",
     "addedToList": "Added to list",
     "linkCard": "Link a card",
     "cardSearchPlaceholder": "Search by name or set code (LOB-EN001)",
@@ -446,18 +446,13 @@
   },
   "proposals": {
     "done": "Done",
-    "doneDesc": "Trades both sides confirmed. The cards changed hands.",
-    "cancelled": "Cancelled",
-    "cancelledDesc": "Trades that fell through — withdrawn or declined.",
     "loginRequired": "Log in to see your proposals.",
     "noProposalsTitle": "No proposals yet",
     "noProposalsDesc": "Send one from the Matches tab when you find a trader you want to deal with.",
-    "incoming": "Incoming",
-    "incomingDesc": "These traders want to deal with you. Accept or decline.",
-    "outgoing": "Outgoing",
-    "outgoingDesc": "Waiting for the other side to respond.",
-    "accepted": "In progress",
-    "acceptedDesc": "Both sides agreed. Coordinate and complete the trade."
+    "closed": "Closed",
+    "waitingOnYou": "{count} trade is waiting on you. | {count} trades are waiting on you.",
+    "nothingWaiting": "Nothing is waiting on you right now.",
+    "findTraders": "Find traders"
   },
   "proposal": {
     "openTradeAria": "Open trade #{id}",
@@ -503,10 +498,21 @@
     "waitingAccept": "Waiting for {name} to answer.",
     "viewTrade": "View trade",
     "starLabel": "{n} star | {n} stars",
-    "viewProfileOf": "View {name}'s profile"
+    "viewProfileOf": "View {name}'s profile",
+    "yourMove": "Your move",
+    "theirMove": "Their move",
+    "rate": "Rate {name}",
+    "youRated": "You rated {name}.",
+    "notChosenYet": "Not chosen yet"
   },
   "proposeDialog": {
     "title": "Propose a trade",
+    "requestCards": "Choose from {name}'s binder",
+    "requestHelp": "Pick the cards you're interested in. {name} will look through your binder next.",
+    "returnHelp": "{name} requested cards from your binder. Choose what you would like in return.",
+    "theirBinder": "{name}'s binder",
+    "sendRequest": "Send request",
+    "sendSelection": "Send my selection",
     "editProposal": "Edit proposal",
     "counterPropose": "Counter-propose",
     "with": "with",
@@ -560,7 +566,18 @@
     "cardsToChooseFrom": "{count} to choose from",
     "youPayAmount": "You pay €{amount}",
     "saveFailed": "We couldn't save your proposal. Please try again.",
-    "photoPreviewAlt": "Verification photo preview"
+    "photoPreviewAlt": "Verification photo preview",
+    "whichBinder": "Which binder is open",
+    "onTheTable": "On the table",
+    "nothingPickedYet": "Nothing picked yet. Click a card to pull it out of the binder.",
+    "pointAtACard": "Point at a card to change how many, or put it back.",
+    "putBack": "Put back",
+    "putBackAria": "Put {name} back in the binder",
+    "oneMore": "One more {name}",
+    "oneFewer": "One fewer {name}",
+    "pickedCardAria": "{name}, {count} selected",
+    "checkThePrice": "Check what this printing is going for.",
+    "locked": "In a trade"
   },
   "tradeDetail": {
     "backToTrades": "Back to trades",
@@ -588,9 +605,31 @@
     "confirmWithoutPhotos": "Photos are missing on at least one side. You can still confirm — they're a record, not a requirement.",
     "waitingForConfirmDetail": "Waiting for {name} to confirm.",
     "bothUploadedConfirmHint": "Both sides have uploaded  confirm when you've received your cards.",
+    "chooseReturnCards": "Choose cards from their binder",
+    "chooseReturnCardsHelp": "{name} picked cards from your binder. Now choose what you would like from theirs.",
+    "waitingForReturnSelection": "Waiting for {name} to look through your binder and choose cards.",
+    "confirmAgreement": "Confirm this agreement",
+    "changeCardsIWant": "Change cards I want",
+    "suggestTerms": "Suggest terms",
+    "tradeMethod": "Trade method",
+    "cashPayer": "Who pays the difference?",
+    "termsSuggested": "Terms updated. Both traders must confirm the new revision.",
+    "confirmRevisionHelp": "Confirm the cards and terms in revision {revision}.",
+    "waitingAgreement": "Your confirmation is recorded. Waiting for {name}.",
+    "agreementConfirmed": "Agreement confirmed.",
+    "agreementComplete": "Both sides agreed. The exchange is now in progress.",
+    "valueDifference": "Value difference",
     "photosVerifiedCanAccept": "Photos verified  you can now accept.",
     "declinePlaceholder": "Optional  let them know why you're declining…",
-    "acceptWithoutPhotos": "Neither side has shown their cards yet. You can accept anyway, but photos are the only record of what was promised."
+    "acceptWithoutPhotos": "Neither side has shown their cards yet. You can accept anyway, but photos are the only record of what was promised.",
+    "phaseSelection": "Choosing cards",
+    "phaseAgreement": "Agreeing",
+    "phaseExchange": "Exchanging",
+    "phaseDone": "Done",
+    "tradeProgress": "Where this trade has got to",
+    "gapEven": "Evenly matched",
+    "gapYouAhead": "In your favour",
+    "gapTheyAhead": "In {name}'s favour"
   },
   "tradeError": {
     "stale": "This trade has moved on since you opened it. We have refreshed it below.",
@@ -613,8 +652,6 @@
     "binderCount": "{count} card | {count} cards",
     "binderSearch": "Search cards",
     "binderWantedOnly": "Only what I want",
-    "binderShowing": "Showing {shown} of {total}",
-    "binderLoadMore": "Load {count} more",
     "binderNoResults": "No cards match.",
     "tabsLabel": "Trader profile sections",
     "loadFailed": "Could not load this profile.",
@@ -642,7 +679,11 @@
     "blankBody": "{name} hasn't put any cards up for trade.",
     "blankBodyJoined": "{name} joined {when} and hasn't put any cards up for trade.",
     "blankCta": "Find your matches",
-    "tableLabel": "Possible trade"
+    "tableLabel": "Possible trade",
+    "binderPageOf": "Page {page} of {total}",
+    "binderPagesOf": "Pages {first}–{last} of {total}",
+    "binderPrevPage": "Previous page",
+    "binderNextPage": "Next page"
   },
   "userCard": {
     "youGet": "You get",
@@ -912,7 +953,12 @@
     "visibleToBoth": "Visible to both traders",
     "noMessages": "No messages yet. Say something!",
     "typeMessage": "Type a message…",
-    "readOnly": "Chat is read-only."
+    "readOnly": "Chat is read-only.",
+    "openWith": "Talk to {name}",
+    "readOnlyWith": "Messages with {name}",
+    "closeChat": "Close the conversation",
+    "newCount": "{count} new",
+    "sinceOpened": "New since you opened this page"
   },
   "deckImport": {
     "title": "Import Deck (.ydk)",
@@ -1756,6 +1802,10 @@
     "addAsCash": "Add as cash offset",
     "exactAfterPicking": "Pick the printings above for an exact figure",
     "sourceShort": "Cardmarket",
+    "trendMetric": "Cardmarket trend price",
+    "lowMetric": "Cardmarket lowest listing",
+    "mixedMetric": "Cardmarket trend and lowest-listing range",
+    "unavailable": "Price unavailable",
     "whichPrinting": "Which printing is yours?",
     "pickPrinting": "Which printing?",
     "noPrice": "No price",
@@ -1763,6 +1813,7 @@
     "whichVersion": "Which version is yours?",
     "versionsUnlabelled": "Cardmarket lists {count} versions of this printing and does not publish which is which. Pick yours by price.",
     "cardmarketProduct": "Cardmarket product",
-    "checkOnCardmarket": "Check on Cardmarket"
+    "checkOnCardmarket": "Check on Cardmarket",
+    "cardmarketTrend": "Cardmarket trend"
   }
 }

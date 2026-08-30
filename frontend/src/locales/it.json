@@ -395,8 +395,8 @@
     "saveChanges": "Salva modifiche",
     "viewOnDiscord": "Vedi su Discord",
     "replyOnDiscord": "Rispondi su Discord",
-    "addToTradeList": "Aggiungi alla lista scambi",
-    "addToWishList": "Aggiungi alla lista desideri",
+    "addToTradeList": "Aggiungi alla pila di scambio",
+    "addToWishList": "Aggiungi alla lista dei desideri",
     "addedToList": "Aggiunto alla lista",
     "linkCard": "Collega una carta",
     "cardSearchPlaceholder": "Cerca per nome o codice (LOB-EN001)",
@@ -446,18 +446,13 @@
   },
   "proposals": {
     "done": "Completati",
-    "doneDesc": "Scambi confermati da entrambe le parti. Le carte hanno cambiato mano.",
-    "cancelled": "Annullati",
-    "cancelledDesc": "Scambi non andati a buon fine — ritirati o rifiutati.",
     "loginRequired": "Accedi per vedere le tue proposte.",
     "noProposalsTitle": "Nessuna proposta ancora",
     "noProposalsDesc": "Inviarne una dalla scheda Corrispondenze quando trovi un trader interessante.",
-    "incoming": "In arrivo",
-    "incomingDesc": "Questi trader vogliono fare uno scambio con te. Accetta o rifiuta.",
-    "outgoing": "Inviate",
-    "outgoingDesc": "In attesa di risposta dall'altro lato.",
-    "accepted": "In corso",
-    "acceptedDesc": "Entrambe le parti hanno accettato. Coordina e completa lo scambio."
+    "closed": "Chiusi",
+    "waitingOnYou": "{count} scambio aspetta te. | {count} scambi aspettano te.",
+    "nothingWaiting": "Al momento non c'è nulla in attesa.",
+    "findTraders": "Trova trader"
   },
   "proposal": {
     "openTradeAria": "Apri lo scambio #{id}",
@@ -503,10 +498,21 @@
     "waitingAccept": "In attesa della risposta di {name}.",
     "viewTrade": "Vedi lo scambio",
     "starLabel": "{n} stella | {n} stelle",
-    "viewProfileOf": "Vedi il profilo di {name}"
+    "viewProfileOf": "Vedi il profilo di {name}",
+    "yourMove": "Tocca a te",
+    "theirMove": "Tocca a loro",
+    "rate": "Valuta {name}",
+    "youRated": "Hai valutato {name}.",
+    "notChosenYet": "Non ancora scelte"
   },
   "proposeDialog": {
     "title": "Proponi uno scambio",
+    "requestCards": "Scegli dal raccoglitore di {name}",
+    "requestHelp": "Scegli le carte che ti interessano. Poi {name} guarderà il tuo raccoglitore.",
+    "returnHelp": "{name} ha richiesto carte dal tuo raccoglitore. Scegli cosa desideri in cambio.",
+    "theirBinder": "Raccoglitore di {name}",
+    "sendRequest": "Invia richiesta",
+    "sendSelection": "Invia la mia selezione",
     "editProposal": "Modifica proposta",
     "counterPropose": "Controproposta",
     "with": "con",
@@ -560,7 +566,18 @@
     "cardsToChooseFrom": "{count} tra cui scegliere",
     "youPayAmount": "Paghi €{amount}",
     "saveFailed": "Impossibile salvare la proposta. Riprova.",
-    "photoPreviewAlt": "Anteprima della foto di verifica"
+    "photoPreviewAlt": "Anteprima della foto di verifica",
+    "whichBinder": "Raccoglitore aperto",
+    "onTheTable": "Sul tavolo",
+    "nothingPickedYet": "Niente scelto. Clicca una carta per estrarla dal raccoglitore.",
+    "pointAtACard": "Punta una carta per cambiare la quantità o rimetterla a posto.",
+    "putBack": "Rimetti",
+    "putBackAria": "Rimetti {name} nel raccoglitore",
+    "oneMore": "Un {name} in più",
+    "oneFewer": "Un {name} in meno",
+    "pickedCardAria": "{name}, {count} selezionate",
+    "checkThePrice": "Guarda quanto vale questa stampa.",
+    "locked": "In uno scambio"
   },
   "tradeDetail": {
     "backToTrades": "Torna agli scambi",
@@ -588,9 +605,31 @@
     "confirmWithoutPhotos": "Mancano le foto di almeno una parte. Puoi confermare lo stesso — sono una traccia, non un requisito.",
     "waitingForConfirmDetail": "In attesa che {name} confermi.",
     "bothUploadedConfirmHint": "Entrambi hanno caricato  conferma quando hai ricevuto le tue carte.",
+    "chooseReturnCards": "Scegli carte dal suo raccoglitore",
+    "chooseReturnCardsHelp": "{name} ha scelto carte dal tuo raccoglitore. Ora scegli dal suo.",
+    "waitingForReturnSelection": "In attesa che {name} guardi il tuo raccoglitore e scelga le carte.",
+    "confirmAgreement": "Conferma questo accordo",
+    "changeCardsIWant": "Modifica le carte desiderate",
+    "suggestTerms": "Proponi condizioni",
+    "tradeMethod": "Metodo di scambio",
+    "cashPayer": "Chi paga la differenza?",
+    "termsSuggested": "Condizioni aggiornate. Entrambi devono confermare la nuova revisione.",
+    "confirmRevisionHelp": "Conferma le carte e i termini della revisione {revision}.",
+    "waitingAgreement": "La tua conferma è registrata. In attesa di {name}.",
+    "agreementConfirmed": "Accordo confermato.",
+    "agreementComplete": "Entrambe le parti sono d'accordo. Lo scambio è in corso.",
+    "valueDifference": "Differenza di valore",
     "photosVerifiedCanAccept": "Foto verificate  puoi ora accettare.",
     "declinePlaceholder": "Facoltativo  spiega perché rifiuti…",
-    "acceptWithoutPhotos": "Nessuna delle due parti ha mostrato le carte. Puoi accettare lo stesso, ma le foto sono l'unica traccia di ciò che è stato promesso."
+    "acceptWithoutPhotos": "Nessuna delle due parti ha mostrato le carte. Puoi accettare lo stesso, ma le foto sono l'unica traccia di ciò che è stato promesso.",
+    "phaseSelection": "Scelta carte",
+    "phaseAgreement": "Accordo",
+    "phaseExchange": "Scambio",
+    "phaseDone": "Concluso",
+    "tradeProgress": "A che punto è questo scambio",
+    "gapEven": "In equilibrio",
+    "gapYouAhead": "A tuo vantaggio",
+    "gapTheyAhead": "A vantaggio di {name}"
   },
   "tradeError": {
     "stale": "Questo scambio è cambiato da quando l'hai aperto. È stato appena aggiornato.",
@@ -613,8 +652,6 @@
     "binderCount": "{count} carta | {count} carte",
     "binderSearch": "Cerca carte",
     "binderWantedOnly": "Solo quello che cerco",
-    "binderShowing": "{shown} su {total}",
-    "binderLoadMore": "Carica altre {count}",
     "binderNoResults": "Nessuna carta corrisponde.",
     "tabsLabel": "Sezioni del profilo",
     "loadFailed": "Impossibile caricare questo profilo.",
@@ -642,7 +679,11 @@
     "blankBody": "{name} non ha ancora messo nessuna carta in scambio.",
     "blankBodyJoined": "{name} si è iscritto {when} e non ha ancora messo nessuna carta in scambio.",
     "blankCta": "Trova i tuoi match",
-    "tableLabel": "Scambio possibile"
+    "tableLabel": "Scambio possibile",
+    "binderPageOf": "Pagina {page} di {total}",
+    "binderPagesOf": "Pagine {first}–{last} di {total}",
+    "binderPrevPage": "Pagina precedente",
+    "binderNextPage": "Pagina successiva"
   },
   "userCard": {
     "youGet": "Ricevi",
@@ -912,7 +953,12 @@
     "visibleToBoth": "Visibile a entrambi i trader",
     "noMessages": "Ancora nessun messaggio. Di' qualcosa!",
     "typeMessage": "Scrivi un messaggio…",
-    "readOnly": "La chat è di sola lettura."
+    "readOnly": "La chat è di sola lettura.",
+    "openWith": "Scrivi a {name}",
+    "readOnlyWith": "Messaggi con {name}",
+    "closeChat": "Chiudi la conversazione",
+    "newCount": "{count} nuovo | {count} nuovo | {count} nuovi",
+    "sinceOpened": "Nuovi da quando hai aperto la pagina"
   },
   "deckImport": {
     "title": "Importa deck (.ydk)",
@@ -1756,6 +1802,10 @@
     "addAsCash": "Aggiungi come conguaglio",
     "exactAfterPicking": "Scegli le stampe qui sopra per un importo esatto",
     "sourceShort": "Cardmarket",
+    "trendMetric": "Prezzo di tendenza Cardmarket",
+    "lowMetric": "Inserzione più bassa su Cardmarket",
+    "mixedMetric": "Intervallo Cardmarket tra tendenza e inserzione minima",
+    "unavailable": "Prezzo non disponibile",
     "whichPrinting": "Quale stampa è la tua?",
     "pickPrinting": "Quale stampa?",
     "noPrice": "Nessun prezzo",
@@ -1763,6 +1813,7 @@
     "whichVersion": "Quale versione è la tua?",
     "versionsUnlabelled": "Cardmarket elenca {count} versioni di questa stampa senza pubblicare quale sia quale. Scegli la tua in base al prezzo.",
     "cardmarketProduct": "Prodotto Cardmarket",
-    "checkOnCardmarket": "Controlla su Cardmarket"
+    "checkOnCardmarket": "Controlla su Cardmarket",
+    "cardmarketTrend": "Tendenza Cardmarket"
   }
 }

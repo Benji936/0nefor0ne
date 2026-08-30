@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { isYourMove } from "./proposalQueue";
 
 /** The last query builder handed out, so a test can inspect what was asked for. */
 let deckQuery;
@@ -32,8 +33,11 @@ const {
   createStatsGeneration, loadAccountStats,
 } = await import("./accountStats");
 
-/** A proposal row in the shape fetch_my_proposals returns. */
-const p = (status, iAmProposer) => ({ status, i_am_proposer: iAmProposer });
+/** A proposal row in the shape fetch_my_proposals returns. The photo flags are
+ *  part of that shape and isYourMove reads them, so they are not optional here:
+ *  a row missing i_uploaded looks like one whose owner still owes a photo. */
+const p = (status, iAmProposer, over = {}) =>
+  ({ status, i_am_proposer: iAmProposer, i_uploaded: true, they_uploaded: true, ...over });
 
 beforeEach(() => {
   tablesTouched = [];
@@ -45,13 +49,25 @@ beforeEach(() => {
 describe("proposal derivations", () => {
   // AC13's worked example, kept literal so the numbers can be checked by eye.
   const mixed = [
-    p("pending", false), p("pending", false),                    // 2 awaiting me
-    p("pending", true), p("pending", true), p("pending", true),  // 3 I sent
-    p("accepted", true),                                         // 1 live
+    p("pending", false), p("pending", false),                    // 2 yours to answer
+    p("pending", true), p("pending", true), p("pending", true),  // 3 waiting on them
+    p("accepted", true),                                         // 1 live, and yours to confirm
   ];
 
-  it("counts only pending proposals the user did not send (AC13, AC14)", () => {
-    expect(awaitingAnswerCount(mixed)).toBe(2);
+  it("counts every trade whose next move is the user's (AC13, AC14)", () => {
+    // Was "pending proposals you did not send", which is what the number under
+    // a card labelled "Waiting on you" must not mean any more: an accepted
+    // trade waits on your half of the receipt, and it is in this figure.
+    expect(awaitingAnswerCount(mixed)).toBe(3);
+  });
+
+  it("counts a trade you sent but have not confirmed as waiting on you", () => {
+    // The case the old "did not send it" rule got wrong, and the reason the
+    // proposals page stopped filing trades by who started them.
+    const mine = p("pending", true, {
+      workflow_phase: "agreement", revision: 4, i_agreed_revision: 3,
+    });
+    expect(awaitingAnswerCount([mine])).toBe(1);
   });
 
   it("counts pending in both directions plus accepted as open (AC13)", () => {
@@ -66,10 +82,10 @@ describe("proposal derivations", () => {
   });
 
   it("agrees with the Trade Center badge on the same rows (AC14)", () => {
-    // Literally TradeCenter.vue's own expression, kept here so a change on
-    // either side has to break a test rather than drift quietly.
-    const badge = mixed.filter((x) => x.status === "pending" && !x.i_am_proposer).length;
-    expect(awaitingAnswerCount(mixed)).toBe(badge);
+    // TradeCenter.vue's badge and the proposals page's first pile are both
+    // `filter(isYourMove)`. Kept here so a change on any of the three has to
+    // break a test rather than drift quietly.
+    expect(awaitingAnswerCount(mixed)).toBe(mixed.filter(isYourMove).length);
   });
 
   it("handles an empty proposal list", () => {
@@ -124,7 +140,13 @@ describe("loadAccountStats", () => {
   it("returns each group's numbers when every source answers", async () => {
     deckResult = { count: 2, error: null };
     fetchPileCounts.mockResolvedValue({ tradeCount: 12, wishCount: 5 });
-    fetchMyProposals.mockResolvedValue([p("pending", false), p("accepted", true)]);
+    // Two open trades, only one of them waiting on this user: the accepted one
+    // already has their confirmation on it. Keeps `awaiting` and `open`
+    // distinct, so a mix-up between them cannot pass.
+    fetchMyProposals.mockResolvedValue([
+      p("pending", false),
+      p("accepted", true, { i_confirmed: true }),
+    ]);
 
     const stats = loadAccountStats("u1");
     expect(await stats.decks).toEqual({ status: "ready", data: { count: 2 } });
