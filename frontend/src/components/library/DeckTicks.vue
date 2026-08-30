@@ -1,12 +1,13 @@
 <script setup>
 /**
- * A deck, drawn as one tick per card.
+ * A deck, drawn as one tick per copy.
  *
  * This replaces a two-segment progress bar. A percentage rounds — 13% of
  * forty-six cards is a number you cannot act on — but a deck is a countable
  * pile, forty and fifteen and fifteen, and what the reader actually wants to
- * know is how many cards short they are. So the strip draws one tick per card
- * and they can be counted.
+ * know is how many cards short they are. So the strip draws one tick per copy
+ * and they can be counted. Per copy, not per card: a deck asking for three of
+ * something you hold one of draws one amethyst tick and two pink ones.
  *
  * Amethyst for the cards already in your trade pile, pink for the ones headed
  * for your wishlist, muted for the ones you have said are coming from
@@ -21,13 +22,17 @@
  */
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { completionRuns, deckTally } from "@/lib/deckStats";
+import { stateRuns } from "@/lib/deckStats";
 
 const props = defineProps({
-  entries: { type: Array, default: () => [] },
-  cardMap: { type: Object, default: () => ({}) },
-  ownedIds: { type: Object, default: () => new Set() },
-  ignoredIds: { type: Object, default: () => new Set() },
+  /**
+   * The deck's copy counts, from deckTally(): { total, owned, sourced,
+   * missing, unknown }. The page allocates and passes the result in rather than
+   * this component resolving ownership itself — a card can sit in the main deck
+   * and the side deck, and only the page sees both entries drawing on one pile
+   * of copies.
+   */
+  tally: { type: Object, default: () => ({ total: 0 }) },
   /** Smaller ticks and no written tally, for a list row. */
   compact: { type: Boolean, default: false },
   maxTicks: { type: Number, default: 80 },
@@ -35,19 +40,13 @@ const props = defineProps({
 
 const { t } = useI18n();
 
-const ctx = computed(() => ({
-  cardMap: props.cardMap,
-  ownedIds: props.ownedIds,
-  ignoredIds: props.ignoredIds,
-}));
-
-const tally = computed(() => deckTally(props.entries, ctx.value));
-const runs = computed(() => completionRuns(props.entries, ctx.value));
+const tally = computed(() => props.tally ?? { total: 0 });
+const runs = computed(() => stateRuns(tally.value));
 
 /** Countable while the deck is a deck; proportional once it is a collection. */
 const counted = computed(() => tally.value.total > 0 && tally.value.total <= props.maxTicks);
 
-// Flattened to one entry per card so the template can render ticks without a
+// Flattened to one entry per copy so the template can render ticks without a
 // nested loop, capped at the total it is already known to be under.
 const ticks = computed(() => {
   if (!counted.value) return [];

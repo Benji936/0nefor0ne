@@ -26,7 +26,8 @@ import {
   fetchDecks, resolveDecks, createDeck, renameDeck, deleteDeck,
   readGuestDecks, clearGuestDecks,
 } from "@/lib/decks";
-import { deckTally } from "@/lib/deckStats";
+import { deckTally, missingEntries } from "@/lib/deckStats";
+import { decodeSourced, quantitiesOf } from "@/lib/deckIgnore";
 import DeckTicks from "@/components/library/DeckTicks.vue";
 
 const props = defineProps({ login: { type: Object, default: null } });
@@ -42,9 +43,9 @@ const isGuest = computed(() => !userId.value);
 
 const loading = ref(true);
 const decks = ref([]);
-const ignoredByDeck = ref({});
+const marksByDeck = ref({});
 const cardMap = ref({});
-const ownedIds = ref(new Set());
+const ownedCopies = ref(new Map());
 const parsedByDeck = ref(new Map());
 
 // ── Load ────────────────────────────────────────────────────────────────────
@@ -55,16 +56,16 @@ async function load() {
   const myId = ++reqId;
   loading.value = true;
   try {
-    const { decks: rows, ignoredByDeck: ignored } = await fetchDecks(userId.value);
+    const { decks: rows, marksByDeck: marks } = await fetchDecks(userId.value);
     if (myId !== reqId) return;
     decks.value = rows;
-    ignoredByDeck.value = ignored;
+    marksByDeck.value = marks;
 
     const resolved = await resolveDecks(rows, userId.value);
     if (myId !== reqId) return;
     parsedByDeck.value = resolved.parsed;
     cardMap.value = resolved.cardMap;
-    ownedIds.value = resolved.ownedIds;
+    ownedCopies.value = resolved.ownedCopies;
   } catch (err) {
     console.error("DecksPage: load failed", err);
     if (myId === reqId) toast(t("common.error"), "error");
@@ -78,11 +79,16 @@ const entriesFor = (deck) => {
   return p ? [...p.main, ...p.extra, ...p.side] : [];
 };
 
-const tallyFor = (deck) => deckTally(entriesFor(deck), {
+// The marks are stored per deck and decoded against that deck's own
+// quantities, because an old whole-entry mark only means something next to
+// the number of copies the deck asks for.
+const ctxFor = (deck) => ({
   cardMap: cardMap.value,
-  ownedIds: ownedIds.value,
-  ignoredIds: ignoredByDeck.value[deck.id] ?? new Set(),
+  ownedCopies: ownedCopies.value,
+  sourcedCopies: decodeSourced(marksByDeck.value[deck.id], quantitiesOf(entriesFor(deck))),
 });
+
+const tallyFor = (deck) => deckTally(entriesFor(deck), ctxFor(deck));
 
 // Every card still to find, across every deck. The page's one summary, and the
 // only number on it that is not about a single deck.
@@ -202,9 +208,9 @@ async function confirmDelete() {
 const addingId = ref(null);
 async function addMissing(deck) {
   if (!userId.value) { emit("requireAuth"); return; }
-  const ignored = ignoredByDeck.value[deck.id] ?? new Set();
-  const rows = entriesFor(deck)
-    .filter((e) => cardMap.value[e.id] && !ownedIds.value.has(e.id) && !ignored.has(e.id))
+  // In copies still outstanding, not copies the deck asks for: owning one of
+  // three puts two on the wishlist, where it used to put three.
+  const rows = missingEntries(entriesFor(deck), ctxFor(deck))
     .map((entry) => {
       const card = cardMap.value[entry.id];
       const name = card.name_en ?? card.name;
@@ -471,12 +477,7 @@ watch(userId, (now, before) => {
           </template>
         </div>
 
-        <DeckTicks
-          :entries="entriesFor(deck)"
-          :card-map="cardMap"
-          :owned-ids="ownedIds"
-          :ignored-ids="ignoredByDeck[deck.id] ?? new Set()"
-        />
+        <DeckTicks :tally="tallyFor(deck)" />
       </li>
     </ul>
 

@@ -14,9 +14,10 @@
  * The page is a shopping list, so it is drawn as one. Amethyst is what is
  * already in your trade pile, pink is what is headed for your wishlist, and
  * teal appears nowhere: a decklist contains no agreements (DESIGN.md, The
- * Agreement Rule). The strip under the name draws one tick per card rather than
+ * Agreement Rule). The strip under the name draws one tick per copy rather than
  * a percentage, because forty-six cards at thirteen percent is not a number
- * anybody can act on and "thirty-eight to find" is.
+ * anybody can act on and "thirty-eight to find" is. Per copy: a deck asking for
+ * three of a card you hold one of is two short, and used to read as settled.
  */
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { useHead } from "@unhead/vue";
@@ -24,8 +25,14 @@ import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import { getClient } from "@/lib/supabaseClient";
 import { fetchDeck, resolveDecks } from "@/lib/decks";
-import { deckTally, computeTypeBreakdown, computeEstimatedValue } from "@/lib/deckStats";
-import { toggleIgnoredId, saveIgnoredIdsToDb } from "@/lib/deckIgnore";
+import {
+  allocateCopies, deckTally, missingEntries,
+  computeTypeBreakdown, computeEstimatedValue,
+} from "@/lib/deckStats";
+import {
+  decodeSourced, withSourcedCount, quantitiesOf,
+  saveSourcedLocal, saveSourcedToDb,
+} from "@/lib/deckIgnore";
 import { iconUrl } from "@/lib/cardIcons";
 import DeckTicks from "@/components/library/DeckTicks.vue";
 import DeckSection from "@/components/library/DeckSection.vue";
@@ -43,14 +50,32 @@ const notFound = ref(false);
 const deck = ref(null);
 const parsed = ref({ main: [], extra: [], side: [] });
 const cardMap = ref({});
-const ownedIds = ref(new Set());
-const ignoredIds = ref(new Set());
+const ownedCopies = ref(new Map());
+const sourcedCopies = ref(new Map());
 
 const ctx = computed(() => ({
-  cardMap: cardMap.value, ownedIds: ownedIds.value, ignoredIds: ignoredIds.value,
+  cardMap: cardMap.value, ownedCopies: ownedCopies.value, sourcedCopies: sourcedCopies.value,
 }));
 const entries = computed(() => [...parsed.value.main, ...parsed.value.extra, ...parsed.value.side]);
 const tally = computed(() => deckTally(entries.value, ctx.value));
+
+// The copies, split across the four states, once for the whole deck.
+//
+// Once, because the pool is shared: a card in the main deck twice and the side
+// deck once needs three copies, and one copy in the collection covers the first
+// entry only. Allocating per section would hand that copy to all three. The
+// sections read their slice back out by position, which is why `entries` is
+// main-extra-side in that order and the slices below follow it.
+const alloc = computed(() => allocateCopies(entries.value, ctx.value));
+const mainAlloc = computed(() => alloc.value.slice(0, parsed.value.main.length));
+const extraAlloc = computed(() => alloc.value.slice(
+  parsed.value.main.length, parsed.value.main.length + parsed.value.extra.length));
+const sideAlloc = computed(() => alloc.value.slice(
+  parsed.value.main.length + parsed.value.extra.length));
+
+// The shopping list, in copies outstanding rather than copies the deck asks
+// for — what the button wishlists and what the estimate prices.
+const stillNeeded = computed(() => missingEntries(entries.value, ctx.value));
 
 // Stale-response guard: only the most recently issued load may commit, so a
 // slower earlier fetch after a rapid id change cannot clobber a newer one.
@@ -60,17 +85,19 @@ async function load() {
   loading.value = true;
   notFound.value = false;
   try {
-    const { deck: row, ignoredIds: ignored } = await fetchDeck(route.params.deckId, userId.value);
+    const { deck: row, marks } = await fetchDeck(route.params.deckId, userId.value);
     if (myId !== reqId) return;
     if (!row) { notFound.value = true; deck.value = null; return; }
     deck.value = row;
-    ignoredIds.value = ignored;
 
     const resolved = await resolveDecks([row], userId.value);
     if (myId !== reqId) return;
     parsed.value = resolved.parsed.get(row.id) ?? { main: [], extra: [], side: [] };
     cardMap.value = resolved.cardMap;
-    ownedIds.value = resolved.ownedIds;
+    ownedCopies.value = resolved.ownedCopies;
+    // Decoded only now: a mark stored in the old whole-entry form has to be
+    // read against the quantities this deck actually asks for.
+    sourcedCopies.value = decodeSourced(marks, quantitiesOf(entries.value));
   } catch (err) {
     console.error("DeckDetailPage: load failed", err);
     if (myId === reqId) { notFound.value = true; toast(t("common.error"), "error"); }
@@ -99,26 +126,27 @@ const typeRows = computed(() => [
 const deckValue = computed(() => computeEstimatedValue(entries.value, cardMap.value));
 // What the cards you still need would cost, which is the number this page is
 // actually about — the whole-deck total is trivia next to it.
-const missingValue = computed(() => computeEstimatedValue(
-  entries.value.filter((e) => cardMap.value[e.id] && !ownedIds.value.has(e.id) && !ignoredIds.value.has(e.id)),
-  cardMap.value,
-));
+const missingValue = computed(() => computeEstimatedValue(stillNeeded.value, cardMap.value));
 const money = (v) => new Intl.NumberFormat(i18nLocale.value, { style: "currency", currency: "EUR" }).format(v);
 
 // ── Sourced elsewhere ───────────────────────────────────────────────────────
-// Vue does not track in-place Set mutation, so the ref is always reassigned.
-function onToggleIgnore(cardId) {
-  const next = new Set(toggleIgnoredId(deck.value.id, cardId));
-  ignoredIds.value = next;
-  if (userId.value) saveIgnoredIdsToDb(getClient(), deck.value.id, next);
+// A count, not a flag: the tile sends how many copies should now be marked, so
+// two of a three-of can be handled while the third stays on the shopping list.
+// Vue does not track in-place Map mutation, so the ref is always reassigned.
+function onMarkSourced({ id, count }) {
+  const next = withSourcedCount(sourcedCopies.value, id, count);
+  sourcedCopies.value = next;
+  if (userId.value) saveSourcedToDb(getClient(), deck.value.id, next);
+  else saveSourcedLocal(deck.value.id, next);
 }
 
 // ── Wishlist ────────────────────────────────────────────────────────────────
 const adding = ref(false);
 async function addMissing() {
   if (!userId.value) { emit("requireAuth"); return; }
-  const rows = entries.value
-    .filter((e) => cardMap.value[e.id] && !ownedIds.value.has(e.id) && !ignoredIds.value.has(e.id))
+  // `stillNeeded` carries the outstanding count, not the deck's count: owning
+  // one of three puts two on the wishlist, where it used to put three.
+  const rows = stillNeeded.value
     .map((entry) => {
       const card = cardMap.value[entry.id];
       const name = card.name_en ?? card.name;
@@ -207,12 +235,7 @@ watch(userId, (now, before) => {
       <section class="dd-panel">
         <h1 class="dd-name">{{ deck.name }}</h1>
 
-        <DeckTicks
-          :entries="entries"
-          :card-map="cardMap"
-          :owned-ids="ownedIds"
-          :ignored-ids="ignoredIds"
-        />
+        <DeckTicks :tally="tally" />
 
         <div class="dd-acts">
           <button
@@ -256,28 +279,22 @@ watch(userId, (now, before) => {
       </p>
 
       <DeckSection
-        :entries="parsed.main"
+        :alloc="mainAlloc"
         :card-map="cardMap"
-        :owned-ids="ownedIds"
-        :ignored-ids="ignoredIds"
         :title="t('deckDetail.mainDeck')"
-        @toggle-ignore="onToggleIgnore"
+        @mark-sourced="onMarkSourced"
       />
       <DeckSection
-        :entries="parsed.extra"
+        :alloc="extraAlloc"
         :card-map="cardMap"
-        :owned-ids="ownedIds"
-        :ignored-ids="ignoredIds"
         :title="t('deckDetail.extraDeck')"
-        @toggle-ignore="onToggleIgnore"
+        @mark-sourced="onMarkSourced"
       />
       <DeckSection
-        :entries="parsed.side"
+        :alloc="sideAlloc"
         :card-map="cardMap"
-        :owned-ids="ownedIds"
-        :ignored-ids="ignoredIds"
         :title="t('deckDetail.sideDeck')"
-        @toggle-ignore="onToggleIgnore"
+        @mark-sourced="onMarkSourced"
       />
     </template>
 

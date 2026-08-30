@@ -39,6 +39,24 @@
 - Teal appears on `TradeDetailPage.vue` only on the seam between the two piles, and only once both sides have
   agreed (`DESIGN.md`, The Agreement Rule).
 - Card art uses the Yu-Gi-Oh card ratio, `59 / 86`, with `object-fit: contain`.
+- A deck counts in copies, not in cards. Ownership is a count per card id, and every entry's copies are split
+  across owned, sourced, missing and unreadable so that holding one of the three a deck asks for reads as one
+  owned and two missing. The completion strip draws a tick per copy and the rule under each card tile is that
+  same strip one entry wide: a third amethyst and two thirds pink for one of three. The tile also writes the
+  split as `1/3`, and reads as missing while any copy is outstanding.
+- The pool is allocated once per deck, across main, extra and side together. The same card can sit in the main
+  and side decks, and those entries draw on one pile of copies — allocating per section would let a single copy
+  cover all of them.
+- Marking a card as coming from elsewhere is a count, not a flag. The corner control marks one more copy per
+  click and clears on the click after the last, so two of a three-of can be handled while the third stays on the
+  shopping list. It reaches only the copies you do not already hold: sourcing a copy that is in your trade pile
+  would be offering to un-own it. A card the deck asks for once behaves exactly as the toggle it replaced, keeps
+  its 28px disc and its `aria-pressed`; a card carrying a count grows into a pill and drops `aria-pressed`,
+  which cannot describe three states, stating the count in its label instead.
+- Marks are stored as one array entry per marked copy behind a leading `0` tag, in the same `int4[]` column and
+  the same localStorage key as before. The tag is load-bearing: without it a two-element array cannot be told
+  apart from the old whole-entry format. An untagged array is read the old way — every copy of that entry — and
+  rewritten in counted form the next time a mark is touched, so no existing mark changes meaning.
 
 ## Trade lifecycle
 
@@ -61,6 +79,9 @@ Legacy proposals remain usable. A proposal without `workflow_phase` follows the 
 | Collection display | `CardElement.vue` | list row, grid tile | two metadata lines, quantity stamp, browser check |
 | Correcting a copy | `EditCardCopy.vue` | edit, remove | `cardCopy.test.js` |
 | Collection order | `lib/collectionSort.js` | name, value, set code, recently added | `collectionSort.test.js` |
+| Deck completion | `lib/deckStats.js` | strip, card grid, list row, import preview | `deckStats.test.js` |
+| Owned copies | `lib/decks.js` `countCopies` | deck pages, import preview | `decks.test.js` |
+| Sourced copies | `lib/deckIgnore.js` | per-copy mark on a deck card | `deckIgnore.test.js` |
 | Trade review | `TradeDetailPage.vue` | selection, agreement, exchange, history | responsive browser check |
 | Proposal queue | `ProposalsTab.vue` | your move, their move, done, closed | segment counts against pile contents |
 | Proposal summary | `ProposalRow.vue` | selection, agreement, exchange, done, closed | overflow and action-state check |
@@ -166,3 +187,27 @@ Current evidence, 2026-08-28:
 - Premium strict audit: 25 existing project-wide findings; none point to the changed trade workflow files.
 - Supabase lint: blocked because no local Docker/Postgres stack is running on port 54322.
 - Browser check: the signed-out trade route renders its login guard without an error overlay. Authenticated state-matrix verification still needs a test session with staged trade data.
+
+Deck copies, 2026-08-30:
+
+- Full frontend suite: 1,146 passed, including 36 new copy-allocation and copy-counting tests.
+- Client production build: passed, 30 of 30 routes and 777 prerendered pages.
+- Browser check, signed in against a real 57-card deck: a card asked for twice against one copy held draws a
+  half-amethyst rule and reads `1/2`; two of three draws two thirds and reads `2/3`; a card fully covered keeps
+  its undivided amethyst rule and its `2×`. The strip and the deck tally moved to 7 owned, 23 sourced,
+  27 missing, and the wishlist button fell from 34 to 27 — the seven copies now covered.
+- Locale parity: 1,518 keys in each of the four files, no drift.
+- Accessibility: the visible fraction is hidden from the accessibility tree and a written line stands in for it
+  after the card name, so the split is never carried by colour alone. Verified in both themes.
+
+Per-copy sourcing, 2026-08-30:
+
+- Full frontend suite: 1,176 passed, including 22 encoding tests and 8 covering the counted mark.
+- Client production build: passed, 30 of 30 routes and 777 prerendered pages.
+- Migration, against the account's own 57-card deck: an existing 16-id mark loaded as 23 marked copies and the
+  tally read 23 sourced / 34 missing — identical to before the change. One click rewrote the whole array in
+  counted form, tagged, with 16 distinct cards and 23 copies still in it.
+- Browser check: a two-of cycled 2 → 0 → 1 → 2, the strip and tally following each step (23/34 → 21/36 → 22/35
+  → 23/34), the rule under the card splitting into one sourced and one missing segment at the halfway stop, and
+  the entry correctly reading as missing while a copy was outstanding. The deck was left exactly as found.
+- Keyboard: the mark is a real button, focusable, and becomes visible on focus rather than only on hover.

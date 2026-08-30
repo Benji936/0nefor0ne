@@ -1029,6 +1029,7 @@
     "tallyMissing": "{n} missing",
     "tallyUnknown": "{n} unreadable",
     "tallyAria": "{owned} of {total} cards owned, {missing} still missing",
+    "copiesNote": "{owned} of {qty} copies in your trade pile",
     "dropNow": "Drop it anywhere on this page"
   },
   "meta": {
@@ -1109,6 +1110,7 @@
   },
   "deckIgnore": {
     "markSourced": "Mark {name} as coming from elsewhere",
+    "markCopy": "Mark another {name} as coming from elsewhere — {n} of {max} so far",
     "countAgain": "Count {name} as missing again"
   },
   "cards": {

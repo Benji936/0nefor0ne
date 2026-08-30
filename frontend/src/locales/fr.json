@@ -1029,6 +1029,7 @@
     "tallyMissing": "{n} manquantes",
     "tallyUnknown": "{n} illisibles",
     "tallyAria": "{owned} cartes sur {total} possédées, {missing} encore manquantes",
+    "copiesNote": "{owned} exemplaire(s) sur {qty} dans votre pile d'échange",
     "dropNow": "Lâche-le n'importe où sur cette page"
   },
   "meta": {
@@ -1109,6 +1110,7 @@
   },
   "deckIgnore": {
     "markSourced": "Marquer {name} comme trouvée ailleurs",
+    "markCopy": "Marquer un {name} de plus comme obtenu ailleurs — {n} sur {max} jusqu'ici",
     "countAgain": "Recompter {name} comme manquante"
   },
   "cards": {
