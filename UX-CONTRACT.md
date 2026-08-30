@@ -57,6 +57,10 @@ Legacy proposals remain usable. A proposal without `workflow_phase` follows the 
 | Capability | Canonical owner | Allowed variants | Verification |
 |---|---|---|---|
 | Binder selection | `ProposeTradeDialog.vue` | request, return selection, revise wanted cards, legacy edit/counter | keyboard, responsive layout, unit/API tests |
+| Binder rendering | `CardBinder.vue` | read-only (trader profile), selectable (proposal dialog), activatable (own collection) | pocket is a button only when selectable or `activate` |
+| Collection display | `CardElement.vue` | list row, grid tile | two metadata lines, quantity stamp, browser check |
+| Correcting a copy | `EditCardCopy.vue` | edit, remove | `cardCopy.test.js` |
+| Collection order | `lib/collectionSort.js` | name, value, set code, recently added | `collectionSort.test.js` |
 | Trade review | `TradeDetailPage.vue` | selection, agreement, exchange, history | responsive browser check |
 | Proposal queue | `ProposalsTab.vue` | your move, their move, done, closed | segment counts against pile contents |
 | Proposal summary | `ProposalRow.vue` | selection, agreement, exchange, done, closed | overflow and action-state check |
@@ -109,6 +113,28 @@ Legacy proposals remain usable. A proposal without `workflow_phase` follows the 
 - The proposals empty state carries a link into the matches tab rather than describing where one might be.
 - Dense card lists keep headers and totals stable while the list area scrolls.
 - Truncated card metadata retains its full value through the card detail or tooltip.
+- The collection offers three views of one half: compact rows, card tiles, and the binder. The binder is the same
+  `CardBinder` a trader's profile and the proposal dialog draw, opened on the whole open half rather than on one
+  wishlist — a binder's pages are already its structure, and filtering it by list as well would nest a filter
+  inside a filter inside a tab. View and order both persist in `localStorage`, and both are validated against the
+  current option list on restore so a key from an older build cannot leave the page in a state it cannot draw.
+- A collection row carries two metadata lines, because a copy is two separate facts: the printing (set code and
+  rarity, monospace, per The Mono Identifier Rule) says which card object it is, and the state line (condition,
+  language, and 1st Edition when true) says what state that copy is in. `first_edition` was stored from the
+  beginning and rendered nowhere, which is what made a wrong entry invisible. It shows only when true.
+- The quantity is a stamp at rest and a stepper when wanted: hovering the row on a fine pointer, or tapping the
+  stamp on a touch one. A spinner on every row of a 200-card binder made the collection read as a form, and the
+  locked state already proved a static count reads correctly.
+- Correcting a copy reuses AddCard's second step field for field, so the form that recorded the mistake is the
+  form that fixes it. Two rules live in `lib/cardCopy.js` rather than the dialog: moving a printing clears
+  `cardmarket_product_id`, because that pin outranks every other price signal and was chosen for the old
+  printing; and quantity cannot fall below the copies locked into accepted trades, the same floor the stepper
+  enforces.
+- Removing a copy is an explicit two-step action in that dialog. It used to be reachable only by decrementing the
+  quantity to zero, which is a deletion disguised as arithmetic.
+- The collection has an order. The fetch asks for no `.order()`, and an unordered scan promises nothing, so a
+  pile could come back rearranged between loads; `sortCollection` supplies a total order client-side, and every
+  comparator falls back to name and then id so rows that tie still land in the same place on every render.
 
 ## Async, validation, and permissions
 

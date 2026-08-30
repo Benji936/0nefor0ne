@@ -266,7 +266,15 @@
     "viewLabel": "Sammlungsansicht",
     "viewList": "Listenansicht",
     "viewGrid": "Rasteransicht",
-    "allLists": "Alle Listen"
+    "allLists": "Alle Listen",
+    "viewBinder": "Ordner",
+    "sortLabel": "Sortieren",
+    "sort": {
+      "name": "Name",
+      "value": "Wert",
+      "printing": "Set-Code",
+      "added": "Zuletzt hinzugefügt"
+    }
   },
   "addCard": {
     "addToTrade": "Zum Tauschstapel hinzufügen",
@@ -915,7 +923,12 @@
   "cardElement": {
     "acceptedTrade": "Akzeptierter Tausch",
     "copyLocked": "1 Exemplar gesperrt",
-    "copiesLocked": "{count} Exemplare gesperrt"
+    "copiesLocked": "{count} Exemplare gesperrt",
+    "firstEdition": "1. Auflage",
+    "firstEditionShort": "1.A",
+    "changeQuantity": "Anzahl ändern",
+    "noPrinting": "Kein Set-Code",
+    "openOnCardmarket": "Auf Cardmarket nachschlagen"
   },
   "tradePhotos": {
     "desc": "Ein Nachweis dessen, was jede Seite schickt. Ein Rat, keine Pflicht — du kannst auch ohne sie annehmen und bestätigen.",
@@ -1815,5 +1828,20 @@
     "cardmarketProduct": "Cardmarket-Produkt",
     "checkOnCardmarket": "Auf Cardmarket prüfen",
     "cardmarketTrend": "Cardmarket-Trend"
+  },
+  "editCard": {
+    "title": "Dieses Exemplar bearbeiten",
+    "edit": "Bearbeiten",
+    "save": "Änderungen speichern",
+    "saving": "Wird gespeichert…",
+    "saved": "Exemplar aktualisiert",
+    "remove": "Entfernen",
+    "removeConfirm": "Endgültig entfernen",
+    "removing": "Wird entfernt…",
+    "needPrinting": "Wähle aus, welche Auflage dieses Exemplar ist.",
+    "needQuantity": "Gib an, wie viele Exemplare du hast — mindestens eines.",
+    "reservedFloor": "{count} in einem Tausch gebunden, den du angenommen hast.",
+    "reservedRemove": "In einem angenommenen Tausch gebunden und daher nicht entfernbar.",
+    "saveFailed": "Das wurde nicht gespeichert. Versuch es erneut."
   }
 }

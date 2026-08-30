@@ -240,13 +240,28 @@ The core interactive primitive of the Propose Trade dialog. A horizontal row wit
 
 ### Card Tile (Library / Search)
 
-Vertical tile: card image (59:86 aspect ratio) → name + rarity chip + condition + language → quantity control.
+Vertical tile: card image (59:86) → name + price → printing line → state line → actions.
 
-- **Width:** 160px fixed. The image fills the full width; the card art does the visual work.
+- **Width:** fluid. Tiles lay out on `repeat(auto-fill, minmax(148px, 1fr))`, two fixed columns below 420px.
+  The earlier 160px-fixed tile in a wrapping flex row left a ragged card-width gap at the end of every pile.
 - **Image:** `aspect-ratio: 59/86`, `loading="lazy"`, `object-cover`.
-- **Data strip:** `px-3 pt-2 pb-1`, small text, rarity as abbreviated initials in amber chip.
-- **Quantity:** Vuetify `v-number-input`, control-variant="split", density="compact". Setting to 0 deletes the row.
-- **Hover:** `outline outline-white` on the image wrapper (Search view card preview).
+- **Quantity:** a mono stamp on the art, bottom-right, the way a sleeve label sits. Tapping it opens the edit
+  form — a tile has no room for a stepper used this rarely.
+- **1st Edition:** a mono amethyst tag, top-left, and only when true.
+
+### Collection Row (CardElement, list view)
+
+A copy is two separate facts, so the row carries two metadata lines under the name:
+
+- **Printing line** — set code (a link out to Cardmarket) and full rarity, monospace per The Mono Identifier Rule.
+  This says *which card object this is*, which is what decides its value.
+- **State line** — condition, language, and 1st Edition when true, in full words separated by `·`. Not
+  abbreviations behind tooltips: a tooltip is not a label, and the point of this line is that a wrong value
+  should be readable without hovering. 1st Edition is the one item set in amethyst, because it is the one that
+  changes what the copy is worth.
+- **Quantity:** a mono stamp at rest. The stepper replaces it on row hover where the pointer is fine, and on tap
+  where it is not. Locked copies keep their static teal count.
+- **Actions:** edit and file, 30px icon buttons in a quiet column that only outlines itself on row hover.
 
 ### Card Preview Overlay (CardYugi)
 

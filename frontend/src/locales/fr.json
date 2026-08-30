@@ -266,7 +266,15 @@
     "viewLabel": "Affichage de la collection",
     "viewList": "Vue liste",
     "viewGrid": "Vue grille",
-    "allLists": "Toutes les listes"
+    "allLists": "Toutes les listes",
+    "viewBinder": "Classeur",
+    "sortLabel": "Tri",
+    "sort": {
+      "name": "Nom",
+      "value": "Valeur",
+      "printing": "Code d'extension",
+      "added": "Ajoutées récemment"
+    }
   },
   "addCard": {
     "addToTrade": "Ajouter à ma pile d'échange",
@@ -915,7 +923,12 @@
   "cardElement": {
     "acceptedTrade": "Échange accepté",
     "copyLocked": "1 copie verrouillée",
-    "copiesLocked": "{count} copies verrouillées"
+    "copiesLocked": "{count} copies verrouillées",
+    "firstEdition": "1re édition",
+    "firstEditionShort": "1RE",
+    "changeQuantity": "Modifier le nombre d'exemplaires",
+    "noPrinting": "Aucun code",
+    "openOnCardmarket": "Rechercher sur Cardmarket"
   },
   "tradePhotos": {
     "desc": "Une trace de ce que chaque partie envoie. Un conseil, pas une obligation — vous pouvez accepter et confirmer sans elles.",
@@ -1815,5 +1828,20 @@
     "cardmarketProduct": "Produit Cardmarket",
     "checkOnCardmarket": "Vérifier sur Cardmarket",
     "cardmarketTrend": "Tendance Cardmarket"
+  },
+  "editCard": {
+    "title": "Modifier cet exemplaire",
+    "edit": "Modifier",
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "saved": "Exemplaire mis à jour",
+    "remove": "Retirer",
+    "removeConfirm": "Retirer définitivement",
+    "removing": "Retrait…",
+    "needPrinting": "Choisissez l'édition de cet exemplaire.",
+    "needQuantity": "Indiquez le nombre d'exemplaires — au moins un.",
+    "reservedFloor": "{count} engagé(s) dans un échange que vous avez accepté.",
+    "reservedRemove": "Engagé dans un échange que vous avez accepté : impossible de le retirer.",
+    "saveFailed": "L'enregistrement a échoué. Réessayez."
   }
 }

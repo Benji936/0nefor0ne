@@ -62,9 +62,18 @@ const props = defineProps({
   // takes the column it is given and grows as tall as that makes it, which is
   // how a binder open on a desk actually behaves.
   fit: { type: String, default: "height" },   // 'height' | 'width'
+  // Makes a read-only binder clickable without making it selectable: a pocket
+  // becomes a button that raises `activate` with its card, and the host decides
+  // what that means. The collection uses it to open the edit form on your own
+  // copy. Opt-in, because a trader's profile must stay a wall you cannot press.
+  activate: { type: Boolean, default: false },
+  // Turns the empty pockets of a page into "put a card here" buttons. The
+  // label is the opt-in as well as the accessible name: a binder nobody owns
+  // has nothing to offer an empty pocket, so there is no default.
+  addLabel: { type: String, default: "" },
 });
 
-const emit = defineEmits(["update:modelValue", "update:filters", "links"]);
+const emit = defineEmits(["update:modelValue", "update:filters", "links", "activate", "add"]);
 
 const { t } = useI18n();
 
@@ -72,6 +81,10 @@ const COLS = 3;
 const PER_PAGE = POCKETS_PER_PAGE;
 
 const selectable = computed(() => props.modelValue !== null);
+/* Whether a pocket is a control at all — picked from, or opened. */
+const pressable = computed(() => selectable.value || props.activate);
+/* Whether the gaps on the last page are controls too. */
+const addable = computed(() => !!props.addLabel);
 const toneStyle = computed(() => {
   if (props.tone === "accent") return { "--cb-tone": "var(--c-accent)" };
   if (props.tone === "trade")  return { "--cb-tone": "var(--c-trade)" };
@@ -208,6 +221,12 @@ const isPicked = (card) => qty(card) > 0;
 const isLocked = (card) => card?.status === "locked";
 
 function toggle(card) {
+  // Selection and activation are exclusive: a binder is either being picked
+  // from or being worked on, never both, so one click can never mean two things.
+  if (props.activate && !selectable.value) {
+    if (!isLocked(card)) emit("activate", card);
+    return;
+  }
   if (!selectable.value || isLocked(card)) return;
   local.value = { ...local.value, [card.id]: isPicked(card) ? 0 : 1 };
   emit("update:modelValue", local.value);
@@ -216,7 +235,11 @@ function toggle(card) {
 /* Arrows walk the pockets and carry you across the page break; PageUp and
    PageDown turn without moving the cursor. */
 function onGridKey(ev) {
-  const live = [...root.value.querySelectorAll(".cb__pocket:not(.cb__pocket--empty)")];
+  // Empty pockets join the walk only where they are buttons; everywhere else
+  // arrowing into a gap would be arrowing into nothing.
+  const live = [...root.value.querySelectorAll(
+    addable.value ? ".cb__pocket" : ".cb__pocket:not(.cb__pocket--empty)"
+  )];
   if (ev.key === "PageDown") { ev.preventDefault(); turn(1);  return; }
   if (ev.key === "PageUp")   { ev.preventDefault(); turn(-1); return; }
 
@@ -257,7 +280,11 @@ function label(card) {
     :class="{ 'cb--frameless': frameless, 'cb--fitwidth': fit === 'width', 'cb--twoup': pagesPerView > 1 }"
     :style="toneStyle"
   >
-    <p v-if="!cards.length" class="cb__empty">{{ emptyLabel }}</p>
+    <!-- An empty binder you can fill is still a binder, so it opens on a blank
+         page of nine offered pockets rather than a sentence explaining that
+         there is nothing here. Everywhere else — a trader's profile — the
+         sentence is still the right answer. -->
+    <p v-if="!cards.length && !addable" class="cb__empty">{{ emptyLabel }}</p>
 
     <template v-else>
       <!-- Controls only appear once there is enough to warrant them, and only
@@ -276,7 +303,10 @@ function label(card) {
         {{ t('traderProfile.binderCount', { count: filtered.length }, filtered.length) }}
       </p>
 
-      <p v-if="!filtered.length" class="cb__empty">
+      <!-- A filter that matches nothing still says so: the gap is the filter's
+           doing, and offering to add a card would answer a question nobody
+           asked. -->
+      <p v-if="!filtered.length && (filtering || !addable)" class="cb__empty">
         {{ filtering ? t('traderProfile.binderNoResults') : emptyLabel }}
       </p>
 
@@ -324,13 +354,14 @@ function label(card) {
                 <div v-for="page in openPages" :key="page.number" class="cb__page">
                   <div class="cb__grid">
                       <component
-                        :is="card && selectable ? 'button' : 'div'"
+                        :is="(card ? pressable : addable) ? 'button' : 'div'"
                         v-for="(card, i) in page.pockets"
                         :key="card ? card.id : `empty-${page.number}-${i}`"
-                        :type="card && selectable ? 'button' : null"
+                        :type="(card ? pressable : addable) ? 'button' : null"
                         class="cb__pocket"
                         :class="{
                           'cb__pocket--empty': !card,
+                          'cb__pocket--add': !card && addable,
                           'cb__pocket--wanted': card && card.matchesMyWishlist,
                           'cb__pocket--picked': card && isPicked(card),
                           'cb__pocket--locked': card && isLocked(card),
@@ -338,14 +369,20 @@ function label(card) {
                         :role="card && selectable ? 'checkbox' : null"
                         :aria-checked="card && selectable ? String(isPicked(card)) : null"
                         :aria-disabled="card && isLocked(card) ? 'true' : null"
-                        :aria-hidden="card ? null : 'true'"
-                        :aria-label="card ? label(card) : null"
-                        :tabindex="card && selectable && isLocked(card) ? -1 : null"
-                        @click="card && toggle(card)"
-                        @keydown.space.prevent="card && toggle(card)"
-                        @keydown.enter="card && toggle(card)"
+                        :aria-hidden="!card && !addable ? 'true' : null"
+                        :aria-label="card ? label(card) : (addable ? addLabel : null)"
+                        :tabindex="card && pressable && isLocked(card) ? -1 : null"
+                        @click="card ? toggle(card) : (addable && emit('add'))"
+                        @keydown.space.prevent="card ? toggle(card) : (addable && emit('add'))"
+                        @keydown.enter="card ? toggle(card) : (addable && emit('add'))"
                         @contextmenu="onContext($event, card)"
                       >
+                        <!-- A gap on the last page is where the next card goes,
+                             so in your own binder it says so. Quiet until the
+                             pocket is under the pointer: nine of these lit at
+                             once would read as nine pending actions. -->
+                        <span v-if="!card && addable" class="cb__add" aria-hidden="true">+</span>
+
                         <template v-if="card">
                           <img
                             :src="cardImage(card.image_id)"
@@ -567,6 +604,34 @@ button.cb__pocket { cursor: pointer; }
 .cb__pocket:focus-visible { outline: 2px solid var(--cb-tone, var(--c-trade)); outline-offset: 3px; }
 
 .cb__pocket--empty { cursor: default; }
+
+/* An empty pocket you can fill. The dashed outline the gap already wears is
+   the affordance; this only makes it reachable and gives it a mark. */
+.cb__pocket--add { cursor: pointer; }
+.cb__pocket--add::before {
+  border-color: color-mix(in srgb, var(--cb-tone, var(--c-trade)) 30%, transparent);
+}
+.cb__add {
+  position: absolute; inset: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; font-weight: 300; line-height: 1;
+  color: color-mix(in srgb, var(--cb-tone, var(--c-trade)) 45%, transparent);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.cb__pocket--add:hover .cb__add,
+.cb__pocket--add:focus-visible .cb__add { opacity: 1; }
+.cb__pocket--add:hover::before {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--cb-tone, var(--c-trade)) 55%, transparent);
+  background: color-mix(in srgb, var(--cb-tone, var(--c-trade)) 6%, transparent);
+}
+.cb__pocket--add:focus-visible { outline: 2px solid var(--cb-tone, var(--c-trade)); outline-offset: -2px; }
+/* Touch has no hover to reveal the mark, so it stays visible and faint. */
+@media (hover: none) {
+  .cb__add { opacity: 0.55; }
+}
+@media (prefers-reduced-motion: reduce) { .cb__add { transition: none; } }
 .cb__pocket--empty::before {
   content: ""; position: absolute; inset: 4px; border-radius: 4px;
   border: 1px dashed color-mix(in srgb, var(--c-border) 45%, transparent);
