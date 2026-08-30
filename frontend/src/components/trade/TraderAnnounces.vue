@@ -118,8 +118,13 @@ function price(a) {
   font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
 }
 /* Pink is want, amethyst is offer, per the three-role rule. */
-.ta__kind--lf   { background: color-mix(in srgb, var(--c-accent) 16%, transparent); color: var(--c-accent); }
-.ta__kind--sell { background: color-mix(in srgb, var(--c-trade) 16%, transparent);  color: var(--c-trade); }
+/* 8%, not 16%. Same colours, same meaning — a want is pink and a listing is
+   amethyst — but a label set in a brand colour on a wash of that same colour
+   pays for the wash out of its own contrast. At 16% three of these four
+   combinations missed 4.5:1: pink at 4.17 light and 4.34 dark, amethyst at
+   4.28 dark. At 8% the worst of them reads 4.75. */
+.ta__kind--lf   { background: color-mix(in srgb, var(--c-accent) 8%, transparent); color: var(--c-accent); }
+.ta__kind--sell { background: color-mix(in srgb, var(--c-trade) 8%, transparent);  color: var(--c-trade); }
 
 .ta__name {
   flex: 1; min-width: 0; color: var(--c-text); font-weight: 600;

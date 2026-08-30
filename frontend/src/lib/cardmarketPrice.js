@@ -41,7 +41,7 @@ export function readPrice(row) {
   const asOf = row.as_of ?? null;
 
   if (printings === 1) {
-    return { kind: EXACT, value: Number(row.price), printings, inSet, asOf };
+    return { kind: EXACT, value: Number(row.price), printings, inSet, asOf, metric: row.metric ?? null };
   }
   return {
     kind: inSet ? NARROWED : RANGE,
@@ -50,6 +50,7 @@ export function readPrice(row) {
     printings,
     inSet,
     asOf,
+    metric: row.metric ?? null,
   };
 }
 

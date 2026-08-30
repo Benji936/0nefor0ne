@@ -587,13 +587,13 @@ function cardTitle(card) {
       </div>
 
       <!-- Trade pile -->
-      <div v-if="activeTab === 'pile'" :id="panelId('pile')" role="tabpanel" :aria-labelledby="tabId('pile')" tabindex="0" class="tpb-panel">
-        <CardBinder :cards="tradePile" :empty-label="t('traderProfile.noCardsForTrade')" />
+      <div v-if="activeTab === 'pile'" :id="panelId('pile')" role="tabpanel" :aria-labelledby="tabId('pile')" tabindex="0" class="tpb-panel tpb-panel--binder">
+        <CardBinder :cards="tradePile" :empty-label="t('traderProfile.noCardsForTrade')" fit="width" />
       </div>
 
       <!-- Wishlist. Pink, because these are cards somebody wants. -->
-      <div v-else-if="activeTab === 'wish'" :id="panelId('wish')" role="tabpanel" :aria-labelledby="tabId('wish')" tabindex="0" class="tpb-panel tpb-panel--want">
-        <CardBinder :cards="wishlist" :empty-label="t('traderProfile.wishlistEmpty')" />
+      <div v-else-if="activeTab === 'wish'" :id="panelId('wish')" role="tabpanel" :aria-labelledby="tabId('wish')" tabindex="0" class="tpb-panel tpb-panel--binder tpb-panel--want">
+        <CardBinder :cards="wishlist" :empty-label="t('traderProfile.wishlistEmpty')" fit="width" />
       </div>
 
       <!-- Reviews -->
@@ -995,6 +995,12 @@ html.dark .tpb { --tpb-star: #F59E0B; }
 /* The wishlist panel is cards somebody wants, so the binder's own accents
    follow the tab that opened it. */
 .tpb-panel--want { --cb-tone: var(--c-accent); }
+
+/* A binder sizes its pockets from one dimension and takes the other from the
+   card's ratio. The dialog owns the window, so it measures from height; a page
+   you scroll has width to spend and no height worth naming, so it measures
+   from width and the binder ends up as tall as the column is wide. */
+.tpb-panel--binder { display: flex; flex-direction: column; }
 
 /* ── Reviews ───────────────────────────────────────────────────────────────
    Most ratings carry no comment, so the score line has to stand on its own

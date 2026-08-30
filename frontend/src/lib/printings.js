@@ -64,6 +64,13 @@ export function rarityKey(raw) {
   return String(raw ?? "").normalize("NFKC").toLowerCase().replace(/[^a-z0-9]/g, "") || null;
 }
 
+/** Whether Cardmarket's printed number belongs to this localized print code. */
+export function matchesCollectorNumber(printCode, collectorNumber) {
+  const code = String(printCode ?? "").split("-").at(-1)?.replace(/[^a-z0-9]/gi, "").toLowerCase();
+  const number = String(collectorNumber ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase();
+  return Boolean(code && number && code.endsWith(number));
+}
+
 /**
  * Fold Cardmarket products into YGOPRODeck printings.
  *
@@ -148,7 +155,17 @@ export function mergePrintings(cardSets, products) {
     const matched = rkey && complete
       ? candidates.filter((p) => rarityKey(p.rarity) === rkey)
       : [];
-    const use = matched.length ? matched : candidates;
+    const rarityUse = matched.length ? matched : candidates;
+
+    // Some sets print one rarity under two card numbers. RA04 Aleister, for
+    // example, has Platinum Secret Rare as both 024 and 278. Rarity alone is
+    // therefore still a band; Cardmarket's product page "Number" field closes
+    // it without relying on product-id or version ordering.
+    const numberComplete = rarityUse.length > 1 && rarityUse.every((p) => p.collector_number);
+    const numbered = numberComplete
+      ? rarityUse.filter((p) => matchesCollectorNumber(printCode, p.collector_number))
+      : [];
+    const use = numbered.length ? numbered : rarityUse;
 
     // Every product of the printing with its own figure, kept rather than
     // reduced, because the picker's second step is a list of exactly these:
@@ -158,16 +175,24 @@ export function mergePrintings(cardSets, products) {
     // Null-check before Number(), not after: `null ?? null ?? null` is null and
     // Number(null) is 0, so the obvious spelling of this turned a product with
     // no sales history into a printing worth nothing.
-    const products = use
+    const prepared = use
       .map((p) => {
         const row = p.cardmarket_price;
-        const raw = row ? row.trend ?? row.avg7 ?? row.avg30 : null;
+        const raw = row ? row.trend ?? row.low : null;
         const n = raw === null || raw === undefined || raw === "" ? NaN : Number(raw);
-        return { idProduct: p.id_product, value: Number.isFinite(n) ? n : null };
+        return {
+          idProduct: p.id_product,
+          value: Number.isFinite(n) ? n : null,
+          metric: row?.trend !== null && row?.trend !== undefined && row?.trend !== "" ? "trend"
+            : Number.isFinite(n) ? "low" : null,
+        };
       })
       .sort((a, b) => (a.value ?? Infinity) - (b.value ?? Infinity));
 
+    const products = prepared.map(({ idProduct, value }) => ({ idProduct, value }));
+
     const values = products.map((p) => p.value).filter((v) => v !== null);
+    const metrics = [...new Set(prepared.filter((p) => p.value !== null).map((p) => p.metric))];
 
     out.push({
       printCode,
@@ -194,6 +219,7 @@ export function mergePrintings(cardSets, products) {
             low_price: values.length > 1 ? Math.min(...values) : null,
             high_price: values.length > 1 ? Math.max(...values) : null,
             in_set: true,
+            metric: metrics.length === 1 ? metrics[0] : "mixed",
           })
         : null,
     });
@@ -255,7 +281,7 @@ export async function fetchPrintings(cardName) {
  *
  * The name is still needed -- it is how the Cardmarket side is found at all.
  */
-export async function fetchPrintingPrices(cardName, cardSets) {
+export async function fetchPrintingPrices(cardName, cardSets, db) {
   if (!cardName || !cardSets?.length) return [];
 
   // Two queries, because a printing is (id_expansion, id_metacard) and not a
@@ -265,12 +291,11 @@ export async function fetchPrintingPrices(cardName, cardSets) {
   // Black Chaos" beside two hyphenated siblings, and a name query returns two
   // of the three. Stopping at the name would quote a narrower band here than
   // card_prices quotes on the same card.
-  const db = getClient();
-  const { data: seeds, error: seedError } = await db
-    .from("cardmarket_product")
-    .select("id_metacard")
-    .ilike("name", cardName)
-    .not("id_metacard", "is", null);
+  db ??= getClient();
+  const { data: seeds, error: seedError } = await db.rpc(
+    "cardmarket_metacards_by_name",
+    { p_name: cardName },
+  );
 
   if (seedError) {
     console.error("fetchPrintings: printing lookup failed", seedError);
@@ -282,7 +307,7 @@ export async function fetchPrintingPrices(cardName, cardSets) {
 
   const { data, error } = await db
     .from("cardmarket_product")
-    .select("id_product, id_expansion, id_metacard, set_code, rarity, cardmarket_price(trend, avg7, avg30)")
+    .select("id_product, id_expansion, id_metacard, set_code, collector_number, rarity, cardmarket_price(trend, low)")
     .in("id_metacard", metacards);
 
   if (error) {

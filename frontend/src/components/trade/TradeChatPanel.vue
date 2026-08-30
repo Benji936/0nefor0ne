@@ -13,6 +13,11 @@ const props = defineProps({
   standalone:    { type: Boolean, default: false },
 });
 
+// How many messages the conversation holds. A host that keeps this panel
+// mounted while it is hidden -- the trade page's docked sleeve does -- has no
+// other way to notice that one arrived.
+const emit = defineEmits(["count"]);
+
 // ── State ─────────────────────────────────────────────────────────────────
 const messages        = ref([]);
 const loadingMessages = ref(false);
@@ -44,6 +49,7 @@ async function loadMessages() {
   loadingMessages.value = true;
   try {
     messages.value = await fetchTradeMessages(props.proposal.id);
+    emit("count", messages.value.length);
   } catch { /* silent */ } finally {
     loadingMessages.value = false;
     scrollToBottom();
@@ -80,6 +86,7 @@ watch(() => props.open, (open) => {
   } else {
     messages.value  = [];
     newMessage.value = "";
+    emit("count", 0);
     if (msgSub) { getClient().removeChannel(msgSub); msgSub = null; }
   }
 }, { immediate: true });

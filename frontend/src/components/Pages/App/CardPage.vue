@@ -279,6 +279,7 @@
               :price="printingPrice(s)"
             />
             <span v-else-if="loadingPrintingPrices" class="cx__print-price-sk" aria-hidden="true" />
+            <span v-else class="cx__print-unavailable">{{ $t('price.unavailable') }}</span>
             <a
               class="cx__print-buy"
               :href="`https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${encodeURIComponent(s.set_code)}`"
@@ -1344,6 +1345,11 @@ export default {
    out to match would imply a precision the band does not have. The set name is
    what flexes, so the money sits against the link on every row. */
 .cx__print-price { flex: 0 0 auto; }
+.cx__print-unavailable {
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  color: var(--c-muted);
+}
 /* Holds the money's place while the prices load, so the ledger settles once
    rather than twitching row by row as they arrive. */
 .cx__print-price-sk {

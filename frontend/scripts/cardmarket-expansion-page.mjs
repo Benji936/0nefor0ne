@@ -132,14 +132,24 @@ export function parseAlt(alt) {
 export function readRow(row) {
   const img = idProductFromImage(row?.imageUrl);
   const placeholder = !img && isPlaceholderImage(row?.imageUrl);
+  const detailProductId = Number(row?.detailProductId);
+  const hasDetailProductId = Number.isSafeInteger(detailProductId) && detailProductId > 0;
   if (!img && !placeholder) return { ok: false, reason: "no idProduct in image URL" };
 
-  const idProduct = img ? img.idProduct : null;
+  if (img && hasDetailProductId && img.idProduct !== detailProductId) {
+    return { ok: false, reason: "detail page id does not match image id", idProduct: img.idProduct };
+  }
+
+  // A known-anomalous listing may use the same placeholder image for every
+  // product. Its dedicated resolver can attach an id read from that row's own
+  // product detail page; no other fallback is accepted here.
+  const idProduct = img ? img.idProduct : hasDetailProductId ? detailProductId : null;
+  const unresolvedPlaceholder = placeholder && idProduct == null;
   const parsed = parseAlt(row?.alt);
   if (!parsed) return { ok: false, reason: "unreadable alt", idProduct };
   if (!parsed.versionNo && !parsed.rarity) {
     return {
-      ok: true, single: true, placeholder, confidence: 1.0,
+      ok: true, single: true, placeholder: unresolvedPlaceholder, confidence: 1.0,
       idProduct, set: img ? img.set : null, cardName: parsed.cardName,
       versionNo: null, versionLabel: null, rarity: null,
     };
@@ -162,7 +172,7 @@ export function readRow(row) {
   }
 
   return {
-    ok: true, single: false, placeholder, confidence,
+    ok: true, single: false, placeholder: unresolvedPlaceholder, confidence,
     idProduct, set: img ? img.set : null,
     cardName: parsed.cardName, versionNo: parsed.versionNo,
     versionLabel: parsed.versionLabel, rarity: parsed.rarity,

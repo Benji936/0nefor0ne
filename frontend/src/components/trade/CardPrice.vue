@@ -48,6 +48,13 @@ const hint = computed(() => {
     ? t("price.inThisSet", { count }, count)
     : t("price.acrossPrintings", { count }, count);
 });
+
+const metricHint = computed(() => {
+  if (props.price?.metric === "trend") return t("price.trendMetric");
+  if (props.price?.metric === "low") return t("price.lowMetric");
+  if (props.price?.metric === "mixed") return t("price.mixedMetric");
+  return "";
+});
 </script>
 
 <template>
@@ -55,6 +62,7 @@ const hint = computed(() => {
     v-if="kind !== NONE"
     class="cp"
     :class="[`cp--${size}`, { 'cp--band': isBand }]"
+    :title="metricHint"
   >
     <span class="cp__value tabular-nums">{{ label }}</span>
     <span v-if="hint" class="cp__hint">{{ hint }}</span>

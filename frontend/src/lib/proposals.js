@@ -7,6 +7,46 @@
 
 import { getClient } from "@/lib/supabaseClient";
 
+async function workflowRpc(name, args, fallback) {
+  const { data, error } = await getClient().rpc(name, args);
+  if (error) {
+    console.error(`${name} failed`, error);
+    throw error;
+  }
+  return data ?? fallback;
+}
+
+export function createTradeRequest(counterparty, requested) {
+  return workflowRpc("create_trade_request", { counterparty, requested });
+}
+
+export function submitTradeReturnSelection(tradeId, requested) {
+  return workflowRpc("submit_trade_return_selection", { p_trade_id: tradeId, requested });
+}
+
+export function reviseMyTradeRequest(tradeId, revision, requested) {
+  return workflowRpc("revise_my_trade_request", {
+    p_trade_id: tradeId,
+    p_revision: revision,
+    requested,
+  });
+}
+
+export function reviseTradeTerms(tradeId, revision, terms = {}) {
+  return workflowRpc("revise_trade_terms", {
+    p_trade_id: tradeId,
+    p_revision: revision,
+    p_trade_method: terms.trade_method ?? null,
+    p_cash_amount: terms.cash_amount ?? null,
+    p_cash_payer: terms.cash_payer ?? null,
+    p_meetup_location: terms.meetup_location ?? null,
+  });
+}
+
+export function confirmTradeAgreement(tradeId, revision) {
+  return workflowRpc("confirm_trade_agreement", { p_trade_id: tradeId, p_revision: revision }, { status: "confirmed" });
+}
+
 // ── Proposals ──────────────────────────────────────────────────────────────
 
 /**

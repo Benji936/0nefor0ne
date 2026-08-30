@@ -379,8 +379,12 @@ describe("a Looking For post is a want, and wants are pink", () => {
     expect(dlg).toMatch(/\.dlg\s*\{[^}]*--an-kind:\s*var\(--c-trade\)/s);
     expect(dlg).toMatch(/\.dlg\[data-kind="want"\]\s*\{\s*--an-kind:\s*var\(--c-accent\)/);
 
-    expect(read("../components/trade/AnnounceDetailDialog.vue"))
-      .toMatch(/\.lf-badge\s*\{[^}]*background:\s*var\(--c-accent\)/s);
+    // The detail dialog now says the kind in words rather than as an "LF"
+    // badge, and reads the same variable the form does.
+    const detail = read("../components/trade/AnnounceDetailDialog.vue");
+    expect(detail).toMatch(/\.dlg\s*\{\s*--an-kind:\s*var\(--c-trade\)/);
+    expect(detail).toMatch(/\.dlg\[data-kind="want"\]\s*\{\s*--an-kind:\s*var\(--c-accent\)/);
+    expect(detail).toMatch(/\.an-head__eyebrow\s*\{[^}]*background:\s*var\(--an-kind\)/s);
   });
 
   // Narrower than the other pages' version of this rule, and deliberately so.
@@ -440,5 +444,60 @@ describe("the support page keeps Ko-fi's blue on Ko-fi's button", () => {
       .filter((line) => /rgba?\(\s*(255|0|100)\s*,|color:\s*white|:\s*#fff\b|#ffffff/i.test(line))
       .filter((line) => !/--sp-kofi|#1A0D45/.test(line));
     expect(stray, "every other colour on the page comes from a token").toEqual([]);
+  });
+});
+
+describe("the announce detail dialog spends no colour the system does not have", () => {
+  // Four literals lived in this file, each written once against the dark page
+  // and each failing on the light one: Discord's blurple as text on a tint of
+  // itself (3.53:1 light, 3.64 dark), the rating amber (1.77:1 light), a red
+  // for delete (2.96:1 light) and — with no meaning in this palette at all — a
+  // green on the button that adds a card to your pile (1.62:1 light).
+  //
+  // The first three are legitimate colours outside the three roles: a brand, a
+  // warning and a danger. They keep their hue and get a value per theme. The
+  // green does not: adding to your trade pile is amethyst and adding to your
+  // wishlist is pink, which is what that button already says in words.
+  const src = read("../components/trade/AnnounceDetailDialog.vue");
+
+  it("holds no raw brand, warning, danger or success literals", () => {
+    const stray = src
+      .split("\n")
+      .filter((line) => /#(ef4444|22c55e|5865F2|f59e0b)\b/i.test(line))
+      .filter((line) => !/--an-(discord|star|danger):/.test(line));
+    expect(stray, "declare it once as a token, with a value per theme").toEqual([]);
+  });
+
+  it.each(["--an-discord", "--an-star", "--an-danger"])("%s has a light and a dark value", (token) => {
+    const declared = src.match(new RegExp(`${token}:\\s*#[0-9A-Fa-f]{6}`, "g")) ?? [];
+    expect(declared).toHaveLength(2);
+    expect(src).toMatch(/html\.dark \.shell \{/);
+  });
+
+  it("puts no green on the add-to-pile button", () => {
+    expect(src).toMatch(/\.btn-tradelist\s*\{[^}]*color:\s*var\(--an-kind\)/s);
+  });
+
+  // The lesson that took three surfaces to learn. Text set in a brand colour on
+  // a wash of the same brand colour is spending its own contrast: on the light
+  // theme, 12% was too much for pink every time it was tried. Nothing in this
+  // file may go back above 10%.
+  // The same arithmetic, wherever an announce badge is drawn. The trader page
+  // draws one too, in the right colours, at a wash that was too heavy for them.
+  it("holds the same ceiling on the trader page's announce badges", () => {
+    const ta = read("../components/trade/TraderAnnounces.vue");
+    const heavy = [...ta.matchAll(/\.ta__kind--\w+\s*\{\s*background:\s*color-mix\(in srgb, var\(--c-\w+\) (\d+)%/g)]
+      .map((m) => Number(m[1]))
+      .filter((pct) => pct > 12);
+    expect(heavy, "16% put three of these four combinations under 4.5:1").toEqual([]);
+  });
+
+  it("keeps a wash under text of the same hue thin enough to read", () => {
+    // Backgrounds only. A border in the same hue carries no text on top of it,
+    // so it can be as strong as it likes — and is, at 34%.
+    const heavy = [...src.matchAll(/background:\s*color-mix\(in srgb, var\(--an-kind\) (\d+)%/g)]
+      .map((m) => Number(m[1]))
+      .filter((pct) => pct > 12);
+    expect(heavy, "pink on a pink wash fell to 4.17:1 at 12%").toEqual([]);
   });
 });

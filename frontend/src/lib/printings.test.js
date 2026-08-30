@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { setCodeOf, mergePrintings, printingRarity, needsVersionChoice } from "./printings.js";
+import { describe, it, expect, vi } from "vitest";
+import { setCodeOf, mergePrintings, printingRarity, needsVersionChoice, fetchPrintingPrices } from "./printings.js";
 import { EXACT, NARROWED } from "./cardmarketPrice.js";
 
 const ygo = (set_code, set_rarity, set_name = "Set") => ({ set_code, set_rarity, set_name });
@@ -36,6 +36,34 @@ describe("mergePrintings prices the printings the app can name", () => {
     expect(out).toHaveLength(1);
     expect(out[0]).toMatchObject({ printCode: "POTE-EN012", setCode: "POTE", rarity: "Common" });
     expect(out[0].price).toMatchObject({ kind: EXACT, value: 0.09 });
+  });
+
+  it("uses Cardmarket's low price when the product has no trend", () => {
+    const out = mergePrintings(
+      [ygo("POTE-EN012", "Common")],
+      [{
+        id_product: 712345,
+        set_code: "POTE",
+        rarity: "Common",
+        cardmarket_price: { trend: null, low: 0.42, avg7: 9.99, avg30: 8.88 },
+      }],
+    );
+
+    expect(out[0].price).toMatchObject({ kind: EXACT, value: 0.42, metric: "low" });
+  });
+
+  it("marks a displayed trend as Cardmarket's trend metric", () => {
+    const out = mergePrintings(
+      [ygo("POTE-EN012", "Common")],
+      [{
+        id_product: 712345,
+        set_code: "POTE",
+        rarity: "Common",
+        cardmarket_price: { trend: 0.09, low: 0.02 },
+      }],
+    );
+
+    expect(out[0].price).toMatchObject({ kind: EXACT, value: 0.09, metric: "trend" });
   });
 
   it("keeps both rarities when one set code covers two of them", () => {
@@ -82,6 +110,26 @@ describe("mergePrintings prices the printings the app can name", () => {
       [prod("RA04", "Quarter-Century Secret Rare", 28.18), prod("RA04", "Ultra Rare", 1.41)],
     );
     expect(out[0].price).toMatchObject({ kind: EXACT, value: 28.18 });
+  });
+
+  it("uses Cardmarket's printed number when one rarity occurs under two print codes", () => {
+    const v4 = { ...prod("RA04", "Platinum Secret Rare", 1.78), collector_number: "024" };
+    const v8 = { ...prod("RA04", "Platinum Secret Rare", 1.47), collector_number: "278" };
+
+    const out = mergePrintings(
+      [
+        ygo("RA04-EN024", "Platinum Secret Rare"),
+        ygo("RA04-EN278", "Platinum Secret Rare"),
+      ],
+      [v4, v8],
+    );
+
+    const en024 = out.find((printing) => printing.printCode === "RA04-EN024");
+    const en278 = out.find((printing) => printing.printCode === "RA04-EN278");
+    expect(en024.price).toMatchObject({ kind: EXACT, value: 1.78 });
+    expect(en024.productId).toBe(v4.id_product);
+    expect(en278.price).toMatchObject({ kind: EXACT, value: 1.47 });
+    expect(en278.productId).toBe(v8.id_product);
   });
 
   it("stays a band when only some of the printing has been read", () => {
@@ -174,21 +222,33 @@ describe("mergePrintings prices the printings the app can name", () => {
     expect(out[0].price).toBeNull();
   });
 
-  it("refuses to price a product that has only a listing", () => {
-    // 10% of the catalogue has no trend and no average -- one person asking a
-    // number rather than a market. A Dark Magical Curtain printing in that
-    // state carried a lone 18,995 EUR listing and set a whole collection's
-    // ceiling to 76,298 EUR before this was pinned down.
+  it("uses the low fallback for a product that has only a listing", () => {
+    // The UI labels this as Cardmarket's lowest listing rather than a trend, so
+    // even an extreme ask is presented for what it is instead of as a market.
     const out = mergePrintings([ygo("MAMO-EN003", "Ultra Rare")], [onlyListed("MAMO", 18995)]);
-    expect(out[0].price).toBeNull();
+    expect(out[0].price).toMatchObject({ kind: EXACT, value: 18995 });
   });
 
-  it("still prices a set where one product has sales and another only a listing", () => {
+  it("includes a low fallback in a multi-product range", () => {
     const out = mergePrintings(
       [ygo("MAMO-EN003", "Ultra Rare")],
       [prod("MAMO", null, 3.39), onlyListed("MAMO", 18995)],
     );
-    expect(out[0].price).toMatchObject({ kind: EXACT, value: 3.39 });
+    expect(out[0].price).toMatchObject({ kind: NARROWED, low: 3.39, high: 18995 });
+  });
+
+  it("does not display rolling averages when trend and low are absent", () => {
+    const out = mergePrintings(
+      [ygo("POTE-EN012", "Common")],
+      [{
+        id_product: 712345,
+        set_code: "POTE",
+        rarity: "Common",
+        cardmarket_price: { trend: null, low: null, avg7: 9.99, avg30: 8.88 },
+      }],
+    );
+
+    expect(out[0].price).toBeNull();
   });
 
   it("matches set codes case-insensitively", () => {
@@ -343,5 +403,39 @@ describe("mergePrintings names the Cardmarket product where it can", () => {
     );
     expect(out[0].productId).toBe(712345);
     expect(out[0].price).toBeNull();
+  });
+});
+
+describe("fetchPrintingPrices uses normalized Cardmarket names", () => {
+  it("resolves a decorative-star Yummy name through the shared database key", async () => {
+    expect(fetchPrintingPrices).toHaveLength(3);
+
+    const products = [{
+      id_product: 848930,
+      id_expansion: 6211,
+      id_metacard: 452283,
+      set_code: "DOOD",
+      collector_number: null,
+      rarity: "Secret Rare",
+      cardmarket_price: { trend: 18.67, low: 12.5 },
+    }];
+    const productQuery = {
+      select: vi.fn(() => productQuery),
+      in: vi.fn().mockResolvedValue({ data: products, error: null }),
+    };
+    const db = {
+      rpc: vi.fn().mockResolvedValue({ data: [{ id_metacard: 452283 }], error: null }),
+      from: vi.fn(() => productQuery),
+    };
+
+    const result = await fetchPrintingPrices("Marshmao☆Yummy", [
+      ygo("DOOD-EN024", "Secret Rare", "Doom of Dimensions"),
+    ], db);
+
+    expect(db.rpc).toHaveBeenCalledWith("cardmarket_metacards_by_name", {
+      p_name: "Marshmao☆Yummy",
+    });
+    expect(db.from).toHaveBeenCalledWith("cardmarket_product");
+    expect(result[0].price).toMatchObject({ kind: EXACT, value: 18.67 });
   });
 });

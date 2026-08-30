@@ -1,4 +1,5 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
+@source "../";
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ── LIGHT THEME ── Variation A: Amethyst Nights
@@ -28,6 +29,14 @@
   --c-on-accent: #FFFFFF;
   --c-ring:      rgba(201,24,90,.35);
   --c-input-bg:  #FBF9FF;
+  /* Binder surfaces. Three depths, ordered board < well < page, so a pocket
+     reads as sunk into the leaf it is welded to and the leaf reads as sitting
+     on the board. They are tokens rather than one-off color-mix() calls
+     because the proposal dialog paints its own surface with --c-board to
+     become the binder, and two places guessing at the same shade drift. */
+  --c-board:     #DCCAF5;
+  --c-page:      #F7F2FF;
+  --c-well:      #E7DAFB;
 }
 
 /* ── DARK THEME ── Variation A: Amethyst Nights
@@ -51,6 +60,9 @@ html.dark {
   --c-on-accent: #13031A;
   --c-ring:      rgba(244,45,135,.45);
   --c-input-bg:  #190C33;
+  --c-board:     #070311;
+  --c-page:      #150A2E;
+  --c-well:      #0C0520;
 }
 
 /* ── VARIATION B: Orchid ──────────────────────────────────
