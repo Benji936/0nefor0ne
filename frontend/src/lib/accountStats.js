@@ -14,6 +14,7 @@
 import { getClient } from "./supabaseClient";
 import { fetchPileCounts } from "./onboarding";
 import { fetchMyProposals } from "./proposals";
+import { isYourMove } from "./proposalQueue";
 
 /**
  * How many decks this user has saved.
@@ -41,17 +42,24 @@ export async function fetchDeckCount(userId) {
 }
 
 /**
- * Proposals waiting on this user's answer.
+ * Trades whose next move is this user's.
  *
- * Deliberately identical to TradeCenter's proposals-tab badge. If the two ever
- * need to change, they need to change together, and accountStats.test.js is
- * where that gets noticed.
+ * This was `pending && !i_am_proposer` — every proposal somebody sent you —
+ * and it agreed with the Trade Center badge because the badge said the same
+ * thing. Both were wrong once the staged workflow landed: a trade you sent can
+ * be waiting on you to confirm a revision, and an accepted trade waits on your
+ * half of the receipt. The card's own label reads "Waiting on you", so the
+ * number under it now counts what is actually waiting on you.
  *
- * @param {Array<{status: string, i_am_proposer: boolean}>} proposals
+ * The definition lives in proposalQueue.isYourMove, which is also what the
+ * proposals page files its piles by and what the row's button verb comes from.
+ * Three surfaces, one answer.
+ *
+ * @param {Array<object>} proposals rows from fetch_my_proposals
  * @returns {number}
  */
 export function awaitingAnswerCount(proposals) {
-  return proposals.filter((p) => p.status === "pending" && !p.i_am_proposer).length;
+  return proposals.filter(isYourMove).length;
 }
 
 /**

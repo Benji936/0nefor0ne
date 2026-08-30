@@ -159,6 +159,7 @@ import { fetchMatches, fetchTradersWithCard, bucketMatches } from "@/lib/matches
 import { fetchMyProposals, completeTradeProposal, cancelTradeProposal } from "@/lib/proposals";
 import { tradeErrorKey, isStaleTradeError } from "@/lib/tradeErrors";
 import { fetchAnnounces } from "@/lib/announces";
+import { isYourMove } from "@/lib/proposalQueue";
 
 /** The tabs, in order. First one is what a bare /trade means. Kept in step with
  *  the route's `:tab` matcher in router/index.js. */
@@ -219,7 +220,10 @@ export default {
       },
     },
     tabs() {
-      const pendingCount = this.proposals.filter(p => p.status === "pending" && !p.i_am_proposer).length;
+      // What is actually waiting on you, from the same function the proposals
+      // page files its piles by. It used to count proposals sent to you, which
+      // stopped being the same thing when the staged workflow arrived.
+      const pendingCount = this.proposals.filter(isYourMove).length;
       const all = [
         { key: "matches",   label: this.$t("tradeCenter.matches"),   icon: "mdi-account-group-outline", badge: 0, guest: false },
         { key: "proposals", label: this.$t("tradeCenter.proposals"), icon: "mdi-swap-horizontal-bold",  badge: pendingCount, guest: false },

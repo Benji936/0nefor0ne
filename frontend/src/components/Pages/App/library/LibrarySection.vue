@@ -1,72 +1,50 @@
 <script setup>
 import { useI18n } from "vue-i18n";
-import AddCard     from "@/components/library/AddCard.vue";
 import CardElement from "@/components/ui/card/CardElement.vue";
 
 const { t } = useI18n();
 
 defineProps({
-  title:     { type: String,  required: true },
+  title:     { type: String,  default: "" },
   mode:      { type: String,  required: true }, // 'trade' | 'wish'
   cards:     { type: Array,   default: () => [] },
   loading:   { type: Boolean, default: false },
   newCardId: { type: [String, Number], default: null },
-  emptyText: { type: String,  default: "Nothing here yet." },
-  ringClass: { type: String,  default: "ring-blue-400" },
+  emptyText: { type: String,  default: "" },
   view:      { type: String,  default: "list" }, // 'list' (rows) | 'grid' (tiles)
-  // A wishlist renders one of these per named list. Those sub-sections share
-  // one add button and one heading level with the section above them, so both
-  // are optional rather than assumed.
-  showAdd:   { type: Boolean, default: true },
+  // The divider tab above already names the pile and carries its count, so the
+  // section only draws a heading when it is one of several on screen at once.
+  showHead:  { type: Boolean, default: false },
   dense:     { type: Boolean, default: false },
   // The lists a card can be moved to. Empty for the trade pile, which has none.
   lists:     { type: Array,   default: () => [] },
-  // Fold this section down to its heading. The state lives with the parent so
-  // it can be remembered between visits; this component only asks to flip it.
-  collapsible: { type: Boolean, default: false },
-  collapsed:   { type: Boolean, default: false },
+  // Card id -> resolved Cardmarket price, loaded once by the page. Empty until
+  // it arrives, which is why CardElement hides the line rather than showing a
+  // placeholder: a price that appears is better than a skeleton that resolves
+  // to nothing for the 2% of cards Cardmarket does not price at all.
+  prices:    { type: Map,     default: () => new Map() },
 });
 
-const emit = defineEmits(["added", "deleted", "move", "update:collapsed"]);
+const emit = defineEmits(["deleted", "move", "printing-picked"]);
 </script>
 
 <template>
   <div class="flex flex-col" :class="dense ? 'gap-2' : 'gap-4'">
-    <div class="flex flex-row items-center justify-between gap-2">
-      <!-- The whole heading is the hit target when it folds: a chevron alone is
-           a small thing to ask somebody to aim at repeatedly. -->
-      <component
-        :is="collapsible ? 'button' : 'p'"
-        class="flex items-center gap-1.5 text-left font-semibold tracking-wide min-w-0"
-        :class="[dense ? 'text-sm' : 'text-xl uppercase', collapsible ? 'ls-toggle' : '']"
-        :style="{ color: dense ? 'var(--c-muted)' : 'var(--c-text)' }"
-        :aria-expanded="collapsible ? String(!collapsed) : null"
-        @click="collapsible && emit('update:collapsed', !collapsed)"
-      >
-        <v-icon
-          v-if="collapsible"
-          icon="mdi-chevron-down"
-          :size="dense ? 16 : 20"
-          class="ls-chev shrink-0"
-          :class="{ 'ls-chev--closed': collapsed }"
-        />
-        <span class="truncate">{{ title }}</span>
-        <!-- The count is what makes a folded list still worth reading. -->
-        <span v-if="collapsible" class="ls-count tabular-nums">{{ cards.length }}</span>
-      </component>
-      <div class="flex items-center gap-1">
-        <slot name="actions" />
-        <AddCard v-if="showAdd" :mode="mode" @added="emit('added', $event)" />
-      </div>
-    </div>
+    <!-- Section labels in the collector's own register: monospace, uppercase,
+         widely tracked (DESIGN.md, The Mono Identifier Rule). The count rides
+         with the name because a list you are scrolling past is worth counting. -->
+    <p v-if="showHead" class="ls-head">
+      <span class="truncate">{{ title }}</span>
+      <span class="ls-count tabular-nums">{{ cards.length }}</span>
+    </p>
 
     <!-- Skeleton -->
-    <template v-if="loading && !collapsed">
+    <template v-if="loading">
       <div
         v-for="i in 3"
         :key="i"
-        class="flex flex-row items-center gap-4 rounded-lg px-4 py-3 w-full animate-pulse border"
-        style="background-color: var(--c-surface-2); border-color: var(--c-border)"
+        class="flex flex-row items-center gap-4 rounded-lg px-4 py-3 w-full animate-pulse motion-reduce:animate-none border"
+        style="background-color: var(--c-surface); border-color: var(--c-border)"
       >
         <div class="h-14 w-10 rounded shrink-0" style="background-color: var(--c-skeleton)" />
         <div class="flex flex-col gap-2 grow">
@@ -78,7 +56,7 @@ const emit = defineEmits(["added", "deleted", "move", "update:collapsed"]);
     </template>
 
     <!-- Cards -->
-    <template v-else-if="!collapsed">
+    <template v-else>
       <TransitionGroup
         name="card-slide"
         tag="div"
@@ -88,32 +66,34 @@ const emit = defineEmits(["added", "deleted", "move", "update:collapsed"]);
           v-for="card in cards"
           :key="card.id"
           :wish="card"
+          :price="prices.get(card.id) ?? null"
+          @printing-picked="$emit('printing-picked', $event)"
           :layout="view"
-          :class="newCardId === card.id ? `ring-2 ${ringClass}` : ''"
+          :class="newCardId === card.id ? 'ls-new' : ''"
           :lists="lists"
           @deleted="emit('deleted', $event)"
           @move="emit('move', $event)"
         />
       </TransitionGroup>
       <!-- A named list that is empty says so in one line. The full empty state,
-           with its go-and-search prompt, belongs to a whole empty section. -->
+           with its go-and-search prompt, belongs to a whole empty pile. -->
       <p
         v-if="cards.length === 0 && dense"
         class="text-xs py-2"
         style="color: var(--c-muted)"
       >{{ emptyText }}</p>
-      <div v-else-if="cards.length === 0" class="flex flex-col items-center gap-3 py-10 text-center">
+      <div v-else-if="cards.length === 0" class="flex flex-col items-center gap-3 py-12 text-center">
         <div
           class="size-12 rounded-2xl flex items-center justify-center"
-          style="background: color-mix(in srgb, var(--c-muted) 10%, transparent)"
+          style="background: color-mix(in srgb, var(--pile, var(--c-muted)) 12%, transparent)"
         >
-          <v-icon :icon="mode === 'trade' ? 'mdi-cards-outline' : 'mdi-heart-outline'" size="24" color="var(--c-muted)" />
+          <v-icon :icon="mode === 'trade' ? 'mdi-cards-outline' : 'mdi-heart-outline'" size="24" color="var(--pile)" />
         </div>
         <p class="text-sm max-w-xs leading-relaxed" style="color: var(--c-muted)">{{ emptyText }}</p>
         <router-link
           to="/"
           class="text-xs font-semibold no-underline flex items-center gap-1 transition-opacity hover:opacity-70"
-          style="color: var(--c-trade)"
+          style="color: var(--pile)"
         >
           <v-icon icon="mdi-magnify" size="14" />
           {{ t('library.searchCards') }}
@@ -126,22 +106,25 @@ const emit = defineEmits(["added", "deleted", "move", "update:collapsed"]);
 <style scoped>
 .card-slide-enter-active { transition: all 0.25s ease-out; }
 .card-slide-enter-from   { opacity: 0; transform: translateY(-6px); }
-
-/* A heading that folds is a button, but it must not look like one. */
-.ls-toggle {
-  background: none;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-  font: inherit;
-  letter-spacing: inherit;
+@media (prefers-reduced-motion: reduce) {
+  .card-slide-enter-active { transition: none; }
+  .card-slide-enter-from   { opacity: 1; transform: none; }
 }
-.ls-toggle:hover .ls-count { color: var(--c-text); }
 
-.ls-chev { transition: transform 0.18s ease-out; }
-.ls-chev--closed { transform: rotate(-90deg); }
+.ls-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  min-width: 0;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+}
 
-/* What a folded list still tells you. */
 .ls-count {
   font-size: 11px;
   font-weight: 700;
@@ -149,5 +132,13 @@ const emit = defineEmits(["added", "deleted", "move", "update:collapsed"]);
   border-radius: 999px;
   color: var(--c-muted);
   background: color-mix(in srgb, var(--c-muted) 12%, transparent);
+}
+
+/* A card that just landed, marked in the colour of the pile it landed in —
+   the ring used to be a Tailwind blue that exists nowhere in the palette. */
+.ls-new {
+  outline: 2px solid var(--pile, var(--c-accent));
+  outline-offset: 2px;
+  border-radius: 10px;
 }
 </style>

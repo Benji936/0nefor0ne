@@ -48,11 +48,13 @@ export async function fetchAnnounces() {
   // 2. Fetch seller profiles.
   // Community announces have no seller, so filter the nulls out rather than
   // sending them to .in(), which would ask for a trader with a null id.
+  // `trader_public`, not "Trader": these are other people's rows, and the
+  // base table stopped answering for those in 20260823.
   const sellerIds = [...new Set(announces.map(a => a.seller).filter(Boolean))];
   let traderData = [];
   if (sellerIds.length > 0) {
     const { data, error: traderError } = await getClient()
-      .from("Trader")
+      .from("trader_public")
       .select("id, Name, City, Country, avatar_url")
       .in("id", sellerIds);
     if (traderError) console.error("fetchAnnounces (traders) failed", traderError);
@@ -107,6 +109,33 @@ export async function fetchAnnouncesBySeller(sellerId, { limit = 6 } = {}) {
     images: (a.images ?? []).sort((x, y) => x.sort_order - y.sort_order),
     wantCards: (a.wantCards ?? []).sort((x, y) => x.sort_order - y.sort_order),
   }));
+}
+
+/**
+ * How many live listings a community has posted.
+ *
+ * The profile page used to carry a "View listings" link that went to the whole
+ * Trade Center, unfiltered, on every one of the 4,451 profiles — a link that
+ * promised this shop's listings and delivered the global feed. Counting first
+ * means the link appears only where there is something behind it, and can say
+ * how much.
+ *
+ * head:true, so this costs a count and no rows. Returns 0 rather than throwing:
+ * a failed count must not take down a page whose job is the address.
+ */
+export async function countCommunityAnnounces(communityId) {
+  if (!communityId) return 0;
+  const { count, error } = await getClient()
+    .from("announce")
+    .select("id", { count: "exact", head: true })
+    .eq("community", communityId)
+    .eq("status", "active")
+    .gt("expires_at", new Date().toISOString());
+  if (error) {
+    console.error("countCommunityAnnounces failed", error);
+    return 0;
+  }
+  return count ?? 0;
 }
 
 /**

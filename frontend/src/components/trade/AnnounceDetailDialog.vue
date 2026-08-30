@@ -159,9 +159,9 @@ const wantCards = computed(() =>
 );
 
 // A Looking For post with no photo has nothing to put in the gallery, and an
-// empty image frame just reads as broken. Drop it in that case — a slim header
-// (.bare-head) takes over the close button, budget and owner badge. Sell posts,
-// and LF posts that do carry photos, keep the gallery.
+// empty image frame just reads as broken. Drop it in that case; the header
+// carries the title, price and close button either way, so nothing has to
+// stand in for it. Sell posts, and LF posts that do carry photos, keep it.
 const showGallery = computed(() => !isLf.value || images.value.length > 0);
 
 // Archetype art, shown in place of the empty-gallery icon and beside the
@@ -184,8 +184,8 @@ const guildIcon   = computed(() => props.announce?.discord_guild_icon ?? null);
 // always in this state — it has no seller account, so there is no thread to
 // open — and so is any listing seen while signed out.
 //
-// Needs a gallery to put in that column: a Looking For post with no photos
-// renders .bare-head instead and stays stacked.
+// Needs a gallery to put in that column: a Looking For post with no photos has
+// nothing to fill it and stays stacked.
 const splitLayout = computed(() => !canChat.value && showGallery.value);
 
 // The footer exists to hold buttons, and an empty bordered strip under the
@@ -302,10 +302,38 @@ function onCardAdded() {
         class="detail-pane"
         :class="{ 'pane--hidden-mobile': currentUserId && mobileTab !== 'details' }"
       >
-        <div class="dlg" :class="{ 'dlg--split': splitLayout }">
+        <div class="dlg" :class="{ 'dlg--split': splitLayout }" :data-kind="isLf ? 'want' : 'sell'">
 
-      <!-- Image gallery (full bleed at top). Hidden for a Looking For post with
-           no photos, which has nothing to show; .bare-head below stands in. -->
+      <!-- One header, whatever the announce turns out to be.
+           There used to be two: a set of overlay chips floated on the photo,
+           and a .bare-head strip for a Looking For post with no photo to float
+           them on. The strip was the tell — with no owner badge and no budget
+           to carry, which is every announce somebody else posted without a
+           price, it rendered as forty pixels of empty bar above the title. And
+           the overlay version put the close button in the top-right of the
+           *photo*, which in the split layout is the middle of the dialog.
+           Title, price, age and close belong to the announce, not to its
+           photograph, so they sit above both. -->
+      <header class="an-head">
+        <div class="an-head__meta">
+          <span class="an-head__eyebrow">{{ isLf ? t('announce.kindLookingFor') : t('announce.kindSell') }}</span>
+          <span v-if="isOwner" class="an-head__own">
+            <v-icon icon="mdi-account-check" size="12" />
+            {{ t("announces.yourAnnounce") }}
+          </span>
+          <span class="an-head__time">{{ timeAgo(announce.created_at, t) }}</span>
+          <button class="an-head__close" :aria-label="t('common.close')" @click="close">
+            <v-icon icon="mdi-close" size="18" />
+          </button>
+        </div>
+        <h2 class="an-head__title">{{ announce.title }}</h2>
+        <p v-if="formattedPrice" class="an-head__price">
+          <span v-if="isLf" class="an-head__price-label">{{ t('announce.budget') }}</span>{{ formattedPrice }}
+        </p>
+      </header>
+
+      <!-- The photograph, under the header. Absent for a Looking For post with
+           no photos, which has nothing to show. -->
       <div v-if="showGallery" class="gallery">
         <img
           v-if="images.length"
@@ -342,22 +370,6 @@ function onCardAdded() {
           />
         </div>
 
-        <!-- Price overlay -->
-        <div v-if="formattedPrice" class="gallery__price">
-          <span v-if="isLf">{{ t('announce.budget') }}: </span>{{ formattedPrice }}
-        </div>
-
-        <!-- Close button -->
-        <button class="gallery__close" @click="close">
-          <v-icon icon="mdi-close" size="18" />
-        </button>
-
-        <!-- Own badge -->
-        <div v-if="isOwner" class="gallery__own">
-          <v-icon icon="mdi-account-check" size="12" />
-          {{ t("announces.yourAnnounce") }}
-        </div>
-
         <!-- Photo count -->
         <div v-if="images.length > 1" class="gallery__count">
           <v-icon icon="mdi-image-multiple-outline" size="12" />
@@ -365,33 +377,8 @@ function onCardAdded() {
         </div>
       </div>
 
-      <!-- Slim header for a gallery-less Looking For post: keeps the close
-           button reachable and re-homes the owner badge and budget the gallery
-           overlay would otherwise carry. -->
-      <div v-else class="bare-head">
-        <span v-if="isOwner" class="bare-head__own">
-          <v-icon icon="mdi-account-check" size="12" />
-          {{ t("announces.yourAnnounce") }}
-        </span>
-        <span v-if="formattedPrice" class="bare-head__price">
-          {{ t('announce.budget') }}: {{ formattedPrice }}
-        </span>
-        <button class="bare-head__close" @click="close">
-          <v-icon icon="mdi-close" size="18" />
-        </button>
-      </div>
-
       <!-- Scrollable content -->
       <div class="dlg-body">
-
-        <!-- Title + time -->
-        <div class="info-row">
-          <h2 class="info-title">
-            <span v-if="isLf" class="lf-badge">{{ t('announce.lfBadge') }}</span>
-            {{ announce.title }}
-          </h2>
-          <span class="info-time">{{ timeAgo(announce.created_at, t) }}</span>
-        </div>
 
         <!-- Expiry state, owner only. Always shown so the countdown is never a
              surprise; escalates to a full banner once the listing is dormant. -->
@@ -535,7 +522,7 @@ function onCardAdded() {
             </span>
           </div>
           <div v-if="rating" class="seller__rating">
-            <v-icon icon="mdi-star" size="13" style="color: #f59e0b" />
+            <v-icon icon="mdi-star" size="13" />
             <span>{{ Number(rating).toFixed(1) }}</span>
           </div>
         </TraderLink>
@@ -545,11 +532,6 @@ function onCardAdded() {
       <!-- Actions footer -->
       <div v-if="showFoot" class="dlg-foot">
         <template v-if="isOwner">
-          <button class="btn-del" :disabled="deleting" @click="handleDelete">
-            <v-progress-circular v-if="deleting" indeterminate size="14" width="2" />
-            <v-icon v-else icon="mdi-delete-outline" size="16" />
-            {{ t('announce.delete') }}
-          </button>
           <!-- Add to trade/wish list, only when a card is linked. LF posts
                offer the wish list instead of the trade list: the linked card
                is what the poster is hunting for, not something they're
@@ -574,6 +556,13 @@ function onCardAdded() {
             <v-progress-circular v-if="updating" indeterminate size="14" width="2" />
             <v-icon v-else icon="mdi-check-circle-outline" size="16" />
             {{ isLf ? t('announce.markFound') : t('announce.markSold') }}
+          </button>
+          <!-- Last, and pushed apart from the rest: the only one of these that
+               cannot be undone. It used to lead the row. -->
+          <button class="btn-del" :disabled="deleting" @click="handleDelete">
+            <v-progress-circular v-if="deleting" indeterminate size="14" width="2" />
+            <v-icon v-else icon="mdi-delete-outline" size="16" />
+            {{ t('announce.delete') }}
           </button>
         </template>
         <template v-else>
@@ -616,7 +605,23 @@ function onCardAdded() {
 
 <style scoped>
 /* ── Two-pane shell ───────────────────────────────── */
+/* The board's own token names, shared with the announce card and the form
+   that made this post. */
 .shell {
+  --an-panel: color-mix(in srgb, var(--c-surface) 94%, var(--c-bg));
+  --an-line: color-mix(in srgb, var(--c-border) 60%, transparent);
+  --an-line-soft: color-mix(in srgb, var(--c-border) 34%, transparent);
+  --an-lit: inset 0 1px 0 color-mix(in srgb, var(--c-text) 8%, transparent);
+
+  /* Discord's blurple and the rating amber, each with a value per theme.
+     Both were single fixed hexes written against the dark page: as text on a
+     tint of themselves the link measured 3.53:1 on light and 3.64 on dark
+     against the 4.5 its size needs, and the star measured 1.77:1 on light
+     while reading 7.24 on dark. Same failure the banlist badge had. */
+  --an-discord: #4752C4;
+  --an-star: #92400E;
+  --an-danger: #B91C1C;
+
   display: flex;
   flex-direction: row;
   background: var(--c-bg);
@@ -625,6 +630,18 @@ function onCardAdded() {
   max-height: 92vh;
   width: 100%;
 }
+html.dark .shell {
+  --an-discord: #8C9EFF;
+  --an-star: #F59E0B;
+  --an-danger: #F87171;
+}
+
+/* The colour of the post, set once and read by the eyebrow, the price, the
+   focus rings and the action that closes the deal — the same device the create
+   dialog uses, so the form you posted in and the page you land on afterwards
+   are the same colour. */
+.dlg { --an-kind: var(--c-trade); }
+.dlg[data-kind="want"] { --an-kind: var(--c-accent); }
 .chat-pane {
   width: 340px;
   flex-shrink: 0;
@@ -662,16 +679,20 @@ function onCardAdded() {
     /* The photo gets the smaller share: it is the thing a reader recognises at
        a glance, and the text is the thing they have to actually read. */
     grid-template-columns: 44% minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) auto;
+    /* Three rows now: the header spans both columns, because the title and the
+       close button belong to the announce rather than to either column. The
+       last row takes the slack, so the footer can sit at the top of it. */
+    grid-template-rows: auto auto minmax(0, 1fr);
     /* Content decides the height, not the viewport. .dlg is height:100% for the
        stacked layout, where the gallery sits above a body that scrolls; here
        that inherits its way up to the shell's 92vh cap, and a short listing
        opens as a full-height window mostly made of nothing. */
     height: auto;
   }
+  .dlg--split .an-head { grid-column: 1 / -1; grid-row: 1; }
   .dlg--split .gallery {
     grid-column: 1;
-    grid-row: 1 / -1;
+    grid-row: 2 / -1;
     /* A stated box, so the photo is fitted into the column rather than setting
        the height of the dialog. Phone photos of a card are tall — the one this
        was built against is 764x1700, which drew a 900px frame beside 240px of
@@ -683,8 +704,13 @@ function onCardAdded() {
   }
   /* Scrolls only when a listing really is longer than the photo is tall, and
      scrolls by itself rather than taking the whole dialog with it. */
-  .dlg--split .dlg-body { grid-column: 2; grid-row: 1; min-height: 0; }
-  .dlg--split .dlg-foot { grid-column: 2; grid-row: 2; }
+  .dlg--split .dlg-body { grid-column: 2; grid-row: 2; min-height: 0; }
+  /* Directly under the listing rather than pinned to the floor of the column.
+     A photograph is taller than three lines of description, so the pinned
+     version left the button stranded a hundred and fifty pixels below the last
+     thing it referred to, with a rule drawn across the gap. The slack belongs
+     at the bottom of the column, not between the text and its action. */
+  .dlg--split .dlg-foot { grid-column: 2; grid-row: 3; align-self: start; }
 }
 
 /* ── Mobile Details / Chat toggle ─────────────────── */
@@ -769,32 +795,7 @@ function onCardAdded() {
 }
 .gallery__dot--active { background: #fff; transform: scale(1.25); }
 
-/* Overlays */
-.gallery__price {
-  position: absolute; bottom: 0; left: 0;
-  padding: 36px 14px 12px;
-  background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%);
-  color: #fff; font-size: 22px; font-weight: 900; letter-spacing: -0.02em;
-  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
-}
-.gallery__close {
-  position: absolute; top: 10px; right: 10px;
-  width: 32px; height: 32px; border-radius: 50%;
-  background: rgba(0,0,0,0.55); color: white;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; backdrop-filter: blur(6px);
-  transition: background 0.15s ease;
-}
-.gallery__close:hover { background: rgba(0,0,0,0.8); }
 
-.gallery__own {
-  position: absolute; top: 10px; left: 10px;
-  display: flex; align-items: center; gap: 4px;
-  padding: 4px 9px; border-radius: 99px;
-  background: var(--c-trade); color: var(--c-on-accent);
-  font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
-  backdrop-filter: blur(4px);
-}
 .gallery__count {
   position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
   display: flex; align-items: center; gap: 4px;
@@ -805,28 +806,86 @@ function onCardAdded() {
 }
 
 /* ── Slim header (Looking For with no gallery) ─────── */
-.bare-head {
-  display: flex; align-items: center; gap: 10px;
-  padding: 12px 16px;
-  background: var(--c-surface);
-  border-bottom: 1px solid var(--c-border);
+/* ── Header ───────────────────────────────────────── */
+.an-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 18px 16px;
+  background: var(--an-panel);
+  border-bottom: 1px solid var(--an-line);
   flex-shrink: 0;
 }
-.bare-head__own {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 4px 9px; border-radius: 99px;
-  background: var(--c-trade); color: var(--c-on-accent);
-  font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+.an-head__meta {
+  display: flex;
+  align-items: center;
+  gap: 9px;
 }
-.bare-head__price { font-size: 14px; font-weight: 800; color: var(--c-text); }
-.bare-head__close {
+/* Says the kind in words, in the kind's colour. The card on the board says
+   "LF" because a badge on a 150px tile has room for an identifier and not a
+   phrase; a dialog has the room, and these are the same two words the create
+   form offers. */
+.an-head__eyebrow {
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-on-accent);
+  background: var(--an-kind);
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+.an-head__own {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 700;
+  color: var(--c-muted);
+}
+.an-head__time {
   margin-left: auto;
-  width: 32px; height: 32px; border-radius: 50%;
+  font-size: 11px; font-weight: 600; color: var(--c-muted);
+  white-space: nowrap;
+}
+.an-head__close {
+  width: 30px; height: 30px; border-radius: 50%;
+  margin-right: -6px;
   display: flex; align-items: center; justify-content: center;
   color: var(--c-muted); cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
-.bare-head__close:hover { background: var(--c-surface-2); }
+.an-head__close:hover { background: var(--c-surface-2); color: var(--c-text); }
+.an-head__close:focus-visible { outline: 2px solid var(--an-kind); outline-offset: 2px; }
+
+/* The one thing the reader came for, set like it. It was 17px in the body,
+   under an empty bar and smaller than the button at the far end of the dialog. */
+.an-head__title {
+  font-family: "Space Grotesk", "Manrope", system-ui, sans-serif;
+  font-size: clamp(1.15rem, 2.2vw, 1.4rem);
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+  color: var(--c-text);
+  margin: 0;
+  text-wrap: balance;
+}
+/* The commercial fact, off the photograph and next to the name of the thing. */
+.an-head__price {
+  margin: 2px 0 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.015em;
+  color: var(--an-kind);
+}
+.an-head__price-label {
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  margin-right: 7px;
+}
 
 /* ── Body ─────────────────────────────────────────── */
 .dlg-body {
@@ -839,32 +898,9 @@ function onCardAdded() {
 .dlg-body::-webkit-scrollbar { width: 4px; }
 .dlg-body::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 99px; }
 
-.info-row {
-  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
-}
-.info-title {
-  font-size: 17px; font-weight: 800; color: var(--c-text);
-  line-height: 1.3; margin: 0; flex: 1;
-}
-.info-time {
-  font-size: 11px; font-weight: 600; color: var(--c-muted);
-  white-space: nowrap; padding-top: 3px;
-}
 .info-desc {
   font-size: 13.5px; color: var(--c-muted);
   line-height: 1.6; margin: 0; white-space: pre-wrap;
-}
-.lf-badge {
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .08em;
-  /* Dark ink, not white: --c-mutual is a bright teal in dark theme, where white
-     lands at 1.86:1. This ink clears AA in both themes (4.52 light, 10.69 dark)
-     and matches the on-mutual text colour DESIGN.md already specifies. */
-  color: var(--c-on-accent);
-  background: var(--c-mutual);
 }
 .detail-archetype {
   display: flex;
@@ -872,7 +908,7 @@ function onCardAdded() {
   gap: 6px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--c-mutual);
+  color: var(--c-accent);
 }
 /* ── Want list (Looking For posts) ─────────────────── */
 .want-list {
@@ -887,9 +923,10 @@ function onCardAdded() {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 7px;
-  border-radius: 8px;
-  background: var(--c-surface-2);
+  padding: 5px 8px;
+  border-radius: 9px;
+  background: var(--an-panel);
+  border: 1px solid var(--an-line-soft);
 }
 .want-thumb {
   width: 22px;
@@ -920,7 +957,7 @@ function onCardAdded() {
   border-radius: 8px;
   object-fit: cover;
   flex-shrink: 0;
-  border: 1px solid color-mix(in srgb, var(--c-mutual) 45%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-accent) 45%, transparent);
 }
 /* ── Expiry notice (owner only) ───────────────────── */
 .expiry {
@@ -935,10 +972,11 @@ function onCardAdded() {
   font-weight: 600;
 }
 .expiry__text { flex: 1; min-width: 0; line-height: 1.4; }
-/* Amber on an amber tint, matching the seller-rating chip in this same file. */
+/* Amber on an amber tint, matching the seller-rating chip in this same file —
+   and, like it, one value per theme rather than one written for the dark page. */
 .expiry--soon {
-  background: color-mix(in srgb, #f59e0b 12%, transparent);
-  color: #f59e0b;
+  background: color-mix(in srgb, var(--an-star) 10%, transparent);
+  color: var(--an-star);
 }
 /* Expired is dormant, not broken, so it stays neutral instead of going red. */
 .expiry--expired {
@@ -959,22 +997,26 @@ function onCardAdded() {
   cursor: pointer;
   transition: opacity 0.15s ease;
 }
+.btn-renew:focus-visible { outline: 2px solid var(--an-kind); outline-offset: 2px; }
 .btn-renew:hover { opacity: 0.88; }
 .btn-renew:disabled { opacity: 0.5; pointer-events: none; }
 
-.divider { height: 1px; background: var(--c-border); }
+.divider { height: 1px; background: var(--an-line-soft); }
 
 /* Discord source link */
 .discord-link {
   display: inline-flex; align-items: center; gap: 7px;
   align-self: flex-start;
-  padding: 7px 13px; border-radius: 10px;
-  background: color-mix(in srgb, #5865F2 14%, transparent);
-  color: #5865F2; font-size: 12.5px; font-weight: 700;
+  min-height: 32px;
+  padding: 0 13px; border-radius: 10px;
+  background: color-mix(in srgb, var(--an-discord) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--an-discord) 28%, transparent);
+  color: var(--an-discord); font-size: 12.5px; font-weight: 700;
   text-decoration: none;
   transition: background 0.15s ease;
 }
-.discord-link:hover { background: color-mix(in srgb, #5865F2 24%, transparent); }
+.discord-link:focus-visible { outline: 2px solid var(--an-kind); outline-offset: 2px; }
+.discord-link:hover { background: color-mix(in srgb, var(--an-discord) 16%, transparent); }
 .discord-link__logo {
   width: 20px; height: 20px; border-radius: 50%;
   object-fit: cover; flex-shrink: 0;
@@ -986,10 +1028,14 @@ function onCardAdded() {
 .seller {
   display: flex; align-items: center; gap: 12px;
   padding: 12px 14px; border-radius: 14px;
-  background: var(--c-surface);
-  border: 1.5px solid var(--c-border);
+  background: var(--an-panel);
+  border: 1px solid var(--an-line);
+  box-shadow: var(--an-lit);
   margin-bottom: 4px;
+  transition: border-color 0.15s ease;
 }
+.seller:hover { border-color: color-mix(in srgb, var(--an-kind) 45%, transparent); }
+.seller:focus-visible { outline: 2px solid var(--an-kind); outline-offset: 2px; }
 .seller__avatar {
   width: 44px; height: 44px; border-radius: 50%;
   object-fit: cover; border: 2px solid var(--c-border); flex-shrink: 0;
@@ -1006,58 +1052,94 @@ function onCardAdded() {
 .seller__rating {
   display: flex; align-items: center; gap: 4px;
   padding: 4px 9px; border-radius: 9px;
-  background: color-mix(in srgb, #f59e0b 12%, transparent);
-  font-size: 13px; font-weight: 800; color: #f59e0b;
+  background: color-mix(in srgb, var(--an-star) 10%, transparent);
+  font-size: 13px; font-weight: 800; color: var(--an-star);
+  font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
 
 /* ── Footer ───────────────────────────────────────── */
 .dlg-foot {
   display: flex; align-items: center; gap: 10px;
-  padding: 14px 18px;
-  background: var(--c-surface);
-  border-top: 1px solid var(--c-border);
+  padding: 13px 18px;
+  background: var(--an-panel);
+  border-top: 1px solid var(--an-line);
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
+/* Ghost at rest, which is what DESIGN.md specifies for a destructive action,
+   and it is the right weight for one: an owner deletes a listing far less
+   often than they edit or close it. Filled, it also measured 2.96:1 in the
+   light theme — red text on a tint of the same red, written once against the
+   dark page. The red is a token per theme now, and it only appears on hover,
+   where the intent is already clear. */
 .btn-del {
   display: flex; align-items: center; gap: 6px;
-  padding: 9px 15px; border-radius: 11px;
-  background: color-mix(in srgb, #ef4444 12%, transparent);
-  color: #ef4444; font-size: 13px; font-weight: 700;
-  cursor: pointer; transition: background 0.15s ease;
+  margin-left: auto;
+  min-height: 38px;
+  padding: 0 14px; border-radius: 11px;
+  background: transparent;
+  color: var(--c-muted);
+  font-family: inherit;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
 }
-.btn-del:hover { background: color-mix(in srgb, #ef4444 22%, transparent); }
+.btn-del:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--an-danger) 10%, transparent);
+  color: var(--an-danger);
+}
+.btn-del:focus-visible { outline: 2px solid var(--an-danger); outline-offset: 2px; }
 .btn-del:disabled { opacity: 0.4; pointer-events: none; }
 
 .btn-edit {
   display: flex; align-items: center; gap: 6px;
-  padding: 9px 15px; border-radius: 11px; margin-left: auto;
+  min-height: 38px;
+  padding: 0 14px; border-radius: 11px;
+  font-family: inherit;
   background: color-mix(in srgb, var(--c-trade) 12%, transparent);
   color: var(--c-trade); font-size: 13px; font-weight: 700;
   cursor: pointer; transition: background 0.15s ease;
 }
-.btn-edit:hover { background: color-mix(in srgb, var(--c-trade) 22%, transparent); }
+.btn-edit:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
+.btn-edit:hover { background: color-mix(in srgb, var(--c-trade) 18%, transparent); }
 
 .btn-sold {
   display: flex; align-items: center; gap: 6px;
-  padding: 9px 15px; border-radius: 11px;
+  min-height: 38px;
+  padding: 0 14px; border-radius: 11px;
+  font-family: inherit;
   background: var(--c-surface-2); color: var(--c-text);
   font-size: 13px; font-weight: 700;
   cursor: pointer; transition: background 0.15s ease;
 }
+.btn-sold:focus-visible { outline: 2px solid var(--an-kind); outline-offset: 2px; }
 .btn-sold:hover { background: var(--c-border); }
 .btn-sold:disabled { opacity: 0.4; pointer-events: none; }
 
+/* This button already changes what it says with the kind of the post — "Add to
+   trade pile" on something being sold, "Add to wishlist" on something being
+   hunted — so it changes colour with it too, and amethyst-for-have,
+   pink-for-want does the saying. It was a green found nowhere else in this
+   system, and at 12% of itself it measured 1.62:1 on the light theme. */
 .btn-tradelist {
   display: flex; align-items: center; gap: 6px;
-  padding: 9px 15px; border-radius: 11px;
-  background: color-mix(in srgb, #22c55e 12%, transparent);
-  color: #22c55e; font-size: 13px; font-weight: 700;
+  min-height: 38px;
+  padding: 0 14px; border-radius: 11px;
+  /* 6%, not 12%. Text on a tint of its own hue spends its own contrast: at
+     12% the pink of a wishlist button measured 4.17:1 on the light theme,
+     against the 4.5 that size needs. The border carries the shape instead, so
+     the chip still reads as one. */
+  background: color-mix(in srgb, var(--an-kind) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--an-kind) 34%, transparent);
+  color: var(--an-kind);
+  font-family: inherit;
+  font-size: 13px; font-weight: 700;
   cursor: pointer; transition: background 0.15s ease;
   white-space: nowrap;
 }
-.btn-tradelist:hover { background: color-mix(in srgb, #22c55e 22%, transparent); }
+.btn-tradelist:focus-visible { outline: 2px solid var(--an-kind); outline-offset: 2px; }
+.btn-tradelist:hover { background: color-mix(in srgb, var(--an-kind) 12%, transparent); }
 .btn-tradelist:disabled { opacity: 0.5; pointer-events: none; }
 .btn-tradelist--done {
   background: var(--c-surface-2);
@@ -1147,17 +1229,27 @@ function onCardAdded() {
 }
 .card-link-result__sub { font-size: 11px; color: var(--c-muted); }
 
-.card-link-err { font-size: 11px; color: #ef4444; }
+.card-link-err { font-size: 11.5px; font-weight: 600; color: var(--c-accent); }
 
 
 
+/* Full width on a phone, where it is a thumb target and the only thing on the
+   row. On a desktop that width made a login prompt the largest object in the
+   dialog — larger than the name of the thing being announced, which is what
+   the reader actually opened it for. */
 .btn-contact {
   display: flex; align-items: center; gap: 7px;
-  padding: 10px 22px; border-radius: 12px;
+  min-height: 44px;
+  padding: 0 22px; border-radius: 12px;
   width: 100%;  justify-content: center;
-  background: var(--c-trade); color: var(--c-on-accent);
+  background: var(--an-kind); color: var(--c-on-accent);
+  font-family: inherit;
   font-size: 14px; font-weight: 700;
-  cursor: pointer; transition: opacity 0.15s ease, transform 0.15s ease;
+  cursor: pointer; transition: opacity 0.15s ease;
 }
-.btn-contact:hover { opacity: 0.88; transform: translateY(-1px); }
+@media (min-width: 560px) {
+  .btn-contact { width: auto; margin-left: auto; }
+}
+.btn-contact:focus-visible { outline: 2px solid var(--an-kind); outline-offset: 3px; }
+.btn-contact:hover { opacity: 0.88; }
 </style>

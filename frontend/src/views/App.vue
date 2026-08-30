@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter, useRoute } from "vue-router";
 import { useHead } from "@unhead/vue";
@@ -12,39 +12,41 @@ import NotificationBell from "@/components/nav/NotificationBell.vue";
 import UserMenuChip from "@/components/nav/UserMenuChip.vue";
 import TcgPlayerAd from "@/components/ads/TcgPlayerAd.vue";
 import CardHoverPreview from "@/components/ui/card/CardHoverPreview.vue";
-import { persistLocale, SUPPORTED } from "@/i18n.js";
+import { persistLocale, SUPPORTED, LANG_LABELS } from "@/i18n.js";
 
 const { t, locale } = useI18n();
 const router = useRouter();
 const route  = useRoute();
 const langMenuOpen = ref(false);
 
-// ── Navbar search: navigation-only (KD-2). The navbar never instantiates
-// useCardSearch and never fetches; it routes to /:locale/cards?q=… and the
-// dedicated CardsPage owns all search state + fetching (the sole async writer).
-const navQuery = ref("");
-
-function goToCards() {
-  // Refining the text query must NOT drop active filters. When already on /cards,
-  // merge `q` into the existing query (filters/sort/density preserved); when
-  // arriving from another page there are no filters to keep, so start clean.
-  const query = route.name === "cards" ? { ...route.query } : {};
-  if (navQuery.value) query.q = navQuery.value;
-  else delete query.q;
-  router.push({
-    name: "cards",
-    params: { locale: route.params.locale || "en" },
-    query,
-  });
-}
-
-// Focusing the navbar search expresses navigate-to-cards intent: jump to the
-// dedicated page if we're not already there (don't clobber existing query).
-function focusSearch() {
-  if (route.name !== "cards") {
-    router.push({ name: "cards", params: { locale: route.params.locale || "en" } });
-  }
-}
+/**
+ * True below the `sm` breakpoint, where there is no side rail.
+ *
+ * The bell is mounted by a `v-if` on this rather than hidden with `sm:hidden`,
+ * because hiding an element still mounts it: two bells meant two Supabase
+ * channels named `notif-<uid>`, and the second one calling `.on()` on an
+ * already-subscribed channel throws during setup and takes the navbar with it.
+ * The theme and language controls above stay on a CSS breakpoint — they hold no
+ * state and open no connections, so mounting both copies costs nothing.
+ *
+ * The gate is on the rail as a whole, not on the rail's bell: below `sm` the
+ * rail is only display:none, so its bell stays mounted and subscribed. Hiding
+ * the bar copy alone still left two of them on a phone.
+ *
+ * Guarded for the prerender, which has no `window`. It resolves to false there,
+ * so prerendered pages ship the rail exactly as before and hydration matches;
+ * a phone unmounts it on the first tick after mount.
+ */
+const isPhone = ref(false);
+let phoneQuery = null;
+const syncIsPhone = (e) => { isPhone.value = e.matches; };
+onMounted(() => {
+  if (typeof window === "undefined" || !window.matchMedia) return;
+  phoneQuery = window.matchMedia("(max-width: 639.98px)");
+  isPhone.value = phoneQuery.matches;
+  phoneQuery.addEventListener("change", syncIsPhone);
+});
+onBeforeUnmount(() => phoneQuery?.removeEventListener("change", syncIsPhone));
 
 // ── SEO head: reactive, SSR-rendered via @unhead/vue ──
 const pageName = computed(() => route.name);
@@ -143,7 +145,6 @@ useHead(
 // of them owning a copy of the dialog and its open state.
 const { promptOpen: phonePromptOpen, promptReason: phonePromptReason } = usePhoneGate();
 
-const LANG_LABELS = { en: "English", fr: "Français", de: "Deutsch", it: "Italiano" };
 
 function switchLang(lang) {
   // `locale` here is this app's own instance, injected by useI18n — the router
@@ -166,50 +167,45 @@ function switchLang(lang) {
 <template>
   <!-- ── Collapsible side rail (desktop ≥ sm) — primary navigation ── -->
   <SideNav
-    v-if="!chromeless"
+    v-if="!chromeless && !isPhone"
     v-model:collapsed="railCollapsed"
     :authenticated="authenticated"
     :page="page"
     :active-trade-tab="activeTradeTab"
+    :is-dark="isDarkTheme"
     @navigate="changePage"
     @matches="openMatches()"
     @tradeTab="openTradeTab"
+    @toggleTheme="toggleTheme"
+    @switchLang="switchLang"
+    @notifications="openProposals"
+    @logout="logout"
+    @login="openLogin()"
   />
 
   <!-- App shell: everything to the right of the rail, shifted by its width. -->
   <div class="app-shell" :style="{ '--rail-w': chromeless ? '0px' : (railCollapsed ? '64px' : '210px') }">
   <!-- ── Top navbar ── -->
+  <!-- Top bar — phones only. On desktop every control it used to hold lives in
+       the side rail, and the card search now belongs to the page that owns the
+       search state, so there is nothing left up here to render. -->
   <nav
-    v-if="!chromeless"
-    class="flex flex-row py-2 px-3 md:py-3 md:px-5 gap-2 md:gap-6 shadow-xs items-center justify-between sticky top-0 z-30"
+    v-if="!chromeless && isPhone"
+    class="flex flex-row py-2 px-3 md:py-3 md:px-5 gap-2 md:gap-6 shadow-xs items-center justify-end sticky top-0 z-30"
     style="background: var(--c-nav); border-bottom: 1px solid var(--c-border); transition: background 0.3s ease"
   >
 
-    <!-- Search — the core action, kept prominent at the top. -->
-    <div
-      class="flex flex-1 min-w-0 max-w-md md:max-w-lg rounded-lg my-1 has-[input:focus-within]:outline-2"
-      style="background: var(--c-surface-2); outline-color: var(--c-accent)"
-    >
-      <input
-        v-model="navQuery"
-        @focus="focusSearch"
-        @keyup.enter="goToCards"
-        class="placeholder:opacity-50 outline-none bg-transparent w-full"
-        style="color: var(--c-text); font-size: 16px; font-weight: 500; padding: 10px 14px; letter-spacing: 0.01em;"
-        :placeholder="$t('nav.searchPlaceholder')"
-        type="text"
-        name="search"
-        inputmode="search"
-      />
-    </div>
-
     <div class="flex items-center gap-1">
-      <NavItem
-        :tooltip="isDarkTheme ? $t('nav.lightMode') : $t('nav.darkMode')"
-        :icon="isDarkTheme ? 'mdi-white-balance-sunny' : 'mdi-moon-waning-crescent'"
-        :indicator="false"
-        @click="toggleTheme"
-      />
+      <!-- Theme, notifications and language: the rail holds these on desktop,
+           and this bar is what stands in for the rail on a phone. -->
+      <div class="flex">
+        <NavItem
+          :tooltip="isDarkTheme ? $t('nav.lightMode') : $t('nav.darkMode')"
+          :icon="isDarkTheme ? 'mdi-white-balance-sunny' : 'mdi-moon-waning-crescent'"
+          :indicator="false"
+          @click="toggleTheme"
+        />
+      </div>
 
       <NotificationBell
         v-if="authenticated"
@@ -218,7 +214,7 @@ function switchLang(lang) {
       />
 
       <!-- ── Language switcher ── -->
-      <div class="relative">
+      <div class="relative flex">
         <button
           class="flex items-center gap-1 px-2 py-1 rounded-lg cursor-pointer transition-opacity hover:opacity-70 select-none"
           :title="$t('language.label')"
@@ -249,7 +245,8 @@ function switchLang(lang) {
         </div>
       </div>
 
-      <!-- Authenticated: user chip with dropdown -->
+      <!-- Authenticated: user chip with dropdown. Phones only — on desktop the
+           same chip heads the side rail, and two of them is one too many. -->
       <UserMenuChip
         v-if="authenticated"
         :login="authenticated"
@@ -257,9 +254,10 @@ function switchLang(lang) {
         @logout="logout"
       />
 
-      <!-- Guest: login button -->
+      <!-- Guest: login button. Stays at every width — the rail shows guests the
+           logo, so this is the only way in. -->
       <NavItem
-        v-else
+        v-else-if="!authenticated"
         :tooltip="$t('nav.loginSignup')"
         icon="mdi-login"
         :indicator="false"

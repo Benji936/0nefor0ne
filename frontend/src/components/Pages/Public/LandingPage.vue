@@ -79,25 +79,19 @@ const heroGrid = [
   { id: "55144522", name: "Pot of Greed", grad: "linear-gradient(140deg,var(--c-accent),var(--c-trade))" },
 ];
 
-// Feature-card mini illustrations (from previewSearch / previewDeck / previewColl).
+// Feature-card mini illustrations.
 const previewSearch = ["89631139", "46986414", "38033121", "14558127"].map((id) => ({ id, src: thumb(id) }));
 const previewDeck = ["89631139", "74677422", "70781052", "23995346", "53129443"].map((id, i) => ({
   id,
   src: thumb(id),
   ml: i === 0 ? "0" : "-22px",
 }));
-const previewColl = [
-  { id: "89631139", owned: true },
-  { id: "23995346", owned: true },
-  { id: "70781052", owned: false },
-  { id: "74677422", owned: true },
-  { id: "33396948", owned: false },
-].map((c) => ({
-  id: c.id,
-  src: thumb(c.id),
-  opacity: c.owned ? "1" : "0.32",
-  filter: c.owned ? "none" : "grayscale(1)",
-}));
+// The library holds two piles and nothing else: cards you will trade away,
+// and cards you are hunting. Drawn as two labelled stacks in the same amethyst
+// and pink the rest of the page uses for giving and wanting.
+const pileStack = (ids) => ids.map((id, i) => ({ id, src: thumb(id), ml: i === 0 ? "0" : "-24px" }));
+const previewPile = pileStack(["89631139", "23995346", "70781052"]);
+const previewWish = pileStack(["74677422", "33396948", "14558127"]);
 
 // Broken card art fades out, leaving the gradient tile behind it. Runs only in
 // the browser on a real <img> error — never at module/setup level (SSR-safe).
@@ -146,15 +140,48 @@ const PRICING_COUNTRY = { fr: "FR", de: "DE", it: "IT" }; // en falls through to
 const planPrice = computed(() => communityPricing(null, PRICING_COUNTRY[locale.value] ?? null));
 const planYear = computed(() => formatPrice(planPrice.value.year.amount, planPrice.value.currency, locale.value));
 const planMonth = computed(() => formatPrice(planPrice.value.month.amount, planPrice.value.currency, locale.value));
+
+// ── Scroll reveal ──────────────────────────────────────────────────────────
+//
+// One motion idiom for the whole page: a block fades up as it enters. Wired in
+// onMounted rather than at setup because this page is SSG-pre-rendered and
+// IntersectionObserver does not exist at build time.
+//
+// The hidden state is applied by JS, never by the stylesheet, so the
+// pre-rendered HTML ships fully visible: a reader with JS disabled — or one
+// whose bundle failed — gets the whole page rather than a blank column of
+// opacity-0 sections. Readers who asked for reduced motion are left alone.
+function setupReveal() {
+  if (typeof window === "undefined" || !("IntersectionObserver" in window)) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const nodes = Array.from(document.querySelectorAll(".landing [data-reveal]"));
+  if (!nodes.length) return;
+  nodes.forEach((n) => n.classList.add("lp-reveal"));
+
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        entry.target.classList.add("lp-in");
+        io.unobserve(entry.target);
+      }
+    },
+    { rootMargin: "0px 0px -8% 0px", threshold: 0.06 }
+  );
+  nodes.forEach((n) => io.observe(n));
+}
+
+onMounted(setupReveal);
 </script>
 
 <template>
   <div class="landing">
-    <!-- ===== Header / nav ===== -->
+    <!-- ===== Header: a floating pill over the hero, not a bar across it ===== -->
     <header class="lp-header">
-      <div class="lp-header-inner">
+      <div class="lp-header-bar">
         <router-link :to="`/${locale}/`" class="lp-brand" :aria-label="$t('landing.hero.productName')">
-          <img src="/logo.png" alt="One for One" class="lp-badge" />
+          <img src="/logo.png" alt="" class="lp-badge" />
           <span class="lp-wordmark">{{ $t("landing.hero.productName") }}</span>
         </router-link>
 
@@ -169,16 +196,19 @@ const planMonth = computed(() => formatPrice(planPrice.value.month.amount, planP
         </nav>
 
         <div class="lp-header-cta">
-          <template v-if="isAuthed">
-            <router-link :to="`/${locale}/cards`" class="lp-btn lp-btn-accent lp-btn-sm">
-              {{ $t("landing.hero.ctaGoToApp") }}
-              <svg class="lp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-            </router-link>
-          </template>
+          <router-link v-if="isAuthed" :to="`/${locale}/cards`" class="lp-btn lp-btn-trade lp-btn-sm">
+            {{ $t("landing.hero.ctaGoToApp") }}
+            <span class="lp-btn-badge" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </span>
+          </router-link>
           <template v-else>
             <button type="button" class="lp-login" @click="emit('requireAuth')">{{ $t("landing.nav.login") }}</button>
-            <button type="button" class="lp-btn lp-btn-accent lp-btn-sm" @click="emit('requireAuth')">
+            <button type="button" class="lp-btn lp-btn-trade lp-btn-sm" @click="emit('requireAuth')">
               {{ $t("landing.hero.ctaGetStartedShort") }}
+              <span class="lp-btn-badge" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+              </span>
             </button>
           </template>
         </div>
@@ -188,120 +218,121 @@ const planMonth = computed(() => formatPrice(planPrice.value.month.amount, planP
     <!-- ===== Hero ===== -->
     <section class="lp-hero">
       <div class="lp-hero-glow" aria-hidden="true" />
-      <div class="lp-hero-inner">
-        <!-- Copy column -->
-        <div class="lp-hero-copy">
-          <span v-if="isAuthed" class="lp-eyebrow lp-eyebrow-authed">{{ $t("landing.hero.eyebrowAuthed") }}</span>
-          <span v-else class="lp-eyebrow">
-            <span class="lp-eyebrow-dot" />{{ $t("landing.hero.eyebrow") }}
-          </span>
 
-          <!-- Single H1 — design renders it across two lines with an accent span. -->
-          <h1 class="lp-h1" v-html="$t('landing.hero.headline')" />
+      <div class="lp-shell lp-hero-copy">
+        <span v-if="isAuthed" class="lp-eyebrow">{{ $t("landing.hero.eyebrowAuthed") }}</span>
+        <span v-else class="lp-eyebrow">
+          <span class="lp-eyebrow-dot" />{{ $t("landing.hero.eyebrow") }}
+        </span>
 
-          <p class="lp-subhead">{{ $t("landing.hero.subheadline") }}</p>
+        <!-- Single H1 — the copy carries its own line break with an accent span. -->
+        <h1 class="lp-h1" v-html="$t('landing.hero.headline')" />
 
-          <div class="lp-cta-row">
-            <!-- Primary CTA: anonymous opens the shared AuthDialog (App.vue),
-                 logged-in routes straight into the app. -->
-            <router-link v-if="isAuthed" :to="`/${locale}/cards`" class="lp-btn lp-btn-accent lp-btn-lg">
-              {{ $t("landing.hero.ctaGoToApp") }}
-              <svg class="lp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-            </router-link>
-            <button v-else type="button" class="lp-btn lp-btn-accent lp-btn-lg" @click="emit('requireAuth')">
-              {{ $t("landing.hero.ctaGetStarted") }}
-              <svg class="lp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-            </button>
+        <p class="lp-lede">{{ $t("landing.hero.subheadline") }}</p>
 
-            <router-link :to="`/${locale}/cards`" class="lp-btn lp-btn-outline lp-btn-lg">
-              <svg class="lp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" /></svg>
-              {{ $t("landing.hero.ctaBrowse") }}
-            </router-link>
-          </div>
+        <div class="lp-cta-row">
+          <!-- Primary CTA: anonymous opens the shared AuthDialog (App.vue),
+               logged-in routes straight into the app. -->
+          <router-link v-if="isAuthed" :to="`/${locale}/cards`" class="lp-btn lp-btn-trade lp-btn-lg">
+            {{ $t("landing.hero.ctaGoToApp") }}
+            <span class="lp-btn-badge" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </span>
+          </router-link>
+          <button v-else type="button" class="lp-btn lp-btn-trade lp-btn-lg" @click="emit('requireAuth')">
+            {{ $t("landing.hero.ctaGetStarted") }}
+            <span class="lp-btn-badge" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </span>
+          </button>
 
-          <ul class="lp-bullets">
-            <li><span class="lp-bullet-dot" />{{ $t("landing.hero.bullets.noFees") }}</li>
-            <li><span class="lp-bullet-dot" />{{ $t("landing.hero.bullets.noAuctions") }}</li>
-            <li><span class="lp-bullet-dot" />{{ $t("landing.hero.bullets.directP2P") }}</li>
-            <li><span class="lp-bullet-dot" />{{ $t("landing.hero.bullets.mutualMatches") }}</li>
-          </ul>
+          <router-link :to="`/${locale}/cards`" class="lp-btn lp-btn-ghost lp-btn-lg">
+            {{ $t("landing.hero.ctaBrowse") }}
+            <span class="lp-btn-badge lp-btn-badge-ghost" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" /></svg>
+            </span>
+          </router-link>
         </div>
 
-        <!-- Visual column: tilted app-window mockup + floating mutual-match card -->
-        <div class="lp-hero-visual">
-          <div class="lp-tilt">
-            <div
-              class="lp-window"
-              role="img"
-              :aria-label="$t('landing.features.search.body')"
-            >
-              <div class="lp-window-bar">
-                <span class="lp-dots">
-                  <span class="lp-dot" style="background:#ef6a7e" />
-                  <span class="lp-dot" style="background:#f3c34e" />
-                  <span class="lp-dot" style="background:#5ec98a" />
-                </span>
-                <span class="lp-url">
-                  <svg class="lp-ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M7 11V7a5 5 0 0 1 10 0v4" /><rect x="5" y="11" width="14" height="9" rx="2" /></svg>
-                  0nefor.one/{{ locale }}/cards
-                </span>
-              </div>
-              <div class="lp-window-body">
-                <div class="lp-search-field">
-                  <svg class="lp-ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--c-accent)" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" /></svg>
-                  <span class="lp-search-term">blue-eyes</span>
-                  <span class="lp-caret" />
-                  <span class="lp-results">6 results</span>
+        <!-- The four promises, as chips on the same line the logo strip occupies
+             in most SaaS heroes. Here the row states terms rather than borrowing
+             credibility from other companies' logos. -->
+        <ul class="lp-promises">
+          <li v-for="k in ['noFees', 'noAuctions', 'directP2P', 'mutualMatches']" :key="k" class="lp-promise">
+            <span class="lp-promise-dot" aria-hidden="true" />{{ $t(`landing.hero.bullets.${k}`) }}
+          </li>
+        </ul>
+      </div>
+
+      <!-- Stage: the app itself, with the mutual match floating clear of it. -->
+      <div class="lp-shell lp-stage">
+        <div class="lp-window" role="img" :aria-label="$t('landing.features.search.body')">
+          <div class="lp-window-bar">
+            <span class="lp-dots">
+              <span class="lp-dot" style="background: #ef6a7e" />
+              <span class="lp-dot" style="background: #f3c34e" />
+              <span class="lp-dot" style="background: #5ec98a" />
+            </span>
+            <span class="lp-url">
+              <svg class="lp-ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M7 11V7a5 5 0 0 1 10 0v4" /><rect x="5" y="11" width="14" height="9" rx="2" /></svg>
+              0nefor.one/{{ locale }}/cards
+            </span>
+          </div>
+          <div class="lp-window-body">
+            <div class="lp-search-field">
+              <svg class="lp-ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--c-accent)" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" /></svg>
+              <span class="lp-search-term">blue-eyes</span>
+              <span class="lp-caret" />
+              <span class="lp-results">6 results</span>
+            </div>
+            <div class="lp-chips">
+              <span class="lp-chip lp-chip-active">All</span>
+              <span class="lp-chip">Monster</span>
+              <span class="lp-chip">Spell</span>
+              <span class="lp-chip">LIGHT</span>
+              <span class="lp-chip">Ultra Rare</span>
+            </div>
+            <div class="lp-result-grid">
+              <div v-for="card in heroGrid" :key="card.id" class="lp-result">
+                <div class="lp-thumb" :style="{ background: card.grad }">
+                  <img :src="thumb(card.id)" :alt="card.name" loading="eager" @error="onImgError" />
                 </div>
-                <div class="lp-chips">
-                  <span class="lp-chip lp-chip-active">All</span>
-                  <span class="lp-chip">Monster</span>
-                  <span class="lp-chip">Spell</span>
-                  <span class="lp-chip">LIGHT</span>
-                  <span class="lp-chip">Ultra Rare</span>
-                </div>
-                <div class="lp-hero-grid">
-                  <div v-for="card in heroGrid" :key="card.id" class="lp-hero-cell">
-                    <div class="lp-thumb" :style="{ background: card.grad }">
-                      <img :src="thumb(card.id)" :alt="card.name" loading="eager" @error="onImgError" />
-                    </div>
-                    <span class="lp-thumb-name">{{ card.name }}</span>
-                  </div>
-                </div>
+                <span class="lp-result-name">{{ card.name }}</span>
               </div>
             </div>
+          </div>
+        </div>
 
-            <!-- Floating mutual-match card -->
-            <div class="lp-match-card">
-              <div class="lp-match-head">
-                <span class="lp-match-title">{{ $t("landing.tradeShowcase.heading") }}</span>
-                <span class="lp-match-found">
-                  <span class="lp-match-found-dot" />{{ $t("landing.tradeShowcase.labelMatch") }}
-                </span>
+        <!-- The signature at its smallest scale: give, seam, get. -->
+        <div class="lp-match">
+          <div class="lp-match-head">
+            <span class="lp-match-title">{{ $t("landing.tradeShowcase.heading") }}</span>
+            <span class="lp-match-found">
+              <span class="lp-match-found-dot" />{{ $t("landing.tradeShowcase.labelMatch") }}
+            </span>
+          </div>
+          <div class="lp-match-body">
+            <div class="lp-match-side">
+              <span class="lp-axis-label lp-axis-label-give">{{ $t("landing.tradeShowcase.labelPile") }}</span>
+              <div class="lp-thumb lp-thumb-give">
+                <img :src="thumb('46986414')" alt="Dark Magician" @error="onImgError" />
               </div>
-              <div class="lp-match-body">
-                <div class="lp-match-side">
-                  <span class="lp-match-label lp-match-label-give">{{ $t("landing.tradeShowcase.labelPile") }}</span>
-                  <div class="lp-thumb lp-thumb-give">
-                    <img :src="thumb('46986414')" alt="Dark Magician" @error="onImgError" />
-                  </div>
-                </div>
-                <div class="lp-swap-circle">
-                  <svg class="lp-ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8h12l-3-3M17 16H5l3 3" /></svg>
-                </div>
-                <div class="lp-match-side">
-                  <span class="lp-match-label lp-match-label-get">{{ $t("landing.tradeShowcase.labelWishlist") }}</span>
-                  <div class="lp-thumb lp-thumb-get">
-                    <img :src="thumb('89631139')" alt="Blue-Eyes White Dragon" @error="onImgError" />
-                  </div>
-                </div>
+            </div>
+            <span class="lp-match-seam" aria-hidden="true" />
+            <div class="lp-swap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8h12l-3-3M17 16H5l3 3" /></svg>
+            </div>
+            <div class="lp-match-side">
+              <span class="lp-axis-label lp-axis-label-get">{{ $t("landing.tradeShowcase.labelWishlist") }}</span>
+              <div class="lp-thumb lp-thumb-get">
+                <img :src="thumb('89631139')" alt="Blue-Eyes White Dragon" @error="onImgError" />
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Card-art marquee strip (decorative) -->
+      <!-- Card-art marquee, bleeding off both edges. -->
       <div class="lp-marquee" :aria-label="$t('landing.marquee.ariaLabel')" aria-hidden="true">
         <div class="lp-marquee-track">
           <div v-for="(src, i) in marquee" :key="i" class="lp-marquee-cell">
@@ -312,157 +343,197 @@ const planMonth = computed(() => formatPrice(planPrice.value.month.amount, planP
     </section>
 
     <!-- ===== How it works ===== -->
-    <section class="lp-section lp-how" aria-labelledby="lp-how-heading">
-      <h2 id="lp-how-heading" class="lp-h2">{{ $t("landing.howItWorks.heading") }}</h2>
-      <p class="lp-section-sub">{{ $t("landing.howItWorks.subheading") }}</p>
-      <div class="lp-how-grid">
-        <div v-for="(step, i) in ['01', '02', '03', '04']" :key="step" class="lp-step-card">
-          <span class="lp-step-num" :class="`lp-step-num-${i}`">{{ step }}</span>
-          <h3 class="lp-h3">{{ $t(`landing.howItWorks.steps.${step}.title`) }}</h3>
-          <p class="lp-step-body">{{ $t(`landing.howItWorks.steps.${step}.body`) }}</p>
+    <!-- The only numbered section on the page, because this is the only content
+         that is genuinely a sequence: each step is unreachable until the one
+         before it is done. -->
+    <section class="lp-section" aria-labelledby="lp-how-heading">
+      <div class="lp-shell">
+        <div class="lp-head" data-reveal>
+          <span class="lp-eyebrow lp-eyebrow-plain">01 &mdash; 04</span>
+          <h2 id="lp-how-heading" class="lp-h2">{{ $t("landing.howItWorks.heading") }}</h2>
+          <p class="lp-sub">{{ $t("landing.howItWorks.subheading") }}</p>
         </div>
+
+        <ol class="lp-steps" data-reveal>
+          <li v-for="step in ['01', '02', '03', '04']" :key="step" class="lp-step">
+            <span class="lp-step-num">{{ step }}</span>
+            <h3 class="lp-h3">{{ $t(`landing.howItWorks.steps.${step}.title`) }}</h3>
+            <p class="lp-step-body">{{ $t(`landing.howItWorks.steps.${step}.body`) }}</p>
+          </li>
+        </ol>
       </div>
     </section>
 
     <!-- ===== Features ===== -->
-    <section class="lp-section lp-features" aria-labelledby="lp-features-heading">
-      <div class="lp-features-head">
-        <h2 id="lp-features-heading" class="lp-h2">{{ $t("landing.features.heading") }}</h2>
-        <p class="lp-section-sub">{{ $t("landing.features.subheading") }}</p>
-      </div>
+    <section class="lp-section" aria-labelledby="lp-features-heading">
+      <div class="lp-shell">
+        <div class="lp-head" data-reveal>
+          <h2 id="lp-features-heading" class="lp-h2">{{ $t("landing.features.heading") }}</h2>
+          <p class="lp-sub">{{ $t("landing.features.subheading") }}</p>
+        </div>
 
-      <div class="lp-features-grid">
-        <!-- Search -->
-        <router-link :to="`/${locale}/cards`" class="lp-feature lp-feature-accent">
-          <div class="lp-feature-illu lp-illu-row">
-            <div v-for="c in previewSearch" :key="c.id" class="lp-thumb lp-illu-thumb">
-              <img :src="c.src" :alt="$t('landing.features.search.title')" loading="lazy" @error="onImgError" />
-            </div>
-          </div>
-          <div class="lp-feature-body">
-            <span class="lp-feature-icon lp-icon-accent">
-              <svg class="lp-ico-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.4-3.4" /></svg>
-            </span>
-            <h3 class="lp-h3 lp-feature-title">{{ $t("landing.features.search.title") }}</h3>
-            <p class="lp-feature-text">{{ $t("landing.features.search.body") }}</p>
-            <span class="lp-feature-cta lp-cta-accent">
-              {{ $t("landing.features.search.cta") }}
-              <svg class="lp-ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-            </span>
-          </div>
-        </router-link>
-
-        <!-- Decks -->
-        <router-link :to="`/${locale}/decks`" class="lp-feature lp-feature-trade">
-          <div class="lp-feature-illu lp-illu-stack">
-            <div v-for="c in previewDeck" :key="c.id" class="lp-thumb lp-illu-deck" :style="{ marginLeft: c.ml }">
-              <img :src="c.src" :alt="$t('landing.features.decks.title')" loading="lazy" @error="onImgError" />
-            </div>
-          </div>
-          <div class="lp-feature-body">
-            <span class="lp-feature-icon lp-icon-trade">
-              <svg class="lp-ico-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 3 8l9 5 9-5-9-5Z" /><path d="m3 13 9 5 9-5" /></svg>
-            </span>
-            <h3 class="lp-h3 lp-feature-title">{{ $t("landing.features.decks.title") }}</h3>
-            <p class="lp-feature-text">{{ $t("landing.features.decks.body") }}</p>
-            <span class="lp-feature-cta lp-cta-trade">
-              {{ $t("landing.features.decks.cta") }}
-              <svg class="lp-ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-            </span>
-          </div>
-        </router-link>
-
-        <!-- Collection -->
-        <router-link :to="`/${locale}/library`" class="lp-feature lp-feature-mutual">
-          <div class="lp-feature-illu lp-illu-coll">
-            <div class="lp-coll-meter">
-              <span class="lp-coll-set">Legend of Blue Eyes</span>
-              <span class="lp-coll-pct">72%</span>
-            </div>
-            <div class="lp-coll-bar"><span class="lp-coll-fill" style="width:72%" /></div>
-            <div class="lp-illu-row lp-coll-row">
-              <div v-for="c in previewColl" :key="c.id" class="lp-thumb lp-illu-coll-thumb" :style="{ filter: c.filter }">
-                <img :src="c.src" :alt="$t('landing.features.collection.title')" loading="lazy" :style="{ opacity: c.opacity }" @error="onImgError" />
+        <div class="lp-features" data-reveal>
+          <!-- Search -->
+          <router-link :to="`/${locale}/cards`" class="lp-card lp-card-accent">
+            <div class="lp-card-visual">
+              <div class="lp-illu-row">
+                <div v-for="c in previewSearch" :key="c.id" class="lp-thumb lp-illu-thumb">
+                  <img :src="c.src" :alt="$t('landing.features.search.title')" loading="lazy" @error="onImgError" />
+                </div>
               </div>
             </div>
-          </div>
-          <div class="lp-feature-body">
-            <span class="lp-feature-icon lp-icon-mutual">
-              <svg class="lp-ico-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h7v7H3zM14 5h7v4h-7zM14 13h7v6h-7zM3 16h7v3H3z" /><path d="m15.5 6.5 1.3 1.3 2.7-2.7" /></svg>
-            </span>
-            <h3 class="lp-h3 lp-feature-title">{{ $t("landing.features.collection.title") }}</h3>
-            <p class="lp-feature-text">{{ $t("landing.features.collection.body") }}</p>
-            <span class="lp-feature-cta lp-cta-mutual">
-              {{ $t("landing.features.collection.cta") }}
-              <svg class="lp-ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-            </span>
-          </div>
-        </router-link>
+            <div class="lp-card-text">
+              <span class="lp-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.4-3.4" /></svg>
+              </span>
+              <h3 class="lp-h3">{{ $t("landing.features.search.title") }}</h3>
+              <p class="lp-card-body">{{ $t("landing.features.search.body") }}</p>
+              <span class="lp-card-cta">
+                {{ $t("landing.features.search.cta") }}
+                <svg class="lp-ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+              </span>
+            </div>
+          </router-link>
 
-        <!-- Trade (emphasized / CORE) -->
-        <router-link :to="`/${locale}/trade`" class="lp-feature lp-feature-core">
-          <span class="lp-core-badge">{{ $t("landing.features.coreBadge") }}</span>
-          <div class="lp-feature-illu lp-illu-pair">
-            <div class="lp-thumb lp-illu-pair-card">
-              <img :src="thumb('74677422')" alt="Red-Eyes Black Dragon" loading="lazy" @error="onImgError" />
+          <!-- Decks -->
+          <router-link :to="`/${locale}/decks`" class="lp-card lp-card-trade">
+            <div class="lp-card-visual">
+              <div class="lp-illu-stack">
+                <div v-for="c in previewDeck" :key="c.id" class="lp-thumb lp-illu-deck" :style="{ marginLeft: c.ml }">
+                  <img :src="c.src" :alt="$t('landing.features.decks.title')" loading="lazy" @error="onImgError" />
+                </div>
+              </div>
             </div>
-            <div class="lp-swap-circle">
-              <svg class="lp-ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8h12l-3-3M17 16H5l3 3" /></svg>
+            <div class="lp-card-text">
+              <span class="lp-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 3 8l9 5 9-5-9-5Z" /><path d="m3 13 9 5 9-5" /></svg>
+              </span>
+              <h3 class="lp-h3">{{ $t("landing.features.decks.title") }}</h3>
+              <p class="lp-card-body">{{ $t("landing.features.decks.body") }}</p>
+              <span class="lp-card-cta">
+                {{ $t("landing.features.decks.cta") }}
+                <svg class="lp-ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+              </span>
             </div>
-            <div class="lp-thumb lp-illu-pair-card lp-illu-pair-get">
-              <img :src="thumb('89631139')" alt="Blue-Eyes White Dragon" loading="lazy" @error="onImgError" />
+          </router-link>
+
+          <!-- Collection -->
+          <router-link :to="`/${locale}/library`" class="lp-card lp-card-accent">
+            <div class="lp-card-visual">
+              <div class="lp-piles">
+                <div class="lp-pile">
+                  <span class="lp-axis-label lp-axis-label-give">{{ $t("library.tradePile") }}</span>
+                  <div class="lp-illu-stack">
+                    <div v-for="c in previewPile" :key="c.id" class="lp-thumb lp-illu-pile" :style="{ marginLeft: c.ml }">
+                      <img :src="c.src" :alt="$t('library.tradePile')" loading="lazy" @error="onImgError" />
+                    </div>
+                  </div>
+                </div>
+                <div class="lp-pile">
+                  <span class="lp-axis-label lp-axis-label-get">{{ $t("library.wishlist") }}</span>
+                  <div class="lp-illu-stack">
+                    <div v-for="c in previewWish" :key="c.id" class="lp-thumb lp-illu-pile" :style="{ marginLeft: c.ml }">
+                      <img :src="c.src" :alt="$t('library.wishlist')" loading="lazy" @error="onImgError" />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="lp-feature-body">
-            <span class="lp-feature-icon lp-icon-core">
-              <svg class="lp-ico-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3" /></svg>
-            </span>
-            <h3 class="lp-h3 lp-feature-title">{{ $t("landing.features.trade.title") }}</h3>
-            <p class="lp-feature-text">{{ $t("landing.features.trade.body") }}</p>
-            <span class="lp-feature-cta lp-cta-accent">
-              {{ $t("landing.features.trade.cta") }}
-              <svg class="lp-ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-            </span>
-          </div>
-        </router-link>
+            <div class="lp-card-text">
+              <span class="lp-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h7v7H3zM14 5h7v4h-7zM14 13h7v6h-7zM3 16h7v3H3z" /><path d="m15.5 6.5 1.3 1.3 2.7-2.7" /></svg>
+              </span>
+              <h3 class="lp-h3">{{ $t("landing.features.piles.title") }}</h3>
+              <p class="lp-card-body">{{ $t("landing.features.piles.body") }}</p>
+              <span class="lp-card-cta">
+                {{ $t("landing.features.piles.cta") }}
+                <svg class="lp-ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+              </span>
+            </div>
+          </router-link>
+
+          <!-- Trade. The one card that carries the axis, and the one marked CORE. -->
+          <router-link :to="`/${locale}/trade`" class="lp-card lp-card-core">
+            <span class="lp-core-badge">{{ $t("landing.features.coreBadge") }}</span>
+            <div class="lp-card-visual">
+              <div class="lp-illu-pair">
+                <div class="lp-thumb lp-thumb-give lp-illu-pair-card">
+                  <img :src="thumb('74677422')" alt="Red-Eyes Black Dragon" loading="lazy" @error="onImgError" />
+                </div>
+                <span class="lp-match-seam" aria-hidden="true" />
+                <div class="lp-swap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8h12l-3-3M17 16H5l3 3" /></svg>
+                </div>
+                <div class="lp-thumb lp-thumb-get lp-illu-pair-card">
+                  <img :src="thumb('89631139')" alt="Blue-Eyes White Dragon" loading="lazy" @error="onImgError" />
+                </div>
+              </div>
+            </div>
+            <div class="lp-card-text">
+              <span class="lp-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3" /></svg>
+              </span>
+              <h3 class="lp-h3">{{ $t("landing.features.trade.title") }}</h3>
+              <p class="lp-card-body">{{ $t("landing.features.trade.body") }}</p>
+              <span class="lp-card-cta">
+                {{ $t("landing.features.trade.cta") }}
+                <svg class="lp-ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+              </span>
+            </div>
+          </router-link>
+        </div>
       </div>
     </section>
 
-    <!-- ===== Trade showcase ===== -->
-    <section class="lp-section lp-showcase" aria-labelledby="lp-trade-heading">
-      <div class="lp-showcase-panel">
-        <div class="lp-showcase-copy">
-          <span class="lp-eyebrow lp-eyebrow-trade">{{ $t("landing.tradeShowcase.eyebrow") }}</span>
-          <h2 id="lp-trade-heading" class="lp-h2 lp-showcase-h2">{{ $t("landing.tradeShowcase.heading") }}</h2>
-          <p class="lp-showcase-body">{{ $t("landing.tradeShowcase.body") }}</p>
-          <router-link :to="`/${locale}/trade`" class="lp-btn lp-btn-trade">
-            {{ $t("landing.tradeShowcase.cta") }}
-            <svg class="lp-ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-          </router-link>
-        </div>
-        <div class="lp-showcase-visual">
-          <div class="lp-showcase-pair">
-            <div class="lp-showcase-side">
-              <span class="lp-match-label lp-match-label-give">{{ $t("landing.tradeShowcase.labelPile") }}</span>
-              <div class="lp-thumb lp-showcase-card lp-thumb-give">
-                <img :src="thumb('46986414')" alt="Dark Magician" loading="lazy" @error="onImgError" />
+    <!-- ===== The axis, full size: the page's one loud moment ===== -->
+    <section class="lp-section" aria-labelledby="lp-trade-heading">
+      <div class="lp-shell">
+        <div class="lp-panel lp-panel-axis" data-reveal>
+          <div class="lp-head lp-head-tight">
+            <span class="lp-eyebrow lp-eyebrow-mutual">
+              <span class="lp-eyebrow-dot" />{{ $t("landing.tradeShowcase.eyebrow") }}
+            </span>
+            <h2 id="lp-trade-heading" class="lp-h2">{{ $t("landing.tradeShowcase.heading") }}</h2>
+            <p class="lp-sub">{{ $t("landing.tradeShowcase.body") }}</p>
+          </div>
+
+          <!-- Two cards leaning into one teal line. Teal is licensed here and
+               nowhere else on the page: this is the agreement itself, not a
+               decoration borrowing the colour of one. -->
+          <div class="lp-axis">
+            <span class="lp-axis-seam" aria-hidden="true" />
+            <div class="lp-axis-row">
+              <figure class="lp-axis-side">
+                <span class="lp-axis-label lp-axis-label-give">{{ $t("landing.tradeShowcase.labelPile") }}</span>
+                <div class="lp-thumb lp-thumb-give lp-axis-card lp-axis-card-give">
+                  <img :src="thumb('46986414')" alt="Dark Magician" loading="lazy" @error="onImgError" />
+                </div>
+                <figcaption class="lp-axis-name">Dark Magician</figcaption>
+              </figure>
+
+              <div class="lp-axis-mark">
+                <span class="lp-axis-disc">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8h12l-3-3M17 16H5l3 3" /></svg>
+                </span>
+                <span class="lp-axis-tag">{{ $t("landing.tradeShowcase.labelMatch") }}</span>
               </div>
-              <span class="lp-showcase-name">Dark Magician</span>
-            </div>
-            <div class="lp-showcase-match">
-              <div class="lp-swap-circle lp-swap-ring">
-                <svg class="lp-ico-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8h12l-3-3M17 16H5l3 3" /></svg>
-              </div>
-              <span class="lp-match-tag">{{ $t("landing.tradeShowcase.labelMatch") }}</span>
-            </div>
-            <div class="lp-showcase-side">
-              <span class="lp-match-label lp-match-label-get">{{ $t("landing.tradeShowcase.labelWishlist") }}</span>
-              <div class="lp-thumb lp-showcase-card lp-thumb-get">
-                <img :src="thumb('89631139')" alt="Blue-Eyes White Dragon" loading="lazy" @error="onImgError" />
-              </div>
-              <span class="lp-showcase-name">Blue-Eyes W. Dragon</span>
+
+              <figure class="lp-axis-side">
+                <span class="lp-axis-label lp-axis-label-get">{{ $t("landing.tradeShowcase.labelWishlist") }}</span>
+                <div class="lp-thumb lp-thumb-get lp-axis-card lp-axis-card-get">
+                  <img :src="thumb('89631139')" alt="Blue-Eyes White Dragon" loading="lazy" @error="onImgError" />
+                </div>
+                <figcaption class="lp-axis-name">Blue-Eyes W. Dragon</figcaption>
+              </figure>
             </div>
           </div>
+
+          <router-link :to="`/${locale}/trade`" class="lp-btn lp-btn-mutual lp-btn-lg">
+            {{ $t("landing.tradeShowcase.cta") }}
+            <span class="lp-btn-badge" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </span>
+          </router-link>
         </div>
       </div>
     </section>
@@ -470,86 +541,62 @@ const planMonth = computed(() => formatPrice(planPrice.value.month.amount, planP
     <!-- ===== People: who is already here ===== -->
     <!-- Hidden entirely until there are enough real rows to fill it; see
          showPeople. Client-fetched, so it is absent from the pre-rendered HTML
-         and appears once the data lands. -->
-    <section v-if="showPeople" class="lp-section lp-people" aria-labelledby="lp-people-heading">
-      <span class="lp-eyebrow lp-eyebrow-people">
-        <span class="lp-eyebrow-dot lp-eyebrow-dot-people" />{{ $t("landing.people.eyebrow") }}
-      </span>
-      <h2 id="lp-people-heading" class="lp-h2">{{ $t("landing.people.heading") }}</h2>
-      <p class="lp-section-sub">{{ $t("landing.people.subheading") }}</p>
-
-      <div class="lp-people-cols">
-        <!-- Newest members -->
-        <div class="lp-people-col">
-          <h3 class="lp-people-col-title">{{ $t("people.newestTitle") }}</h3>
-          <ul class="lp-people-list">
-            <li v-for="t in recentPeople" :key="t.id">
-              <router-link :to="`/${locale}/trader/${t.id}`" class="lp-person">
-                <span class="lp-person-avatar">
-                  <img v-if="t.avatar_url" :src="t.avatar_url" alt="" loading="lazy" @error="onImgError" />
-                  <span v-else>{{ t.initial }}</span>
-                </span>
-                <span class="lp-person-text">
-                  <span class="lp-person-name">{{ t.Name }}</span>
-                  <span v-if="t.place" class="lp-person-meta">{{ t.place }}</span>
-                </span>
-                <span v-if="t.agoKey" class="lp-person-when">
-                  {{ $t(t.agoKey, { n: t.agoCount }, t.agoCount) }}
-                </span>
-              </router-link>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Deepest trade piles -->
-        <div class="lp-people-col">
-          <h3 class="lp-people-col-title">{{ $t("people.pilesTitle") }}</h3>
-          <ul class="lp-people-list">
-            <li v-for="(t, i) in topPiles" :key="t.id">
-              <router-link :to="`/${locale}/trader/${t.id}`" class="lp-person">
-                <span class="lp-person-rank" aria-hidden="true">{{ i + 1 }}</span>
-                <span class="lp-person-avatar">
-                  <img v-if="t.avatar_url" :src="t.avatar_url" alt="" loading="lazy" @error="onImgError" />
-                  <span v-else>{{ traderInitial(t.name) }}</span>
-                </span>
-                <span class="lp-person-text">
-                  <span class="lp-person-name">{{ t.name }}</span>
-                </span>
-                <span class="lp-person-count">
-                  {{ $t("people.pileCount", { count: t.pile_size }, t.pile_size) }}
-                </span>
-              </router-link>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== Discord community ===== -->
-    <section class="lp-section lp-discord" aria-labelledby="lp-discord-heading">
-      <div class="lp-discord-panel">
-        <div class="lp-discord-glow" aria-hidden="true" />
-        <div class="lp-discord-copy">
-          <span class="lp-eyebrow lp-eyebrow-discord">
-            <span class="lp-eyebrow-dot lp-eyebrow-dot-discord" />{{ $t("landing.discord.eyebrow") }}
+         and appears once the data lands — which is also why it carries no
+         data-reveal: its arrival is already its entrance. -->
+    <section v-if="showPeople" class="lp-section" aria-labelledby="lp-people-heading">
+      <div class="lp-shell">
+        <div class="lp-head">
+          <span class="lp-eyebrow">
+            <span class="lp-eyebrow-dot" />{{ $t("landing.people.eyebrow") }}
           </span>
-          <h2 id="lp-discord-heading" class="lp-h2 lp-discord-h2">{{ $t("landing.discord.heading") }}</h2>
-          <p class="lp-discord-body">{{ $t("landing.discord.body") }}</p>
-          <ul class="lp-discord-bullets">
-            <li v-for="k in ['sync', 'chat', 'alerts']" :key="k">
-              <svg class="lp-ico-sm lp-discord-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
-              {{ $t(`landing.discord.bullets.${k}`) }}
-            </li>
-          </ul>
-          <a :href="DISCORD_URL" target="_blank" rel="noopener noreferrer" class="lp-btn lp-btn-lg lp-btn-discord">
-            <svg class="lp-ico lp-discord-glyph" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.317 4.3698a19.7913 19.7913 0 0 0-4.8851-1.5152.0741.0741 0 0 0-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 0 0-.0785-.037 19.7363 19.7363 0 0 0-4.8852 1.515.0699.0699 0 0 0-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 0 0 .0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 0 0 .0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 0 0-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 0 1-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 0 1 .0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 0 1 .0785.0095c.1202.099.246.198.3728.2924a.077.077 0 0 1-.0066.1276 12.2986 12.2986 0 0 1-1.873.8914.0766.0766 0 0 0-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 0 0 .0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 0 0 .0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 0 0-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" /></svg>
-            {{ $t("landing.discord.cta") }}
-          </a>
+          <h2 id="lp-people-heading" class="lp-h2">{{ $t("landing.people.heading") }}</h2>
+          <p class="lp-sub">{{ $t("landing.people.subheading") }}</p>
         </div>
-        <div class="lp-discord-visual" aria-hidden="true">
-          <span class="lp-discord-logo">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.3698a19.7913 19.7913 0 0 0-4.8851-1.5152.0741.0741 0 0 0-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 0 0-.0785-.037 19.7363 19.7363 0 0 0-4.8852 1.515.0699.0699 0 0 0-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 0 0 .0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 0 0 .0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 0 0-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 0 1-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 0 1 .0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 0 1 .0785.0095c.1202.099.246.198.3728.2924a.077.077 0 0 1-.0066.1276 12.2986 12.2986 0 0 1-1.873.8914.0766.0766 0 0 0-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 0 0 .0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 0 0 .0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 0 0-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" /></svg>
-          </span>
+
+        <div class="lp-people">
+          <!-- Newest members -->
+          <div class="lp-people-col">
+            <h3 class="lp-people-title">{{ $t("people.newestTitle") }}</h3>
+            <ul class="lp-people-list">
+              <li v-for="t in recentPeople" :key="t.id">
+                <router-link :to="`/${locale}/trader/${t.id}`" class="lp-person">
+                  <span class="lp-person-avatar">
+                    <img v-if="t.avatar_url" :src="t.avatar_url" alt="" loading="lazy" @error="onImgError" />
+                    <span v-else>{{ t.initial }}</span>
+                  </span>
+                  <span class="lp-person-text">
+                    <span class="lp-person-name">{{ t.Name }}</span>
+                    <span v-if="t.place" class="lp-person-meta">{{ t.place }}</span>
+                  </span>
+                  <span v-if="t.agoKey" class="lp-person-when">
+                    {{ $t(t.agoKey, { n: t.agoCount }, t.agoCount) }}
+                  </span>
+                </router-link>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Deepest trade piles -->
+          <div class="lp-people-col">
+            <h3 class="lp-people-title">{{ $t("people.pilesTitle") }}</h3>
+            <ul class="lp-people-list">
+              <li v-for="(t, i) in topPiles" :key="t.id">
+                <router-link :to="`/${locale}/trader/${t.id}`" class="lp-person">
+                  <span class="lp-person-rank" aria-hidden="true">{{ i + 1 }}</span>
+                  <span class="lp-person-avatar">
+                    <img v-if="t.avatar_url" :src="t.avatar_url" alt="" loading="lazy" @error="onImgError" />
+                    <span v-else>{{ traderInitial(t.name) }}</span>
+                  </span>
+                  <span class="lp-person-text">
+                    <span class="lp-person-name">{{ t.name }}</span>
+                  </span>
+                  <span class="lp-person-count">
+                    {{ $t("people.pileCount", { count: t.pile_size }, t.pile_size) }}
+                  </span>
+                </router-link>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </section>
@@ -565,148 +612,189 @@ const planMonth = computed(() => formatPrice(planPrice.value.month.amount, planP
          agreement chain (DESIGN.md, The Agreement Rule) and an offer is not an
          agreement. The one teal mark here is inside the mock, where it is
          reproducing what the directory actually renders. -->
-    <section class="lp-section lp-plan" aria-labelledby="lp-plan-heading">
-      <div class="lp-plan-grid">
-        <div class="lp-plan-copy">
-          <span class="lp-eyebrow lp-eyebrow-plan">
-            <span class="lp-eyebrow-dot lp-eyebrow-dot-plan" />{{ $t("landing.plan.eyebrow") }}
+    <section class="lp-section" aria-labelledby="lp-plan-heading">
+      <div class="lp-shell">
+        <div class="lp-head" data-reveal>
+          <span class="lp-eyebrow lp-eyebrow-trade">
+            <span class="lp-eyebrow-dot" />{{ $t("landing.plan.eyebrow") }}
           </span>
-          <h2 id="lp-plan-heading" class="lp-h2 lp-plan-h2">{{ $t("landing.plan.heading") }}</h2>
-          <p class="lp-plan-body">{{ $t("landing.plan.body") }}</p>
-
-          <!-- The same four promises the verify page makes, read from the same
-               keys. One list, so the pitch cannot outgrow what is delivered. -->
-          <ul class="lp-plan-unlocks">
-            <li v-for="k in ['unlockNear', 'unlockEvents', 'unlockBadge', 'unlockRanking']" :key="k">
-              <svg class="lp-ico-sm lp-plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
-              {{ $t(`communityVerify.${k}`) }}
-            </li>
-          </ul>
-
-          <p class="lp-plan-price">
-            <strong class="lp-plan-free">{{ $t("landing.plan.freeYear") }}</strong>
-            {{ $t("landing.plan.thenYear", { year: planYear }) }}
-          </p>
-          <p class="lp-plan-alt">{{ $t("landing.plan.monthly", { month: planMonth }) }}</p>
-
-          <router-link :to="{ name: 'community', params: { locale } }" class="lp-btn lp-btn-trade">
-            {{ $t("landing.plan.cta") }}
-            <svg class="lp-ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-          </router-link>
+          <h2 id="lp-plan-heading" class="lp-h2">{{ $t("landing.plan.heading") }}</h2>
+          <p class="lp-sub">{{ $t("landing.plan.body") }}</p>
         </div>
 
-        <!-- Your listing carrying the badge, above the ones without it: the mark
-             and the ranking, shown rather than described twice. Every claim it
-             makes is already in the list on the left, so the whole mock is
-             decorative and hidden from assistive tech. -->
-        <div class="lp-plan-visual" aria-hidden="true">
-          <span class="lp-plan-visual-label">{{ $t("community.home") }}</span>
-
-          <div class="lp-plan-card">
-            <div class="lp-plan-card-banner"></div>
-            <span class="lp-plan-card-avatar">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16l-1.2-4.2A1 1 0 0 0 17.8 4H6.2a1 1 0 0 0-.96.73L4 9Z" /><path d="M4 9v10h16V9" /><path d="M9.5 19v-5.5h5V19" /></svg>
-            </span>
-            <div class="lp-plan-card-body">
-              <span class="lp-plan-card-top">
-                <span class="lp-plan-card-name">{{ $t("landing.plan.mockName") }}</span>
-                <!-- The directory's verified mark, reproduced: a teal disc with
-                     the on-accent check that every brand colour carries. -->
-                <span class="lp-plan-card-check">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+        <div class="lp-plan" data-reveal>
+          <article class="lp-price">
+            <!-- Price and CTA sit on their own inner panel, the list below on the
+                 card itself: what it costs is one decision, what you get is the
+                 supporting detail. -->
+            <div class="lp-price-head">
+              <strong class="lp-price-free">{{ $t("landing.plan.freeYear") }}</strong>
+              <span class="lp-price-then">{{ $t("landing.plan.thenYear", { year: planYear }) }}</span>
+              <span class="lp-price-alt">{{ $t("landing.plan.monthly", { month: planMonth }) }}</span>
+              <router-link :to="{ name: 'community', params: { locale } }" class="lp-btn lp-btn-trade lp-btn-block">
+                {{ $t("landing.plan.cta") }}
+                <span class="lp-btn-badge" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                 </span>
-              </span>
-              <span class="lp-plan-card-meta">{{ $t("community.typeStore") }}</span>
+              </router-link>
             </div>
-          </div>
 
-          <div v-for="n in 2" :key="n" class="lp-plan-ghost">
-            <span class="lp-plan-ghost-mark" />
-            <span class="lp-plan-ghost-lines">
-              <span class="lp-plan-ghost-bar" />
-              <span class="lp-plan-ghost-bar lp-plan-ghost-bar-short" />
-            </span>
+            <!-- The same four promises the verify page makes, read from the same
+                 keys. One list, so the pitch cannot outgrow what is delivered. -->
+            <ul class="lp-price-list">
+              <li v-for="k in ['unlockNear', 'unlockEvents', 'unlockBadge', 'unlockRanking']" :key="k">
+                <span class="lp-check" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                </span>
+                {{ $t(`communityVerify.${k}`) }}
+              </li>
+            </ul>
+          </article>
+
+          <!-- Your listing carrying the badge, above the ones without it: the mark
+               and the ranking, shown rather than described twice. Every claim it
+               makes is already in the list beside it, so the whole mock is
+               decorative and hidden from assistive tech. -->
+          <div class="lp-plan-mock" aria-hidden="true">
+            <span class="lp-mock-label">{{ $t("community.home") }}</span>
+
+            <div class="lp-mock-card">
+              <div class="lp-mock-banner"></div>
+              <span class="lp-mock-avatar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16l-1.2-4.2A1 1 0 0 0 17.8 4H6.2a1 1 0 0 0-.96.73L4 9Z" /><path d="M4 9v10h16V9" /><path d="M9.5 19v-5.5h5V19" /></svg>
+              </span>
+              <div class="lp-mock-body">
+                <span class="lp-mock-top">
+                  <span class="lp-mock-name">{{ $t("landing.plan.mockName") }}</span>
+                  <!-- The directory's verified mark, reproduced: a teal disc with
+                       the on-accent check that every brand colour carries. -->
+                  <span class="lp-mock-check">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                  </span>
+                </span>
+                <span class="lp-mock-meta">{{ $t("community.typeStore") }}</span>
+              </div>
+            </div>
+
+            <div v-for="n in 2" :key="n" class="lp-mock-ghost">
+              <span class="lp-mock-ghost-mark" />
+              <span class="lp-mock-ghost-lines">
+                <span class="lp-mock-bar" />
+                <span class="lp-mock-bar lp-mock-bar-short" />
+              </span>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ===== Donate / support ===== -->
-    <section class="lp-section lp-donate" aria-labelledby="lp-donate-heading">
-      <div class="lp-donate-panel">
-        <div class="lp-donate-glow" aria-hidden="true" />
-        <div class="lp-donate-copy">
-          <span class="lp-eyebrow lp-eyebrow-donate">
-            <span class="lp-eyebrow-dot lp-eyebrow-dot-donate" />{{ $t("landing.donate.eyebrow") }}
-          </span>
-          <h2 id="lp-donate-heading" class="lp-h2 lp-donate-h2">{{ $t("landing.donate.heading") }}</h2>
-          <p class="lp-donate-body">{{ $t("landing.donate.body") }}</p>
-          <ul class="lp-donate-bullets">
-            <li v-for="k in ['servers', 'free', 'solo']" :key="k">
-              <svg class="lp-ico-sm lp-donate-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
-              {{ $t(`landing.donate.bullets.${k}`) }}
-            </li>
-          </ul>
-          <a :href="KOFI_URL" target="_blank" rel="noopener noreferrer" class="lp-btn lp-btn-lg lp-btn-donate">
-            <svg class="lp-ico lp-donate-glyph" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path :d="KOFI_PATH" /></svg>
-            {{ $t("landing.donate.cta") }}
-          </a>
-        </div>
-        <div class="lp-donate-visual" aria-hidden="true">
-          <span class="lp-donate-logo">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path :d="KOFI_PATH" /></svg>
-          </span>
+    <!-- ===== Discord + Donate: the two asks, side by side ===== -->
+    <!-- Paired rather than stacked. They were two full-width slabs with one hex
+         swapped between them; as a pair they read as one row of two invitations
+         and stop competing for the same vertical space. -->
+    <!-- No aria-labelledby: the region holds two independent invitations, and
+         naming it with both headings at once produces one run-on region name. -->
+    <section class="lp-section">
+      <div class="lp-shell">
+        <div class="lp-asks" data-reveal>
+          <div class="lp-panel lp-panel-ask">
+            <span class="lp-ask-glyph lp-ask-glyph-discord" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.3698a19.7913 19.7913 0 0 0-4.8851-1.5152.0741.0741 0 0 0-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 0 0-.0785-.037 19.7363 19.7363 0 0 0-4.8852 1.515.0699.0699 0 0 0-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 0 0 .0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 0 0 .0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 0 0-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 0 1-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 0 1 .0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 0 1 .0785.0095c.1202.099.246.198.3728.2924a.077.077 0 0 1-.0066.1276 12.2986 12.2986 0 0 1-1.873.8914.0766.0766 0 0 0-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 0 0 .0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 0 0 .0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 0 0-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" /></svg>
+            </span>
+            <span class="lp-eyebrow lp-eyebrow-plain">{{ $t("landing.discord.eyebrow") }}</span>
+            <h2 id="lp-discord-heading" class="lp-h3 lp-ask-h">{{ $t("landing.discord.heading") }}</h2>
+            <p class="lp-ask-body">{{ $t("landing.discord.body") }}</p>
+            <ul class="lp-ask-list">
+              <li v-for="k in ['sync', 'chat', 'alerts']" :key="k">
+                <span class="lp-check lp-check-plain" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                </span>
+                {{ $t(`landing.discord.bullets.${k}`) }}
+              </li>
+            </ul>
+            <a :href="DISCORD_URL" target="_blank" rel="noopener noreferrer" class="lp-btn lp-btn-ghost lp-btn-block">
+              {{ $t("landing.discord.cta") }}
+              <span class="lp-btn-badge lp-btn-badge-ghost" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+              </span>
+            </a>
+          </div>
+
+          <div class="lp-panel lp-panel-ask">
+            <span class="lp-ask-glyph lp-ask-glyph-kofi" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path :d="KOFI_PATH" /></svg>
+            </span>
+            <span class="lp-eyebrow lp-eyebrow-plain">{{ $t("landing.donate.eyebrow") }}</span>
+            <h2 id="lp-donate-heading" class="lp-h3 lp-ask-h">{{ $t("landing.donate.heading") }}</h2>
+            <p class="lp-ask-body">{{ $t("landing.donate.body") }}</p>
+            <ul class="lp-ask-list">
+              <li v-for="k in ['servers', 'free', 'solo']" :key="k">
+                <span class="lp-check lp-check-plain" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                </span>
+                {{ $t(`landing.donate.bullets.${k}`) }}
+              </li>
+            </ul>
+            <a :href="KOFI_URL" target="_blank" rel="noopener noreferrer" class="lp-btn lp-btn-ghost lp-btn-block">
+              {{ $t("landing.donate.cta") }}
+              <span class="lp-btn-badge lp-btn-badge-ghost" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+              </span>
+            </a>
+          </div>
         </div>
       </div>
     </section>
 
     <!-- ===== Footer ===== -->
     <footer class="lp-footer">
-      <div class="lp-footer-inner">
-        <div class="lp-footer-brand">
-          <div class="lp-footer-brand-row">
-            <img src="/logo.png" alt="One for One" class="lp-badge lp-badge-sm" />
-            <span class="lp-wordmark">{{ $t("landing.hero.productName") }}</span>
-          </div>
-          <p class="lp-footer-blurb">{{ $t("landing.footer.blurb") }}</p>
-        </div>
-
-        <nav class="lp-footer-col" :aria-label="$t('landing.footer.colProduct')">
-          <span class="lp-footer-col-title">{{ $t("landing.footer.colProduct") }}</span>
-          <router-link :to="`/${locale}/cards`" class="lp-footer-link">{{ $t("landing.footer.search") }}</router-link>
-          <router-link :to="`/${locale}/decks`" class="lp-footer-link">{{ $t("landing.footer.decks") }}</router-link>
-          <router-link :to="`/${locale}/library`" class="lp-footer-link">{{ $t("landing.footer.collection") }}</router-link>
-          <router-link :to="`/${locale}/trade`" class="lp-footer-link">{{ $t("landing.footer.trade") }}</router-link>
-          <router-link :to="{ name: 'community', params: { locale } }" class="lp-footer-link">{{ $t("community.home") }}</router-link>
-        </nav>
-
-        <nav class="lp-footer-col" :aria-label="$t('landing.footer.colMore')">
-          <span class="lp-footer-col-title">{{ $t("landing.footer.colMore") }}</span>
-          <router-link :to="`/${locale}/privacy`" class="lp-footer-link">{{ $t("landing.footer.about") }}</router-link>
-          <router-link :to="`/${locale}/built-with`" class="lp-footer-link">{{ $t("landing.footer.builtWith") }}</router-link>
-          <router-link :to="`/${locale}/privacy`" class="lp-footer-link">{{ $t("landing.footer.privacy") }}</router-link>
-          <router-link :to="`/${locale}/terms`" class="lp-footer-link">{{ $t("landing.footer.terms") }}</router-link>
-          <a href="mailto:hello@0nefor.one" class="lp-footer-link">{{ $t("landing.footer.contact") }}</a>
-        </nav>
-      </div>
-
       <!-- Built-with / partners logo strip → links to the /built-with page (which
            carries the referral disclosure). -->
-      <router-link :to="`/${locale}/built-with`" class="lp-builtwith-strip" :aria-label="$t('landing.footer.builtWithStripTitle')">
-        <span class="lp-builtwith-title">{{ $t("landing.footer.builtWithStripTitle") }}</span>
-        <span class="lp-builtwith-logos">
-          <span v-for="tool in builtWithTools" :key="tool.key" class="lp-builtwith-logo">
-            <img v-if="tool.img" :src="isDark ? tool.img.dark : tool.img.light" :alt="tool.name" class="lp-builtwith-img" />
-            <svg v-else-if="tool.path" :viewBox="tool.viewBox" fill="currentColor" :aria-label="tool.name" role="img">
-              <path :d="tool.path" />
-            </svg>
-            <span v-else class="lp-builtwith-wordmark">{{ tool.name }}</span>
+      <div class="lp-shell">
+        <router-link :to="`/${locale}/built-with`" class="lp-builtwith" :aria-label="$t('landing.footer.builtWithStripTitle')">
+          <span class="lp-builtwith-title">{{ $t("landing.footer.builtWithStripTitle") }}</span>
+          <span class="lp-builtwith-logos">
+            <span v-for="tool in builtWithTools" :key="tool.key" class="lp-builtwith-logo">
+              <img v-if="tool.img" :src="isDark ? tool.img.dark : tool.img.light" :alt="tool.name" class="lp-builtwith-img" />
+              <svg v-else-if="tool.path" :viewBox="tool.viewBox" fill="currentColor" :aria-label="tool.name" role="img">
+                <path :d="tool.path" />
+              </svg>
+              <span v-else class="lp-builtwith-wordmark">{{ tool.name }}</span>
+            </span>
           </span>
-        </span>
-      </router-link>
+        </router-link>
+
+        <div class="lp-footer-grid">
+          <div class="lp-footer-brand">
+            <div class="lp-footer-brand-row">
+              <img src="/logo.png" alt="" class="lp-badge lp-badge-sm" />
+              <span class="lp-wordmark">{{ $t("landing.hero.productName") }}</span>
+            </div>
+            <p class="lp-footer-blurb">{{ $t("landing.footer.blurb") }}</p>
+          </div>
+
+          <nav class="lp-footer-col" :aria-label="$t('landing.footer.colProduct')">
+            <span class="lp-footer-col-title">{{ $t("landing.footer.colProduct") }}</span>
+            <router-link :to="`/${locale}/cards`" class="lp-footer-link">{{ $t("landing.footer.search") }}</router-link>
+            <router-link :to="`/${locale}/decks`" class="lp-footer-link">{{ $t("landing.footer.decks") }}</router-link>
+            <router-link :to="`/${locale}/library`" class="lp-footer-link">{{ $t("landing.footer.piles") }}</router-link>
+            <router-link :to="`/${locale}/trade`" class="lp-footer-link">{{ $t("landing.footer.trade") }}</router-link>
+            <router-link :to="{ name: 'community', params: { locale } }" class="lp-footer-link">{{ $t("community.home") }}</router-link>
+          </nav>
+
+          <nav class="lp-footer-col" :aria-label="$t('landing.footer.colMore')">
+            <span class="lp-footer-col-title">{{ $t("landing.footer.colMore") }}</span>
+            <router-link :to="`/${locale}/privacy`" class="lp-footer-link">{{ $t("landing.footer.about") }}</router-link>
+            <router-link :to="`/${locale}/built-with`" class="lp-footer-link">{{ $t("landing.footer.builtWith") }}</router-link>
+            <router-link :to="`/${locale}/privacy`" class="lp-footer-link">{{ $t("landing.footer.privacy") }}</router-link>
+            <router-link :to="`/${locale}/terms`" class="lp-footer-link">{{ $t("landing.footer.terms") }}</router-link>
+            <a href="mailto:hello@0nefor.one" class="lp-footer-link">{{ $t("landing.footer.contact") }}</a>
+          </nav>
+        </div>
+      </div>
 
       <div class="lp-footer-sub">
-        <div class="lp-footer-sub-inner">
+        <div class="lp-shell lp-footer-sub-inner">
           <span class="lp-copyright">{{ $t("landing.footer.copyright") }}</span>
           <router-link :to="`/${locale}/terms`" class="lp-footer-link">{{ $t("landing.footer.termsOfService") }}</router-link>
           <router-link :to="`/${locale}/privacy`" class="lp-footer-link">{{ $t("landing.footer.privacyPolicy") }}</router-link>
@@ -721,6 +809,22 @@ const planMonth = computed(() => formatPrice(planPrice.value.month.amount, planP
    landing reads as a standalone marketing surface (header, marquee, footer
    all run edge-to-edge). ── */
 .landing {
+  /* One container width for every section, so nothing on the page is aligned
+     by eye. */
+  --lp-w: clamp(18rem, 92vw, 1160px);
+  --lp-r: 24px;
+  --lp-r-card: 18px;
+  --lp-r-sm: 12px;
+  /* Panel and card grounds sit one tonal step above the page, per the three-
+     surface stack (DESIGN.md §4) — depth by tone, not by drop shadow. */
+  --lp-panel: color-mix(in srgb, var(--c-surface) 94%, var(--c-bg));
+  --lp-line: color-mix(in srgb, var(--c-border) 60%, transparent);
+  --lp-line-soft: color-mix(in srgb, var(--c-border) 34%, transparent);
+  /* A 1px top highlight instead of an outer shadow: the reference's cards read
+     as lit from above, and this gets that without breaking The Flat-By-Default
+     Rule. */
+  --lp-lit: inset 0 1px 0 color-mix(in srgb, var(--c-text) 8%, transparent);
+
   font-family: "Manrope", system-ui, sans-serif;
   background: var(--c-bg);
   color: var(--c-text);
@@ -733,863 +837,1175 @@ const planMonth = computed(() => formatPrice(planPrice.value.month.amount, planP
   }
 }
 
+.lp-shell {
+  width: var(--lp-w);
+  margin-inline: auto;
+}
+
+/* ── Type ──────────────────────────────────────────────────────────────────
+   The display face is pushed much harder than the body face: big, tightly
+   tracked, near-solid leading. The size and tracking contrast is what carries
+   the personality, which is why no third webfont was added to get it. */
 .landing :where(h1, h2, h3) {
   font-family: "Space Grotesk", "Manrope", system-ui, sans-serif;
-}
-
-/* ── Shared buttons ── */
-.lp-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  border: none;
-  cursor: pointer;
-  text-decoration: none;
-  font-family: inherit;
   font-weight: 700;
-  transition: filter 0.15s ease, transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
-.lp-btn-sm { padding: 10px 18px; border-radius: 9px; font-size: 14.5px; }
-.lp-btn-lg { padding: 14px 26px; border-radius: 11px; font-size: 16px; }
-.lp-btn-accent { background: var(--c-accent); color: var(--c-on-accent); box-shadow: var(--c-shadow-card, 0 1px 2px rgba(28, 8, 82, 0.05)); }
-.lp-btn-accent:hover { filter: brightness(1.07); transform: translateY(-1px); }
-.lp-btn-outline { background: transparent; color: var(--c-text); border: 1px solid var(--c-border); padding: 13px 24px; }
-.lp-btn-outline:hover { background: var(--c-surface); border-color: var(--c-accent); }
-.lp-btn-trade { background: var(--c-trade); color: var(--c-on-accent); padding: 13px 22px; border-radius: 11px; font-size: 15px; margin-top: 26px; }
-.lp-btn-trade:hover { filter: brightness(1.07); }
 
-.lp-ico { width: 17px; height: 17px; }
-.lp-ico-md { width: 22px; height: 22px; }
-.lp-ico-sm { width: 15px; height: 15px; flex: none; }
+.lp-h1 {
+  font-size: clamp(2.4rem, 6vw, 4.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  margin: 0;
+  text-wrap: balance;
+}
+.lp-h1 :deep(span),
+.lp-h1 :deep(em) {
+  color: var(--c-accent);
+  font-style: normal;
+}
 
-/* ── Header ── */
-.lp-header {
-  position: sticky;
-  top: 0;
-  z-index: 40;
-  background: color-mix(in srgb, var(--c-bg) 82%, transparent);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-bottom: 1px solid color-mix(in srgb, var(--c-border) 55%, transparent);
+.lp-h2 {
+  font-size: clamp(1.85rem, 3.5vw, 2.9rem);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  margin: 0;
+  text-wrap: balance;
 }
-/* Landing-specific offset so the header doesn't hug the very top */
-.landing .lp-header {
-  top: 12px;
-}
-.lp-header-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 clamp(18px, 4vw, 40px);
-  height: 68px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-.lp-brand { display: flex; align-items: center; gap: 11px; text-decoration: none; color: var(--c-text); }
-.lp-badge {
-  display: inline-grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  overflow: hidden;
-  background: transparent;
-  padding: 0;
-}
-.lp-badge img { width: 100%; height: 100%; object-fit: contain; display: block; }
-.lp-badge-sm { width: 30px; height: 30px; border-radius: 8px; }
-.lp-wordmark { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 18px; letter-spacing: -0.4px; }
 
-/* Center nav + "Log in" are hidden < 760px (the design's JS breakpoint), driven
-   from scoped CSS — NOT `hidden sm:flex` (Tailwind v4 base .hidden defeats it). */
-.lp-nav { display: none; align-items: center; gap: 6px; }
-.lp-nav-link {
-  padding: 8px 14px;
-  border-radius: 8px;
-  text-decoration: none;
+.lp-h3 {
+  font-size: clamp(1.02rem, 1.4vw, 1.22rem);
+  line-height: 1.25;
+  letter-spacing: -0.012em;
+  margin: 0;
+}
+
+.lp-lede {
+  font-size: clamp(0.98rem, 1.3vw, 1.14rem);
+  line-height: 1.6;
   color: var(--c-muted);
-  font-weight: 600;
-  font-size: 14.5px;
-  transition: color 0.15s ease, background 0.15s ease;
-}
-.lp-nav-link:hover { color: var(--c-text); background: var(--c-surface); }
-
-.lp-header-cta { display: flex; align-items: center; gap: 10px; }
-.lp-login {
-  display: none;
-  align-items: center;
-  padding: 10px 14px;
-  border-radius: 9px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  color: var(--c-text);
-  font-family: inherit;
-  font-weight: 600;
-  font-size: 14.5px;
-  transition: background 0.15s ease;
-}
-.lp-login:hover { background: var(--c-surface); }
-
-@media (min-width: 760px) {
-  .lp-nav { display: flex; }
-  .lp-login { display: inline-flex; }
+  margin: 0;
+  max-width: 60ch;
 }
 
-/* ── Hero ── */
-.lp-hero { position: relative; overflow: hidden; }
-.lp-hero-glow {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(720px 460px at 82% -6%, color-mix(in srgb, var(--c-trade) 26%, transparent), transparent 70%),
-    radial-gradient(560px 360px at 4% 6%, color-mix(in srgb, var(--c-accent) 15%, transparent), transparent 72%);
+.lp-sub {
+  font-size: clamp(0.92rem, 1.1vw, 1.02rem);
+  line-height: 1.6;
+  color: var(--c-muted);
+  margin: 0;
+  max-width: 62ch;
 }
-.lp-hero-inner {
-  position: relative;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: clamp(38px, 6vw, 76px) clamp(18px, 4vw, 40px) clamp(40px, 6vw, 72px);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: clamp(32px, 4vw, 56px);
-}
-.lp-hero-copy { flex: 1 1 380px; min-width: 280px; max-width: 560px; }
 
+/* The third voice: monospace, uppercase, widely tracked. Set codes and binder
+   labels are already read this way in the app (DESIGN.md, The Mono Identifier
+   Rule), so section labels borrow the collector's own register rather than the
+   soft rounded chip the reference uses. */
 .lp-eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 13px;
-  border-radius: 999px;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  color: var(--c-accent);
-  font-weight: 700;
-  font-size: 12.5px;
-  letter-spacing: 0.3px;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
+  color: var(--c-accent);
+  background: color-mix(in srgb, var(--c-accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-accent) 26%, transparent);
+  border-radius: 999px;
+  padding: 6px 14px;
+  width: fit-content;
 }
-.lp-eyebrow-authed { color: var(--c-mutual); }
-.lp-eyebrow-trade { background: var(--c-bg); color: var(--c-trade); }
-.lp-eyebrow-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--c-mutual); }
-
-.lp-h1 {
-  font-weight: 700;
-  letter-spacing: -1.6px;
-  line-height: 1.03;
-  font-size: clamp(38px, 6vw, 62px);
-  margin: 18px 0 0;
-  text-wrap: balance;
+.lp-eyebrow-trade {
+  color: var(--c-trade);
+  background: color-mix(in srgb, var(--c-trade) 12%, transparent);
+  border-color: color-mix(in srgb, var(--c-trade) 26%, transparent);
 }
-.lp-h1 :deep(span) { color: var(--c-accent); }
-
-.lp-subhead {
-  margin: 20px 0 0;
-  font-size: clamp(16px, 1.6vw, 19px);
-  line-height: 1.55;
+.lp-eyebrow-mutual {
+  color: var(--c-mutual);
+  background: color-mix(in srgb, var(--c-mutual) 12%, transparent);
+  border-color: color-mix(in srgb, var(--c-mutual) 28%, transparent);
+}
+.lp-eyebrow-plain {
   color: var(--c-muted);
-  max-width: 520px;
-  text-wrap: pretty;
+  background: color-mix(in srgb, var(--c-muted) 9%, transparent);
+  border-color: var(--lp-line-soft);
 }
 
-.lp-cta-row { display: flex; flex-wrap: wrap; gap: 13px; margin-top: 30px; }
-.lp-cta-row .lp-btn-accent { box-shadow: var(--c-shadow, 0 18px 44px -16px rgba(104, 48, 168, 0.28)); }
+.lp-eyebrow-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  flex: none;
+}
 
-.lp-bullets { list-style: none; display: flex; flex-wrap: wrap; gap: 8px 10px; margin: 28px 0 0; padding: 0; }
-.lp-bullets li { display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 600; color: var(--c-muted); }
-.lp-bullet-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--c-mutual); }
+.lp-ico-sm {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
 
-/* Hero visual + 3D tilt (flattened < 760px so it can't clip/overflow on mobile) */
-.lp-hero-visual { flex: 1 1 420px; min-width: 280px; display: flex; justify-content: center; perspective: 1700px; }
-.lp-tilt { position: relative; width: 100%; max-width: 560px; transform-style: preserve-3d; }
-@media (min-width: 760px) {
-  .lp-tilt { transform: rotateY(-12deg) rotateX(5deg); }
+/* ── Buttons ───────────────────────────────────────────────────────────────
+   Pill, with the label and a circular icon badge — the reference's one idiom
+   worth taking wholesale. These are landing-only `lp-btn` elements, not the
+   app's 8px-radius v-btn (DESIGN.md §5), so the two vocabularies stay apart. */
+.lp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: inherit;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  transition: filter 0.16s ease, background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.lp-btn-sm { padding: 8px 8px 8px 18px; font-size: 0.875rem; }
+.lp-btn-lg { padding: 9px 9px 9px 24px; font-size: 1rem; }
+/* Block buttons are used without a size class, so they carry their own
+   padding rather than inheriting none. */
+.lp-btn-block {
+  width: 100%;
+  justify-content: space-between;
+  padding: 9px 9px 9px 22px;
+  font-size: 0.94rem;
+}
+
+.lp-btn-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--c-on-accent) 20%, transparent);
+  flex: none;
+}
+.lp-btn-lg .lp-btn-badge { width: 30px; height: 30px; }
+.lp-btn-badge svg { width: 14px; height: 14px; }
+.lp-btn-badge-ghost { background: color-mix(in srgb, var(--c-text) 12%, transparent); }
+
+.lp-btn-trade { background: var(--c-trade); color: var(--c-on-accent); }
+.lp-btn-trade:hover { filter: brightness(1.08); }
+.lp-btn-mutual { background: var(--c-mutual); color: var(--c-on-accent); }
+.lp-btn-mutual:hover { filter: brightness(1.08); }
+.lp-btn-ghost {
+  background: color-mix(in srgb, var(--c-surface) 70%, transparent);
+  color: var(--c-text);
+  border-color: var(--lp-line);
+}
+.lp-btn-ghost:hover { background: var(--c-surface-2); border-color: var(--c-trade); }
+
+.lp-login {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--c-muted);
+  padding: 8px 4px;
+  transition: color 0.16s ease;
+}
+.lp-login:hover { color: var(--c-text); }
+
+/* ── Header: a floating pill, clear of the page edge ── */
+.lp-header {
+  position: sticky;
+  top: 14px;
+  z-index: 40;
+  padding: 14px 0 0;
+}
+.lp-header-bar {
+  width: var(--lp-w);
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 10px 10px 10px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--lp-line);
+  background: color-mix(in srgb, var(--c-surface) 78%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--lp-lit);
+}
+
+.lp-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--c-text);
+  flex: none;
+}
+.lp-badge { width: 30px; height: 30px; border-radius: 8px; object-fit: contain; }
+.lp-badge-sm { width: 26px; height: 26px; }
+.lp-wordmark {
+  font-family: "Space Grotesk", "Manrope", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1.02rem;
+  letter-spacing: -0.02em;
+}
+
+.lp-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline: auto;
+}
+.lp-nav-link {
+  text-decoration: none;
+  color: var(--c-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 999px;
+  transition: color 0.16s ease, background-color 0.16s ease;
+}
+.lp-nav-link:hover { color: var(--c-text); background: var(--c-surface-2); }
+
+.lp-header-cta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+@media (max-width: 900px) {
+  .lp-nav { display: none; }
+  .lp-header-bar { justify-content: space-between; }
+}
+@media (max-width: 460px) {
+  .lp-wordmark { display: none; }
+}
+
+/* ── Hero ── */
+.lp-hero {
+  position: relative;
+  padding-top: clamp(56px, 8vw, 104px);
+  isolation: isolate;
+}
+/* Ambient light behind the hero. Two brand hues at low strength, never a
+   rainbow — the page reads as lit, not as painted. */
+.lp-hero-glow {
+  position: absolute;
+  inset: -180px 0 auto;
+  height: 720px;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(58% 46% at 50% 8%, color-mix(in srgb, var(--c-trade) 26%, transparent), transparent 70%),
+    radial-gradient(42% 38% at 78% 30%, color-mix(in srgb, var(--c-accent) 16%, transparent), transparent 72%);
+  filter: blur(18px);
+  opacity: 0.75;
+}
+
+.lp-hero-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 22px;
+}
+.lp-hero-copy .lp-lede { max-width: 52ch; }
+
+.lp-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 2px;
+}
+
+/* Terms, where a SaaS hero usually puts other companies' logos. */
+.lp-promises {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+.lp-promise {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--c-muted);
+  background: color-mix(in srgb, var(--c-surface) 66%, transparent);
+  border: 1px solid var(--lp-line-soft);
+  border-radius: 999px;
+  padding: 7px 14px;
+}
+.lp-promise-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--c-trade);
+  flex: none;
+}
+
+/* ── Stage: the app window, with the match floating off its corner ── */
+.lp-stage {
+  position: relative;
+  margin-top: clamp(38px, 5vw, 66px);
 }
 
 .lp-window {
-  border-radius: 18px;
-  background: var(--c-bg);
-  border: 1px solid var(--c-border);
-  box-shadow: var(--c-shadow, 0 18px 44px -16px rgba(104, 48, 168, 0.28));
+  border: 1px solid var(--lp-line);
+  border-radius: var(--lp-r);
+  background: var(--lp-panel);
+  box-shadow: var(--lp-lit);
   overflow: hidden;
 }
 .lp-window-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 11px 14px;
-  border-bottom: 1px solid color-mix(in srgb, var(--c-border) 60%, transparent);
-  background: var(--c-surface);
+  gap: 14px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--lp-line-soft);
+  background: color-mix(in srgb, var(--c-surface-2) 55%, transparent);
 }
-.lp-dots { display: flex; gap: 6px; }
-.lp-dot { width: 11px; height: 11px; border-radius: 50%; }
+.lp-dots { display: inline-flex; gap: 6px; flex: none; }
+.lp-dot { width: 10px; height: 10px; border-radius: 999px; display: block; }
 .lp-url {
-  flex: 1;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  height: 26px;
-  padding: 0 12px;
-  border-radius: 7px;
-  background: var(--c-bg);
-  border: 1px solid var(--c-border);
+  gap: 7px;
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.72rem;
   color: var(--c-muted);
-  font-size: 12.5px;
-  font-weight: 600;
+  background: color-mix(in srgb, var(--c-bg) 55%, transparent);
+  border-radius: 999px;
+  padding: 5px 14px;
+  margin-inline: auto;
 }
-.lp-window-body { padding: 16px; }
+
+.lp-window-body { padding: clamp(14px, 2vw, 22px); display: flex; flex-direction: column; gap: 14px; }
+
 .lp-search-field {
   display: flex;
   align-items: center;
   gap: 10px;
-  height: 40px;
-  padding: 0 14px;
-  border-radius: 10px;
-  border: 1px solid var(--c-accent);
-  background: var(--c-input-bg);
-  box-shadow: 0 0 0 3px var(--c-ring);
+  border: 1px solid var(--lp-line);
+  border-radius: var(--lp-r-sm);
+  background: var(--c-input-bg, var(--c-surface-2));
+  padding: 11px 14px;
 }
-.lp-search-term { color: var(--c-text); font-weight: 600; font-size: 14px; }
-.lp-caret { width: 1.5px; height: 17px; background: var(--c-accent); display: inline-block; }
-.lp-results { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--c-muted); }
-
-.lp-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
-.lp-chip {
-  padding: 5px 11px;
-  border-radius: 999px;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
+.lp-search-term { font-size: 0.9rem; font-weight: 600; }
+.lp-caret {
+  width: 1.5px;
+  height: 15px;
+  background: var(--c-accent);
+  animation: lp-blink 1.1s steps(2, start) infinite;
+}
+@keyframes lp-blink { 50% { opacity: 0; } }
+.lp-results {
+  margin-left: auto;
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.7rem;
   color: var(--c-muted);
-  font-size: 11.5px;
-  font-weight: 700;
 }
-.lp-chip-active { background: var(--c-accent); color: var(--c-on-accent); border-color: transparent; }
 
-.lp-hero-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 11px; margin-top: 14px; }
-.lp-hero-cell { display: flex; flex-direction: column; gap: 6px; }
-.lp-thumb {
-  aspect-ratio: 0.686;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid var(--c-border);
-  background: linear-gradient(140deg, var(--c-trade), var(--c-accent));
+.lp-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.lp-chip {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--c-muted);
+  border: 1px solid var(--lp-line-soft);
+  border-radius: 999px;
+  padding: 5px 12px;
 }
-.lp-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.lp-thumb-name {
-  font-size: 10.5px;
-  font-weight: 700;
-  color: var(--c-text);
-  line-height: 1.2;
+.lp-chip-active {
+  color: var(--c-on-accent);
+  background: var(--c-accent);
+  border-color: transparent;
+}
+
+.lp-result-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+.lp-result { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.lp-result-name {
+  font-size: 0.66rem;
+  color: var(--c-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Floating mutual-match card */
-.lp-match-card {
-  position: absolute;
-  right: -6px;
-  bottom: -22px;
-  width: min(258px, 72%);
-  background: var(--c-surface);
-  border: 1px solid var(--c-mutual);
-  border-radius: 14px;
-  padding: 13px 14px;
-  box-shadow: var(--c-shadow, 0 18px 44px -16px rgba(104, 48, 168, 0.28));
-  transform: translateZ(60px);
+/* Every card image in the page shares one frame: the 59:86 card ratio, so
+   nothing shifts when art loads (DESIGN.md §6). */
+.lp-thumb {
+  position: relative;
+  aspect-ratio: 59 / 86;
+  border-radius: 9px;
+  overflow: hidden;
+  background: var(--c-skeleton);
 }
-.lp-match-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.lp-match-title { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 12.5px; color: var(--c-text); }
+.lp-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: opacity 0.2s ease;
+}
+.lp-thumb-give { box-shadow: 0 0 0 1.5px var(--c-trade); }
+.lp-thumb-get { box-shadow: 0 0 0 1.5px var(--c-accent); }
+
+/* ── The match card: the signature at its smallest ── */
+.lp-match {
+  border: 1px solid var(--lp-line);
+  border-radius: var(--lp-r-card);
+  background: var(--lp-panel);
+  box-shadow: var(--lp-lit);
+  padding: 14px;
+  width: 262px;
+}
+@media (min-width: 900px) {
+  .lp-match {
+    position: absolute;
+    right: -24px;
+    bottom: -46px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    background: color-mix(in srgb, var(--c-surface) 88%, transparent);
+  }
+}
+@media (max-width: 899px) {
+  .lp-match { margin: 18px auto 0; }
+}
+.lp-match-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.lp-match-title {
+  font-family: "Space Grotesk", "Manrope", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: -0.01em;
+}
 .lp-match-found {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 9px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--c-mutual) 16%, transparent);
-  color: var(--c-mutual);
+  gap: 6px;
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.6rem;
   font-weight: 700;
-  font-size: 10.5px;
-  animation: ofo-ring 2.6s ease-out infinite;
+  letter-spacing: 0.12em;
+  color: var(--c-mutual);
+  background: color-mix(in srgb, var(--c-mutual) 14%, transparent);
+  border-radius: 999px;
+  padding: 4px 9px;
 }
-.lp-match-found-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--c-mutual); animation: ofo-pulse 2s ease-in-out infinite; }
-.lp-match-body { display: flex; align-items: center; gap: 9px; }
-.lp-match-side { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.lp-match-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
-.lp-match-label-give { color: var(--c-muted); }
-.lp-match-label-get { color: var(--c-accent); text-align: right; }
-.lp-thumb-give { aspect-ratio: 0.686; border-radius: 7px; background: linear-gradient(140deg, var(--c-trade), var(--c-accent)); border: none; }
-.lp-thumb-get { aspect-ratio: 0.686; border-radius: 7px; background: linear-gradient(140deg, var(--c-accent), var(--c-mutual)); border: none; }
-.lp-swap-circle {
+.lp-match-found-dot { width: 5px; height: 5px; border-radius: 999px; background: currentColor; }
+.lp-match-body {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+}
+.lp-match-side { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+
+/* The seam, small: a teal thread the swap disc sits on. */
+.lp-match-seam {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 62%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--c-mutual), transparent);
+  opacity: 0.5;
+}
+.lp-swap {
+  position: relative;
   display: grid;
   place-items: center;
   width: 30px;
   height: 30px;
-  border-radius: 50%;
-  background: var(--c-bg);
-  border: 1px solid var(--c-border);
-  color: var(--c-mutual);
+  border-radius: 999px;
+  background: var(--c-mutual);
+  color: var(--c-on-accent);
   flex: none;
 }
+.lp-swap svg { width: 15px; height: 15px; }
 
-/* Marquee */
+.lp-axis-label {
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.lp-axis-label-give { color: var(--c-trade); }
+.lp-axis-label-get { color: var(--c-accent); }
+
+/* ── Marquee ── */
 .lp-marquee {
-  position: relative;
-  margin-top: 18px;
-  padding: 14px 0;
-  border-top: 1px solid color-mix(in srgb, var(--c-border) 45%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--c-border) 45%, transparent);
-  background: var(--c-surface);
+  margin-top: clamp(56px, 7vw, 92px);
   overflow: hidden;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
 }
-.lp-marquee-track { display: flex; gap: 14px; width: max-content; animation: ofo-marquee 38s linear infinite; }
+.lp-marquee-track {
+  display: flex;
+  gap: 12px;
+  width: max-content;
+  animation: lp-marquee 46s linear infinite;
+}
 .lp-marquee-cell {
-  width: 108px;
-  aspect-ratio: 1.45;
-  border-radius: 8px;
+  width: 190px;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--lp-r-sm);
   overflow: hidden;
-  background: var(--c-input-bg);
-  border: 1px solid var(--c-border);
+  border: 1px solid var(--lp-line-soft);
   flex: none;
 }
-.lp-marquee-cell img { width: 100%; height: 100%; object-fit: cover; object-position: center 26%; display: block; }
+.lp-marquee-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+@keyframes lp-marquee {
+  to { transform: translateX(-50%); }
+}
 
-/* ── Section scaffolding ── */
-.lp-section { max-width: 1200px; margin: 0 auto; }
-.lp-how { padding: clamp(48px, 7vw, 84px) clamp(18px, 4vw, 40px) clamp(20px, 3vw, 30px); }
-.lp-features { padding: clamp(40px, 6vw, 72px) clamp(18px, 4vw, 40px) clamp(20px, 3vw, 28px); }
-.lp-showcase { padding: clamp(40px, 6vw, 72px) clamp(18px, 4vw, 40px) clamp(56px, 8vw, 96px); }
+/* ── Sections ── */
+.lp-section { padding: clamp(64px, 9vw, 118px) 0 0; }
 
-.lp-h2 { font-weight: 700; letter-spacing: -1px; font-size: clamp(26px, 3.6vw, 38px); line-height: 1.1; margin: 0; }
-.lp-h3 { font-weight: 700; font-size: 17.5px; margin: 0; letter-spacing: -0.3px; }
-.lp-section-sub { margin: 12px 0 clamp(28px, 4vw, 40px); font-size: 16.5px; line-height: 1.55; color: var(--c-muted); max-width: 560px; }
+.lp-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  margin-bottom: clamp(32px, 4vw, 52px);
+}
+.lp-head-tight { margin-bottom: clamp(26px, 3vw, 38px); }
 
-/* How it works */
-.lp-how-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(232px, 1fr)); gap: clamp(14px, 1.6vw, 20px); }
-.lp-step-card { display: flex; flex-direction: column; gap: 12px; padding: 24px; border-radius: 16px; background: var(--c-surface); border: 1px solid var(--c-border); }
-.lp-step-num { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 14px; }
-.lp-step-num-0 { color: var(--c-accent); }
-.lp-step-num-1 { color: var(--c-trade); }
-.lp-step-num-2 { color: var(--c-mutual); }
-.lp-step-num-3 { color: var(--c-accent); }
-.lp-step-body { margin: 0; font-size: 14px; line-height: 1.5; color: var(--c-muted); }
+/* ── How it works ── */
+.lp-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: none;
+}
+.lp-step {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 24px 22px 26px;
+  border: 1px solid var(--lp-line-soft);
+  border-radius: var(--lp-r-card);
+  background: var(--lp-panel);
+  box-shadow: var(--lp-lit);
+}
+/* The numeral is the ornament, so it is allowed to be large and quiet. */
+.lp-step-num {
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--c-trade);
+  opacity: 0.55;
+  line-height: 1;
+}
+.lp-step-body { font-size: 0.88rem; line-height: 1.55; color: var(--c-muted); margin: 0; }
 
-/* Features */
-.lp-features-head { max-width: 620px; margin-bottom: clamp(26px, 4vw, 42px); }
-.lp-features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(284px, 1fr)); gap: clamp(14px, 1.6vw, 20px); }
-.lp-feature {
+/* ── Feature cards: visual on top, words underneath ── */
+.lp-features {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.lp-card {
   position: relative;
   display: flex;
   flex-direction: column;
-  border-radius: 18px;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
   text-decoration: none;
-  color: var(--c-text);
-  box-shadow: var(--c-shadow-card, 0 1px 2px rgba(28, 8, 82, 0.05));
+  color: inherit;
+  border: 1px solid var(--lp-line-soft);
+  border-radius: var(--lp-r);
+  background: var(--lp-panel);
+  box-shadow: var(--lp-lit);
   overflow: hidden;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
-.lp-feature:hover { transform: translateY(-4px); box-shadow: var(--c-shadow, 0 18px 44px -16px rgba(104, 48, 168, 0.28)); }
-.lp-feature-accent:hover { border-color: var(--c-accent); }
-.lp-feature-trade:hover { border-color: var(--c-trade); }
-.lp-feature-mutual:hover { border-color: var(--c-mutual); }
-.lp-feature-core {
-  background: linear-gradient(165deg, color-mix(in srgb, var(--c-accent) 13%, var(--c-surface)), var(--c-surface));
-  border-color: var(--c-accent);
+.lp-card:hover { transform: translateY(-3px); }
+.lp-card-accent:hover {
+  border-color: color-mix(in srgb, var(--c-accent) 50%, transparent);
+  box-shadow: var(--lp-lit), 0 14px 40px color-mix(in srgb, var(--c-accent) 22%, transparent);
+}
+.lp-card-trade:hover,
+.lp-card-core:hover {
+  border-color: color-mix(in srgb, var(--c-trade) 50%, transparent);
+  box-shadow: var(--lp-lit), 0 14px 40px color-mix(in srgb, var(--c-trade) 22%, transparent);
 }
 
-.lp-feature-illu { padding: 14px 16px 0; }
-.lp-illu-row { display: flex; gap: 8px; }
-.lp-illu-thumb { flex: 1; aspect-ratio: 0.686; border-radius: 7px; }
+/* The visual half. Card art is the product, so it gets the top of every card
+   and is cropped by the frame rather than shrunk to fit inside it. */
+.lp-card-visual {
+  position: relative;
+  height: 208px;
+  padding: 20px 22px 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  background:
+    radial-gradient(80% 100% at 50% 100%, color-mix(in srgb, var(--c-surface-2) 80%, transparent), transparent 70%);
+}
+.lp-card-visual::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 46px;
+  background: linear-gradient(transparent, var(--lp-panel));
+  pointer-events: none;
+}
+
+.lp-illu-row { display: flex; gap: 8px; width: 100%; justify-content: center; }
+.lp-illu-thumb { width: 104px; flex: none; }
 .lp-illu-stack { display: flex; }
-.lp-illu-deck { width: 30%; aspect-ratio: 0.686; border-radius: 7px; box-shadow: var(--c-shadow-card, 0 1px 2px rgba(28, 8, 82, 0.05)); }
-.lp-illu-coll { padding: 16px 18px 4px; }
-.lp-coll-meter { display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700; color: var(--c-muted); margin-bottom: 7px; }
-.lp-coll-pct { color: var(--c-mutual); }
-.lp-coll-bar { height: 8px; border-radius: 999px; background: var(--c-input-bg); border: 1px solid var(--c-border); overflow: hidden; }
-.lp-coll-fill { display: block; height: 100%; background: linear-gradient(90deg, var(--c-mutual), var(--c-trade)); }
-.lp-coll-row { margin-top: 11px; }
-.lp-illu-coll-thumb { flex: 1; aspect-ratio: 0.686; border-radius: 6px; background: var(--c-input-bg); position: relative; }
-.lp-illu-pair { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 18px 0; }
-.lp-illu-pair-card { width: 30%; aspect-ratio: 0.686; border-radius: 8px; box-shadow: var(--c-shadow-card, 0 1px 2px rgba(28, 8, 82, 0.05)); }
-.lp-illu-pair-get { background: linear-gradient(140deg, var(--c-accent), var(--c-mutual)); border-color: var(--c-accent); box-shadow: 0 8px 20px -10px var(--c-ring); }
+.lp-illu-deck { width: 112px; flex: none; }
+.lp-illu-pair {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+}
+.lp-illu-pair-card { width: 112px; flex: none; }
+.lp-illu-pair .lp-match-seam { top: 50%; left: 12%; right: 12%; opacity: 0.6; }
+.lp-illu-pair .lp-swap { align-self: center; }
 
-.lp-feature-body { padding: 18px 22px 24px; display: flex; flex-direction: column; gap: 11px; }
-.lp-feature-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; }
-.lp-icon-accent { background: color-mix(in srgb, var(--c-accent) 14%, transparent); color: var(--c-accent); }
-.lp-icon-trade { background: color-mix(in srgb, var(--c-trade) 16%, transparent); color: var(--c-trade); }
-.lp-icon-mutual { background: color-mix(in srgb, var(--c-mutual) 16%, transparent); color: var(--c-mutual); }
-.lp-icon-core { background: var(--c-accent); color: var(--c-on-accent); }
-.lp-feature-title { font-size: 19px; }
-.lp-feature-text { margin: 0; font-size: 14.5px; line-height: 1.5; color: var(--c-muted); }
-.lp-feature-cta { display: inline-flex; align-items: center; gap: 7px; font-weight: 700; font-size: 14px; }
-.lp-cta-accent { color: var(--c-accent); }
-.lp-cta-trade { color: var(--c-trade); }
-.lp-cta-mutual { color: var(--c-mutual); }
+/* The two piles, side by side and labelled, so the card shows the same two
+   lists the library page opens on. */
+.lp-piles {
+  display: flex;
+  gap: clamp(14px, 3vw, 30px);
+  width: 100%;
+  justify-content: center;
+  align-items: flex-end;
+}
+.lp-pile { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.lp-illu-pile { width: 88px; flex: none; }
+
+.lp-card-text {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 22px 24px 26px;
+}
+.lp-card-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--c-surface-2);
+  color: var(--c-trade);
+  margin-bottom: 3px;
+}
+.lp-card-accent .lp-card-icon { color: var(--c-accent); }
+.lp-card-icon svg { width: 18px; height: 18px; }
+.lp-card-body { font-size: 0.88rem; line-height: 1.55; color: var(--c-muted); margin: 0; }
+.lp-card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 4px;
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: var(--c-trade);
+}
+.lp-card-accent .lp-card-cta { color: var(--c-accent); }
 
 .lp-core-badge {
   position: absolute;
   top: 16px;
   right: 16px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: var(--c-accent);
-  color: var(--c-on-accent);
-  font-weight: 700;
-  font-size: 11px;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
   z-index: 2;
-}
-
-/* Trade showcase */
-.lp-showcase-panel {
-  border-radius: 24px;
-  border: 1px solid var(--c-border);
-  background: var(--c-surface);
-  box-shadow: var(--c-shadow-card, 0 1px 2px rgba(28, 8, 82, 0.05));
-  overflow: hidden;
-  display: flex;
-  flex-wrap: wrap;
-}
-.lp-showcase-copy { flex: 1 1 320px; min-width: 280px; padding: clamp(28px, 4vw, 48px); }
-.lp-showcase-h2 { margin: 16px 0 0; }
-.lp-showcase-body { margin: 14px 0 0; font-size: 16px; line-height: 1.55; color: var(--c-muted); max-width: 440px; }
-.lp-showcase-visual {
-  flex: 1 1 320px;
-  min-width: 280px;
-  padding: clamp(24px, 3vw, 40px);
-  background: linear-gradient(160deg, color-mix(in srgb, var(--c-trade) 12%, var(--c-surface)), var(--c-surface));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-left: 1px solid color-mix(in srgb, var(--c-border) 50%, transparent);
-}
-.lp-showcase-pair { display: flex; align-items: center; gap: clamp(10px, 2vw, 22px); }
-.lp-showcase-side { display: flex; flex-direction: column; align-items: center; gap: 9px; }
-.lp-showcase-card { width: clamp(96px, 17vw, 128px); aspect-ratio: 0.686; border-radius: 11px; box-shadow: var(--c-shadow, 0 18px 44px -16px rgba(104, 48, 168, 0.28)); }
-.lp-showcase-side .lp-match-label { text-align: center; }
-.lp-showcase-name { font-size: 12px; font-weight: 700; color: var(--c-text); }
-.lp-showcase-match { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.lp-swap-ring { width: 46px; height: 46px; border-color: var(--c-mutual); animation: ofo-ring 2.8s ease-out infinite; }
-.lp-match-tag { font-size: 10.5px; font-weight: 700; color: var(--c-mutual); }
-
-/* ── People: who is already here ── */
-.lp-people { padding: clamp(28px, 5vw, 56px) clamp(18px, 4vw, 40px) clamp(20px, 3vw, 30px); }
-.lp-eyebrow-people { color: var(--c-trade); }
-.lp-eyebrow-dot-people { background: var(--c-trade); }
-
-/* Two columns that answer two different questions, so they are separated by a
-   rule rather than boxed as cards — the section is one thought, not two. */
-.lp-people-cols {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: clamp(28px, 4vw, 44px);
-}
-@media (min-width: 860px) {
-  .lp-people-cols { grid-template-columns: 1fr 1fr; gap: clamp(40px, 5vw, 72px); }
-  .lp-people-col + .lp-people-col {
-    padding-left: clamp(40px, 5vw, 72px);
-    border-left: 1px solid color-mix(in srgb, var(--c-border) 60%, transparent);
-  }
-}
-
-.lp-people-col-title {
-  margin: 0 0 14px;
-  font-size: 12.5px;
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.58rem;
   font-weight: 700;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.16em;
+  color: var(--c-on-accent);
+  background: var(--c-trade);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+/* ── Panels ── */
+.lp-panel {
+  border: 1px solid var(--lp-line);
+  border-radius: var(--lp-r);
+  background: var(--lp-panel);
+  box-shadow: var(--lp-lit);
+  padding: clamp(28px, 4vw, 52px);
+}
+
+/* ── The axis, full size ──────────────────────────────────────────────────
+   The page's one loud moment: two cards leaning into a single teal line. Teal
+   is spent here and nowhere else (DESIGN.md, The Agreement Rule) — this is the
+   agreement itself, not decoration borrowing its colour. */
+.lp-panel-axis {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.lp-panel-axis::before {
+  content: "";
+  position: absolute;
+  inset: auto 0 -60% 0;
+  height: 320px;
+  background: radial-gradient(50% 60% at 50% 100%, color-mix(in srgb, var(--c-mutual) 15%, transparent), transparent 70%);
+  pointer-events: none;
+}
+
+.lp-axis {
+  position: relative;
+  width: 100%;
+  max-width: 620px;
+  margin: clamp(26px, 3vw, 40px) 0 clamp(30px, 3.5vw, 44px);
+}
+.lp-axis-seam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--c-mutual) 22%, var(--c-mutual) 78%, transparent);
+  opacity: 0.55;
+}
+.lp-axis-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: clamp(14px, 3vw, 34px);
+}
+.lp-axis-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+.lp-axis-card {
+  width: clamp(96px, 15vw, 138px);
+  transition: transform 0.25s ease;
+}
+/* Leaning in — the whole point of the name. */
+.lp-axis-card-give { transform: rotate(-6deg); }
+.lp-axis-card-get { transform: rotate(6deg); }
+.lp-panel-axis:hover .lp-axis-card-give { transform: rotate(-3deg) translateX(5px); }
+.lp-panel-axis:hover .lp-axis-card-get { transform: rotate(3deg) translateX(-5px); }
+.lp-axis-name { font-size: 0.76rem; color: var(--c-muted); margin: 0; }
+
+.lp-axis-mark { display: flex; flex-direction: column; align-items: center; gap: 9px; }
+.lp-axis-disc {
+  display: grid;
+  place-items: center;
+  width: clamp(40px, 5vw, 52px);
+  height: clamp(40px, 5vw, 52px);
+  border-radius: 999px;
+  background: var(--c-mutual);
+  color: var(--c-on-accent);
+  /* The one glow on the page, and it is on the one thing worth glowing. */
+  box-shadow: 0 0 0 7px color-mix(in srgb, var(--c-mutual) 14%, transparent);
+}
+.lp-axis-disc svg { width: 22px; height: 22px; }
+.lp-axis-tag {
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--c-mutual);
+}
+
+/* ── People ── */
+.lp-people {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.lp-people-col {
+  border: 1px solid var(--lp-line-soft);
+  border-radius: var(--lp-r-card);
+  background: var(--lp-panel);
+  box-shadow: var(--lp-lit);
+  padding: 22px;
+}
+.lp-people-title {
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--c-muted);
+  margin: 0 0 14px;
 }
-
-.lp-people-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.lp-people-list li + li { border-top: 1px solid color-mix(in srgb, var(--c-border) 45%, transparent); }
-
+.lp-people-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .lp-person {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 10px;
-  margin: 0 -10px; /* hover reaches past the text without widening the column */
-  border-radius: 12px;
+  gap: 11px;
+  padding: 9px 10px;
+  border-radius: var(--lp-r-sm);
   text-decoration: none;
-  color: var(--c-text);
-  transition: background 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  color: inherit;
+  transition: background-color 0.16s ease;
 }
-.lp-person:hover { background: var(--c-surface); }
-
+.lp-person:hover { background: var(--c-surface-2); }
 .lp-person-rank {
-  flex: none;
-  width: 18px;
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 15px;
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.72rem;
   font-weight: 700;
-  color: color-mix(in srgb, var(--c-muted) 70%, transparent);
-  font-variant-numeric: tabular-nums;
-}
-
-.lp-person-avatar {
+  color: var(--c-muted);
+  width: 12px;
   flex: none;
+}
+.lp-person-avatar {
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
   overflow: hidden;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
+  flex: none;
+  background: color-mix(in srgb, var(--c-trade) 22%, transparent);
+  color: var(--c-trade);
   font-weight: 700;
-  font-size: 15px;
-  color: var(--c-accent);
+  font-size: 0.82rem;
 }
 .lp-person-avatar img { width: 100%; height: 100%; object-fit: cover; }
-
-/* min-width: 0 so a long name truncates instead of shoving the count off. */
-.lp-person-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
-.lp-person-name {
-  font-weight: 600;
-  font-size: 14.5px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.lp-person-meta { font-size: 12px; color: var(--c-muted); }
-
-.lp-person-when { flex: none; font-size: 12px; color: var(--c-muted); }
+.lp-person-text { display: flex; flex-direction: column; min-width: 0; }
+.lp-person-name { font-size: 0.86rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lp-person-meta { font-size: 0.72rem; color: var(--c-muted); }
+.lp-person-when,
 .lp-person-count {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--c-muted);
   flex: none;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--c-trade);
-  font-variant-numeric: tabular-nums;
 }
 
-/* ── Discord community ── */
-.lp-discord { padding: clamp(20px, 3vw, 30px) clamp(18px, 4vw, 40px) clamp(48px, 7vw, 84px); }
-.lp-discord-panel {
-  position: relative;
-  overflow: hidden;
-  border-radius: 24px;
-  border: 1px solid color-mix(in srgb, #5865f2 42%, var(--c-border));
-  background: linear-gradient(150deg, color-mix(in srgb, #5865f2 14%, var(--c-surface)), var(--c-surface) 68%);
-  box-shadow: var(--c-shadow-card, 0 1px 2px rgba(28, 8, 82, 0.05));
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: clamp(20px, 3vw, 40px);
-  padding: clamp(28px, 4vw, 52px);
-}
-.lp-discord-glow {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(520px 320px at 90% 8%, color-mix(in srgb, #5865f2 30%, transparent), transparent 70%);
-}
-.lp-discord-copy { position: relative; flex: 1 1 400px; min-width: 280px; }
-.lp-eyebrow-discord { color: #5865f2; }
-.lp-eyebrow-dot-discord { background: #5865f2; }
-.lp-discord-h2 { margin: 16px 0 0; }
-.lp-discord-body { margin: 14px 0 0; font-size: 16px; line-height: 1.55; color: var(--c-muted); max-width: 460px; }
-.lp-discord-bullets { list-style: none; margin: 20px 0 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
-.lp-discord-bullets li { display: flex; align-items: center; gap: 9px; font-size: 14.5px; font-weight: 600; color: var(--c-text); }
-.lp-discord-check { color: #5865f2; }
-.lp-btn-discord {
-  background: #5865f2;
-  color: #fff;
-  margin-top: 26px;
-  box-shadow: 0 14px 30px -12px rgba(88, 101, 242, 0.6);
-}
-.lp-btn-discord:hover { filter: brightness(1.08); transform: translateY(-1px); }
-.lp-discord-glyph { width: 21px; height: 21px; }
-.lp-discord-visual { position: relative; flex: 0 0 auto; display: grid; place-items: center; padding: 4px; }
-.lp-discord-logo {
-  display: grid;
-  place-items: center;
-  width: clamp(116px, 15vw, 164px);
-  height: clamp(116px, 15vw, 164px);
-  border-radius: 32px;
-  background: #5865f2;
-  color: #fff;
-  box-shadow: 0 24px 60px -18px rgba(88, 101, 242, 0.7);
-}
-.lp-discord-logo svg { width: 54%; height: 54%; }
-
-@media (prefers-reduced-motion: reduce) {
-  .lp-btn-discord:hover { transform: none; }
-}
-
-/* ── Community plan: the offer to shop and server owners ── */
-/* No panel, no glow, no logo blob: the two sections either side of this one are
-   already that shape, and the difference in form is what tells the reader this
-   paragraph is addressed to someone else. A hairline above does the separating
-   that a border-radius would otherwise have to. */
+/* ── Community plan, as a price card ── */
 .lp-plan {
-  padding: clamp(4px, 1vw, 10px) clamp(18px, 4vw, 40px) clamp(48px, 7vw, 84px);
-}
-.lp-plan-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: clamp(30px, 4vw, 56px);
-  align-items: center;
-  padding-top: clamp(34px, 5vw, 60px);
-  border-top: 1px solid color-mix(in srgb, var(--c-border) 60%, transparent);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
+  gap: 16px;
+  align-items: start;
 }
-@media (min-width: 900px) {
-  .lp-plan-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: clamp(48px, 6vw, 88px); }
+.lp-price {
+  border: 1px solid var(--lp-line);
+  border-radius: var(--lp-r);
+  background: var(--lp-panel);
+  box-shadow: var(--lp-lit);
+  padding: 14px;
 }
+/* Price and CTA on their own inner panel, the list on the card itself: what it
+   costs is one decision, what you get is the supporting detail. */
+.lp-price-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 24px 22px;
+  border-radius: calc(var(--lp-r) - 10px);
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--c-trade) 20%, var(--c-surface-2)),
+    var(--c-surface-2)
+  );
+}
+.lp-price-free {
+  font-family: "Space Grotesk", "Manrope", system-ui, sans-serif;
+  font-size: clamp(1.5rem, 2.4vw, 2.1rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.lp-price-then { font-size: 0.92rem; font-weight: 600; color: var(--c-text); }
+.lp-price-alt { font-size: 0.82rem; color: var(--c-muted); margin-bottom: 14px; }
 
-.lp-plan-copy { min-width: 0; }
-.lp-eyebrow-plan { color: var(--c-trade); }
-.lp-eyebrow-dot-plan { background: var(--c-trade); }
-.lp-plan-h2 { margin: 16px 0 0; }
-.lp-plan-body { margin: 14px 0 0; font-size: 16px; line-height: 1.55; color: var(--c-muted); max-width: 480px; }
-
-.lp-plan-unlocks { list-style: none; margin: 22px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.lp-plan-unlocks li {
+.lp-price-list {
+  list-style: none;
+  margin: 0;
+  padding: 22px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.lp-price-list li,
+.lp-ask-list li {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  font-size: 14.5px;
+  gap: 11px;
+  font-size: 0.88rem;
   line-height: 1.45;
-  font-weight: 600;
-  color: var(--c-text);
+  color: var(--c-muted);
 }
-.lp-plan-check { color: var(--c-trade); margin-top: 3px; }
+.lp-check {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  flex: none;
+  margin-top: 1px;
+  background: color-mix(in srgb, var(--c-trade) 20%, transparent);
+  color: var(--c-trade);
+}
+.lp-check-plain { background: color-mix(in srgb, var(--c-muted) 16%, transparent); color: var(--c-muted); }
+.lp-check svg { width: 11px; height: 11px; }
 
-/* The free year leads and the price follows it in the same sentence: the offer
-   is "nothing for a year", and a figure quoted first would be read as the ask. */
-.lp-plan-price { margin: 24px 0 0; font-size: 16px; line-height: 1.5; color: var(--c-muted); }
-.lp-plan-free { color: var(--c-text); font-weight: 700; }
-.lp-plan-alt { margin: 5px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--c-muted); }
-
-/* ── The mock: a verified listing, and the ones without the mark ── */
-.lp-plan-visual { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
-.lp-plan-visual-label {
-  font-size: 11.5px;
+/* The directory row this buys, shown rather than described twice. */
+.lp-plan-mock {
+  border: 1px solid var(--lp-line-soft);
+  border-radius: var(--lp-r);
+  background: color-mix(in srgb, var(--c-surface) 60%, transparent);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.lp-mock-label {
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.62rem;
   font-weight: 700;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  margin-bottom: 4px;
+}
+.lp-mock-card {
+  position: relative;
+  border: 1px solid color-mix(in srgb, var(--c-mutual) 34%, transparent);
+  border-radius: var(--lp-r-card);
+  background: var(--c-surface);
+  overflow: hidden;
+  padding-bottom: 14px;
+}
+.lp-mock-banner {
+  height: 42px;
+  background: linear-gradient(120deg, var(--c-trade), var(--c-accent));
+  opacity: 0.5;
+}
+.lp-mock-avatar {
+  position: absolute;
+  top: 22px;
+  left: 16px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--c-surface-2);
+  border: 2px solid var(--c-surface);
+  color: var(--c-muted);
+}
+.lp-mock-avatar svg { width: 20px; height: 20px; }
+.lp-mock-body { padding: 12px 16px 0 64px; display: flex; flex-direction: column; gap: 3px; }
+.lp-mock-top { display: flex; align-items: center; gap: 7px; }
+.lp-mock-name { font-weight: 700; font-size: 0.9rem; }
+.lp-mock-check {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--c-mutual);
+  color: var(--c-on-accent);
+  flex: none;
+}
+.lp-mock-check svg { width: 9px; height: 9px; }
+.lp-mock-meta { font-size: 0.74rem; color: var(--c-muted); }
+
+.lp-mock-ghost {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--lp-line-soft);
+  border-radius: var(--lp-r-card);
+  padding: 14px;
+  opacity: 0.45;
+}
+.lp-mock-ghost-mark { width: 34px; height: 34px; border-radius: 10px; background: var(--c-skeleton); flex: none; }
+.lp-mock-ghost-lines { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.lp-mock-bar { height: 7px; border-radius: 999px; background: var(--c-skeleton); width: 62%; }
+.lp-mock-bar-short { width: 38%; }
+
+/* ── The two asks, side by side ── */
+.lp-asks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.lp-panel-ask {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: clamp(24px, 3vw, 34px);
+}
+.lp-ask-glyph {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--c-surface-2);
+  margin-bottom: 2px;
+}
+.lp-ask-glyph svg { width: 22px; height: 22px; }
+.lp-ask-glyph-discord { color: #5865f2; }
+.lp-ask-glyph-kofi { color: #ff5e5b; }
+.lp-ask-h { font-size: clamp(1.15rem, 1.8vw, 1.5rem); letter-spacing: -0.02em; }
+.lp-ask-body { font-size: 0.88rem; line-height: 1.55; color: var(--c-muted); margin: 0; }
+.lp-ask-list { list-style: none; margin: 2px 0 auto; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.lp-panel-ask .lp-btn { margin-top: 16px; }
+
+/* ── Footer ── */
+.lp-footer { margin-top: clamp(64px, 9vw, 118px); }
+
+.lp-builtwith {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 3vw, 40px);
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 22px 24px;
+  border: 1px solid var(--lp-line-soft);
+  border-radius: var(--lp-r);
+  background: var(--lp-panel);
+  text-decoration: none;
+  transition: border-color 0.18s ease;
+}
+.lp-builtwith:hover { border-color: var(--lp-line); }
+.lp-builtwith-title {
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+}
+.lp-builtwith-logos {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 2.6vw, 34px);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.lp-builtwith-logo {
+  display: inline-flex;
+  align-items: center;
+  color: var(--c-muted);
+  opacity: 0.72;
+  transition: opacity 0.18s ease;
+}
+.lp-builtwith:hover .lp-builtwith-logo { opacity: 1; }
+.lp-builtwith-logo svg { height: 19px; width: auto; }
+.lp-builtwith-img { height: 19px; width: auto; object-fit: contain; display: block; }
+.lp-builtwith-wordmark { font-weight: 700; font-size: 0.88rem; letter-spacing: -0.01em; }
+
+.lp-footer-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(24px, 4vw, 56px);
+  padding: clamp(40px, 5vw, 66px) 0 clamp(32px, 4vw, 48px);
+}
+.lp-footer-brand { display: flex; flex-direction: column; gap: 12px; }
+.lp-footer-brand-row { display: flex; align-items: center; gap: 10px; }
+.lp-footer-blurb { font-size: 0.86rem; line-height: 1.6; color: var(--c-muted); margin: 0; max-width: 40ch; }
+.lp-footer-col { display: flex; flex-direction: column; gap: 10px; }
+.lp-footer-col-title {
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--c-muted);
   margin-bottom: 2px;
 }
-
-.lp-plan-card {
-  position: relative;
-  border: 1.5px solid color-mix(in srgb, var(--c-trade) 55%, var(--c-border));
-  border-radius: 16px;
-  background: var(--c-surface);
-  overflow: hidden;
-  box-shadow: var(--c-shadow, 0 18px 44px -16px rgba(104, 48, 168, 0.28));
-}
-.lp-plan-card-banner {
-  height: 58px;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--c-trade) 26%, var(--c-surface-2)), var(--c-surface-2));
-}
-.lp-plan-card-avatar {
-  position: absolute;
-  top: 34px;
-  left: 14px;
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: var(--c-surface-2);
-  border: 2.5px solid var(--c-surface);
-  color: var(--c-trade);
-}
-.lp-plan-card-avatar svg { width: 22px; height: 22px; }
-
-.lp-plan-card-body { padding: 26px 14px 14px; display: flex; flex-direction: column; gap: 4px; }
-.lp-plan-card-top { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.lp-plan-card-name {
-  font-weight: 700;
-  font-size: 14.5px;
-  color: var(--c-text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.lp-plan-card-check {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 17px;
-  height: 17px;
-  border-radius: 50%;
-  background: var(--c-mutual);
-  color: var(--c-on-accent);
-}
-.lp-plan-card-check svg { width: 11px; height: 11px; }
-.lp-plan-card-meta { font-size: 12px; color: var(--c-muted); }
-
-/* The listings that did not claim theirs. Blank rather than invented: naming
-   them would be putting words in a real shop's mouth, and the point they make
-   is only about position. */
-.lp-plan-ghost {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 12px 14px;
-  border: 1px solid color-mix(in srgb, var(--c-border) 55%, transparent);
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--c-surface) 45%, transparent);
-}
-.lp-plan-ghost:last-child { opacity: 0.55; }
-.lp-plan-ghost-mark {
-  flex: none;
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
-  background: color-mix(in srgb, var(--c-muted) 22%, transparent);
-}
-.lp-plan-ghost-lines { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
-.lp-plan-ghost-bar { height: 8px; border-radius: 99px; background: color-mix(in srgb, var(--c-muted) 22%, transparent); }
-.lp-plan-ghost-bar-short { width: 42%; }
-
-/* ── Donate / support ── */
-.lp-donate { padding: clamp(4px, 1vw, 10px) clamp(18px, 4vw, 40px) clamp(48px, 7vw, 84px); }
-.lp-donate-panel {
-  position: relative;
-  overflow: hidden;
-  border-radius: 24px;
-  border: 1px solid color-mix(in srgb, #ff5e5b 42%, var(--c-border));
-  background: linear-gradient(150deg, color-mix(in srgb, #ff5e5b 13%, var(--c-surface)), var(--c-surface) 68%);
-  box-shadow: var(--c-shadow-card, 0 1px 2px rgba(28, 8, 82, 0.05));
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: clamp(20px, 3vw, 40px);
-  padding: clamp(28px, 4vw, 52px);
-}
-.lp-donate-glow {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(520px 320px at 90% 8%, color-mix(in srgb, #ff5e5b 28%, transparent), transparent 70%);
-}
-.lp-donate-copy { position: relative; flex: 1 1 400px; min-width: 280px; }
-.lp-eyebrow-donate { color: #ff5e5b; }
-.lp-eyebrow-dot-donate { background: #ff5e5b; }
-.lp-donate-h2 { margin: 16px 0 0; }
-.lp-donate-body { margin: 14px 0 0; font-size: 16px; line-height: 1.55; color: var(--c-muted); max-width: 460px; }
-.lp-donate-bullets { list-style: none; margin: 20px 0 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
-.lp-donate-bullets li { display: flex; align-items: center; gap: 9px; font-size: 14.5px; font-weight: 600; color: var(--c-text); }
-.lp-donate-check { color: #ff5e5b; }
-.lp-btn-donate {
-  background: #ff5e5b;
-  color: #fff;
-  margin-top: 26px;
-  box-shadow: 0 14px 30px -12px rgba(255, 94, 91, 0.6);
-}
-.lp-btn-donate:hover { filter: brightness(1.08); transform: translateY(-1px); }
-.lp-donate-glyph { width: 21px; height: 21px; }
-.lp-donate-visual { position: relative; flex: 0 0 auto; display: grid; place-items: center; padding: 4px; }
-.lp-donate-logo {
-  display: grid;
-  place-items: center;
-  width: clamp(116px, 15vw, 164px);
-  height: clamp(116px, 15vw, 164px);
-  border-radius: 32px;
-  background: #ff5e5b;
-  color: #fff;
-  box-shadow: 0 24px 60px -18px rgba(255, 94, 91, 0.7);
-}
-.lp-donate-logo svg { width: 52%; height: 52%; }
-
-@media (prefers-reduced-motion: reduce) {
-  .lp-btn-donate:hover { transform: none; }
-}
-
-/* ── Footer ── */
-.lp-footer { border-top: 1px solid color-mix(in srgb, var(--c-border) 55%, transparent); background: var(--c-surface); }
-
-/* Built-with / partners logo strip */
-.lp-builtwith-strip {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 4px clamp(18px, 4vw, 40px) clamp(20px, 3vw, 28px);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 14px 24px;
+.lp-footer-link {
   text-decoration: none;
-}
-.lp-builtwith-title {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
   color: var(--c-muted);
+  font-size: 0.86rem;
+  transition: color 0.16s ease;
 }
-.lp-builtwith-logos { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 26px; }
-.lp-builtwith-logo { display: inline-flex; align-items: center; color: var(--c-muted); transition: color 0.18s ease; }
-.lp-builtwith-strip:hover .lp-builtwith-logo { color: var(--c-text); }
-.lp-builtwith-logo svg { height: 20px; width: auto; display: block; }
-.lp-builtwith-img { height: 18px; width: auto; max-width: 110px; object-fit: contain; display: block; }
-.lp-builtwith-wordmark { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 16px; letter-spacing: -0.4px; }
+.lp-footer-link:hover { color: var(--c-text); }
 
-@media (prefers-reduced-motion: reduce) {
-  .lp-builtwith-logo { transition: none; }
-}
-.lp-footer-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: clamp(36px, 5vw, 56px) clamp(18px, 4vw, 40px);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 36px 56px;
-  justify-content: space-between;
-}
-.lp-footer-brand { max-width: 300px; }
-.lp-footer-brand-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-.lp-footer-blurb { margin: 0; font-size: 14px; line-height: 1.55; color: var(--c-muted); }
-.lp-footer-col { display: flex; flex-direction: column; gap: 11px; }
-.lp-footer-col-title { font-weight: 700; font-size: 13px; letter-spacing: 0.4px; text-transform: uppercase; color: var(--c-text); margin-bottom: 2px; }
-.lp-footer-link { font-size: 14px; color: var(--c-muted); text-decoration: none; font-weight: 600; transition: color 0.15s ease; }
-.lp-footer-link:hover { color: var(--c-accent); }
-.lp-footer-sub { border-top: 1px solid color-mix(in srgb, var(--c-border) 45%, transparent); }
-.lp-footer-sub-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 18px clamp(18px, 4vw, 40px);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
-  justify-content: space-between;
-}
-.lp-copyright { font-size: 13px; color: var(--c-muted); }
+.lp-footer-sub { border-top: 1px solid var(--lp-line-soft); padding: 20px 0 26px; }
+.lp-footer-sub-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; }
+.lp-copyright { font-size: 0.8rem; color: var(--c-muted); margin-right: auto; }
 
-/* ── Keyframes (scoped is fine — referenced only here) ── */
-@keyframes ofo-pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.12); opacity: 0.8; }
+/* ── Reveal ────────────────────────────────────────────────────────────────
+   `.lp-reveal` is applied by JS, never here, so the pre-rendered HTML ships
+   visible and a reader without JS never meets an opacity-0 page. */
+.lp-reveal {
+  opacity: 0;
+  transform: translateY(14px);
 }
-@keyframes ofo-ring {
-  0% { box-shadow: 0 0 0 0 var(--c-ring); }
-  70% { box-shadow: 0 0 0 13px transparent; }
-  100% { box-shadow: 0 0 0 0 transparent; }
-}
-@keyframes ofo-marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+.lp-reveal.lp-in {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lp-marquee-track,
-  .lp-match-found,
-  .lp-match-found-dot,
-  .lp-swap-ring { animation: none; }
-  .lp-feature,
-  .lp-btn { transition: none; }
+  .lp-marquee-track { animation: none; }
+  .lp-caret { animation: none; }
+  .lp-card:hover { transform: none; }
+  .lp-panel-axis:hover .lp-axis-card-give,
+  .lp-panel-axis:hover .lp-axis-card-get { transform: none; }
+  .lp-reveal,
+  .lp-reveal.lp-in { opacity: 1; transform: none; transition: none; }
+}
+
+/* Keyboard focus stays visible on every interactive element, including the
+   ones that are links dressed as cards. */
+.landing :where(a, button):focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 3px;
+  border-radius: var(--lp-r-sm);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1000px) {
+  .lp-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lp-plan { grid-template-columns: minmax(0, 1fr); }
+  .lp-result-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .lp-features,
+  .lp-people,
+  .lp-asks { grid-template-columns: minmax(0, 1fr); }
+  .lp-footer-grid { grid-template-columns: minmax(0, 1fr); }
+  .lp-card-visual { height: 176px; }
+  .lp-marquee-cell { width: 148px; }
+  .lp-btn-lg { padding: 8px 8px 8px 20px; font-size: 0.94rem; }
+}
+@media (max-width: 520px) {
+  .lp-steps { grid-template-columns: minmax(0, 1fr); }
+  .lp-result-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lp-cta-row { width: 100%; flex-direction: column; }
+  .lp-cta-row .lp-btn { justify-content: space-between; width: 100%; }
+  .lp-match { width: 100%; max-width: 300px; }
 }
 </style>

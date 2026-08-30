@@ -5,6 +5,9 @@ import de from "./locales/de.json";
 import it from "./locales/it.json";
 
 const SUPPORTED = ["en", "fr", "de", "it"];
+// Each language named in itself — a reader looking for their own language scans
+// for the word they already know, not for its English translation.
+const LANG_LABELS = { en: "English", fr: "Français", de: "Deutsch", it: "Italiano" };
 const STORAGE_KEY = "lang";
 
 /** Pick the best locale: saved preference → browser language → 'en'. */
@@ -63,4 +66,4 @@ export function persistLocale(lang) {
   }
 }
 
-export { SUPPORTED, detectLocale };
+export { SUPPORTED, LANG_LABELS, detectLocale };

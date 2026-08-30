@@ -55,7 +55,13 @@ onMounted(() => {
       :style="{ left: pos.left + 'px', top: pos.top + 'px', width: PANEL_W + 'px' }"
       aria-hidden="true"
     >
-      <CardInfoPanel :card="card" :image-id="hoverState.id" clamp-desc cropped />
+      <CardInfoPanel
+        :card="card"
+        :image-id="hoverState.id"
+        :highlight="hoverState.highlight"
+        clamp-desc
+        cropped
+      />
     </div>
   </teleport>
 </template>

@@ -164,18 +164,23 @@ const cardOf = (row) => row.selected ?? row.card ?? null;
 <style scoped>
 /* .field-label / .field-input live in CreateAnnounceDialog's scoped styles and
    do not cross into this component, so the shared field look is restated here.
-   Keep in sync with that file if the form styling changes. */
+   Keep in sync with that file if the form styling changes.
+   The colours are not restated: --an-kind and --an-line are custom properties
+   set on the dialog shell, and custom properties inherit through scoping, so
+   the want list picks up the pink of the Looking For form it only ever appears
+   in. The fallbacks cover this being mounted anywhere else. */
 .field-label {
-  font-size: 11px;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 10.5px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--c-muted);
 }
 .field-input {
   width: 100%;
-  background: var(--c-surface);
-  border: 1.5px solid var(--c-border);
+  background: var(--c-input-bg);
+  border: 1.5px solid var(--an-line, var(--c-border));
   border-radius: 12px;
   padding: 10px 13px;
   font-size: 13.5px;
@@ -184,8 +189,8 @@ const cardOf = (row) => row.selected ?? row.card ?? null;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .field-input:focus {
-  border-color: var(--c-trade);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-trade) 15%, transparent);
+  border-color: var(--an-kind, var(--c-accent));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--an-kind, var(--c-accent)) 15%, transparent);
 }
 .field-input::placeholder { color: var(--c-muted); opacity: 0.5; font-size: 13px; }
 .field-input:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -198,15 +203,20 @@ const cardOf = (row) => row.selected ?? row.card ?? null;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 11px;
-  border-radius: 8px;
-  border: 1px solid var(--c-border);
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 9px;
+  border: 1px solid var(--an-line, var(--c-border));
   background: var(--c-surface-2);
   color: var(--c-text);
+  font-family: inherit;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+  transition: border-color 0.15s ease;
 }
+.wl-btn:hover:not(:disabled) { border-color: var(--an-kind, var(--c-accent)); }
+.wl-btn:focus-visible { outline: 2px solid var(--an-kind, var(--c-accent)); outline-offset: 2px; }
 .wl-btn:disabled { opacity: .5; cursor: default; }
 .wl-clear {
   background: none;

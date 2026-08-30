@@ -53,19 +53,14 @@ onMounted(async () => {
 
 <template>
   <section v-if="loading || enough" class="flex flex-col gap-4">
-    <div class="flex items-center gap-3">
-      <v-icon icon="mdi-account-group" size="18" style="color: var(--c-accent)" />
-      <p class="text-xl uppercase font-semibold tracking-wide" style="color: var(--c-text)">
-        {{ t("people.sectionTitle") }}
-      </p>
-      <span class="text-xs px-2 py-1 rounded border" style="color: var(--c-muted); border-color: var(--c-border)">
-        {{ t("people.sectionHint") }}
-      </span>
-    </div>
+    <p class="hm-eyebrow">
+      <v-icon icon="mdi-account-group" size="14" />{{ t("people.sectionTitle") }}
+      <span class="hm-eyebrow__sep">·</span>{{ t("people.sectionHint") }}
+    </p>
 
     <!-- Skeleton: two columns of three, the shape the real thing arrives in. -->
     <div v-if="loading" class="st-cols">
-      <div v-for="c in 2" :key="c" class="flex flex-col gap-2">
+      <div v-for="c in 2" :key="c" class="st-panel">
         <div
           v-for="j in 3"
           :key="j"
@@ -78,10 +73,12 @@ onMounted(async () => {
     <div v-else class="st-cols">
       <!-- Deepest piles first: on this page the useful question is who to trade
            with, and that is answered by who has the most up for trade. -->
-      <div class="flex flex-col gap-1">
+      <div class="st-panel">
         <p class="st-col-title">{{ t("people.pilesTitle") }}</p>
-        <a v-for="(p, i) in topPiles" :key="p.id" :href="traderHref(p.id)" class="st-person">
-          <span class="st-rank" aria-hidden="true">{{ i + 1 }}</span>
+        <!-- No rank numbers. Pile sizes tie constantly (224, 6, 6), so numbering
+             them states an order the data does not have — and the count on each
+             row is the fact, which implies the order anyway. -->
+        <a v-for="p in topPiles" :key="p.id" :href="traderHref(p.id)" class="st-person">
           <span class="st-avatar">
             <img v-if="p.avatar_url" :src="p.avatar_url" alt="" loading="lazy" />
             <span v-else>{{ traderInitial(p.name) }}</span>
@@ -91,7 +88,7 @@ onMounted(async () => {
         </a>
       </div>
 
-      <div class="flex flex-col gap-1">
+      <div class="st-panel">
         <p class="st-col-title">{{ t("people.newestTitle") }}</p>
         <a v-for="p in recentPeople" :key="p.id" :href="traderHref(p.id)" class="st-person">
           <span class="st-avatar">
@@ -107,7 +104,6 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div class="h-px w-full" style="background-color: var(--c-border)" />
   </section>
 </template>
 
@@ -115,42 +111,47 @@ onMounted(async () => {
 .st-cols {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 20px;
+  gap: 12px;
 }
 @media (min-width: 900px) {
-  .st-cols { grid-template-columns: 1fr 1fr; gap: 40px; }
+  .st-cols { grid-template-columns: 1fr 1fr; }
+}
+
+/* The landing page's panel: one tonal step under the page, a hairline that is a
+   fraction of the border token, and a 1px top highlight instead of a shadow. */
+.st-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+  background: var(--hm-panel);
+  border: 1px solid var(--hm-line-soft);
+  border-radius: 18px;
+  box-shadow: var(--hm-lit);
 }
 
 .st-col-title {
-  font-size: 11.5px;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 0.64rem;
   font-weight: 700;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--c-muted);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .st-person {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 10px;
-  margin: 0 -10px;
+  padding: 7px 9px;
+  margin: 0 -9px;
   border-radius: 10px;
   text-decoration: none;
   color: var(--c-text);
   transition: background 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-.st-person:hover { background: var(--c-surface); }
-
-.st-rank {
-  flex: none;
-  width: 14px;
-  font-size: 13px;
-  font-weight: 700;
-  color: color-mix(in srgb, var(--c-muted) 70%, transparent);
-  font-variant-numeric: tabular-nums;
-}
+.st-person:hover { background: color-mix(in srgb, var(--c-surface) 80%, transparent); }
 
 .st-avatar {
   flex: none;
@@ -161,12 +162,14 @@ onMounted(async () => {
   border-radius: 50%;
   overflow: hidden;
   background: var(--c-surface);
-  border: 1px solid var(--c-border);
+  border: 1px solid var(--hm-line);
   font-weight: 700;
   font-size: 14px;
   color: var(--c-accent);
 }
 .st-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.st-person:focus-visible { outline: 2px solid var(--c-accent); outline-offset: -2px; }
 
 /* min-width: 0 so a long name truncates rather than pushing the count off. */
 .st-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }

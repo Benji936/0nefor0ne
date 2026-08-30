@@ -11,7 +11,7 @@
 - **Card search** — search the full YGOProdeck database by name or set code; preview card detail, ATK/DEF, rarity, printings, and Cardmarket links directly from the results
 - **Trade pile & wishlist** — add cards to your collection with set, condition, language, and quantity; mark them as available for trade or add them to your wishlist
 - **Mutual match system** — the platform compares your trade pile against other users' wishlists (and vice versa) and surfaces mutual matches, one-sided matches, and traders who have what you want
-- **Propose a trade** — two-column negotiation UI to select which cards go on each side of the deal, then send directly to the other trader
+- **Propose a trade** — choose cards from another trader's binder, let them choose from yours, then confirm the same cards and terms before exchanging
 - **Notifications** — real-time bell indicator for incoming trade proposals
 - **Trader profiles** — avatar, location, trade history, and a direct "propose trade" shortcut
 - **Multilingual** — full UI and card data in English, French, German, and Italian; locale-prefixed URLs (`/en/`, `/fr/`, `/de/`, `/it/`) with hreflang SEO

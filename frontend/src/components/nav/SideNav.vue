@@ -10,6 +10,9 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
+import NotificationBell from "@/components/nav/NotificationBell.vue";
+import UserMenuChip from "@/components/nav/UserMenuChip.vue";
+import { SUPPORTED, LANG_LABELS } from "@/i18n.js";
 
 const props = defineProps({
   // Pinned state. Drives the rail width AND the content margin (owned by App).
@@ -19,11 +22,21 @@ const props = defineProps({
   page: { type: String, default: "search" },
   // Active trade sub-tab (matches | proposals | announces)
   activeTradeTab: { type: String, default: "matches" },
+  // Theme + language live here rather than in the top bar, so the rail holds
+  // every persistent app control and the bar is left to search. App still owns
+  // the state; the rail only reports the intent.
+  isDark: { type: Boolean, default: true },
 });
 
-const emit = defineEmits(["update:collapsed", "navigate", "matches", "tradeTab"]);
+const emit = defineEmits([
+  "update:collapsed", "navigate", "matches", "tradeTab",
+  "toggleTheme", "switchLang", "notifications", "logout", "login",
+]);
 
-const { t } = useI18n();
+// `locale` is the URL segment used to build in-app links; `currentLang` is the
+// active i18n language shown on the switcher. They agree in practice, but the
+// links must follow the URL and the label must follow what is being rendered.
+const { t, locale: currentLang } = useI18n();
 const route = useRoute();
 const locale = computed(() => route.params.locale || "en");
 
@@ -59,14 +72,44 @@ function activate(item) {
     class="side-nav fixed left-0 top-0 bottom-0 z-40"
     :class="{ 'side-nav--collapsed': collapsed }"
   >
-    <!-- Logo → home -->
-    <button class="sn-logo" :aria-label="$t('nav.search')" @click="emit('navigate', 'search')">
+    <!-- Head of the rail: who you are signed in as, and the menu of your own
+         things. Guests have no account to show, so they keep the logo — and
+         with it the way home. -->
+    <UserMenuChip
+      v-if="authenticated"
+      :login="authenticated"
+      placement="rail"
+      :collapsed="collapsed"
+      @navigate="emit('navigate', $event)"
+      @logout="emit('logout')"
+    />
+    <button v-else class="sn-logo" :aria-label="$t('nav.search')" @click="emit('navigate', 'search')">
       <img src="/logo.png" alt="One for One" class="sn-logo-img" />
       <span v-show="!collapsed" class="sn-wordmark">One for One</span>
     </button>
 
     <!-- Primary destinations (labels become tooltips when collapsed) -->
     <nav class="sn-list flex flex-col gap-1 mt-2">
+      <!-- Notifications sit above Search: what is waiting for you outranks
+           what you came to look for. Guests have nothing to be notified of. -->
+      <v-tooltip
+        v-if="authenticated"
+        location="right"
+        :text="t('notifications.title')"
+        :disabled="!collapsed"
+      >
+        <template #activator="{ props: tip }">
+          <div v-bind="tip" class="sn-bell-row">
+            <NotificationBell
+              :login="authenticated"
+              placement="rail"
+              @navigate="emit('notifications')"
+            />
+            <span v-show="!collapsed" class="sn-label sn-bell-label">{{ t('notifications.title') }}</span>
+          </div>
+        </template>
+      </v-tooltip>
+
       <template v-for="item in items" :key="item.key">
         <v-tooltip
           location="right"
@@ -112,6 +155,46 @@ function activate(item) {
     </nav>
 
     <div class="sn-footer mt-auto">
+      <!-- Theme -->
+      <v-tooltip
+        location="right"
+        :text="isDark ? $t('nav.lightMode') : $t('nav.darkMode')"
+        :disabled="!collapsed"
+      >
+        <template #activator="{ props: tip }">
+          <button v-bind="tip" class="sn-item" @click="emit('toggleTheme')">
+            <v-icon :icon="isDark ? 'mdi-white-balance-sunny' : 'mdi-moon-waning-crescent'" size="22" class="sn-ico" />
+            <span v-show="!collapsed" class="sn-label">{{ isDark ? $t('nav.lightMode') : $t('nav.darkMode') }}</span>
+          </button>
+        </template>
+      </v-tooltip>
+
+      <!-- Language. v-menu teleports to the body, which is what keeps the list
+           from being cut off by the rail's own overflow: hidden. -->
+      <v-menu location="right" offset="10" :close-on-content-click="true">
+        <template #activator="{ props: menu }">
+          <button v-bind="menu" class="sn-item" :title="$t('language.label')">
+            <v-icon icon="mdi-translate" size="22" class="sn-ico" />
+            <span v-show="!collapsed" class="sn-label sn-lang-label">
+              {{ LANG_LABELS[currentLang] }}
+              <span class="sn-lang-code">{{ currentLang }}</span>
+            </span>
+          </button>
+        </template>
+        <div class="sn-lang-menu">
+          <button
+            v-for="lang in SUPPORTED"
+            :key="lang"
+            class="sn-lang-opt"
+            :class="{ 'sn-lang-opt--active': lang === currentLang }"
+            @click="emit('switchLang', lang)"
+          >
+            <span class="sn-lang-code">{{ lang }}</span>
+            <span>{{ LANG_LABELS[lang] }}</span>
+          </button>
+        </div>
+      </v-menu>
+
       <v-tooltip
         location="right"
         :text="$t('nav.support')"
@@ -151,6 +234,27 @@ function activate(item) {
             </svg>
             <span v-show="!collapsed" class="sn-label">{{ $t('nav.joinDiscord') }}</span>
           </a>
+        </template>
+      </v-tooltip>
+
+      <!-- Sign out, or — for a guest — the way in. The top bar is gone on
+           desktop, so this row is the only sign-in affordance the rail offers. -->
+      <v-tooltip
+        location="right"
+        :text="authenticated ? $t('userMenu.signOut') : $t('nav.loginSignup')"
+        :disabled="!collapsed"
+      >
+        <template #activator="{ props: tip }">
+          <button
+            v-bind="tip"
+            class="sn-item sn-signout"
+            @click="emit(authenticated ? 'logout' : 'login')"
+          >
+            <v-icon :icon="authenticated ? 'mdi-logout' : 'mdi-login'" size="22" class="sn-ico" />
+            <span v-show="!collapsed" class="sn-label">
+              {{ authenticated ? $t('userMenu.signOut') : $t('nav.loginSignup') }}
+            </span>
+          </button>
         </template>
       </v-tooltip>
 
@@ -238,6 +342,55 @@ function activate(item) {
 .sn-subitem--active .sn-ico { color: var(--c-accent); }
 .sn-subitem:hover { opacity: 1; background: var(--c-surface-2); }
 
+/* The bell is its own component, so the row around it reproduces .sn-item's
+   geometry instead of wrapping it in one — a button inside a button is not
+   markup we can ship. */
+.sn-bell-row {
+  display: flex;
+  align-items: center;
+  /* The bell is a 36px square button with its own centring, so the padding and
+     gap here differ from .sn-item's 10/14 in order to land the glyph and the
+     label on exactly the same two columns as every item below it. */
+  padding: 0 4px;
+  gap: 8px;
+  height: 44px;
+  border-radius: 12px;
+}
+.side-nav--collapsed .sn-bell-row { justify-content: center; padding: 0; gap: 0; }
+.sn-bell-row:hover { background: var(--c-surface-2); }
+.sn-bell-label { color: var(--c-text); }
+
+.sn-lang-label { display: flex; align-items: center; gap: 8px; }
+.sn-lang-code {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--c-muted);
+}
+.sn-lang-menu {
+  display: flex;
+  flex-direction: column;
+  min-width: 150px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+}
+.sn-lang-opt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--c-text);
+}
+.sn-lang-opt:hover { background: var(--c-surface-2); }
+.sn-lang-opt--active { color: var(--c-accent); font-weight: 700; }
+.sn-lang-opt--active .sn-lang-code { color: var(--c-accent); }
+
 .sn-footer {
   display: flex;
   flex-direction: column;
@@ -260,6 +413,12 @@ function activate(item) {
 .sn-discord:hover {
   background: var(--c-surface-2);
 }
+/* Sign out / sign in: the one identity action in the rail, and the one row that
+   carries the accent — everything above it rests muted. */
+.sn-signout .sn-ico,
+.sn-signout .sn-label { color: var(--c-accent); }
+.sn-signout:hover { background: color-mix(in srgb, var(--c-accent) 8%, transparent); }
+
 .sn-toggle { color: var(--c-muted); }
 .sn-toggle .sn-label { font-weight: 500; }
 

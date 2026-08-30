@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { codeForCountry, canonicalCountry, COUNTRIES } from "./countries";
+import { codeForCountry, canonicalCountry, resolveCountry, COUNTRIES } from "./countries";
 
 describe("codeForCountry", () => {
   it("maps a country name to its ISO code", () => {
@@ -55,5 +55,45 @@ describe("canonicalCountry", () => {
   it("gives an alias the same code as the canonical name", () => {
     expect(codeForCountry("Republic of Indonesia")).toBe("ID");
     expect(codeForCountry("Bosnia and Herzegovina")).toBe("BA");
+  });
+});
+
+describe("resolveCountry", () => {
+  // The directory files every country in English, and the finder searches that
+  // column. Without this, a German reader typing their own country into a box
+  // that says "Laden, Stadt oder Land" got nothing back — and so did French and
+  // Italian. The names come from Intl rather than from a table nobody would
+  // remember to extend.
+  it("resolves a country written in the reader's language to the stored name", () => {
+    expect(resolveCountry("Deutschland", "de")?.name).toBe("Germany");
+    expect(resolveCountry("Allemagne", "fr")?.name).toBe("Germany");
+    expect(resolveCountry("Germania", "it")?.name).toBe("Germany");
+    expect(resolveCountry("Vereinigte Staaten", "de")?.name).toBe("United States");
+    expect(resolveCountry("Royaume-Uni", "fr")?.name).toBe("United Kingdom");
+    expect(resolveCountry("Giappone", "it")?.name).toBe("Japan");
+  });
+
+  it("still takes the English name whatever the reader's language", () => {
+    expect(resolveCountry("Germany", "de")?.name).toBe("Germany");
+    expect(resolveCountry("czechia", "fr")?.name).toBe("Czech Republic");
+  });
+
+  // An ISO code comes back from Intl unchanged when it has no display name, and
+  // indexing those would make "de" resolve to Germany — swallowing every shop
+  // with "de" in its name.
+  it("never resolves a bare country code", () => {
+    expect(resolveCountry("de", "de")).toBeNull();
+    expect(resolveCountry("US", "en")).toBeNull();
+  });
+
+  it("is null for something that is not a country, in any language", () => {
+    expect(resolveCountry("Augsburg", "de")).toBeNull();
+    expect(resolveCountry("", "de")).toBeNull();
+    expect(resolveCountry(null, "de")).toBeNull();
+  });
+
+  it("survives a locale tag the platform cannot parse", () => {
+    expect(() => resolveCountry("Germany", "not a locale")).not.toThrow();
+    expect(resolveCountry("Germany", "not a locale")?.name).toBe("Germany");
   });
 });

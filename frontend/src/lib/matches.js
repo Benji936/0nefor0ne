@@ -254,7 +254,6 @@ export async function fetchTrendingCards(limit = 8) {
   return data ?? [];
 }
 
-/** Fetch the full wishlist of any user. */
 /**
  * Just the card names on a user's wishlist.
  *
@@ -263,19 +262,45 @@ export async function fetchTrendingCards(limit = 8) {
  * because this runs alongside three other requests on every profile open.
  */
 export async function fetchWishlistNames(userId) {
+  return pileNames(userId, true, "fetchWishlistNames");
+}
+
+/**
+ * The names in someone's trade pile.
+ *
+ * The mirror of the above, and the other half of a trader page's table: their
+ * wishlist crossed with this tells the viewer which of their own cards the
+ * trader is hunting. Same shape, same cost, same status rule.
+ */
+export async function fetchTradePileNames(userId) {
+  return pileNames(userId, false, "fetchTradePileNames");
+}
+
+/**
+ * Distinct card names on one side of one person's collection.
+ *
+ * The status filter is the point. find_matches excludes traded and locked rows
+ * from both `me_wish` and `me_have`; the wishlist version of this query did
+ * not, so a profile page could report a match on a want the matches list had
+ * already retired. Written once so the two sides cannot drift apart again.
+ */
+async function pileNames(userId, wish, label) {
   if (!userId) return [];
   const { data, error } = await getClient()
     .from("Card")
     .select("name")
     .eq("trader", userId)
-    .eq("wish", true);
+    .eq("wish", wish)
+    .neq("status", "traded")
+    .neq("status", "locked");
   if (error) {
-    console.error("fetchWishlistNames failed", error);
+    console.error(`${label} failed`, error);
     return [];
   }
   return [...new Set((data ?? []).map((c) => c.name).filter(Boolean))];
 }
 
+/** Fetch the full wishlist of any user. */
 export async function fetchUserWishlist(userId) {
   const { data, error } = await getClient()
     .from("Card")

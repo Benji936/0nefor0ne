@@ -1,0 +1,66 @@
+name: Import Cardmarket prices
+
+# Cardmarket rebuilds its price guide once a day, in the small hours CET. This
+# reads that file plus the product catalogue and loads them into
+# cardmarket_product + cardmarket_price.
+#
+# Unlike the other data workflows here, this one commits nothing. Prices are a
+# feed, not a manifest: 86,000 numbers that change every morning would mean a
+# daily rebuild of all 777 prerendered pages to move some decimals, and two
+# people looking at the same trade could be served different values depending on
+# which deploy their browser had cached. The trade gap feeds a cash offset, so
+# it has to come from one place. See supabase/migrations/20260823_cardmarket_prices.sql.
+#
+# The importer refuses to write when the file looks wrong -- truncated download,
+# stale createdAt, too few priced products -- and exits non-zero, which fails
+# this job and leaves yesterday's prices in place. That is the intended
+# behaviour, not a flake: a wrong price is worse than an old one.
+
+on:
+  schedule:
+    # 06:15 UTC. Cardmarket's file is stamped around 02:44 CET, so this leaves a
+    # wide margin for a late rebuild without waiting a whole day for it.
+    - cron: "15 6 * * *"
+  workflow_dispatch: {}
+
+# Never let a scheduled run and a manual run upsert at the same time.
+concurrency:
+  group: cardmarket-prices
+  cancel-in-progress: false
+
+permissions:
+  contents: read # commits nothing, so no write access is needed
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # Only @supabase/supabase-js is needed; the downloads use global fetch.
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci --no-audit --no-fund
+
+      # Resolve and report without writing. Cheap, and it puts the coverage
+      # numbers in the log next to the run that used them, so a drop in how many
+      # printings resolve is visible before anyone goes looking for it.
+      - name: Resolve (dry run)
+        working-directory: frontend
+        run: node scripts/cardmarket-import.mjs --dry-run --report
+
+      - name: Import
+        working-directory: frontend
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/cardmarket-import.mjs

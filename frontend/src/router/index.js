@@ -7,7 +7,12 @@ import LandingPage from "@/components/Pages/Public/LandingPage.vue";
 // Pages shared by every locale
 const localeChildren = [
   { path: "",          name: "home",        component: LandingPage },
-  { path: "library",   name: "library",     component: () => import(/* webpackChunkName: "library" */     "@/components/Pages/App/Library.vue") },
+  // Which half of the binder is open is a param, not local state, for the same
+  // reasons as the trade centre's `:tab`: it keeps one component mounted across
+  // a switch, it is linkable (the account page's two collection tiles each point at
+  // their own half), and it survives a refresh. Optional, so existing
+  // `{ name: 'library' }` links still resolve — Library rewrites the bare path.
+  { path: "library/:pile(trade|wishlist)?", name: "library", component: () => import(/* webpackChunkName: "library" */     "@/components/Pages/App/Library.vue") },
   { path: 'community', name: 'community',   component: () => import(/* webpackChunkName: "community" */   '@/components/Pages/App/CommunityDirectory.vue') },
   { path: 'community/:slug', name: 'communityProfile', component: () => import(/* webpackChunkName: "community-profile" */ '@/components/Pages/App/CommunityProfile.vue') },
   // Verification is its own route rather than a dialog because the flow leaves

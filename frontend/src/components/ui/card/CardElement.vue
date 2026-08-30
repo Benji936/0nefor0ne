@@ -1,8 +1,11 @@
 <script setup>
 import LanguageTooltip from '@/components/tooltips/LanguageTooltip.vue';
 import ConditionTooltip from '@/components/tooltips/ConditionTooltip.vue';
+import CardPrice from '@/components/trade/CardPrice.vue';
+import PrintingPicker from '@/components/trade/PrintingPicker.vue';
+import { RANGE } from '@/lib/cardmarketPrice';
 import { cardImage } from '@/lib/cardImage';
-defineEmits(['deleted', 'move']);
+defineEmits(['deleted', 'move', 'printing-picked']);
 </script>
 
 <template>
@@ -10,6 +13,7 @@ defineEmits(['deleted', 'move']);
        parent TransitionGroup from running a leave/enter on the root (which flashed
        both layouts during a view switch). -->
   <div class="ce-root">
+  <PrintingPicker v-model="pickerOpen" :card="wish" @picked="$emit('printing-picked', $event)" />
   <!-- ── Compact list row (basic view) ── -->
   <div
     v-if="layout === 'list'"
@@ -42,7 +46,7 @@ defineEmits(['deleted', 'move']);
         <LanguageTooltip v-if="wish.language" :language="wish.language" />
         <v-tooltip v-if="wish.rarity" :text="wish.rarity" location="top">
           <template #activator="{ props: tip }">
-            <span v-bind="tip" class="!py-0.5 px-1 rounded text-[11px] h-fit bg-amber-900/50 text-amber-300 cursor-default">{{ shortenRarity(wish.rarity) }}</span>
+            <span v-bind="tip" class="ce-rarity cursor-default">{{ shortenRarity(wish.rarity) }}</span>
           </template>
         </v-tooltip>
         <a
@@ -54,6 +58,25 @@ defineEmits(['deleted', 'move']);
         ><v-icon icon="mdi-open-in-new" size="12" />{{ wish.extension }}</a>
       </div>
     </div>
+
+    <!-- What it is worth. Right of the meta and left of the quantity, so a
+         scrolled binder reads as a column of figures rather than a price
+         buried among the chips.
+
+         When the printing is unknown the figure itself is the prompt: the wide
+         range is the reason to answer, so the answer is offered on it rather
+         than parked in a separate control somebody has to notice. -->
+    <button
+      v-if="price && price.kind === RANGE"
+      type="button"
+      class="ce-price ce-price--ask shrink-0"
+      :title="$t('price.whichPrinting')"
+      @click.stop="pickerOpen = true"
+    >
+      <CardPrice :price="price" size="sm" />
+      <span class="ce-ask">{{ $t('price.pickPrinting') }}</span>
+    </button>
+    <CardPrice v-else-if="price" :price="price" size="sm" class="ce-price shrink-0" />
 
     <!-- Move to another wishlist -->
     <v-menu v-if="canFile" location="bottom end">
@@ -80,7 +103,7 @@ defineEmits(['deleted', 'move']);
     </v-menu>
 
     <!-- Quantity / locked status -->
-    <div class="shrink-0">
+    <div class="shrink-0 ce-qty">
       <div
         v-if="wish.status === 'locked'"
         class="flex items-center gap-1.5 rounded-md px-2 !py-1.5"
@@ -133,13 +156,23 @@ defineEmits(['deleted', 'move']);
 
     <!-- Data -->
     <div class="flex flex-col gap-2 px-3 pt-2 pb-1" style="background-color: var(--c-surface)">
-      <p class="font-semibold text-xs leading-tight truncate" style="color: var(--c-text)">{{ wish.name }}</p>
+      <div class="flex items-baseline gap-2 min-w-0">
+        <p class="font-semibold text-xs leading-tight truncate flex-1" style="color: var(--c-text)">{{ wish.name }}</p>
+        <button
+          v-if="price && price.kind === RANGE"
+          type="button"
+          class="ce-price--ask shrink-0"
+          :title="$t('price.whichPrinting')"
+          @click.stop="pickerOpen = true"
+        ><CardPrice :price="price" size="sm" /></button>
+        <CardPrice v-else-if="price" :price="price" size="sm" class="shrink-0" />
+      </div>
       <div class="flex flex-wrap gap-3">
         <ConditionTooltip v-if="wish.condition" :condition="wish.condition" />
         <LanguageTooltip v-if="wish.language" :language="wish.language" />
         <v-tooltip v-if="wish.rarity" :text="wish.rarity" location="top">
           <template #activator="{ props: tip }">
-            <span v-bind="tip" class="py-1 px-1 rounded text-xs h-fit bg-amber-900/50 text-amber-300 cursor-default">{{ shortenRarity(wish.rarity) }}</span>
+            <span v-bind="tip" class="ce-rarity cursor-default">{{ shortenRarity(wish.rarity) }}</span>
           </template>
         </v-tooltip>
         <a
@@ -214,6 +247,10 @@ export default {
   props: {
     wish:   { required: true },
     layout: { default: 'list' },
+    // What Cardmarket says this printing is worth, already resolved by the
+    // page. Passed in rather than fetched here: a binder renders hundreds of
+    // these, and one request per row would be hundreds of requests.
+    price:  { type: Object, default: null },
     // Named wishlists this card could be filed under. Empty for a trade-pile
     // card, which has no lists — the control hides itself rather than offering
     // somewhere to put something that cannot go there.
@@ -221,6 +258,7 @@ export default {
   },
   data() {
     return {
+      pickerOpen: false,
       quantityCount: this.wish.quantity,
       reservedQty: 0,
       loadingReserved: false,
@@ -302,6 +340,63 @@ export default {
 </script>
 
 <style scoped>
+/* ── Price in a list row ──────────────────────────────────────────────────
+   A column on a wide row, its own line on a narrow one. At 375px a band like
+   "€72.26 – €158.68" is a third of the row: held beside the chips it squeezed
+   the name down to "Clo…" and pushed NM/EN/SR out from under it into the
+   figure. Below 620px the row wraps and the price takes the line under the
+   name, indented past the thumbnail so it still reads as belonging to it. */
+.ce-price { margin-left: auto; }
+
+/* The unknown-printing price is a control, so it looks like one on hover and
+   carries the question under the figure. Dashed, not solid: the number inside
+   it is provisional, and a solid button would present a range as an answer
+   rather than as the reason to give one. */
+.ce-price--ask {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 1px;
+  padding: 3px 8px; border-radius: 9px; cursor: pointer;
+  background: transparent;
+  border: 1px dashed color-mix(in srgb, var(--c-trade) 40%, transparent);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.ce-price--ask:hover {
+  background: color-mix(in srgb, var(--c-trade) 8%, transparent);
+  border-color: color-mix(in srgb, var(--c-trade) 65%, transparent);
+}
+.ce-price--ask:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
+.ce-ask {
+  font-size: 10px; font-weight: 700; color: var(--c-trade);
+  text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) { .ce-price--ask { transition: none; } }
+
+@media (max-width: 620px) {
+  .card-row { flex-wrap: wrap; row-gap: 8px; }
+  /* Thumbnail and name take the first line whole, so the name never has to
+     compete with a figure for width. Price and quantity then share the second
+     line -- the two things you act on, side by side, rather than stacked into a
+     third row that makes every card in the binder taller. */
+  .card-row > .min-w-0 { flex: 1 1 calc(100% - 62px); }
+  .ce-price { order: 5;  margin-left: 0; padding-left: 50px; }
+  .ce-qty   { order: 10; margin-left: auto; }
+}
+/* A rarity code is an identifier, so it is set like one: monospace, in the same
+   tinted-neutral chip the collection uses for its counts (DESIGN.md, The Mono
+   Identifier Rule). It used to be Tailwind amber — a hue outside the palette,
+   and at 1.8:1 on a light row it was not readable at all. */
+.ce-rarity {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+  height: fit-content;
+  color: var(--c-muted);
+  background: color-mix(in srgb, var(--c-muted) 14%, transparent);
+}
+
 /* Quiet until wanted: filing is a thing you do occasionally, and a button per
    card at full contrast would compete with the card itself. */
 .ce-file {

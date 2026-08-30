@@ -1,6 +1,5 @@
 {
   "nav": {
-    "searchPlaceholder": "Cerca carte o codici set…",
     "collection": "Collezione",
     "tradeMatches": "Corrispondenze scambio",
     "lightMode": "Modalità chiara",
@@ -14,7 +13,7 @@
     "decks": "Decks",
     "collapseMenu": "Comprimi menu",
     "expandMenu": "Espandi menu",
-    "joinDiscord": "Unisciti al nostro Discord",
+    "joinDiscord": "Discord",
     "support": "Sostienici"
   },
   "footer": {
@@ -57,7 +56,7 @@
       "eyebrowAuthed": "Bentornato",
       "productName": "One for One",
       "headline": "Scambia i doppioni.<br>Trova le carte che cerchi.",
-      "subheadline": "One for One mette in contatto i collezionisti Yu-Gi-Oh! che hanno ciò che gli altri cercano. Niente commissioni, niente aste  solo scambi diretti tra giocatori, con un motore di ricerca carte completo, un costruttore di deck e un tracker della collezione.",
+      "subheadline": "One for One mette in contatto i collezionisti Yu-Gi-Oh! che hanno ciò che gli altri cercano. Niente commissioni, niente aste  solo scambi diretti tra giocatori, con un motore di ricerca carte completo, un costruttore di deck e una lista desideri.",
       "ctaGetStarted": "Inizia  è gratis",
       "ctaGetStartedShort": "Inizia",
       "ctaGoToApp": "Vai all'app",
@@ -108,10 +107,10 @@
         "body": "Costruisci deck da zero o importa una lista  vedi esattamente cosa possiedi e cosa ti manca.",
         "cta": "Costruisci o importa un deck"
       },
-      "collection": {
-        "title": "Monitoraggio collezione",
-        "body": "Monitora i tuoi progressi in ogni set e scopri all'istante quali carte ti mancano ancora.",
-        "cta": "Monitora la collezione"
+      "piles": {
+        "title": "Lista desideri e mazzo di scambio",
+        "body": "Due liste: le carte che cerchi e quelle di cui ti privi. Ogni corrispondenza sul sito nasce dal loro confronto.",
+        "cta": "Crea le tue liste"
       },
       "trade": {
         "title": "Scambi",
@@ -171,7 +170,7 @@
       "colMore": "Altro",
       "search": "Cerca carte",
       "decks": "Deck",
-      "collection": "Monitoraggio collezione",
+      "piles": "Lista desideri e mazzo di scambio",
       "trade": "Scambi",
       "about": "Chi siamo",
       "privacy": "Privacy",
@@ -197,6 +196,10 @@
       "month": "{n} mese fa | {n} mesi fa",
       "year": "{n} anno fa | {n} anni fa"
     }
+  },
+  "home": {
+    "tradedIn": "In {count} scambio | In {count} scambi",
+    "alsoMoving": "Si muove anche"
   },
   "auth": {
     "signIn": "Accedi",
@@ -256,13 +259,14 @@
     "tradePileEmpty": "Nessuna carta da scambiare ancora. Aggiungine alcune per iniziare.",
     "wishlistEmpty": "La tua lista desideri è vuota. Aggiungi le carte che stai cercando.",
     "searchCards": "Cerca carte da aggiungere",
-    "emptyTrade": "Niente qui ancora  aggiungi carte che hai da offrire.",
-    "emptyWish": "Niente qui ancora  aggiungi carte che stai cercando.",
+    "emptyTrade": "Niente qui ancora — aggiungi carte che hai da offrire.",
+    "emptyWish": "Niente qui ancora — aggiungi carte che stai cercando.",
     "addedToWishlist": "\"{name}\" aggiunto alla lista desideri.",
     "addedToTrade": "\"{name}\" aggiunto al mazzo di scambio.",
     "viewLabel": "Vista collezione",
     "viewList": "Vista elenco",
-    "viewGrid": "Vista griglia"
+    "viewGrid": "Vista griglia",
+    "allLists": "Tutte le liste"
   },
   "addCard": {
     "addToTrade": "Aggiungi al mazzo di scambio",
@@ -327,6 +331,7 @@
   },
   "matches": {
     "loginRequired": "Accedi per vedere le tue corrispondenze di scambio.",
+    "near": "Vicino a",
     "allCountries": "Tutti i paesi",
     "city": "Città",
     "clearFilters": "cancella filtri",
@@ -338,11 +343,13 @@
     "theyWant": "Vogliono ciò che hai",
     "noMatchesTitle": "Nessuna corrispondenza ancora",
     "noMatchesDesc": "Più carte aggiungi al tuo mazzo e alla lista desideri, più trader troverai qui.",
+    "noneHereTitle": "Nessuna corrispondenza lì",
+    "noneHereDesc": "Lì nessuno si sovrappone al tuo raccoglitore. Allarga la ricerca per vedere il resto.",
     "goToCollection": "Vai alla mia collezione per aggiungere carte"
   },
   "announces": {
     "noAnnouncesTitle": "Nessun annuncio ancora",
-    "noAnnouncesDesc": "Sii il primo a pubblicare un annuncio!",
+    "noAnnouncesDesc": "Pubblica una carta che scambi, o una che stai cercando. Gli annunci restano {days} giorni.",
     "newAnnounce": "Nuovo annuncio",
     "search": "Cerca annunci...",
     "filterAll": "Tutti",
@@ -354,11 +361,12 @@
     "unknownSeller": "Venditore sconosciuto",
     "yourAnnounce": "Il tuo annuncio",
     "yourAnnounceHint": "Solo tu puoi eliminare o segnare come venduto",
-    "allAnnounces": "Tutti gli annunci",
+    "onTheBoard": "In bacheca",
     "noSearchResults": "Nessun annuncio corrisponde alla tua ricerca.",
     "onlyYours": "Nessun altro annuncio ancora, il tuo è il primo!",
     "noLookingForTitle": "Nessuna ricerca al momento",
     "noLookingForDesc": "Pubblica cosa stai cercando e lascia che siano i venditori a contattarti.",
+    "noSellingTitle": "Niente in vendita al momento",
     "newLookingFor": "Nuova ricerca"
   },
   "announce": {
@@ -370,6 +378,7 @@
     "currency": "Valuta",
     "images": "Foto",
     "addImages": "Aggiungi foto",
+    "coverPhoto": "Copertina",
     "maxImages": "Fino a {max} foto",
     "create": "Pubblica annuncio",
     "edit": "Modifica",
@@ -386,14 +395,17 @@
     "saveChanges": "Salva modifiche",
     "viewOnDiscord": "Vedi su Discord",
     "replyOnDiscord": "Rispondi su Discord",
-    "addToTradeList": "Aggiungi alla lista scambi",
-    "addToWishList": "Aggiungi alla lista desideri",
+    "addToTradeList": "Aggiungi alla pila di scambio",
+    "addToWishList": "Aggiungi alla lista dei desideri",
     "addedToList": "Aggiunto alla lista",
     "linkCard": "Collega una carta",
     "cardSearchPlaceholder": "Cerca per nome o codice (LOB-EN001)",
     "cardNotFound": "Nessuna carta trovata.",
     "cardSearchFailed": "Ricerca fallita. Riprova.",
     "cardLinkFailed": "Impossibile collegare la carta.",
+    "cardOptional": "Carta (facoltativo)",
+    "cardAddsToPile": "Pubblicando, la carta entra anche nella tua pila di scambio.",
+    "removeCard": "Rimuovi la carta",
     "kindSell": "Vendo",
     "kindLookingFor": "Cerco",
     "kindHint": "Stai vendendo una carta o ne stai cercando una?",
@@ -408,7 +420,6 @@
     "budget": "Budget",
     "budgetOptional": "Budget (facoltativo)",
     "budgetHint": "Lascia vuoto se preferisci parlarne.",
-    "photosOptionalLf": "Foto (facoltativo)",
     "createLookingFor": "Pubblica la ricerca",
     "lfBadge": "LF",
     "wantTooLong": "Troppo lungo insieme al nome dell'archetipo. Resta entro 120 caratteri totali.",
@@ -435,18 +446,13 @@
   },
   "proposals": {
     "done": "Completati",
-    "doneDesc": "Scambi confermati da entrambe le parti. Le carte hanno cambiato mano.",
-    "cancelled": "Annullati",
-    "cancelledDesc": "Scambi non andati a buon fine — ritirati o rifiutati.",
     "loginRequired": "Accedi per vedere le tue proposte.",
     "noProposalsTitle": "Nessuna proposta ancora",
     "noProposalsDesc": "Inviarne una dalla scheda Corrispondenze quando trovi un trader interessante.",
-    "incoming": "In arrivo",
-    "incomingDesc": "Questi trader vogliono fare uno scambio con te. Accetta o rifiuta.",
-    "outgoing": "Inviate",
-    "outgoingDesc": "In attesa di risposta dall'altro lato.",
-    "accepted": "In corso",
-    "acceptedDesc": "Entrambe le parti hanno accettato. Coordina e completa lo scambio."
+    "closed": "Chiusi",
+    "waitingOnYou": "{count} scambio aspetta te. | {count} scambi aspettano te.",
+    "nothingWaiting": "Al momento non c'è nulla in attesa.",
+    "findTraders": "Trova trader"
   },
   "proposal": {
     "openTradeAria": "Apri lo scambio #{id}",
@@ -492,10 +498,21 @@
     "waitingAccept": "In attesa della risposta di {name}.",
     "viewTrade": "Vedi lo scambio",
     "starLabel": "{n} stella | {n} stelle",
-    "viewProfileOf": "Vedi il profilo di {name}"
+    "viewProfileOf": "Vedi il profilo di {name}",
+    "yourMove": "Tocca a te",
+    "theirMove": "Tocca a loro",
+    "rate": "Valuta {name}",
+    "youRated": "Hai valutato {name}.",
+    "notChosenYet": "Non ancora scelte"
   },
   "proposeDialog": {
     "title": "Proponi uno scambio",
+    "requestCards": "Scegli dal raccoglitore di {name}",
+    "requestHelp": "Scegli le carte che ti interessano. Poi {name} guarderà il tuo raccoglitore.",
+    "returnHelp": "{name} ha richiesto carte dal tuo raccoglitore. Scegli cosa desideri in cambio.",
+    "theirBinder": "Raccoglitore di {name}",
+    "sendRequest": "Invia richiesta",
+    "sendSelection": "Invia la mia selezione",
     "editProposal": "Modifica proposta",
     "counterPropose": "Controproposta",
     "with": "con",
@@ -549,7 +566,18 @@
     "cardsToChooseFrom": "{count} tra cui scegliere",
     "youPayAmount": "Paghi €{amount}",
     "saveFailed": "Impossibile salvare la proposta. Riprova.",
-    "photoPreviewAlt": "Anteprima della foto di verifica"
+    "photoPreviewAlt": "Anteprima della foto di verifica",
+    "whichBinder": "Raccoglitore aperto",
+    "onTheTable": "Sul tavolo",
+    "nothingPickedYet": "Niente scelto. Clicca una carta per estrarla dal raccoglitore.",
+    "pointAtACard": "Punta una carta per cambiare la quantità o rimetterla a posto.",
+    "putBack": "Rimetti",
+    "putBackAria": "Rimetti {name} nel raccoglitore",
+    "oneMore": "Un {name} in più",
+    "oneFewer": "Un {name} in meno",
+    "pickedCardAria": "{name}, {count} selezionate",
+    "checkThePrice": "Guarda quanto vale questa stampa.",
+    "locked": "In uno scambio"
   },
   "tradeDetail": {
     "backToTrades": "Torna agli scambi",
@@ -577,9 +605,31 @@
     "confirmWithoutPhotos": "Mancano le foto di almeno una parte. Puoi confermare lo stesso — sono una traccia, non un requisito.",
     "waitingForConfirmDetail": "In attesa che {name} confermi.",
     "bothUploadedConfirmHint": "Entrambi hanno caricato  conferma quando hai ricevuto le tue carte.",
+    "chooseReturnCards": "Scegli carte dal suo raccoglitore",
+    "chooseReturnCardsHelp": "{name} ha scelto carte dal tuo raccoglitore. Ora scegli dal suo.",
+    "waitingForReturnSelection": "In attesa che {name} guardi il tuo raccoglitore e scelga le carte.",
+    "confirmAgreement": "Conferma questo accordo",
+    "changeCardsIWant": "Modifica le carte desiderate",
+    "suggestTerms": "Proponi condizioni",
+    "tradeMethod": "Metodo di scambio",
+    "cashPayer": "Chi paga la differenza?",
+    "termsSuggested": "Condizioni aggiornate. Entrambi devono confermare la nuova revisione.",
+    "confirmRevisionHelp": "Conferma le carte e i termini della revisione {revision}.",
+    "waitingAgreement": "La tua conferma è registrata. In attesa di {name}.",
+    "agreementConfirmed": "Accordo confermato.",
+    "agreementComplete": "Entrambe le parti sono d'accordo. Lo scambio è in corso.",
+    "valueDifference": "Differenza di valore",
     "photosVerifiedCanAccept": "Foto verificate  puoi ora accettare.",
     "declinePlaceholder": "Facoltativo  spiega perché rifiuti…",
-    "acceptWithoutPhotos": "Nessuna delle due parti ha mostrato le carte. Puoi accettare lo stesso, ma le foto sono l'unica traccia di ciò che è stato promesso."
+    "acceptWithoutPhotos": "Nessuna delle due parti ha mostrato le carte. Puoi accettare lo stesso, ma le foto sono l'unica traccia di ciò che è stato promesso.",
+    "phaseSelection": "Scelta carte",
+    "phaseAgreement": "Accordo",
+    "phaseExchange": "Scambio",
+    "phaseDone": "Concluso",
+    "tradeProgress": "A che punto è questo scambio",
+    "gapEven": "In equilibrio",
+    "gapYouAhead": "A tuo vantaggio",
+    "gapTheyAhead": "A vantaggio di {name}"
   },
   "tradeError": {
     "stale": "Questo scambio è cambiato da quando l'hai aperto. È stato appena aggiornato.",
@@ -602,10 +652,7 @@
     "binderCount": "{count} carta | {count} carte",
     "binderSearch": "Cerca carte",
     "binderWantedOnly": "Solo quello che cerco",
-    "binderShowing": "{shown} su {total}",
-    "binderLoadMore": "Carica altre {count}",
     "binderNoResults": "Nessuna carta corrisponde.",
-    "matchTitle": "{count} carta che cerchi | {count} carte che cerchi",
     "tabsLabel": "Sezioni del profilo",
     "loadFailed": "Impossibile caricare questo profilo.",
     "retry": "Riprova",
@@ -622,15 +669,27 @@
     "noLocationSet": "Posizione non impostata",
     "traderNotFound": "Trader non trovato.",
     "close": "Chiudi",
-    "proposeTrade": "Proponi scambio"
+    "proposeTrade": "Proponi scambio",
+    "joined": "Iscritto {when}",
+    "unrated": "Non ancora valutato",
+    "scopeLocal": "Scambia solo intorno a {place}.",
+    "scopeNational": "Scambia solo all'interno di {place}.",
+    "scopeElsewhere": "Il tuo account è in {place}.",
+    "blankTitle": "Ancora niente da scambiare",
+    "blankBody": "{name} non ha ancora messo nessuna carta in scambio.",
+    "blankBodyJoined": "{name} si è iscritto {when} e non ha ancora messo nessuna carta in scambio.",
+    "blankCta": "Trova i tuoi match",
+    "tableLabel": "Scambio possibile",
+    "binderPageOf": "Pagina {page} di {total}",
+    "binderPagesOf": "Pagine {first}–{last} di {total}",
+    "binderPrevPage": "Pagina precedente",
+    "binderNextPage": "Pagina successiva"
   },
   "userCard": {
-    "mutual": "Reciproco",
-    "hasYourWants": "Ha ciò che vuoi",
-    "wantsYours": "Vuole ciò che hai",
-    "match": "Match",
-    "theyHave": "Ha",
-    "theyWant": "Vuole",
+    "youGet": "Ricevi",
+    "theyGet": "Riceve",
+    "emptyYouGet": "Niente di suo è ancora nella tua lista dei desideri",
+    "emptyTheyGet": "Niente di tuo è ancora nella sua lista dei desideri",
     "propose": "Proponi",
     "anonymous": "Anonimo",
     "verifiedTrader": "Trader verificato"
@@ -706,8 +765,6 @@
     "backToSearch": "Torna alla ricerca",
     "cardNotFound": "Carta non trovata",
     "searchOther": "Cerca un'altra carta",
-    "traders": "Trader con questa carta",
-    "noTraders": "Nessuno sta scambiando questa carta.",
     "addToWishlist": "Aggiungi alla lista desideri",
     "addToTrade": "Aggiungi al mazzo di scambio",
     "printings": "Edizioni",
@@ -723,7 +780,20 @@
     "priceCm": "Cardmarket {price}",
     "showAllPrintings": "Mostra tutte le {count} edizioni",
     "showLess": "Mostra meno",
-    "seeArchetype": "Vedi tutte le carte {name}"
+    "seeArchetype": "Vedi tutte le carte {name}",
+    "marketTitle": "Questa carta in scambio",
+    "inTradePiles": "Pile di scambio",
+    "onWishlists": "Liste dei desideri",
+    "noneOffering": "Non ancora in nessuna pila di scambio.",
+    "noneHunting": "Non ancora in nessuna lista dei desideri.",
+    "artworkNumber": "Illustrazione {n}",
+    "findPrinting": "Trova {code} su Cardmarket",
+    "marketState": {
+      "none": "Nessuno scambia ancora questa carta qui",
+      "held": "Qualcuno qui ha questa carta",
+      "wanted": "Qualcuno qui cerca questa carta",
+      "both": "Qualcuno ce l'ha e qualcuno la cerca"
+    }
   },
   "setPage": {
     "title": "{setName}  Set Yu-Gi-Oh! | One for One",
@@ -752,7 +822,8 @@
     "anonymous": "Anonimo",
     "unknownLocation": "Posizione sconosciuta",
     "unknown": "Sconosciuto",
-    "noneYet": "Ancora nessuno"
+    "noneYet": "Ancora nessuno",
+    "save": "Salva"
   },
   "search": {
     "results": "Risultati",
@@ -839,15 +910,7 @@
   },
   "cardYugi": {
     "level": "Livello",
-    "tradersWithCard": "Trader con questa carta",
-    "tradersLookingForCard": "Trader in cerca di questa carta",
-    "noTraders": "Nessuno sta scambiando questa carta.",
-    "noTradersLookingForCard": "Nessuno sta cercando questa carta.",
-    "moreTraders": "+{count} altri trader",
-    "permalink": "Permalink",
-    "match": "Match",
-    "hasThisCard": "Ha questa carta",
-    "wantsYours": "Vuole le tue"
+    "permalink": "Permalink"
   },
   "cardElement": {
     "acceptedTrade": "Scambio accettato",
@@ -890,7 +953,12 @@
     "visibleToBoth": "Visibile a entrambi i trader",
     "noMessages": "Ancora nessun messaggio. Di' qualcosa!",
     "typeMessage": "Scrivi un messaggio…",
-    "readOnly": "La chat è di sola lettura."
+    "readOnly": "La chat è di sola lettura.",
+    "openWith": "Scrivi a {name}",
+    "readOnlyWith": "Messaggi con {name}",
+    "closeChat": "Chiudi la conversazione",
+    "newCount": "{count} nuovo | {count} nuovo | {count} nuovi",
+    "sinceOpened": "Nuovi da quando hai aperto la pagina"
   },
   "deckImport": {
     "title": "Importa deck (.ydk)",
@@ -910,50 +978,45 @@
     "error": "Impossibile leggere il file deck"
   },
   "deckDetail": {
-    "title": "Deck: {name}",
-    "backToDecks": "Back to Decks",
     "notFound": "Deck not found.",
-    "loading": "Loading deck…",
     "mainDeck": "Main Deck",
     "extraDeck": "Extra Deck",
     "sideDeck": "Side Deck",
-    "addMissingToWishlist": "Add missing to wishlist",
-    "allOwned": "You own all cards in this deck!",
-    "summary": "{total} cards · {owned} owned · {missing} missing",
-    "unrecognized": "{count} unrecognized",
-    "completionPct": "{pct}% completato",
-    "completionAria": "{owned} di {total} carte possedute, {pct}% completato",
-    "ownedSegment": "Posseduta",
-    "sourcedSegment": "Ottenuta",
-    "missingSegment": "Mancante",
-    "typeBreakdown": "Ripartizione per tipo",
-    "estimatedValue": "Valore stimato: {value}",
-    "estimatedApprox": "Approssimativo, basato sui prezzi più bassi elencati",
-    "priceUnavailable": "Prezzo non disponibile"
+    "allOwned": "Non manca nulla — questo deck è giocabile.",
+    "wishlistMissing": "Aggiungi le {n} mancanti alla wishlist",
+    "costToFinish": "circa {value} per finire",
+    "deckValue": "valore del deck {value}"
   },
   "decks": {
-    "title": "I miei Deck",
-    "empty": "Nessun deck ancora. Importa un file .ydk per iniziare.",
-    "importButton": "Importa deck (.ydk)",
+    "title": "I miei deck",
+    "importButton": "Importa un .ydk",
     "confirmName": "Nome del deck",
     "confirmImport": "Salva deck",
-    "sortByMissing": "Ordina per mancanti",
-    "totalCards": "{total} carte",
-    "ownedCount": "{owned} possedute",
-    "missingCount": "{missing} mancanti",
-    "addMissing": "Aggiungi {count} carta mancante alla lista desideri | Aggiungi {count} carte mancanti alla lista desideri",
     "migratePartialFail": "Non è stato possibile salvare {errors} deck.",
-    "allOwned": "Possiedi tutte le carte di questo deck",
-    "openDeck": "Apri il deck",
     "rename": "Rinomina",
     "delete": "Elimina deck",
     "deleteConfirm": "Eliminare questo deck?",
-    "guestBanner": "I tuoi deck sono salvati nel browser. Accedi per salvarli in modo permanente.",
+    "guestBanner": "Salvati in questo browser. Accedi per conservarli.",
     "migratePrompt": "Hai {count} deck salvato/i nel browser. Salvarli nel tuo account?",
     "migrateSave": "Salva nell'account",
     "migrateDiscard": "Scarta",
     "manageLink": "Salva e gestisci tutti i deck →",
-    "unrecognizedCount": "{count} sconosciuta/e"
+    "summaryDecks": "nessun deck | 1 deck | {n} deck",
+    "summaryCards": "niente più da trovare | 1 carta da trovare | {n} carte da trovare",
+    "imported": "{name} salvato",
+    "migrated": "Deck salvati sul tuo account",
+    "orderLabel": "Ordine",
+    "orderMissing": "Più mancanti",
+    "orderNewest": "Più recenti",
+    "emptyTitle": "Ancora nessun deck",
+    "emptyBody": "Trascina un file .ydk in un punto qualsiasi di questa pagina — esportato da EDOPro, YGOPRODeck o Master Duel — e ogni carta verrà confrontata con quelle che possiedi già.",
+    "wishlistMissing": "Wishlist {n}",
+    "tallyOwned": "{n} possedute",
+    "tallySourced": "{n} trovate altrove",
+    "tallyMissing": "{n} mancanti",
+    "tallyUnknown": "{n} illeggibili",
+    "tallyAria": "{owned} carte su {total} possedute, {missing} ancora mancanti",
+    "dropNow": "Rilascialo in un punto qualsiasi della pagina"
   },
   "meta": {
     "tradeDetail": {
@@ -961,8 +1024,8 @@
       "desc": "Consulta una proposta di scambio, le carte, le foto e le modalità."
     },
     "home": {
-      "title": "One for One  Scambio di carte Yu-Gi-Oh! tra giocatori",
-      "desc": "Scambia i doppioni Yu-Gi-Oh! e trova le carte che cerchi con One for One  scambi diretti tra giocatori, senza commissioni né aste, con un motore di ricerca carte completo, un costruttore di deck e un tracker della collezione."
+      "title": "One for One — Scambio di carte Yu-Gi-Oh! tra giocatori",
+      "desc": "Scambia i doppioni Yu-Gi-Oh! e trova le carte che cerchi con One for One — scambi diretti tra giocatori, senza commissioni né aste, con un motore di ricerca carte completo, un costruttore di deck e una lista desideri."
     },
     "search": {
       "title": "One for One  Scambio Carte Yu-Gi-Oh!",
@@ -1003,8 +1066,8 @@
       "desc": "Scopri ogni carta che un effetto Yu-Gi-Oh! può cercare, Evocare Specialmente o mandare al Cimitero. Esplora cosa può recuperare l'effetto di questa carta su One for One."
     },
     "built-with": {
-      "title": "Realizzato con & partner | One for One",
-      "desc": "I servizi che alimentano One for One e i marketplace dove i collezionisti comprano e vendono carte Yu-Gi-Oh!."
+      "title": "Sostieni One for One — gratis, senza commissioni",
+      "desc": "One for One non trattiene nulla sugli scambi. Due modi per aiutare: una donazione una tantum, o i tuoi acquisti tramite i nostri link, senza costi aggiuntivi."
     },
     "community": {
       "title": "Negozi & community",
@@ -1032,10 +1095,8 @@
     }
   },
   "deckIgnore": {
-    "ignore": "Ignora",
-    "unignore": "Ripristina",
-    "skippedBadge": "OTTENUTO",
-    "ignoredCount": "{n} ignorata/e"
+    "markSourced": "Segna {name} come trovata altrove",
+    "countAgain": "Conta di nuovo {name} come mancante"
   },
   "cards": {
     "title": "Sfoglia carte",
@@ -1063,7 +1124,8 @@
       "buttonWithCount": "Filtri ({count})",
       "activeLabel": "Filtri attivi"
     },
-    "emptyState": "Inizia a digitare il nome di una carta o applica un filtro per sfogliare il database."
+    "emptyState": "Cerca per nome della carta, o incolla un codice set.",
+    "searchPlaceholder": "Cerca carte o codici set…"
   },
   "combo": {
     "explore": "Esplora combo",
@@ -1239,23 +1301,26 @@
   },
   "builtWith": {
     "back": "Indietro",
-    "heading": "Realizzato con & partner",
-    "intro": "One for One è sviluppato e ospitato grazie a questi servizi e collabora con i marketplace dove i collezionisti comprano e vendono.",
-    "disclosure": "Alcuni link qui sotto sono link di referral. Se ti iscrivi o acquisti tramite questi link, sostieni One for One senza costi aggiuntivi per te.",
-    "groups": {
-      "marketplace": "Dove comprare",
-      "stack": "Realizzato con"
+    "heading": "One for One non trattiene nulla",
+    "intro": "Nessuna commissione sugli scambi, niente da pagare per pubblicare, nessun abbonamento. Tenerlo in piedi costa comunque — puoi dare una mano in due modi.",
+    "ways": {
+      "coffee": {
+        "eyebrow": "Ti costa un caffè",
+        "title": "Offrimi un caffè",
+        "body": "Una tantum tramite Ko-fi, senza registrarti. Va in hosting e dominio.",
+        "cta": "Sostienici su Ko-fi"
+      },
+      "shop": {
+        "eyebrow": "Non ti costa nulla",
+        "title": "Compra tramite questi link",
+        "body": "Questi negozi ci riconoscono una piccola commissione quando compri dai link qui sotto. Per te il prezzo non cambia."
+      }
     },
-    "visit": "Visita {name}",
+    "runsOn": "Dove vanno i soldi",
     "tools": {
       "tcgplayer": "Compra e vendi carte singole da migliaia di venditori affidabili.",
       "ebay": "Prodotti sigillati, carte singole e oggetti da collezione da venditori di tutto il mondo.",
       "railway": "Hosting cloud che fa funzionare il nostro bot Discord 24 ore su 24."
-    },
-    "support": {
-      "title": "Sostieni One for One",
-      "body": "One for One è gratuito e non applica commissioni di scambio. Se vuoi aiutare a coprire i costi di hosting e a mantenere attivo il progetto, puoi offrirmi un caffè.",
-      "cta": "Sostienici su Ko-fi"
     }
   },
   "wantList": {
@@ -1272,8 +1337,12 @@
     "home": "Community",
     "directoryTitle": "Negozi & community",
     "directorySubtitle": "Trova negozi Yu-Gi-Oh, server Discord e gruppi vicino a te.",
-    "searchPlaceholder": "Cerca per nome",
-    "kindAll": "Tutti",
+    "foundAll": "Ancora nessun luogo | 1 luogo | {n} luoghi",
+    "foundFor": "Nessun risultato per “{q}” | 1 luogo per “{q}” | {n} luoghi per “{q}”",
+    "foundIn": "{place}: nessun luogo | {place}: 1 luogo | {place}: {n} luoghi",
+    "foundNear": "Niente entro {km} km | 1 luogo entro {km} km | {n} luoghi entro {km} km",
+    "foundFiltered": "Nessun risultato per i tuoi filtri | 1 luogo per i tuoi filtri | {n} luoghi per i tuoi filtri",
+    "searchPlaceholder": "Negozio, città o paese",
     "kindStore": "Negozi",
     "kindDiscord": "Discord",
     "kindGroup": "Gruppi",
@@ -1326,7 +1395,6 @@
     "eventErrDate": "Inserisci una data e un'ora valide.",
     "eventErrEndBeforeStart": "La fine deve essere successiva all'inizio.",
     "eventErrUrl": "Il link deve iniziare con http:// o https://",
-    "filterCountry": "Paese",
     "filterRegion": "Regione",
     "remoteDuel": "Duello a distanza",
     "remoteDuelLabel": "Duelli a distanza",
@@ -1334,6 +1402,11 @@
     "remoteDuelOn": "Offre duelli a distanza",
     "remoteDuelOff": "Nessun duello a distanza",
     "empty": "Nulla corrisponde ancora a questi filtri.",
+    "clearFilters": "Azzera i filtri",
+    "clearSearch": "Cancella la ricerca",
+    "pageRange": "{from}–{to} di {total}",
+    "pagePrev": "Pagina precedente",
+    "pageNext": "Pagina successiva",
     "addYours": "Aggiungi il tuo negozio o la tua community",
     "claimThis": "Rivendica questo negozio",
     "claimTitle": "Rivendica questa scheda",
@@ -1363,7 +1436,6 @@
     "claimManualSent": "Richiesta inviata. Ti ricontatteremo.",
     "claimed": "Rivendicato",
     "verified": "Verificato",
-    "unclaimedNotice": "Questa scheda non è ancora rivendicata. Sei tu il proprietario?",
     "report": "Segnala",
     "reportTitle": "Segnala questa scheda",
     "reportPlaceholder": "Cosa non va in questa scheda?",
@@ -1380,9 +1452,6 @@
     "save": "Salva",
     "create": "Pubblica",
     "cancel": "Annulla",
-    "viewAnnounces": "Vedi gli annunci",
-    "openDiscord": "Apri Discord",
-    "openWebsite": "Sito web",
     "myCommunities": "Le mie community",
     "manage": "Gestisci",
     "metaProfileTitle": "{name}: Yu-Gi-Oh {kind} a {city}",
@@ -1451,7 +1520,21 @@
     "billingDiscordActive": "Attivo tramite Discord",
     "billingDiscordSince": "Dal {date}",
     "billingCancelInDiscord": "Disdici in Discord",
-    "billingUnavailable": "Impossibile caricare i dati di fatturazione. Aggiorna la pagina."
+    "billingUnavailable": "Impossibile caricare i dati di fatturazione. Aggiorna la pagina.",
+    "otsLabel": "Official Tournament Store",
+    "directions": "Indicazioni",
+    "awayFromYou": "a {d} da te",
+    "listingCount": "nessun annuncio | 1 annuncio | {n} annunci",
+    "listedOts": "Dall'elenco degli Official Tournament Store di Konami.",
+    "listedPlain": "Inserita nell'elenco delle community.",
+    "listedBody": "Nessuno del negozio l'ha ancora rivendicata — rivendicala e la pagina diventa tua.",
+    "gone": "Questa pagina non c'è.",
+    "fieldAddress": "Via e numero civico",
+    "fieldPostal": "CAP",
+    "fieldState": "Regione o provincia",
+    "fieldPhone": "Telefono",
+    "listedLabel": "Scheda non rivendicata",
+    "nearbyTitle": "Altri posti entro {km} km"
   },
   "communityVerify": {
     "metaTitle": "Verifica {name}",
@@ -1702,5 +1785,35 @@
       "notVerified": "Non ancora verificato",
       "cta": "Verifica"
     }
+  },
+  "price": {
+    "inThisSet": "{count} stampa in questo set | {count} stampe in questo set",
+    "acrossPrintings": "su {count} stampa | su {count} stampe",
+    "tradePileValue": "Valore della pila di scambio",
+    "wishlistValue": "Valore della lista dei desideri",
+    "unpriced": "{count} senza prezzo | {count} senza prezzo",
+    "needPrinting": "{count} carta ha bisogno di una stampa | {count} carte hanno bisogno di una stampa",
+    "youGiveValue": "Tu dai",
+    "youReceiveValue": "Tu ricevi",
+    "evenTrade": "Scambio pari",
+    "youReceiveMore": "Ricevi {amount} in più",
+    "youGiveMore": "Dai {amount} in più",
+    "gapUnknown": "Tra {low} e {high} di differenza",
+    "addAsCash": "Aggiungi come conguaglio",
+    "exactAfterPicking": "Scegli le stampe qui sopra per un importo esatto",
+    "sourceShort": "Cardmarket",
+    "trendMetric": "Prezzo di tendenza Cardmarket",
+    "lowMetric": "Inserzione più bassa su Cardmarket",
+    "mixedMetric": "Intervallo Cardmarket tra tendenza e inserzione minima",
+    "unavailable": "Prezzo non disponibile",
+    "whichPrinting": "Quale stampa è la tua?",
+    "pickPrinting": "Quale stampa?",
+    "noPrice": "Nessun prezzo",
+    "noPrintings": "Nessuna stampa trovata per questa carta.",
+    "whichVersion": "Quale versione è la tua?",
+    "versionsUnlabelled": "Cardmarket elenca {count} versioni di questa stampa senza pubblicare quale sia quale. Scegli la tua in base al prezzo.",
+    "cardmarketProduct": "Prodotto Cardmarket",
+    "checkOnCardmarket": "Controlla su Cardmarket",
+    "cardmarketTrend": "Tendenza Cardmarket"
   }
 }

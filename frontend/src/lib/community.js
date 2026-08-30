@@ -3,7 +3,8 @@ import { slugify, withSuffix } from "@/lib/communitySlug";
 import { sanitizeLinks } from "@/lib/communityLinks";
 import { normalizeKinds } from "@/lib/communityKinds";
 import { normalizeInterval } from "@/lib/communityPricing";
-import { codeForCountry, countryByCode, canonicalCountry } from "@/lib/countries";
+import { codeForCountry, countryByCode, canonicalCountry, resolveCountry } from "@/lib/countries";
+import { boundingBox, distanceKm } from "@/lib/near";
 import { geocodePlace } from "@/lib/geocode";
 import { invokeFunction } from "@/lib/edgeFunction";
 
@@ -93,7 +94,50 @@ export async function resolveLocation({ city, country, lat, lng } = {}) {
   };
 }
 
-export async function fetchDirectory({ kind, country, region, remoteDuel, q, page = 0, pageSize = PAGE_SIZE } = {}) {
+/**
+ * The finder's filter, as a PostgREST `or()` expression.
+ *
+ * A directory of places is searched by place. The box ran on `name` alone, so a
+ * reader typing their own town got nothing back — a town is not a shop name —
+ * and the only way to narrow by where was a 44-entry country dropdown beside
+ * it. It now runs on the three things a row is findable by: what it is called,
+ * what town it is in, and what country.
+ *
+ * Returns "" for an empty query, which the caller reads as "no filter".
+ */
+export function placeSearchFilter(q, locale) {
+  const text = String(q ?? "").trim();
+  if (!text) return "";
+
+  // Escape LIKE metacharacters so a literal % or _ in the search text is
+  // matched literally rather than treated as a wildcard.
+  const like = `%${text.replace(/[\\%_]/g, (m) => "\\" + m)}%`;
+  // PostgREST parses the or() list itself, splitting on commas and parentheses,
+  // so "Cards, Games & More" typed into the box would tear the filter in half
+  // and 400 the request. Double-quoting hands the whole string over as one
+  // literal; the backslash pass is what stops a typed quote closing it early.
+  const lit = (v) => `"${String(v).replace(/["\\]/g, (m) => "\\" + m)}"`;
+
+  const parts = [
+    `name.ilike.${lit(like)}`,
+    `city.ilike.${lit(like)}`,
+    `country.ilike.${lit(like)}`,
+  ];
+
+  // Countries people write one way and the directory files another: Czechia, the
+  // long form of the USA — and, for a reader who is not reading in English,
+  // their own country's name in their own language. Resolved through the same
+  // list every write side uses (see resolveCountry), so the finder and the
+  // stored rows agree on what a country is called. Skipped when the substring
+  // match above would already have found it, to keep the filter short.
+  const canon = resolveCountry(text, locale);
+  if (canon && !canon.name.toLowerCase().includes(text.toLowerCase())) {
+    parts.push(`country.eq.${lit(canon.name)}`);
+  }
+  return parts.join(",");
+}
+
+export async function fetchDirectory({ kind, country, region, remoteDuel, q, locale, page = 0, pageSize = PAGE_SIZE } = {}) {
   let query = getClient()
     .from("community")
     .select("id, kind, kinds, name, slug, city, country, region, avatar_url, banner_url, remote_duel, verified, owner, follower_count", { count: "exact" })
@@ -105,12 +149,8 @@ export async function fetchDirectory({ kind, country, region, remoteDuel, q, pag
   if (country)            query = query.eq("country", country);
   if (region)             query = query.eq("region", region);
   if (remoteDuel === true) query = query.eq("remote_duel", true);
-  if (q && q.trim()) {
-    // Escape LIKE metacharacters so a literal % or _ in the search text is
-    // matched literally rather than treated as a wildcard.
-    const esc = q.trim().replace(/[\\%_]/g, (m) => "\\" + m);
-    query = query.ilike("name", `%${esc}%`);
-  }
+  const search = placeSearchFilter(q, locale);
+  if (search) query = query.or(search);
 
   const from = page * pageSize;
   const { data, count, error } = await query
@@ -401,4 +441,47 @@ export async function fetchMyCountryCode() {
     .from("Trader").select("country_code").eq("id", me).maybeSingle();
   if (error) { console.error("fetchMyCountryCode failed", error); return null; }
   return data?.country_code ?? null;
+}
+
+/**
+ * The other places within reach of this one.
+ *
+ * A store page was a dead end: 4,451 of them, each linking out to Google Maps
+ * and to nothing inside the app. This is the answer to the question a reader
+ * actually has next — this one is shut on Mondays, what else is around — and
+ * it is what connects the directory's pages to each other instead of leaving
+ * every one of them a leaf.
+ *
+ * Deliberately not one of the near_me database functions: communities_near
+ * returns only verified rows and unclaimed_near only unowned ones, and this
+ * wants both, ranked by distance. A bounding box narrows it in SQL, then
+ * distanceKm sorts what comes back — which is a few dozen rows in a city and a
+ * handful anywhere else. Returns [] on failure: a rail at the foot of the page
+ * must not be able to take the address at the top of it down with it.
+ */
+export async function fetchNearbyPlaces(community, { km = 40, limit = 6 } = {}) {
+  const box = boundingBox({ lat: community?.lat, lng: community?.lng }, km);
+  if (!box) return [];
+  let query = getClient()
+    .from("community")
+    .select("id, name, slug, kind, kinds, city, country, lat, lng, verified, avatar_url")
+    .eq("status", "published")
+    .neq("id", community.id)
+    .gte("lat", box.minLat)
+    .lte("lat", box.maxLat)
+    // A city block can hold a dozen shops and a capital a hundred; 120 is well
+    // past what the six slots below need, and caps a query over a box that is
+    // 80 km on a side in a dense country.
+    .limit(120);
+  if (box.minLng != null) query = query.gte("lng", box.minLng).lte("lng", box.maxLng);
+
+  const { data, error } = await query;
+  if (error) { console.error("fetchNearbyPlaces failed", error); return []; }
+
+  const here = { lat: community.lat, lng: community.lng };
+  return (data ?? [])
+    .map((row) => ({ ...row, km: distanceKm(here, row) }))
+    .filter((row) => Number.isFinite(row.km) && row.km <= km)
+    .sort((a, b) => a.km - b.km)
+    .slice(0, limit);
 }

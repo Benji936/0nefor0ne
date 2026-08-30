@@ -4,6 +4,8 @@
  * Upserts one `community` row per OTS store from data/stores.json.
  * Seeded rows are UNCLAIMED shells (owner NULL, status 'published') that owners
  * can later claim. Idempotent on ots_store_id (re-running updates, never dupes).
+ * Rows an owner has claimed are skipped: their name, address and phone are the
+ * owner's edits, and the OTS record must not be written back over them.
  *
  * Usage:
  *   node scripts/seed-communities.mjs --dry-run           # print, write nothing
@@ -32,7 +34,30 @@ if (!DRY && !SERVICE_KEY) {
   console.error("Set SUPABASE_SERVICE_ROLE_KEY to write (owner NULL bypasses RLS). Use --dry-run to preview.");
   process.exit(1);
 }
-const db = DRY ? null : createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
+// Built whenever a key is present, dry run or not: a dry run with the key can
+// then report the claimed rows it would skip instead of guessing.
+const db = SERVICE_KEY ? createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } }) : null;
+
+/**
+ * The ots_store_id of every claimed row. An owner edits their name, address and
+ * phone on the profile page, and this seeder would otherwise write the OTS
+ * record back over that edit on the next sync, so claimed rows are left alone.
+ */
+async function claimedStoreIds() {
+  const PAGE = 1000;
+  const ids = new Set();
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await db
+      .from("community")
+      .select("ots_store_id")
+      .not("owner", "is", null)
+      .not("ots_store_id", "is", null)
+      .range(from, from + PAGE - 1);
+    if (error) { console.error("could not read claimed rows:", error); process.exit(1); }
+    for (const r of data) ids.add(String(r.ots_store_id));
+    if (data.length < PAGE) return ids;
+  }
+}
 
 function toRow(store, usedSlugs) {
   const a = store.address ?? {};
@@ -46,6 +71,15 @@ function toRow(store, usedSlugs) {
     name: store.name,
     slug,
     website: store.website ?? null,
+    // The street, the code and the shop's public number. The seeder used to
+    // drop all four, so 4,450 store pages knew the town and not the address
+    // (20260822_community_street_address.sql). The e-mail in the same record
+    // stays out on purpose: publishing 3,348 shop inboxes is a scraping
+    // surface, and an owner who wants to be written to can add an email link.
+    address: a.street ?? null,
+    postal_code: a.zip ?? null,
+    state: a.state ?? null,
+    phone: store.phone ?? null,
     city: a.city ?? null,
     // Spelled the way the directory filter spells it. The source writes long
     // forms ("Republic of Indonesia") that no country picker offers, which
@@ -66,10 +100,19 @@ async function main() {
   const stores = (raw.data ?? raw).filter(s => s?.id && s?.name);
   const slice = LIMIT > 0 ? stores.slice(0, LIMIT) : stores;
   const usedSlugs = new Set();
-  const rows = slice.map(s => toRow(s, usedSlugs));
+  const all = slice.map(s => toRow(s, usedSlugs));
+
+  const claimed = db ? await claimedStoreIds() : null;
+  const rows = claimed ? all.filter(r => !claimed.has(r.ots_store_id)) : all;
+  const skipped = all.length - rows.length;
 
   console.log(`stores: ${stores.length} | seeding: ${rows.length} | dry-run: ${DRY}`);
-  console.log("sample:", JSON.stringify(rows[0], null, 2));
+  console.log(
+    claimed
+      ? `skipped ${skipped} owner-edited row(s) (${claimed.size} claimed in all)`
+      : "claimed rows unknown (no service key): a real run would skip them",
+  );
+  console.log("sample:", JSON.stringify(rows[0] ?? null, null, 2));
   if (DRY) return;
 
   const CHUNK = 500;

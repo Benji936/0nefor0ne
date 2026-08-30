@@ -1,22 +1,52 @@
 <script setup>
-// The trader profile itself: identity, stats, and the pile/wishlist/reviews
-// tabs. Deliberately chrome-free — no dialog frame, no page frame, no footer
-// actions — so TraderProfileDialog and TraderPage can both render it and never
-// drift apart.
-//
-// Owns its own loading, because both hosts want the same fetch on the same
-// trigger. `active` lets the dialog defer the fetch until it is actually
-// opened; the page passes nothing and loads immediately.
+/**
+ * One side of the table.
+ *
+ * This page was built as a profile — a face, a place, a row of counts, three
+ * tabs — and the data says a profile is not what anybody arrives for. Ten of
+ * the fourteen accounts in the database have an empty trade pile, an empty
+ * wishlist, no completed trades and no reviews, so the modal profile rendered
+ * as four zeroes and a sentence: "0 trades completed", "Trade pile 0",
+ * "Wishlist 0", "Reviews 0", "No cards listed for trade." Two thirds of a
+ * screen of nothing, with no way to tell an account that arrived yesterday
+ * from one that was abandoned a year ago.
+ *
+ * The question a visitor actually brings is never "who is this" — it is "is
+ * there a trade here for me", and the app already knows how to draw that. The
+ * matches list draws every trader as a seam with two arms, what you get and
+ * what they get, lit only where cards actually travel. The profile threw that
+ * away and showed a one-directional strip: their cards you want, and nothing
+ * whatsoever about your cards they want, even though their wishlist is fetched
+ * on the same load and rendered in a tab a few pixels below. Three of the six
+ * live matching relationships in this database run in that unshown direction,
+ * so for half of them the page reported no overlap while the Trade Center
+ * reported one.
+ *
+ * So the page opens on the table: their side, your side, and the seam where
+ * the two meet, with the propose button sitting in it. Amethyst for the pile
+ * coming toward you, pink for the pile they want off you, teal only when both
+ * arms are live — that is the mutual match, and teal marks nothing else
+ * (DESIGN.md, The Agreement Rule). A page with nothing on either side says so
+ * in one sentence and offers the way out, instead of three tabs of zeroes.
+ *
+ * Chrome-free by design, so TraderProfileDialog and TraderPage both render it
+ * and never drift apart.
+ */
 import { ref, computed, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRoute } from 'vue-router';
 import { getClient } from '@/lib/supabaseClient';
 import { cardImage } from '@/lib/cardImage';
 import CardBinder from '@/components/trade/CardBinder.vue';
 import TraderAnnounces from '@/components/trade/TraderAnnounces.vue';
 import TraderCommunities from '@/components/trade/TraderCommunities.vue';
 import { countryByCode } from '@/lib/countries';
-import { fetchUserTradePile, fetchUserWishlist, fetchWishlistNames } from '@/lib/matches';
+import {
+  fetchUserTradePile, fetchUserWishlist, fetchWishlistNames, fetchTradePileNames,
+} from '@/lib/matches';
+import { joinedAgo } from '@/lib/people';
 import { timeAgo } from '@/lib/notifications';
+import { tradeTable } from '@/lib/traderMatch';
 
 const props = defineProps({
   traderId: { type: String,  default: null },
@@ -26,20 +56,37 @@ const props = defineProps({
   // dialog must not be, or the document ends up with two h1s and the dialog
   // claims the page's own outline.
   headingLevel: { type: Number, default: 2, validator: (n) => n >= 1 && n <= 6 },
-  // Whoever is looking. Needed to work out which of this trader's cards the
-  // viewer actually wants, which is the question the page exists to answer.
+  // Whoever is looking. Needed to work out which way cards would travel, which
+  // is the question the page exists to answer.
   viewerId: { type: String, default: null },
 });
 const emit = defineEmits(['loaded', 'propose', 'auth-required']);
 
 const { t } = useI18n();
+const route = useRoute();
+const locale = computed(() => route.params.locale || 'en');
 
-const loading   = ref(false);
+// Starts true: "we have not looked yet" is a skeleton, not a missing trader.
+// With it false, a host that defers the fetch — TraderPage waiting for the
+// session to resolve — rendered the not-found dead end for the split second
+// before the first load began.
+const loading   = ref(true);
 const loadError = ref(false); // the request failed, as opposed to "no such trader"
-const profile   = ref(null);   // from get_trader_public_profile
+const profile   = ref(null);
 const tradePile = ref([]);
 const wishlist  = ref([]);
 const reviews   = ref([]);
+// The two name lists that decide which way cards travel. Fetched once per load
+// alongside everything else.
+const myWishNames = ref([]);
+const myPileNames = ref([]);
+const viewerCountry = ref(null);
+// Whether the two sections that own their own fetch found anything. The blank
+// state has to know, or it would tell a trader with four live listings that
+// they have nothing going on.
+const announceCount  = ref(0);
+const communityCount = ref(0);
+
 const activeTab = ref('pile'); // 'pile' | 'wish' | 'reviews'
 let _loadToken = 0;
 
@@ -63,12 +110,6 @@ const initials = computed(() => {
   return n.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
 });
 
-const scopeMeta = computed(() => ({
-  local:     { label: t('account.localOnly'),        icon: 'mdi-map-marker' },
-  national:  { label: t('account.nationalOnly'),     icon: 'mdi-flag-outline' },
-  worldwide: { label: t('account.scopes.worldwide'), icon: 'mdi-earth' },
-}[profile.value?.trade_scope ?? 'worldwide']));
-
 async function load(id) {
   if (!id) return;
   const token = ++_loadToken;
@@ -78,15 +119,31 @@ async function load(id) {
   tradePile.value = [];
   wishlist.value  = [];
   reviews.value   = [];
+  myWishNames.value = [];
+  myPileNames.value = [];
+  viewerCountry.value = null;
+  announceCount.value = 0;
+  communityCount.value = 0;
   activeTab.value = 'pile';
 
+  // You cannot trade with yourself, so a viewer looking at their own page needs
+  // none of the three viewer-side queries.
+  const asViewer = props.viewerId && props.viewerId !== id;
+
   try {
-    // The viewer's wishlist has to land before the trader's pile, because the
-    // pile query is what tags each card as wanted. Own profile skips it: you
-    // cannot match against yourself.
-    const myWants = props.viewerId && props.viewerId !== id
-      ? await fetchWishlistNames(props.viewerId)
-      : [];
+    // The viewer's two name lists have to land before the trader's pile,
+    // because the pile query is what tags each card as wanted for the binder's
+    // filter. Issued together — they are the same shape and the same cost.
+    const [myWants, myHaves, meRes] = asViewer
+      ? await Promise.all([
+          fetchWishlistNames(props.viewerId),
+          fetchTradePileNames(props.viewerId),
+          // Only used to say "your account is in X" next to a trader who will
+          // not trade outside their own country. Straight off "Trader" because
+          // this one is the viewer's own row — the only kind the table serves.
+          getClient().from('Trader').select('country_code').eq('id', props.viewerId).maybeSingle(),
+        ])
+      : [[], [], null];
     if (token !== _loadToken) return;
 
     const [profileRes, pile, wish, reviewsRes] = await Promise.all([
@@ -109,11 +166,19 @@ async function load(id) {
       loadError.value = true;
       return;
     }
-    profile.value   = profileRes.data?.[0] ?? null;
-    tradePile.value = pile;
-    wishlist.value  = wish;
-    reviews.value   = await withRaters(reviewsRes.data ?? []);
+    profile.value     = profileRes.data?.[0] ?? null;
+    tradePile.value   = pile;
+    wishlist.value    = wish;
+    myWishNames.value = myWants;
+    myPileNames.value = myHaves;
+    viewerCountry.value = meRes?.data?.country_code ?? null;
+    reviews.value     = await withRaters(reviewsRes.data ?? []);
     if (token !== _loadToken) return;
+    // Open on a tab that has something in it. The pile is the right default
+    // when there is one, but it is empty for ten of the fourteen accounts here
+    // and one of those has sixteen cards sitting in the tab next door — so the
+    // page opened on "No cards listed for trade" with the answer one click away.
+    activeTab.value = firstFilledTab();
     emit('loaded', profile.value);
   } catch (e) {
     if (token !== _loadToken) return;
@@ -124,17 +189,27 @@ async function load(id) {
   }
 }
 
+function firstFilledTab() {
+  if (tradePile.value.length) return 'pile';
+  if (wishlist.value.length)  return 'wish';
+  if (reviews.value.length)   return 'reviews';
+  return 'pile';
+}
+
 /**
  * Attach each review's author. A bare list of stars from nobody in particular
  * is weak evidence; a name makes it a reference. Done as a second query rather
  * than a PostgREST embed so it does not depend on the FK constraint's
  * generated name, and it degrades to unnamed reviews rather than failing.
+ *
+ * Reads `trader_public`: a reviewer is by definition not the viewer, and
+ * "Trader" only answers for your own row now.
  */
 async function withRaters(rows) {
   const ids = [...new Set(rows.map((r) => r.rater_id).filter(Boolean))];
   if (!ids.length) return rows;
   const { data, error } = await getClient()
-    .from('Trader')
+    .from('trader_public')
     .select('id, Name, avatar_url')
     .in('id', ids);
   if (error) { console.error('review raters failed', error); return rows; }
@@ -144,30 +219,121 @@ async function withRaters(rows) {
 
 function retry() { load(props.traderId); }
 
-watch(() => [props.active, props.traderId], ([on, id]) => {
+// An array of getters, not a getter returning an array: the second form hands
+// Vue a fresh array every time, which never compares equal, so the profile
+// refetched on any unrelated re-evaluation — including Supabase's own initial
+// auth event re-setting the viewer id to the value it already had.
+watch([() => props.active, () => props.traderId, () => props.viewerId], ([on, id]) => {
   if (on && id) load(id);
+  // Live and pointed at nothing: that is a bad URL, and it has to settle rather
+  // than hold a skeleton open forever.
+  else if (on) { loading.value = false; profile.value = null; }
 }, { immediate: true });
 
-// A restricted scope means this trader may not trade with you at all, so it is
-// the one meta item that can change your next action.
-const scopeRestricted = computed(() => ['local', 'national'].includes(profile.value?.trade_scope));
+// ── The table ──────────────────────────────────────────────────────────────
 
-// The cards of theirs that the viewer is hunting. fetchUserTradePile tags these
-// by name; this is the page's primary answer, so it leads the layout.
-const matches = computed(() => tradePile.value.filter((c) => c.matchesMyWishlist));
-
-// Matches only exist for a signed-in viewer looking at someone else, so this is
-// really just "not my own profile" — but stated explicitly so the CTA can never
-// appear on a page where it would dead-end.
+// Matches only exist for a signed-in viewer looking at somebody else, so this
+// is really "not my own profile" — stated explicitly so the propose action can
+// never appear on a page where it would dead-end.
 const canPropose = computed(() => !!props.viewerId && props.viewerId !== props.traderId);
+
+const table = computed(() => tradeTable({
+  theirPile:     tradePile.value,
+  theirWishlist: wishlist.value,
+  myWishNames:   myWishNames.value,
+  myPileNames:   myPileNames.value,
+}));
+
+// Which way cards actually move. The seam reads straight off these, exactly as
+// it does on the matches list: an arm is drawn solid only when something
+// travels along it, so a one-way trade looks one-way rather than being
+// labelled one-way. That is why there is no verdict line any more — a band
+// reading "ONE-WAY" over a seam already saying it was a caption for a picture.
+const incoming = computed(() => table.value.youGet.length > 0);
+const outgoing = computed(() => table.value.youGive.length > 0);
+const mutual   = computed(() => incoming.value && outgoing.value);
+
+const seamGlyph = computed(() => {
+  if (mutual.value) return 'mdi-swap-horizontal';
+  if (incoming.value) return 'mdi-arrow-left';
+  if (outgoing.value) return 'mdi-arrow-right';
+  return 'mdi-minus';
+});
+
+// ── Facts ──────────────────────────────────────────────────────────────────
 
 const completedTrades = computed(() => Number(profile.value?.completed_trades ?? 0));
 const ratingCount     = computed(() => Number(profile.value?.rating_count ?? 0));
 
+// How long they have been here. For an account with nothing in it this is the
+// only fact that separates "arrived on Tuesday" from "gave up in March", and
+// the page never asked the database for it.
+// The bare interval ("2 months ago"), reused by two sentences. Kept apart from
+// the sentences themselves so neither has to lowercase a translated string to
+// drop it mid-clause.
+const agoText = computed(() => {
+  const ago = joinedAgo(profile.value?.created_at);
+  if (!ago) return null;
+  if (ago.unit === 'today') return t('people.ago.today');
+  return t(`people.ago.${ago.unit}`, { n: ago.count }, ago.count);
+});
+const joinedText = computed(() =>
+  agoText.value ? t('traderProfile.joined', { when: agoText.value }) : null);
+
+/**
+ * Where this trader will and will not trade — but only when it restricts them,
+ * and only for somebody who could otherwise propose. "Worldwide" is the
+ * permissive default and tells you nothing you can act on; "national only"
+ * from another country means the proposal you were about to write cannot
+ * happen. Four of the fourteen accounts here carry a restricted scope.
+ */
+const scopeNote = computed(() => {
+  const scope = profile.value?.trade_scope;
+  if (!canPropose.value || !scope || scope === 'worldwide') return null;
+
+  const where = scope === 'local'
+    ? (profile.value?.city?.trim() || country.value?.name)
+    : country.value?.name;
+  if (!where) return t(scope === 'local' ? 'account.localOnly' : 'account.nationalOnly');
+  return t(scope === 'local' ? 'traderProfile.scopeLocal' : 'traderProfile.scopeNational', { place: where });
+});
+
+// Said as a second sentence rather than folded into the first, because it is a
+// fact about the reader and not about the trader.
+const scopeMismatch = computed(() => {
+  if (!scopeNote.value || !viewerCountry.value || !profile.value?.country_code) return null;
+  if (viewerCountry.value === profile.value.country_code) return null;
+  const mine = countryByCode(viewerCountry.value);
+  return mine ? t('traderProfile.scopeElsewhere', { place: mine.name }) : null;
+});
+
+// Whether there are two piles to lay a trade across. Without them the table is
+// guaranteed to be empty on both sides, so it would be a box drawn around a
+// question nobody asked.
+const hasLists = computed(() => tradePile.value.length > 0 || wishlist.value.length > 0);
+
+// The tab strip earns its place only when a tab has something behind it. Three
+// tabs reading 0 · 0 · 0 over an empty panel is chrome around nothing.
+const hasTabs = computed(() => hasLists.value || ratingCount.value > 0);
+
+// Nothing in the binder, nothing on the wishlist, nothing said about them, and
+// neither of the two self-fetching sections found anything either. Ten of the
+// fourteen accounts here land in exactly this state. The two counts come from
+// the children because they own their own fetch — without them this would tell
+// a trader with four live listings that they have nothing going on.
+const barren = computed(() =>
+  !hasTabs.value && !announceCount.value && !communityCount.value);
+
+// The seam is a summary, not a browser: past this a side becomes a wall, and
+// the binder below already holds the full list behind its own filter. Higher
+// than the matches list's seven, because a page has room a row in a list does
+// not.
+const ARM_MAX = 12;
+
 const tabItems = computed(() => [
-  { key: 'pile',    label: t('library.tradePile'),     count: tradePile.value.length },
-  { key: 'wish',    label: t('library.wishlist'),      count: wishlist.value.length  },
-  { key: 'reviews', label: t('traderProfile.reviews'), count: Number(profile.value?.rating_count ?? 0) },
+  { key: 'pile',    label: t('library.tradePile'),     count: tradePile.value.length, tone: 'trade'  },
+  { key: 'wish',    label: t('library.wishlist'),      count: wishlist.value.length,  tone: 'accent' },
+  { key: 'reviews', label: t('traderProfile.reviews'), count: ratingCount.value,      tone: 'plain'  },
 ]);
 
 // Roving tabindex with automatic activation, per the APG tabs pattern: the
@@ -197,15 +363,21 @@ function onTabKeydown(e) {
   focusTab(next);
 }
 
+function cardTitle(card) {
+  const bits = [card.name];
+  if (card.extension) bits.push(card.extension);
+  const base = bits.join(' · ');
+  return card.condition ? `${base} (${card.condition})` : base;
+}
 </script>
 
 <template>
   <!-- Skeleton -->
   <div v-if="loading" class="tpb">
-    <div class="tpb-id">
-      <div class="tpb-skel-avatar animate-pulse shrink-0" style="background: var(--c-skeleton)" />
-      <div class="tpb-id__text tpb-skel-lines">
-        <div class="h-6 rounded w-2/5 animate-pulse" style="background: var(--c-skeleton)" />
+    <div class="tpb-plate">
+      <div class="tpb-skel-face animate-pulse shrink-0" style="background: var(--c-skeleton)" />
+      <div class="tpb-plate__text tpb-skel-lines">
+        <div class="h-8 rounded w-2/5 animate-pulse" style="background: var(--c-skeleton)" />
         <div class="h-4 rounded w-3/5 animate-pulse" style="background: var(--c-skeleton)" />
       </div>
     </div>
@@ -215,103 +387,137 @@ function onTabKeydown(e) {
   </div>
 
   <!-- Content -->
-  <div v-else-if="profile" class="tpb">
+  <div v-else-if="profile" class="tpb" :data-kind="table.kind">
 
-    <!-- Identity -->
-    <div class="tpb-id">
-      <div class="tpb-id__avatar">
+    <!-- ── Who ────────────────────────────────────────────────────────── -->
+    <header class="tpb-plate">
+      <div class="tpb-face">
         <img v-if="profile.avatar_url" :src="profile.avatar_url" alt="" />
         <span v-else>{{ initials }}</span>
       </div>
 
-      <div class="tpb-id__text">
-        <component :is="headingTag" class="tpb-id__name">{{ profile.name ?? t('userCard.anonymous') }}</component>
+      <div class="tpb-plate__text">
+        <component :is="headingTag" class="tpb-name">{{ profile.name ?? t('userCard.anonymous') }}</component>
 
-        <!-- Everything the tabs below do not already say. Pile and wishlist
-             counts live in the tab labels, so repeating them here would show
-             the same number twice within 100px — and via a different query,
-             which is a disagreement waiting to happen. -->
-        <ul class="tpb-meta">
-          <li>
-            <template v-if="country">
-              <span class="tpb-meta__flag">{{ country.flag }}</span>
-              <span>{{ [profile.city, country.name].filter(Boolean).join(', ') }}</span>
-            </template>
-            <template v-else-if="profile.city">
-              <v-icon icon="mdi-map-marker-outline" size="15" />
-              <span>{{ profile.city }}</span>
-            </template>
-            <span v-else class="tpb-meta__absent">{{ t('traderProfile.noLocationSet') }}</span>
-          </li>
-
-          <!-- Scope only earns emphasis when it is a constraint: "worldwide"
-               is the permissive default and says nothing you need to act on. -->
-          <li :class="{ 'tpb-meta--notable': scopeRestricted }">
-            <v-icon :icon="scopeMeta.icon" size="15" />
-            <span>{{ scopeMeta.label }}</span>
-          </li>
-
-          <li>
-            <v-icon icon="mdi-handshake-outline" size="15" />
-            <span>{{ t('traderProfile.tradesCompleted', { count: completedTrades }, completedTrades) }}</span>
-          </li>
-
-          <!-- Omitted rather than shown as "—": an unrated trader has no score,
-               and a dash reads as a broken value. The Reviews tab says 0. -->
-          <li v-if="ratingCount > 0" class="tpb-meta--rating">
-            <v-icon icon="mdi-star" size="15" />
-            <span class="tpb-meta__score">{{ profile.avg_rating }}</span>
-            <!-- Parenthesised: "4.3 3 reviews" runs two unrelated numbers
-                 together and reads as one broken figure. -->
-            <span>({{ t('traderProfile.reviewCount', { count: ratingCount }, ratingCount) }})</span>
-          </li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- Match block: the page's primary answer, and the one place it raises
-         its voice. Amethyst, matching UserCard's "they_have" kind, since this
-         is the same signal in a different surface. Rendered only when there is
-         something to say; an empty box here would cost every viewer the space
-         to be told nothing. -->
-    <section v-if="matches.length" class="tpb-match" :aria-labelledby="`${uid}-match`">
-      <div class="tpb-match__head">
-        <p :id="`${uid}-match`" class="tpb-match__title">
-          <v-icon icon="mdi-cards-outline" size="17" />
-          <strong>{{ t('traderProfile.matchTitle', { count: matches.length }, matches.length) }}</strong>
+        <p class="tpb-where">
+          <template v-if="country">
+            <span class="tpb-where__flag">{{ country.flag }}</span>
+            <span>{{ [profile.city, country.name].filter(Boolean).join(', ') }}</span>
+          </template>
+          <template v-else-if="profile.city">
+            <v-icon icon="mdi-map-marker-outline" size="15" />
+            <span>{{ profile.city }}</span>
+          </template>
+          <span v-else class="tpb-where--absent">{{ t('traderProfile.noLocationSet') }}</span>
         </p>
-        <!-- The action belongs here, at the moment of intent, not below three
-             screens of binder. -->
-        <button v-if="canPropose" type="button" class="tpb-match__cta" @click="emit('propose')">
-          <v-icon icon="mdi-swap-horizontal" size="16" />
-          {{ t('traderProfile.proposeTrade') }}
-        </button>
+
+        <!-- The record, in the collector's register: monospace, uppercase,
+             widely tracked (DESIGN.md, The Mono Identifier Rule), matching the
+             ledger lines on the deck and community pages. -->
+        <p class="tpb-ledger">
+          <span v-if="joinedText">{{ joinedText }}</span>
+          <span v-if="completedTrades > 0">
+            {{ t('traderProfile.tradesCompleted', { count: completedTrades }, completedTrades) }}
+          </span>
+          <span v-if="ratingCount > 0" class="tpb-ledger__rated">
+            <v-icon icon="mdi-star" size="13" aria-hidden="true" />
+            <span class="tpb-ledger__score">{{ profile.avg_rating }}</span>
+            <span>({{ t('traderProfile.reviewCount', { count: ratingCount }, ratingCount) }})</span>
+          </span>
+          <span v-else>{{ t('traderProfile.unrated') }}</span>
+        </p>
       </div>
-      <ul class="tpb-match__row">
-        <li v-for="card in matches" :key="card.id">
-          <v-tooltip
-            :text="`${card.name}${card.extension ? ' · ' + card.extension : ''}${card.condition ? ' (' + card.condition + ')' : ''}`"
-            location="top"
-            open-on-click
-          >
-            <template #activator="{ props: tip }">
-              <img
-                v-bind="tip"
-                :src="cardImage(card.image_id)"
-                :alt="card.name"
-                class="tpb-match__card"
-                loading="lazy"
-              />
-            </template>
-          </v-tooltip>
-        </li>
-      </ul>
+
+      <!-- Where the matches list puts it: on the identity line, not three
+           screens below the binder. -->
+      <button v-if="canPropose && !barren" type="button" class="tpb-propose" @click="emit('propose')">
+        <v-icon icon="mdi-swap-horizontal" size="17" />
+        {{ t('traderProfile.proposeTrade') }}
+      </button>
+    </header>
+
+    <!-- ── The table ──────────────────────────────────────────────────────
+         Both sides of the trade, and the seam where they meet. Drawn whenever
+         somebody could actually propose, including when the answer is "nothing
+         lines up" — that is an answer to the page's question, and drawing
+         nothing would leave the reader to guess whether it had been asked. -->
+    <!-- ── The table ──────────────────────────────────────────────────────
+         Give, join, get — the same seam the matches list draws for every
+         trader, at page scale and with the real piles in it. The two sides are
+         tinted in their own colour and the arms between them are dashed until
+         cards actually travel, so the shape of the trade is legible before any
+         label is read. -->
+    <section
+      v-if="canPropose && hasLists"
+      class="tpb-table"
+      :aria-label="t('traderProfile.tableLabel')"
+    >
+      <div class="tpb-axis">
+        <div class="tpb-side" data-side="get">
+          <p class="tpb-axis__label">
+            {{ t('userCard.youGet') }}
+            <span v-if="incoming" class="tpb-axis__n tabular-nums">{{ table.youGet.length }}</span>
+          </p>
+          <div v-if="incoming" class="tpb-thumbs">
+            <img
+              v-for="card in table.youGet.slice(0, ARM_MAX)"
+              :key="`get-${card.id}`"
+              :src="cardImage(card.image_id)"
+              :alt="card.name"
+              :title="cardTitle(card)"
+              class="tpb-thumb"
+              loading="lazy"
+              decoding="async"
+            />
+            <span v-if="table.youGet.length > ARM_MAX" class="tpb-more tabular-nums">
+              +{{ table.youGet.length - ARM_MAX }}
+            </span>
+          </div>
+          <p v-else class="tpb-nothing">{{ t('userCard.emptyYouGet') }}</p>
+        </div>
+
+        <div class="tpb-seam" :class="{ 'is-mutual': mutual }">
+          <span class="tpb-seam__arm" :class="{ 'is-live': incoming }" />
+          <span class="tpb-seam__glyph"><v-icon :icon="seamGlyph" size="17" /></span>
+          <span class="tpb-seam__arm" :class="{ 'is-live': outgoing }" />
+        </div>
+
+        <div class="tpb-side" data-side="give">
+          <p class="tpb-axis__label">
+            {{ t('userCard.theyGet') }}
+            <span v-if="outgoing" class="tpb-axis__n tabular-nums">{{ table.youGive.length }}</span>
+          </p>
+          <div v-if="outgoing" class="tpb-thumbs">
+            <img
+              v-for="card in table.youGive.slice(0, ARM_MAX)"
+              :key="`give-${card.id}`"
+              :src="cardImage(card.image_id)"
+              :alt="card.name"
+              :title="cardTitle(card)"
+              class="tpb-thumb"
+              loading="lazy"
+              decoding="async"
+            />
+            <span v-if="table.youGive.length > ARM_MAX" class="tpb-more tabular-nums">
+              +{{ table.youGive.length - ARM_MAX }}
+            </span>
+          </div>
+          <p v-else class="tpb-nothing">{{ t('userCard.emptyTheyGet') }}</p>
+        </div>
+      </div>
+
+      <!-- A constraint on the trade, so it sits under the trade rather than in
+           the facts about the person. -->
+      <p v-if="scopeNote" class="tpb-note">
+        <v-icon icon="mdi-map-marker-radius-outline" size="14" aria-hidden="true" />
+        <span>{{ scopeNote }}<template v-if="scopeMismatch"> {{ scopeMismatch }}</template></span>
+      </p>
     </section>
 
-    <!-- Signed out, matching is impossible: the viewer has no wishlist to
-         compare against. This takes the match block's slot rather than
-         leaving a hole, because a shared link landing on a stranger's page is
-         the single best moment to explain what the site is for. -->
+    <!-- Signed out, there is no table to draw: the viewer has no lists to
+         compare against. This takes the table's slot rather than leaving a
+         hole, because a shared link landing on a stranger's page is the single
+         best moment to explain what the site is for. -->
     <section v-else-if="!viewerId && tradePile.length" class="tpb-signin">
       <p class="tpb-signin__lead">
         {{ t('traderProfile.signedOutLead', { count: tradePile.length }, tradePile.length) }}
@@ -322,92 +528,112 @@ function onTabKeydown(e) {
     </section>
 
     <!-- What they are after: the other half of a trade. -->
-    <TraderAnnounces :trader-id="traderId" />
+    <TraderAnnounces :trader-id="traderId" @count="announceCount = $event" />
 
     <!-- Where they play. Two people in the same shop are an easier trade. -->
-    <TraderCommunities :trader-id="traderId" />
+    <TraderCommunities :trader-id="traderId" @count="communityCount = $event" />
 
-    <!-- Tab row -->
-    <div
-      ref="tabList"
-      class="tpb-tabs"
-      role="tablist"
-      :aria-label="t('traderProfile.tabsLabel')"
-      @keydown="onTabKeydown"
-    >
-      <button
-        v-for="tab in tabItems"
-        :key="tab.key"
-        :id="tabId(tab.key)"
-        role="tab"
-        type="button"
-        :aria-selected="activeTab === tab.key"
-        :aria-controls="panelId(tab.key)"
-        :tabindex="activeTab === tab.key ? 0 : -1"
-        class="tpb-tab flex items-center gap-2 text-base font-semibold cursor-pointer transition-colors"
-        :style="{
-          color: activeTab === tab.key ? 'var(--c-text)' : 'var(--c-muted)',
-          borderBottom: activeTab === tab.key ? '2px solid var(--c-accent)' : '2px solid transparent',
-        }"
-        @click="activeTab = tab.key"
-      >
-        {{ tab.label }}
-        <span
-          class="text-xs font-bold px-2 py-1 rounded-md tabular-nums"
-          :style="activeTab === tab.key
-            ? 'background: color-mix(in srgb, var(--c-accent) 15%, transparent); color: var(--c-accent)'
-            : 'background: color-mix(in srgb, var(--c-muted) 12%, transparent); color: var(--c-muted)'"
-        >{{ tab.count }}</span>
+    <!-- ── Nothing here ───────────────────────────────────────────────────
+         Ten of fourteen accounts. Says so once and points somewhere, instead
+         of three tabs reading zero over an empty panel. -->
+    <section v-if="barren" class="tpb-blank">
+      <p class="tpb-blank__lead">{{ t('traderProfile.blankTitle') }}</p>
+      <p class="tpb-blank__body">
+        {{ agoText
+           ? t('traderProfile.blankBodyJoined', { name: profile.name ?? t('userCard.anonymous'), when: agoText })
+           : t('traderProfile.blankBody', { name: profile.name ?? t('userCard.anonymous') }) }}
+      </p>
+      <!-- The Trade Center's match list needs a session, so a signed-out
+           visitor is sent to sign in rather than through a door that is locked
+           on the other side. -->
+      <router-link v-if="viewerId" class="tpb-blank__cta" :to="{ name: 'TradeCenter', params: { locale, tab: 'matches' } }">
+        {{ t('traderProfile.blankCta') }}
+        <v-icon icon="mdi-arrow-right" size="15" aria-hidden="true" />
+      </router-link>
+      <button v-else type="button" class="tpb-blank__cta" @click="emit('auth-required')">
+        {{ t('traderProfile.signedOutCta') }}
+        <v-icon icon="mdi-arrow-right" size="15" aria-hidden="true" />
       </button>
-    </div>
+    </section>
 
-    <!-- Trade pile -->
-    <div v-if="activeTab === 'pile'" :id="panelId('pile')" role="tabpanel" :aria-labelledby="tabId('pile')" tabindex="0" class="tpb-panel">
-      <CardBinder :cards="tradePile" :empty-label="t('traderProfile.noCardsForTrade')" />
-    </div>
+    <template v-if="hasTabs">
+      <!-- Tab row. Each tab is coloured by which side of the trade its panel
+           holds — their binder is what you could get, their wishlist is what
+           they want off you — so the strip repeats the arms above rather than
+           painting all three the same. -->
+      <div
+        ref="tabList"
+        class="tpb-tabs"
+        role="tablist"
+        :aria-label="t('traderProfile.tabsLabel')"
+        @keydown="onTabKeydown"
+      >
+        <button
+          v-for="tab in tabItems"
+          :key="tab.key"
+          :id="tabId(tab.key)"
+          role="tab"
+          type="button"
+          class="tpb-tab"
+          :data-tone="tab.tone"
+          :aria-selected="activeTab === tab.key"
+          :aria-controls="panelId(tab.key)"
+          :tabindex="activeTab === tab.key ? 0 : -1"
+          @click="activeTab = tab.key"
+        >
+          {{ tab.label }}
+          <span class="tpb-tab__n tabular-nums">{{ tab.count }}</span>
+        </button>
+      </div>
 
-    <!-- Wishlist -->
-    <div v-else-if="activeTab === 'wish'" :id="panelId('wish')" role="tabpanel" :aria-labelledby="tabId('wish')" tabindex="0" class="tpb-panel">
-      <CardBinder :cards="wishlist" :empty-label="t('traderProfile.wishlistEmpty')" dim />
-    </div>
+      <!-- Trade pile -->
+      <div v-if="activeTab === 'pile'" :id="panelId('pile')" role="tabpanel" :aria-labelledby="tabId('pile')" tabindex="0" class="tpb-panel tpb-panel--binder">
+        <CardBinder :cards="tradePile" :empty-label="t('traderProfile.noCardsForTrade')" fit="width" />
+      </div>
 
-    <!-- Reviews -->
-    <div v-else-if="activeTab === 'reviews'" :id="panelId('reviews')" role="tabpanel" :aria-labelledby="tabId('reviews')" tabindex="0" class="tpb-panel">
-      <ul v-if="reviews.length > 0" class="tpb-rev">
-        <li v-for="r in reviews" :key="r.rater_id + r.created_at" class="tpb-rev__item">
-          <div class="tpb-rev__line">
-            <!-- Who said it. A row of stars from nobody in particular is weak
-                 evidence; a name makes it a reference. -->
-            <img v-if="r.rater?.avatar_url" :src="r.rater.avatar_url" alt="" class="tpb-rev__avatar" loading="lazy" />
-            <span v-else class="tpb-rev__avatar tpb-rev__avatar--letter">
-              {{ (r.rater?.Name || '?')[0].toUpperCase() }}
-            </span>
-            <span class="tpb-rev__who">{{ r.rater?.Name || t('userCard.anonymous') }}</span>
+      <!-- Wishlist. Pink, because these are cards somebody wants. -->
+      <div v-else-if="activeTab === 'wish'" :id="panelId('wish')" role="tabpanel" :aria-labelledby="tabId('wish')" tabindex="0" class="tpb-panel tpb-panel--binder tpb-panel--want">
+        <CardBinder :cards="wishlist" :empty-label="t('traderProfile.wishlistEmpty')" fit="width" />
+      </div>
 
-            <span class="tpb-rev__stars" :aria-label="t('traderProfile.reviewScore', { score: r.score })">
-              <v-icon
-                v-for="n in 5" :key="n"
-                :icon="n <= r.score ? 'mdi-star' : 'mdi-star-outline'"
-                size="15"
-                aria-hidden="true"
-              />
-            </span>
+      <!-- Reviews -->
+      <div v-else-if="activeTab === 'reviews'" :id="panelId('reviews')" role="tabpanel" :aria-labelledby="tabId('reviews')" tabindex="0" class="tpb-panel">
+        <ul v-if="reviews.length > 0" class="tpb-rev">
+          <li v-for="r in reviews" :key="r.rater_id + r.created_at" class="tpb-rev__item">
+            <div class="tpb-rev__line">
+              <!-- Who said it. A row of stars from nobody in particular is weak
+                   evidence; a name makes it a reference. -->
+              <img v-if="r.rater?.avatar_url" :src="r.rater.avatar_url" alt="" class="tpb-rev__avatar" loading="lazy" />
+              <span v-else class="tpb-rev__avatar tpb-rev__avatar--letter">
+                {{ (r.rater?.Name || '?')[0].toUpperCase() }}
+              </span>
+              <span class="tpb-rev__who">{{ r.rater?.Name || t('userCard.anonymous') }}</span>
 
-            <!-- timeAgo needs `t`, or it silently renders English in every locale. -->
-            <span class="tpb-rev__when">{{ timeAgo(r.created_at, t, { short: true }) }}</span>
-          </div>
-          <p v-if="r.comment" class="tpb-rev__comment">{{ r.comment }}</p>
-        </li>
-      </ul>
-      <p v-else class="text-sm py-6 text-center" style="color: var(--c-muted)">{{ t('traderProfile.noReviewsYet') }}</p>
-    </div>
+              <span class="tpb-rev__stars" :aria-label="t('traderProfile.reviewScore', { score: r.score })">
+                <v-icon
+                  v-for="n in 5" :key="n"
+                  :icon="n <= r.score ? 'mdi-star' : 'mdi-star-outline'"
+                  size="15"
+                  aria-hidden="true"
+                />
+              </span>
+
+              <!-- timeAgo needs `t`, or it silently renders English in every locale. -->
+              <span class="tpb-rev__when">{{ timeAgo(r.created_at, t, { short: true }) }}</span>
+            </div>
+            <p v-if="r.comment" class="tpb-rev__comment">{{ r.comment }}</p>
+          </li>
+        </ul>
+        <p v-else class="tpb-rev__empty">{{ t('traderProfile.noReviewsYet') }}</p>
+      </div>
+    </template>
 
   </div>
 
   <!-- Request failed. Distinct from "not found", and the only one of the two
        worth retrying, so it gets its own action rather than the host slot. -->
   <div v-else-if="loadError" class="tpb-dead" role="alert">
-    <v-icon icon="mdi-wifi-off" size="36" />
+    <v-icon icon="mdi-wifi-off" size="34" />
     <p class="tpb-dead__msg">{{ t('traderProfile.loadFailed') }}</p>
     <button type="button" class="tpb-dead__action" @click="retry">
       <v-icon icon="mdi-refresh" size="16" />
@@ -418,242 +644,370 @@ function onTabKeydown(e) {
   <!-- No such trader. The way out depends on where you are, so the host
        supplies it: a page sends you somewhere, a dialog just closes. -->
   <div v-else class="tpb-dead">
-    <v-icon icon="mdi-account-off-outline" size="36" />
+    <v-icon icon="mdi-account-off-outline" size="34" />
     <p class="tpb-dead__msg">{{ t('traderProfile.traderNotFound') }}</p>
     <slot name="not-found-action" />
   </div>
 </template>
 
 <style scoped>
-/* ── Rhythm ────────────────────────────────────────────────────────────────
-   Was gap-6 (24px) between every block, which gave the page one flat beat.
-   Now: the meta line sits tight under the name because it is part of the same
-   thought, and the tabs get real air because they start a new one. */
-.tpb { display: flex; flex-direction: column; }
-.tpb > .tpb-tabs { margin-top: 30px; }
-.tpb-panel { margin-top: 20px; }
-.tpb-skel-lines { gap: 10px; }
-.tpb-skel-cards { margin-top: 30px; }
+/* ── Tokens ────────────────────────────────────────────────────────────────
+   The landing page's register, scoped to this page and prefixed so it cannot
+   collide with the equivalents on the community, deck and account pages. Custom
+   properties inherit through scoped-style boundaries, so the children —
+   CardBinder, TraderAnnounces, TraderCommunities — resolve these too.
 
-/* ── Match block ───────────────────────────────────────────────────────────
-   Leads the page. Amethyst because UserCard already maps "they have your
-   wants" to --c-trade; teal would be wrong, that is reserved for a confirmed
-   mutual match, which this is not. */
-.tpb-match {
-  /* Hugs its content so a single match is a compact statement, not one card
-     stranded in a wide empty box. Grows to full width as matches accumulate. */
-  width: fit-content;
-  max-width: 100%;
-  margin-top: 26px;
-  padding: 16px 18px 18px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--c-trade) 9%, transparent);
-  border: 1px solid color-mix(in srgb, var(--c-trade) 28%, transparent);
-}
-.tpb-match__head {
-  margin: 0 0 12px; display: flex; align-items: center; gap: 24px;
-  justify-content: space-between; flex-wrap: wrap;
-}
-.tpb-match__title {
-  margin: 0; display: flex; align-items: center; gap: 8px;
-  font-size: 0.9375rem; color: var(--c-text);
-}
-.tpb-match__title .v-icon { color: var(--c-trade); }
-.tpb-match__title strong { font-weight: 700; }
-.tpb-match__cta {
-  display: inline-flex; align-items: center; gap: 6px;
-  min-height: 36px; padding: 0 14px; border-radius: 10px;
-  background: var(--c-trade); color: var(--c-on-accent); border: none; cursor: pointer;
-  font-size: 13px; font-weight: 700; white-space: nowrap;
-  transition: opacity 0.15s ease;
-}
-.tpb-match__cta:hover { opacity: 0.88; }
-.tpb-match__cta:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
-@media (pointer: coarse) { .tpb-match__cta { min-height: 44px; } }
-.tpb-match__row {
-  list-style: none; margin: 0; padding: 0 0 4px;
-  display: flex; gap: 10px; overflow-x: auto;
-  scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--c-trade) 40%, transparent) transparent;
-}
-.tpb-match__row::-webkit-scrollbar { height: 3px; }
-.tpb-match__row::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--c-trade) 40%, transparent); border-radius: 99px;
-}
-.tpb-match__card {
-  height: 104px; width: 74px; flex-shrink: 0; display: block;
-  border-radius: 5px; object-fit: contain; background: var(--c-surface-2);
-  outline: 1.5px solid color-mix(in srgb, var(--c-trade) 55%, transparent);
-  transition: transform 0.15s cubic-bezier(0.22,1,0.36,1);
-}
-.tpb-match__card:hover { transform: translateY(-2px) scale(1.05); }
+   The star colour is the one exception and is documented on the declaration. */
+.tpb {
+  --tpb-panel: color-mix(in srgb, var(--c-surface) 94%, var(--c-bg));
+  --tpb-line: color-mix(in srgb, var(--c-border) 60%, transparent);
+  --tpb-line-soft: color-mix(in srgb, var(--c-border) 34%, transparent);
+  --tpb-lit: inset 0 1px 0 color-mix(in srgb, var(--c-text) 8%, transparent);
+  /* The app's rating amber, centralised here rather than repeated as a raw hex
+     the way it was twice in this file. Two values, because the one everywhere
+     else uses reads at 1.95:1 on the light theme's white — under the 3:1 floor
+     a graphical object needs, and the star is the only thing carrying the
+     score. The dark value is the app's existing #F59E0B, unchanged. */
+  --tpb-star: #B45309;
 
-@media (max-width: 560px) {
-  .tpb-match { margin-top: 20px; padding: 13px 14px 15px; }
+  /* Which way cards move, as one colour the whole page can read: the seam
+     glyph, the propose button and every focus ring on this surface take it, so
+     the page agrees with itself about what kind of trade this is. */
+  --kind: var(--c-trade);
+
+  display: flex; flex-direction: column;
 }
+html.dark .tpb { --tpb-star: #F59E0B; }
 
-/* ── Meta line ─────────────────────────────────────────────────────────────
-   Replaces four bordered stat tiles. They were cards inside a card, all four
-   the same size and shape, and the two loudest numbers in them were repeated
-   verbatim by the tab labels underneath. As a text line the facts read in one
-   pass and the name is unambiguously the largest thing on the page.
+.tpb[data-kind="you_get"]  { --kind: var(--c-trade); }
+.tpb[data-kind="you_give"] { --kind: var(--c-accent); }
+.tpb[data-kind="mutual"]   { --kind: var(--c-mutual); }
+.tpb[data-kind="none"]     { --kind: var(--c-muted); }
 
-   Icons carry the only colour here, so no small text sits on a tinted surface:
-   the old 12px labels needed 4.5:1 against surface-2 and three of the eight
-   label/theme combinations missed it. */
-.tpb-meta {
-  list-style: none; margin: 7px 0 0; padding: 0;
-  display: flex; flex-wrap: wrap; align-items: center;
-  gap: 3px 18px;
-  font-size: 0.9375rem; color: var(--c-muted);
-}
-.tpb-meta li { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
-.tpb-meta .v-icon { color: var(--c-muted); flex-shrink: 0; }
-.tpb-meta__flag { font-size: 1rem; line-height: 1; }
-.tpb-meta__absent { opacity: 0.6; }
+/* ── Who ───────────────────────────────────────────────────────────────────
+   Wrapping row: the text column may shrink, so a long handle wraps under the
+   avatar instead of squeezing it off the line. */
+/* Avatar, identity, action — the matches row's head, at page scale. The
+   button drops to its own line before the name is ever squeezed. */
+.tpb-plate { display: flex; align-items: center; gap: 18px 20px; flex-wrap: wrap; }
 
-/* Emphasis by weight and text colour, not by another saturated hue. */
-.tpb-meta--notable { color: var(--c-text); font-weight: 600; }
-.tpb-meta--notable .v-icon { color: var(--c-trade); }
-
-/* Amber star matches the seller rating elsewhere in the app
-   (AnnounceDetailDialog, AnnounceCard), rather than inventing a colour or
-   spending teal, which is reserved for confirmed mutual matches. */
-.tpb-meta--rating .v-icon { color: #f59e0b; }
-.tpb-meta__score { color: var(--c-text); font-weight: 700; font-variant-numeric: tabular-nums; }
-
-/* ── Identity ──────────────────────────────────────────────────────────────
-   Was a single non-wrapping flex row sized for a 720px dialog. On a page at
-   375px the avatar and the scope badge left the name about 50px, which
-   truncated "TinyHex" to "Ti…". Now a wrapping row: the badge is the piece
-   that drops to its own line, because it is the least important of the three
-   and the only one that can leave without breaking the avatar/name pairing. */
-.tpb-id {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.tpb-id__avatar {
-  width: 80px; height: 80px; flex-shrink: 0;
+.tpb-face {
+  width: 76px; height: 76px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  border-radius: 16px; overflow: hidden;
-  font-size: 1.875rem; font-weight: 700; user-select: none;
+  border-radius: 20px; overflow: hidden;
+  font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; user-select: none;
   background: color-mix(in srgb, var(--c-trade) 18%, transparent);
   color: var(--c-trade);
-  border: 1px solid color-mix(in srgb, var(--c-trade) 30%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-trade) 34%, transparent);
+  box-shadow: var(--tpb-lit);
 }
-.tpb-id__avatar img { width: 100%; height: 100%; object-fit: cover; }
+.tpb-face img { width: 100%; height: 100%; object-fit: cover; }
 
-/* Grows to fill, but may shrink below its content width — without min-width:0
-   a long name would push the badge off the row instead of wrapping. */
-.tpb-id__text { display: flex; flex-direction: column; min-width: 0; flex: 1 1 200px; }
+.tpb-plate__text { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1 1 220px; }
 
-/* Wraps rather than truncates: a name is the one thing on this page that must
-   be readable in full. Capped at two lines so a pathological handle cannot
-   push the stats off-screen, and `anywhere` so an unbroken string still
-   breaks instead of overflowing. */
-.tpb-id__name {
-  /* Now a real heading element, so it arrives with UA margins and its own
-     font-size to override. */
+/* The display face, pushed hard and used exactly once: the trader's name is the
+   only thing on the page set at hero size. Wraps rather than truncates — a name
+   is the one thing here that must be readable in full — and is capped at two
+   lines so a pathological handle cannot push the table off-screen. */
+.tpb-name {
   margin: 0;
-  font-size: 1.5rem; font-weight: 700; line-height: 1.25;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-size: clamp(1.6rem, 3.6vw, 2.35rem);
+  font-weight: 700; line-height: 1.04; letter-spacing: -0.035em;
   color: var(--c-text);
   overflow-wrap: anywhere;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 
-/* Content-driven, not a device guess: below this the three-across row can no
-   longer give the name a readable column (80px avatar + ~105px badge + gaps
-   eats ~225px of it). */
+.tpb-where {
+  margin: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font-size: 0.9375rem; color: var(--c-muted); min-width: 0;
+}
+.tpb-where .v-icon { color: var(--c-muted); flex-shrink: 0; }
+.tpb-where__flag { font-size: 1rem; line-height: 1; }
+.tpb-where--absent { opacity: 0.75; }
+
+/* The record. Four bordered stat tiles became a text line, and now a ledger:
+   how long they have been here, what they have finished, and what people said.
+   Nothing in it is repeated by the tabs below. */
+.tpb-ledger {
+  margin: 2px 0 0; padding: 0;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 0.11em; text-transform: uppercase;
+  color: var(--c-muted);
+}
+.tpb-ledger > span { display: inline-flex; align-items: center; gap: 5px; }
+/* A separator drawn by the line itself, so it can never start a wrapped row. */
+.tpb-ledger > span:not(:last-child)::after {
+  content: "·"; margin-left: 6px;
+  color: color-mix(in srgb, var(--c-muted) 72%, transparent);
+}
+.tpb-ledger__rated .v-icon { color: var(--tpb-star); }
+.tpb-ledger__score { color: var(--c-text); font-variant-numeric: tabular-nums; }
+
+/* ── The table ─────────────────────────────────────────────────────────────
+   The matches list's row, at page scale. Same panel (one tonal step under the
+   background, a hairline, and a 1px top highlight rather than a drop shadow),
+   same two tinted sides, same dashed seam that goes solid where cards travel.
+   The two surfaces show the same fact, so they are the same drawing. */
+.tpb-table {
+  margin-top: 26px;
+  padding: clamp(14px, 2vw, 20px);
+  background: var(--tpb-panel);
+  border: 1px solid var(--tpb-line-soft);
+  border-radius: 18px;
+  box-shadow: var(--tpb-lit);
+}
+
+.tpb-axis { display: flex; align-items: stretch; gap: 4px; }
+
+.tpb-side {
+  display: flex; flex-direction: column; gap: 10px;
+  flex: 1; min-width: 0;
+  padding: 13px 15px;
+  border-radius: 13px;
+  border: 1px solid var(--tpb-line-soft);
+}
+.tpb-side[data-side="get"]  { background: color-mix(in srgb, var(--c-trade) 6%, transparent); }
+.tpb-side[data-side="give"] { background: color-mix(in srgb, var(--c-accent) 6%, transparent); }
+
+.tpb-axis__label {
+  display: flex; align-items: center; gap: 8px; margin: 0;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 0.66rem; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase;
+}
+.tpb-side[data-side="get"]  .tpb-axis__label { color: var(--c-trade); }
+.tpb-side[data-side="give"] .tpb-axis__label { color: var(--c-accent); }
+/* No pill behind the count, for the reason the matches row gives: a chip
+   tinted in the same hue as its own text subtracts contrast from the one
+   number that matters. Dropping the tracking separates it from the label. */
+.tpb-axis__n { letter-spacing: 0; }
+
+.tpb-thumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.tpb-thumb {
+  height: 84px; width: 57px; flex-shrink: 0; display: block;
+  border-radius: 5px; object-fit: cover; background: var(--c-surface-2);
+  outline: 1px solid var(--tpb-line);
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.tpb-thumb:hover { transform: translateY(-3px) scale(1.06); }
+
+.tpb-more {
+  align-self: center; padding: 3px 9px; border-radius: 999px;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 0.72rem; font-weight: 700;
+  color: var(--c-muted);
+  background: color-mix(in srgb, var(--c-muted) 14%, transparent);
+}
+
+/* An empty side is the reason this is not a mutual match, so it names which
+   half is missing rather than saying "None". */
+.tpb-nothing {
+  margin: 0; align-self: flex-start; max-width: 26ch;
+  font-size: 0.8125rem; line-height: 1.45; color: var(--c-muted);
+}
+
+.tpb-seam {
+  display: flex; align-items: center; flex: 0 0 auto;
+  width: clamp(48px, 7%, 84px);
+  /* The arrow takes the colour of the direction it points, so it agrees with
+     the arm it sits on instead of floating above the pair in neutral. */
+  color: var(--kind);
+}
+.tpb-seam__arm { flex: 1; height: 1px; border-top: 1px dashed var(--tpb-line); }
+.tpb-seam__arm.is-live { border-top-style: solid; }
+.tpb-seam__arm:first-child.is-live { border-top-color: var(--c-trade); }
+.tpb-seam__arm:last-child.is-live  { border-top-color: var(--c-accent); }
+.tpb-seam__glyph {
+  display: grid; place-items: center;
+  width: 32px; height: 32px; flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid var(--tpb-line);
+  background: var(--tpb-panel);
+}
+/* Closed on both sides: the only state teal marks. */
+.tpb-seam.is-mutual .tpb-seam__glyph {
+  border-color: transparent;
+  background: var(--c-mutual);
+  color: var(--c-on-accent);
+}
+
+.tpb-note {
+  margin: 13px 2px 1px;
+  display: flex; align-items: flex-start; gap: 6px;
+  font-size: 0.8125rem; line-height: 1.45; color: var(--c-muted);
+}
+.tpb-note .v-icon { flex-shrink: 0; margin-top: 2px; color: var(--c-muted); }
+
+/* The action, on the identity line. It used to sit in a bordered footer strip
+   below three screens of binder — the furthest possible point from the moment
+   somebody decides to trade. */
+.tpb-propose {
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 44px; padding: 0 20px; border-radius: 13px;
+  background: var(--kind); color: var(--c-on-accent);
+  border: 1.5px solid transparent; cursor: pointer;
+  font-size: 14px; font-weight: 700; white-space: nowrap;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+/* Nothing lines up yet — you may still know something the lists do not, so the
+   button stays, but it stops shouting. */
+.tpb[data-kind="none"] .tpb-propose {
+  background: transparent; color: var(--c-trade);
+  border-color: color-mix(in srgb, var(--c-trade) 45%, transparent);
+}
+.tpb-propose:hover { opacity: 0.9; transform: translateY(-1px); }
+.tpb-propose:focus-visible { outline: 2px solid var(--kind); outline-offset: 2px; }
+
+/* Phones: the axis rotates. The two piles stack and the seam runs between
+   them, so give-join-get survives the turn instead of being squeezed sideways. */
+@media (max-width: 640px) {
+  .tpb-table { margin-top: 20px; }
+  .tpb-axis { flex-direction: column; }
+  .tpb-seam {
+    flex-direction: row; width: auto; height: 30px;
+    justify-content: center; gap: 12px;
+  }
+  .tpb-seam__arm { max-width: 70px; }
+}
+
+/* The button keeps its own width on a phone, for the reason the matches row
+   gives: stretched across the plate it becomes a slab between the name and the
+   trade it is proposing, and it asks for the decision before showing the
+   evidence. It wraps to its own line and stays a 44px target. */
 @media (max-width: 560px) {
-  /* The meta line stacks here, so centring would float the avatar against a
-     tall text column and pull it away from the name it belongs to. */
-  .tpb-id { gap: 14px; align-items: flex-start; }
-  .tpb-id__avatar { width: 60px; height: 60px; border-radius: 14px; font-size: 1.5rem; }
-  .tpb-id__name { font-size: 1.375rem; }
-  /* Tighter column gap so two short facts can share a line instead of each
-     taking its own; the meta line is four items and would otherwise become a
-     four-line stack on a phone. */
-  .tpb-meta { font-size: 0.875rem; gap: 2px 13px; }
-  .tpb > .tpb-tabs { margin-top: 24px; }
+  .tpb-propose { padding: 0 18px; }
 }
 
-/* ── Tabs ──────────────────────────────────────────────────────────────────
-   Overflowed silently at 375px (382px of tabs in a 276px box, overflow
-   visible), so "Reviews" was clipped and unreachable. Scrolls now, and the
-   buttons refuse to compress into unreadability. */
-.tpb-tabs {
-  display: flex;
-  gap: 0;
-  /* The rule was a border-bottom plus a -1px margin on each tab to overhang it.
-     Inside a scroll container that 1px overhang makes scrollHeight exceed
-     clientHeight, which grows a stray vertical scrollbar. An inset shadow draws
-     the same line without occupying layout, so nothing overhangs. */
-  box-shadow: inset 0 -1px 0 var(--c-border);
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: var(--c-border) transparent;
-  -webkit-overflow-scrolling: touch;
+/* ── Nothing here ──────────────────────────────────────────────────────────
+   A dashed edge rather than a solid panel: this is a page waiting for content,
+   not a container holding some. */
+.tpb-blank {
+  margin-top: 26px; padding: 34px 22px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  text-align: center;
+  border: 1px dashed var(--tpb-line); border-radius: 20px;
 }
-.tpb-tabs::-webkit-scrollbar { height: 3px; }
-.tpb-tabs::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 99px; }
-
-.tpb-tab { flex-shrink: 0; padding: 16px 20px; white-space: nowrap; }
-
-/* Tighter tabs on narrow screens so all three usually fit without scrolling;
-   the scroll above is the safety net for long translations, not the norm. */
-@media (max-width: 560px) {
-  .tpb-tab { padding: 14px 13px; font-size: 0.9375rem; }
+.tpb-blank__lead {
+  margin: 0;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-size: 1.125rem; font-weight: 700; letter-spacing: -0.015em;
+  color: var(--c-text);
 }
-
-/* Touch devices get the 44px target PRODUCT.md asks for; pointer devices keep
-   the tighter rhythm. */
-@media (pointer: coarse) {
-  .tpb-tab { min-height: 48px; }
+.tpb-blank__body {
+  margin: 0; max-width: 46ch;
+  font-size: 0.875rem; line-height: 1.55; color: var(--c-muted);
 }
-
-/* Tracks .tpb-id__avatar at both sizes so nothing jumps when the profile lands. */
-.tpb-skel-avatar { width: 80px; height: 80px; border-radius: 16px; }
-@media (max-width: 560px) { .tpb-skel-avatar { width: 60px; height: 60px; border-radius: 14px; } }
-
+.tpb-blank__cta {
+  margin-top: 6px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 42px; padding: 0 18px; border-radius: 12px;
+  background: color-mix(in srgb, var(--c-trade) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-trade) 34%, transparent);
+  color: var(--c-trade); font-size: 13.5px; font-weight: 700; text-decoration: none;
+  transition: background 0.15s ease;
+}
+.tpb-blank__cta:hover { background: color-mix(in srgb, var(--c-trade) 24%, transparent); }
+.tpb-blank__cta:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
 
 /* ── Signed-out invitation ─────────────────────────────────────────────────
-   Deliberately quieter than the match block: that one reports a fact worth
-   acting on, this one asks for something. Same slot, less voice. */
+   Quieter than the table: that one reports a fact worth acting on, this one
+   asks for something. Same slot, less voice. */
 .tpb-signin {
   margin-top: 26px; padding: 15px 18px;
   display: flex; align-items: center; justify-content: space-between;
   gap: 18px; flex-wrap: wrap;
-  border-radius: 14px;
-  border: 1px solid var(--c-border);
-  background: var(--c-surface-2);
+  border-radius: 18px;
+  border: 1px solid var(--tpb-line);
+  background: var(--tpb-panel);
+  box-shadow: var(--tpb-lit);
 }
 .tpb-signin__lead { margin: 0; font-size: 0.9375rem; color: var(--c-text); }
 .tpb-signin__cta {
   flex-shrink: 0;
   display: inline-flex; align-items: center;
-  min-height: 38px; padding: 0 16px; border-radius: 10px;
+  min-height: 40px; padding: 0 17px; border-radius: 12px;
   background: var(--c-trade); color: var(--c-on-accent); border: none; cursor: pointer;
   font-size: 13px; font-weight: 700; white-space: nowrap;
   transition: opacity 0.15s ease;
 }
-.tpb-signin__cta:hover { opacity: 0.88; }
+.tpb-signin__cta:hover { opacity: 0.9; }
 .tpb-signin__cta:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
-@media (pointer: coarse) { .tpb-signin__cta { min-height: 44px; } }
 @media (max-width: 560px) {
   .tpb-signin { margin-top: 20px; }
   .tpb-signin__cta { width: 100%; justify-content: center; }
 }
-@media (prefers-reduced-motion: reduce) { .tpb-signin__cta { transition: none; } }
+
+/* ── Tabs ──────────────────────────────────────────────────────────────────
+   Scrolls rather than clipping: at 375px three translated labels overflowed
+   silently and "Reviews" was unreachable. The rule under them is an inset
+   shadow, not a border — inside a scroll container a 1px overhang makes
+   scrollHeight exceed clientHeight and grows a stray vertical scrollbar. */
+.tpb-tabs {
+  margin-top: 30px;
+  display: flex; gap: 0;
+  box-shadow: inset 0 -1px 0 var(--tpb-line);
+  overflow-x: auto; overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--tpb-line) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+.tpb-tabs::-webkit-scrollbar { height: 3px; }
+.tpb-tabs::-webkit-scrollbar-thumb { background: var(--tpb-line); border-radius: 99px; }
+
+.tpb-tab {
+  --tone: var(--c-text);
+  flex-shrink: 0;
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px 18px; white-space: nowrap;
+  background: transparent; border: none; cursor: pointer;
+  font-size: 0.9375rem; font-weight: 700; color: var(--c-muted);
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.tpb-tab[data-tone="trade"]  { --tone: var(--c-trade); }
+.tpb-tab[data-tone="accent"] { --tone: var(--c-accent); }
+.tpb-tab:hover { color: var(--c-text); }
+.tpb-tab[aria-selected="true"] { color: var(--c-text); border-bottom-color: var(--tone); }
+
+.tpb-tab__n {
+  padding: 2px 8px; border-radius: 7px;
+  font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.02em;
+  background: color-mix(in srgb, var(--c-muted) 14%, transparent);
+  color: var(--c-muted);
+}
+.tpb-tab[aria-selected="true"] .tpb-tab__n {
+  background: color-mix(in srgb, var(--tone) 15%, transparent);
+  color: var(--tone);
+}
+
+@media (max-width: 560px) {
+  .tpb-tabs { margin-top: 24px; }
+  .tpb-tab { padding: 13px 12px; font-size: 0.875rem; gap: 6px; }
+}
+@media (pointer: coarse) { .tpb-tab { min-height: 48px; } }
+
+.tpb-panel { margin-top: 20px; }
+/* The wishlist panel is cards somebody wants, so the binder's own accents
+   follow the tab that opened it. */
+.tpb-panel--want { --cb-tone: var(--c-accent); }
+
+/* A binder sizes its pockets from one dimension and takes the other from the
+   card's ratio. The dialog owns the window, so it measures from height; a page
+   you scroll has width to spend and no height worth naming, so it measures
+   from width and the binder ends up as tall as the column is wide. */
+.tpb-panel--binder { display: flex; flex-direction: column; }
 
 /* ── Reviews ───────────────────────────────────────────────────────────────
    Most ratings carry no comment, so the score line has to stand on its own
    rather than look like a card missing its body. Bordered rows, no tiles. */
 .tpb-rev { list-style: none; margin: 0; padding: 0; }
-.tpb-rev__item { padding: 11px 2px; border-bottom: 1px solid var(--c-border); }
-.tpb-rev__item:first-child { border-top: 1px solid var(--c-border); }
+.tpb-rev__item { padding: 11px 2px; border-bottom: 1px solid var(--tpb-line); }
+.tpb-rev__item:first-child { border-top: 1px solid var(--tpb-line); }
 .tpb-rev__line { display: flex; align-items: center; gap: 9px; }
 .tpb-rev__avatar {
   width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
@@ -670,7 +1024,7 @@ function onTabKeydown(e) {
 /* Amber matches the seller rating elsewhere in the app. Teal was wrong here:
    it is reserved for a confirmed mutual match. */
 .tpb-rev__stars { display: inline-flex; gap: 1px; margin-left: auto; flex-shrink: 0; }
-.tpb-rev__stars .v-icon { color: #f59e0b; }
+.tpb-rev__stars .v-icon { color: var(--tpb-star); }
 .tpb-rev__when {
   flex-shrink: 0; font-size: 12px; color: var(--c-muted);
   font-variant-numeric: tabular-nums;
@@ -678,9 +1032,8 @@ function onTabKeydown(e) {
 .tpb-rev__comment {
   margin: 7px 0 0 31px; font-size: 13.5px; line-height: 1.55; color: var(--c-text);
 }
-@media (max-width: 560px) {
-  .tpb-rev__comment { margin-left: 0; }
-}
+.tpb-rev__empty { margin: 0; padding: 26px 0; text-align: center; font-size: 0.875rem; color: var(--c-muted); }
+@media (max-width: 560px) { .tpb-rev__comment { margin-left: 0; } }
 
 /* ── Focus ─────────────────────────────────────────────────────────────────
    The tab is one stop and the panel is the next, so both need a visible ring:
@@ -691,6 +1044,22 @@ function onTabKeydown(e) {
   outline: 2px solid var(--c-trade);
   outline-offset: -2px;
   border-radius: 8px;
+}
+
+/* ── Skeleton ──────────────────────────────────────────────────────────────
+   Tracks the plate at both sizes so nothing jumps when the profile lands. */
+.tpb-skel-face { width: 76px; height: 76px; border-radius: 20px; }
+.tpb-skel-lines { gap: 10px; }
+.tpb-skel-cards { margin-top: 30px; }
+@media (max-width: 560px) {
+  .tpb-plate { gap: 14px; align-items: flex-start; }
+  .tpb-face, .tpb-skel-face { width: 58px; height: 58px; border-radius: 16px; font-size: 1.35rem; }
+  .tpb-where { font-size: 0.875rem; }
+  /* At this width every ledger item takes its own line, so the separator can
+     only ever end one — a dot hanging off the right of three consecutive
+     lines. The line break separates them instead. */
+  .tpb-ledger { gap: 3px 14px; }
+  .tpb-ledger > span:not(:last-child)::after { content: none; }
 }
 
 /* ── Dead ends ─────────────────────────────────────────────────────────────
@@ -704,9 +1073,9 @@ function onTabKeydown(e) {
 .tpb-dead__msg { margin: 0; font-size: 0.875rem; color: var(--c-muted); }
 .tpb-dead__action {
   display: inline-flex; align-items: center; gap: 6px;
-  min-height: 40px; padding: 0 16px; border-radius: 11px;
+  min-height: 42px; padding: 0 17px; border-radius: 12px;
   background: color-mix(in srgb, var(--c-trade) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--c-trade) 30%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-trade) 34%, transparent);
   color: var(--c-trade); font-size: 13px; font-weight: 700; cursor: pointer;
   transition: background 0.15s ease;
 }
@@ -716,16 +1085,13 @@ function onTabKeydown(e) {
 @media (pointer: coarse) { .tpb-dead__action { min-height: 48px; } }
 
 /* ── Reduced motion ────────────────────────────────────────────────────────
-   Matches the targeted approach used elsewhere (CommunityProfile, SideNav):
-   kill the specific decorative animations, not every transition on the page.
-   The skeleton pulse is the worst offender here, running on a dozen elements
-   at once. */
+   Kill the specific decorative animations, not every transition on the page.
+   The skeleton pulse is the worst offender, running on a dozen elements at
+   once. */
 @media (prefers-reduced-motion: reduce) {
   .animate-pulse { animation: none; }
-  .tpb-match__card { transition: none; }
-  .tpb-match__card:hover { transform: none; }
-  .tpb-match__cta { transition: none; }
-  .tpb-tab { transition: none; }
-  .tpb-dead__action { transition: none; }
+  .tpb-thumb, .tpb-thumb:hover { transition: none; transform: none; }
+  .tpb-propose, .tpb-signin__cta, .tpb-tab, .tpb-blank__cta, .tpb-dead__action { transition: none; }
+  .tpb-propose:hover { transform: none; }
 }
 </style>

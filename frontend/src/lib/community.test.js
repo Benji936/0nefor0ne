@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import * as community from "./community";
-import { giveUpMode, resolveLocation } from "./community";
+import { giveUpMode, resolveLocation, placeSearchFilter } from "./community";
 
 describe("community data-access module", () => {
   it("compiles and exports the expected data-access functions", () => {
@@ -9,7 +9,7 @@ describe("community data-access module", () => {
       "requestClaimCode", "verifyClaimCode", "requestManualReview",
       "reportCommunity", "fetchMyCommunities",
       "startClaimCheckout", "openBillingPortal", "fetchMyClaim",
-      "giveUpMode", "releaseCommunity",
+      "giveUpMode", "releaseCommunity", "placeSearchFilter",
     ];
     for (const name of expected) expect(typeof community[name]).toBe("function");
   });
@@ -116,5 +116,59 @@ describe("resolveLocation", () => {
       json: async () => [{ place_id: 1, display_name: "Geneva", lat: null, lon: null }],
     }));
     expect((await resolveLocation({ city: "Geneva" })).lat).toBeNull();
+  });
+});
+
+describe("placeSearchFilter", () => {
+  // The finder searches the three things a place is findable by. It used to
+  // search shop names alone, so a reader typing their own town got nothing.
+  it("looks in the name, the town and the country", () => {
+    const f = placeSearchFilter("Berlin");
+    expect(f).toContain('name.ilike."%Berlin%"');
+    expect(f).toContain('city.ilike."%Berlin%"');
+    expect(f).toContain('country.ilike."%Berlin%"');
+  });
+
+  it("is nothing at all for an empty or blank query", () => {
+    expect(placeSearchFilter("")).toBe("");
+    expect(placeSearchFilter("   ")).toBe("");
+    expect(placeSearchFilter(null)).toBe("");
+    expect(placeSearchFilter(undefined)).toBe("");
+  });
+
+  // PostgREST parses the or() list itself, splitting on commas. Unquoted, the
+  // first condition would end early and the request would come back 400 — and a
+  // comma is exactly what "217 Comics, Cards, & Games" contains.
+  it("quotes the value so a typed comma cannot split the filter", () => {
+    const f = placeSearchFilter("Comics, Cards");
+    expect(f).toContain('name.ilike."%Comics, Cards%"');
+    expect(f.split(".ilike.").length - 1).toBe(3);
+  });
+
+  it("escapes a quote and a backslash rather than letting them close the literal", () => {
+    expect(placeSearchFilter('Joe"s')).toContain('name.ilike."%Joe\\"s%"');
+    expect(placeSearchFilter("back\\slash")).toContain('name.ilike."%back\\\\\\\\slash%"');
+  });
+
+  // A bare % is a LIKE wildcard. Unescaped, a reader who types one gets handed
+  // the entire directory — confirmed against the API: 4,451 rows.
+  it("escapes LIKE wildcards so they match themselves", () => {
+    expect(placeSearchFilter("50%")).toContain('name.ilike."%50\\\\%%"');
+    expect(placeSearchFilter("a_b")).toContain('name.ilike."%a\\\\_b%"');
+  });
+
+  // The rows were written through canonicalCountry, so the finder resolves
+  // through it too — otherwise a country spelled the common way is a country
+  // nobody can find.
+  it("adds an exact country match for a name the directory files differently", () => {
+    expect(placeSearchFilter("Czechia")).toContain('country.eq."Czech Republic"');
+    expect(placeSearchFilter("Türkiye")).toContain('country.eq."Turkey"');
+    expect(placeSearchFilter("United States of America")).toContain('country.eq."United States"');
+  });
+
+  it("does not bother when the substring match already finds that country", () => {
+    expect(placeSearchFilter("Germany")).not.toContain("country.eq.");
+    expect(placeSearchFilter("german")).not.toContain("country.eq.");
+    expect(placeSearchFilter("South Korea")).not.toContain("country.eq.");
   });
 });

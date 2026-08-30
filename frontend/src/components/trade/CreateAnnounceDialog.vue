@@ -173,9 +173,9 @@ async function searchCard(q) {
       cards = res?.data?.data ?? [];
     }
     cardResults.value = cards.slice(0, 8);
-    if (cards.length === 0) cardSearchErr.value = "No card found.";
+    if (cards.length === 0) cardSearchErr.value = t("announce.cardNotFound");
   } catch {
-    cardSearchErr.value = "Search failed. Try again.";
+    cardSearchErr.value = t("announce.cardSearchFailed");
   } finally {
     cardSearching.value = false;
   }
@@ -337,86 +337,51 @@ async function submit() {
     transition="dialog-bottom-transition"
     scrollable
   >
-    <div class="dlg">
-      <!-- Header -->
+    <div class="dlg" :data-kind="isLf ? 'want' : 'sell'">
+      <!-- Header. The kind switch is the header rather than a field inside the
+           form, because it is not a field: it decides which form you get. In
+           Looking For the photo column disappears, the title is replaced by an
+           archetype and a want list, and the submit button changes verb. A
+           control with that much authority is the first thing you meet, and it
+           sets --an-kind, so the dialog is drawn in the colour of the post it
+           is about to make. -->
       <div class="dlg-head">
-        <div class="dlg-head__icon">
-          <v-icon icon="mdi-bullhorn-outline" size="18" />
+        <div class="dlg-head__row">
+          <!-- Names the thing; the button names the action. Both said "Post
+               Announce" before, which is one of them doing no work. -->
+          <span class="dlg-head__eyebrow">{{ isEdit ? t('announce.editTitle') : t('announces.newAnnounce') }}</span>
+          <button class="dlg-close" :aria-label="t('common.close')" @click="close">
+            <v-icon icon="mdi-close" size="19" />
+          </button>
         </div>
-        <span class="dlg-head__title">{{ isEdit ? t('announce.editTitle') : t('announce.create') }}</span>
-        <button class="dlg-close" @click="close">
-          <v-icon icon="mdi-close" size="19" />
-        </button>
+        <div class="kind-switch" role="group" :aria-label="t('announce.kindHint')">
+          <button
+            type="button"
+            class="kind-opt"
+            :class="{ 'kind-opt--on': !isLf }"
+            :aria-pressed="!isLf"
+            @click="setKind('sell')"
+          >
+            <v-icon icon="mdi-tag-outline" size="15" />{{ t('announce.kindSell') }}
+          </button>
+          <button
+            type="button"
+            class="kind-opt kind-opt--want"
+            :class="{ 'kind-opt--on': isLf }"
+            :aria-pressed="isLf"
+            @click="setKind('looking_for')"
+          >
+            <v-icon icon="mdi-heart-outline" size="15" />{{ t('announce.kindLookingFor') }}
+          </button>
+        </div>
       </div>
 
       <!-- Scrollable body: 2-col on desktop, stack on mobile -->
       <div class="dlg-body">
         <div class="form-layout" :class="{ 'form-layout--single': isLf }">
 
-          <!-- LEFT: Photo panel (selling only). A Looking For post is a request
-               to acquire cards, not an item to show off, so it carries no photo
-               upload; the want list states what it's after instead. -->
-          <div v-if="!isLf" class="photo-col">
-            <div class="field-label-row" style="margin-bottom:8px">
-              <span class="field-label">{{ isLf ? t('announce.photosOptionalLf') : t('announce.images') }}</span>
-              <span class="field-hint">{{ totalCount }} / {{ MAX }}</span>
-            </div>
-            <div class="photo-grid">
-              <!-- Already-uploaded images (edit mode) -->
-              <div v-for="(img, i) in existingImages" :key="'ex-' + img.id" class="photo-thumb">
-                <img :src="img.url" class="photo-thumb__img" />
-                <button class="photo-thumb__del" @click="removeExisting(i)">
-                  <v-icon icon="mdi-close" size="13" />
-                </button>
-                <span v-if="i === 0" class="photo-thumb__cover">Cover</span>
-              </div>
-              <!-- Newly picked images -->
-              <div v-for="(img, i) in newImages" :key="'new-' + i" class="photo-thumb">
-                <img :src="img.preview" class="photo-thumb__img" />
-                <button class="photo-thumb__del" @click="removeNew(i)">
-                  <v-icon icon="mdi-close" size="13" />
-                </button>
-                <span v-if="existingImages.length === 0 && i === 0" class="photo-thumb__cover">Cover</span>
-              </div>
-              <button v-if="totalCount < MAX" class="photo-add" @click="fileInput?.click()">
-                <v-icon icon="mdi-camera-plus-outline" size="28" style="color: var(--c-muted)" />
-                <span class="photo-add__label">{{ t('announce.addImages') }}</span>
-              </button>
-            </div>
-            <input ref="fileInput" type="file" accept="image/*" multiple class="hidden" @change="pickFiles" />
-          </div>
-
-          <!-- RIGHT: Text fields -->
+          <!-- The fields, first. -->
           <div class="fields-col">
-
-            <!-- Kind toggle -->
-            <div class="field-block">
-              <label class="field-label">{{ t('announce.kindHint') }}</label>
-              <div class="flex gap-2">
-                <button
-                  type="button"
-                  class="flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-xs font-semibold border cursor-pointer transition-all"
-                  :style="!isLf
-                    ? { backgroundColor: 'var(--c-trade)', borderColor: 'var(--c-trade)', color: 'var(--c-on-accent)' }
-                    : { backgroundColor: 'transparent', borderColor: 'var(--c-border)', color: 'var(--c-muted)' }"
-                  :aria-pressed="!isLf"
-                  @click="setKind('sell')"
-                >
-                  <v-icon icon="mdi-tag-outline" size="14" />{{ t('announce.kindSell') }}
-                </button>
-                <button
-                  type="button"
-                  class="flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-xs font-semibold border cursor-pointer transition-all"
-                  :style="isLf
-                    ? { backgroundColor: 'var(--c-mutual)', borderColor: 'var(--c-mutual)', color: 'var(--c-on-accent)' }
-                    : { backgroundColor: 'transparent', borderColor: 'var(--c-border)', color: 'var(--c-muted)' }"
-                  :aria-pressed="isLf"
-                  @click="setKind('looking_for')"
-                >
-                  <v-icon icon="mdi-magnify" size="14" />{{ t('announce.kindLookingFor') }}
-                </button>
-              </div>
-            </div>
 
             <!-- Looking For: archetype + detail replace the Title field -->
             <template v-if="isLf">
@@ -530,7 +495,7 @@ async function submit() {
                  there would also add it to the poster's trade list, which is
                  backwards for something they are trying to acquire. -->
             <div v-if="!isEdit && !isLf" class="field-block" style="position:relative">
-              <label class="field-label">Card <span style="color:var(--c-muted);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+              <label class="field-label">{{ t('announce.cardOptional') }}</label>
 
               <!-- Selected card chip -->
               <div v-if="selectedCard" class="card-chip">
@@ -539,7 +504,7 @@ async function submit() {
                   <span class="card-chip__name">{{ selectedCard.card_name }}</span>
                   <span class="card-chip__sub">{{ selectedCard.extension }}</span>
                 </div>
-                <button class="card-chip__clear" @click="clearCard" title="Remove">
+                <button class="card-chip__clear" :title="t('announce.removeCard')" :aria-label="t('announce.removeCard')" @click="clearCard">
                   <v-icon icon="mdi-close" size="13" />
                 </button>
               </div>
@@ -550,7 +515,7 @@ async function submit() {
                 <input
                   v-model="cardQuery"
                   type="text"
-                  placeholder="Search by name or set code (LOB-EN001)"
+                  :placeholder="t('announce.cardSearchPlaceholder')"
                   class="field-input card-search-input"
                   @input="onCardInput"
                   autocomplete="off"
@@ -578,9 +543,9 @@ async function submit() {
                 </button>
               </div>
 
-              <span v-if="cardSearchErr && !cardSearching" class="field-hint" style="color:#ef4444">{{ cardSearchErr }}</span>
-              <span v-if="selectedCard" class="field-hint" style="color:var(--c-muted)">
-                🃏 This card will be added to your trade list automatically.
+              <span v-if="cardSearchErr && !cardSearching" class="field-hint field-hint--bad">{{ cardSearchErr }}</span>
+              <span v-if="selectedCard" class="field-hint">
+                {{ t('announce.cardAddsToPile') }}
               </span>
             </div>
 
@@ -607,6 +572,42 @@ async function submit() {
             </div>
 
           </div>
+
+          <!-- Photos, second. They are optional and the title is not, so the
+               required field leads, on a phone as well as here. A Looking For
+               post carries none at all — it is a request to acquire cards, not
+               an item to show off — and because this is the trailing column,
+               switching kind takes it away without moving a single field the
+               user has already filled in. -->
+          <div v-if="!isLf" class="photo-col">
+            <div class="field-label-row">
+              <span class="field-label">{{ t('announce.images') }}</span>
+              <span class="field-hint">{{ totalCount }} / {{ MAX }}</span>
+            </div>
+            <div class="photo-grid" :class="{ 'photo-grid--empty': totalCount === 0 }">
+              <!-- Already-uploaded images (edit mode) -->
+              <div v-for="(img, i) in existingImages" :key="'ex-' + img.id" class="photo-thumb">
+                <img :src="img.url" class="photo-thumb__img" />
+                <button class="photo-thumb__del" @click="removeExisting(i)">
+                  <v-icon icon="mdi-close" size="13" />
+                </button>
+                <span v-if="i === 0" class="photo-thumb__cover">{{ t('announce.coverPhoto') }}</span>
+              </div>
+              <!-- Newly picked images -->
+              <div v-for="(img, i) in newImages" :key="'new-' + i" class="photo-thumb">
+                <img :src="img.preview" class="photo-thumb__img" />
+                <button class="photo-thumb__del" @click="removeNew(i)">
+                  <v-icon icon="mdi-close" size="13" />
+                </button>
+                <span v-if="existingImages.length === 0 && i === 0" class="photo-thumb__cover">{{ t('announce.coverPhoto') }}</span>
+              </div>
+              <button v-if="totalCount < MAX" class="photo-add" @click="fileInput?.click()">
+                <v-icon icon="mdi-camera-plus-outline" size="28" style="color: var(--c-muted)" />
+                <span class="photo-add__label">{{ t('announce.addImages') }}</span>
+              </button>
+            </div>
+            <input ref="fileInput" type="file" accept="image/*" multiple class="hidden" @change="pickFiles" />
+          </div>
         </div>
       </div>
 
@@ -629,7 +630,21 @@ async function submit() {
 
 <style scoped>
 /* ── Dialog shell ─────────────────────────────────── */
+/* Same token names as the announces tab and the announce card, so the dialog
+   the board opens into is drawn from the board's own vocabulary. */
 .dlg {
+  --an-panel: color-mix(in srgb, var(--c-surface) 94%, var(--c-bg));
+  --an-line: color-mix(in srgb, var(--c-border) 60%, transparent);
+  --an-line-soft: color-mix(in srgb, var(--c-border) 34%, transparent);
+  --an-lit: inset 0 1px 0 color-mix(in srgb, var(--c-text) 8%, transparent);
+
+  /* The one colour the form spends, and the kind switch sets it. Amethyst is
+     a card leaving your hands; pink is a card you are asking for. Those are
+     the app's own two words for the two posts this dialog makes, and they are
+     the colours the post will wear on the board once it is up — the card's LF
+     badge is already pink for exactly this reason. */
+  --an-kind: var(--c-trade);
+
   display: flex;
   flex-direction: column;
   /* The overlay honours max-width, but this panel is shrink-to-fit inside it,
@@ -641,6 +656,8 @@ async function submit() {
   overflow: hidden;
   max-height: 92vh;
 }
+.dlg[data-kind="want"] { --an-kind: var(--c-accent); }
+
 @media (min-width: 640px) {
   .dlg { border-radius: 20px; }
 }
@@ -648,30 +665,70 @@ async function submit() {
 /* ── Header ───────────────────────────────────────── */
 .dlg-head {
   display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 24px 18px;
+  background: var(--an-panel);
+  border-bottom: 1px solid var(--an-line);
+  flex-shrink: 0;
+}
+.dlg-head__row {
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
-  padding: 18px 24px;
-  background: var(--c-surface);
-  border-bottom: 1px solid var(--c-border);
-  flex-shrink: 0;
 }
-.dlg-head__icon {
-  width: 32px; height: 32px; border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
-  background: color-mix(in srgb, var(--c-trade) 18%, transparent);
-  color: var(--c-trade);
-  flex-shrink: 0;
-}
-.dlg-head__title {
-  font-size: 15px; font-weight: 800; color: var(--c-text); flex: 1;
+/* The mono eyebrow the rest of the app labels its sections with. It names the
+   job (post / edit); the switch below it names the kind. */
+.dlg-head__eyebrow {
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--c-muted);
 }
 .dlg-close {
   width: 32px; height: 32px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   color: var(--c-muted); cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
-.dlg-close:hover { background: var(--c-surface-2); }
+.dlg-close:hover { background: var(--c-surface-2); color: var(--c-text); }
+.dlg-close:focus-visible { outline: 2px solid var(--an-kind); outline-offset: 2px; }
+
+/* ── Kind switch ──────────────────────────────────── */
+/* Two halves of one control rather than two loose buttons: exactly one is
+   always true, and the pair reads as a single either/or. */
+.kind-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--c-surface-2);
+  border: 1px solid var(--an-line-soft);
+}
+.kind-opt {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.kind-opt:hover:not(.kind-opt--on) { color: var(--c-text); }
+.kind-opt--on {
+  background: var(--c-trade);
+  color: var(--c-on-accent);
+}
+.kind-opt--want.kind-opt--on { background: var(--c-accent); }
+.kind-opt:focus-visible { outline: 2px solid var(--an-kind); outline-offset: 2px; }
 
 /* ── Body ─────────────────────────────────────────── */
 .dlg-body {
@@ -683,15 +740,17 @@ async function submit() {
 .dlg-body::-webkit-scrollbar { width: 4px; }
 .dlg-body::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 99px; }
 
-/* 2-col grid on ≥ 500px, single col below */
+/* Fields lead, photos trail. The required title is the first thing you meet at
+   every width, and because the photo panel is the trailing column, choosing
+   Looking For removes it without shifting anything already typed. */
 .form-layout {
   display: grid;
   grid-template-columns: 1fr;
   gap: 20px;
 }
-@media (min-width: 500px) {
+@media (min-width: 560px) {
   .form-layout {
-    grid-template-columns: 200px 1fr;
+    grid-template-columns: minmax(0, 1fr) 210px;
     gap: 24px;
     align-items: start;
   }
@@ -700,14 +759,13 @@ async function submit() {
    little more without squeezing the fields, which carry the want list. */
 @media (min-width: 800px) {
   .form-layout {
-    grid-template-columns: 230px 1fr;
+    grid-template-columns: minmax(0, 1fr) 240px;
     gap: 28px;
   }
 }
 /* Looking For has no photo panel, so its single fields column must span the
-   full width rather than drop into the narrow first grid column. Declared
-   after the media queries so it wins at every breakpoint (equal specificity,
-   later in source order). */
+   full width. Declared after the media queries so it wins at every breakpoint
+   (equal specificity, later in source order). */
 .form-layout--single { grid-template-columns: 1fr; }
 
 .photo-col {
@@ -725,27 +783,35 @@ async function submit() {
 .field-block { display: flex; flex-direction: column; gap: 6px; }
 .field-row   { display: flex; gap: 12px; align-items: flex-start; }
 
-.field-label-row { display: flex; align-items: center; justify-content: space-between; }
+.field-label-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+/* The same mono eyebrow the announces tab labels ON THE BOARD and UPCOMING
+   EVENTS with, so a field label and a section label are one voice. */
 .field-label {
-  font-size: 11px;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 10.5px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--c-muted);
 }
 .field-hint {
-  font-size: 10px;
+  font-size: 11px;
+  line-height: 1.45;
   color: var(--c-muted);
-  opacity: 0.7;
 }
+/* Errors stay pink, which is what every other failed field in this app says.
+   --an-kind never lands on loose text, so the two cannot be confused even in
+   Looking For, where the form's own accent is pink too. */
+.field-hint--bad { color: var(--c-accent); font-weight: 600; }
 .archetype-list {
   list-style: none;
   margin-top: 4px;
   max-height: 180px;
   overflow-y: auto;
-  border: 1px solid var(--c-border);
-  border-radius: 8px;
+  border: 1px solid var(--an-line);
+  border-radius: 10px;
   background: var(--c-surface-2);
+  box-shadow: var(--an-lit);
 }
 /* Preview of the art the chosen archetype will carry. Absent entirely when the
    typed text matches no archetype, or when the art fails to load. */
@@ -756,8 +822,8 @@ async function submit() {
   margin-top: 8px;
   padding: 7px 9px;
   border-radius: 10px;
-  border: 1px solid var(--c-border);
-  background: var(--c-surface-2);
+  border: 1px solid color-mix(in srgb, var(--an-kind) 30%, transparent);
+  background: color-mix(in srgb, var(--an-kind) 8%, transparent);
 }
 .archetype-preview__art {
   width: 38px;
@@ -765,12 +831,12 @@ async function submit() {
   border-radius: 8px;
   object-fit: cover;
   flex-shrink: 0;
-  border: 1px solid color-mix(in srgb, var(--c-mutual) 45%, transparent);
+  border: 1px solid color-mix(in srgb, var(--an-kind) 45%, transparent);
 }
 .archetype-preview__name {
   font-size: 12px;
   font-weight: 700;
-  color: var(--c-mutual);
+  color: var(--an-kind);
 }
 .archetype-option {
   display: block;
@@ -784,13 +850,14 @@ async function submit() {
 }
 .archetype-option:hover,
 .archetype-option:focus-visible {
-  background: color-mix(in srgb, var(--c-mutual) 18%, transparent);
+  background: color-mix(in srgb, var(--an-kind) 14%, transparent);
+  outline: none;
 }
 
 .field-input {
   width: 100%;
-  background: var(--c-surface);
-  border: 1.5px solid var(--c-border);
+  background: var(--c-input-bg);
+  border: 1.5px solid var(--an-line);
   border-radius: 12px;
   padding: 10px 13px;
   font-size: 13.5px;
@@ -799,8 +866,8 @@ async function submit() {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .field-input:focus {
-  border-color: var(--c-trade);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-trade) 15%, transparent);
+  border-color: var(--an-kind);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--an-kind) 15%, transparent);
 }
 .field-input::placeholder { color: var(--c-muted); opacity: 0.5; font-size: 13px; }
 .field-input:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -819,79 +886,106 @@ async function submit() {
 /* ── Photo grid ───────────────────────────────────── */
 .photo-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
 }
+/* With nothing in it the grid held one small square in a two-column track and
+   left the other half blank, which read as a broken tile rather than a place
+   to drop a photo. Empty, the control is the whole column. */
+.photo-grid--empty { grid-template-columns: 1fr; }
+.photo-grid--empty .photo-add { aspect-ratio: 4 / 3; }
 .photo-thumb {
   position: relative;
   aspect-ratio: 1;
   border-radius: 12px;
   overflow: hidden;
-  border: 1.5px solid var(--c-border);
+  border: 1.5px solid var(--an-line);
 }
 .photo-thumb__img { width: 100%; height: 100%; object-fit: cover; }
+/* Both overlays sit on photographs, so they carry their own ground rather
+   than trusting whatever is underneath. That ground was raw black at 55-65%
+   with a raw white glyph, and the hover state was a raw red — three colours
+   this system does not have. --c-bg is the page's own near-black in dark and
+   near-white in light, so the chip stays legible on either theme's idea of a
+   photo, and the delete hover is pink, which is what removal is called here. */
 .photo-thumb__del {
   position: absolute; top: 5px; right: 5px;
-  width: 22px; height: 22px; border-radius: 50%;
-  background: rgba(0,0,0,0.65); color: white;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: color-mix(in srgb, var(--c-bg) 78%, transparent);
+  color: var(--c-text);
+  backdrop-filter: blur(6px);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
-.photo-thumb__del:hover { background: rgba(200,0,0,0.8); }
+.photo-thumb__del:hover {
+  background: var(--c-accent);
+  color: var(--c-on-accent);
+}
+.photo-thumb__del:focus-visible { outline: 2px solid var(--an-kind); outline-offset: 2px; }
 .photo-thumb__cover {
   position: absolute; bottom: 4px; left: 4px;
-  padding: 2px 6px; border-radius: 5px;
-  font-size: 9px; font-weight: 800; letter-spacing: 0.05em;
-  background: rgba(0,0,0,0.55); color: #fff;
-  backdrop-filter: blur(4px);
+  padding: 3px 7px; border-radius: 6px;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  background: color-mix(in srgb, var(--c-bg) 78%, transparent);
+  color: var(--c-text);
+  backdrop-filter: blur(6px);
 }
 .photo-add {
   aspect-ratio: 1;
   border-radius: 12px;
-  border: 1.5px dashed var(--c-border);
-  background: var(--c-surface);
+  border: 1.5px dashed var(--an-line);
+  background: var(--an-panel);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
 }
-.photo-add:hover { border-color: var(--c-trade); background: color-mix(in srgb, var(--c-trade) 6%, transparent); }
+.photo-add:hover { border-color: var(--an-kind); background: color-mix(in srgb, var(--an-kind) 6%, transparent); }
+.photo-add:focus-visible { outline: 2px solid var(--an-kind); outline-offset: 2px; }
 .photo-add__label { font-size: 10px; font-weight: 600; color: var(--c-muted); }
 
 /* ── Error bar ────────────────────────────────────── */
 .error-bar {
-  display: flex; align-items: center; gap: 6px;
-  padding: 9px 12px; border-radius: 10px;
-  background: color-mix(in srgb, #ef4444 12%, transparent);
-  color: #ef4444;
-  font-size: 12px; font-weight: 600;
+  display: flex; align-items: center; gap: 7px;
+  padding: 10px 13px; border-radius: 10px;
+  background: color-mix(in srgb, var(--c-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-accent) 30%, transparent);
+  color: var(--c-accent);
+  font-size: 12.5px; font-weight: 600;
 }
 
 /* ── Footer ───────────────────────────────────────── */
 .dlg-foot {
   display: flex; align-items: center; justify-content: flex-end; gap: 10px;
-  padding: 16px 24px;
-  background: var(--c-surface);
-  border-top: 1px solid var(--c-border);
+  padding: 14px 24px;
+  background: var(--an-panel);
+  border-top: 1px solid var(--an-line);
   flex-shrink: 0;
 }
 .btn-cancel {
-  padding: 9px 16px; border-radius: 11px;
+  min-height: 42px;
+  padding: 0 16px; border-radius: 11px;
+  font-family: inherit;
   font-size: 13px; font-weight: 600; color: var(--c-muted);
-  cursor: pointer; transition: background 0.15s ease;
+  cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
 }
-.btn-cancel:hover { background: var(--c-surface-2); }
+.btn-cancel:hover { background: var(--c-surface-2); color: var(--c-text); }
+.btn-cancel:focus-visible { outline: 2px solid var(--an-kind); outline-offset: 2px; }
 .btn-cancel:disabled { opacity: 0.4; pointer-events: none; }
 
 .btn-submit {
   display: flex; align-items: center; gap: 7px;
-  padding: 9px 20px; border-radius: 11px;
-  background: var(--c-trade); color: var(--c-on-accent);
+  min-height: 42px;
+  padding: 0 20px; border-radius: 11px;
+  background: var(--an-kind); color: var(--c-on-accent);
+  font-family: inherit;
   font-size: 13px; font-weight: 700;
-  cursor: pointer; transition: opacity 0.15s ease, transform 0.15s ease;
-  min-width: 120px; justify-content: center;
+  cursor: pointer; transition: opacity 0.15s ease;
+  min-width: 130px; justify-content: center;
 }
-.btn-submit:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+.btn-submit:hover:not(:disabled) { opacity: 0.88; }
+.btn-submit:focus-visible { outline: 2px solid var(--an-kind); outline-offset: 3px; }
 .btn-submit:disabled { opacity: 0.4; pointer-events: none; }
 
 /* ── Card picker ───────────────────────────────────── */
@@ -919,11 +1013,15 @@ async function submit() {
   top: calc(100% + 4px);
   left: 0; right: 0;
   background: var(--c-surface);
-  border: 1.5px solid var(--c-border);
+  border: 1.5px solid var(--an-line);
   border-radius: 14px;
   overflow: hidden;
   z-index: 50;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  /* A raw black drop shadow was the only thing separating this from the field
+     below it; in the light theme it was a bruise. The panel is one tonal step
+     up with a lit top edge instead (DESIGN.md, The Flat-By-Default Rule). */
+  background: var(--c-surface);
+  box-shadow: var(--an-lit);
   max-height: 260px;
   overflow-y: auto;
 }
@@ -940,7 +1038,8 @@ async function submit() {
   border-bottom: 1px solid var(--c-border);
 }
 .card-result:last-child { border-bottom: none; }
-.card-result:hover { background: var(--c-surface-2); }
+.card-result:hover { background: color-mix(in srgb, var(--an-kind) 10%, transparent); }
+.card-result:focus-visible { background: color-mix(in srgb, var(--an-kind) 10%, transparent); outline: none; }
 .card-result__img {
   width: 32px;
   height: 46px;
@@ -977,8 +1076,8 @@ async function submit() {
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
-  background: color-mix(in srgb, var(--c-trade) 10%, transparent);
-  border: 1.5px solid color-mix(in srgb, var(--c-trade) 35%, transparent);
+  background: color-mix(in srgb, var(--an-kind) 10%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--an-kind) 35%, transparent);
   border-radius: 12px;
 }
 .card-chip__img {
@@ -1014,5 +1113,6 @@ async function submit() {
   transition: background 0.15s ease, color 0.15s ease;
 }
 .card-chip__clear:hover { background: var(--c-surface-2); color: var(--c-text); }
+.card-chip__clear:focus-visible { outline: 2px solid var(--an-kind); outline-offset: 2px; }
 
 </style>

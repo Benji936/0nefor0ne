@@ -102,7 +102,7 @@ const SECTIONS = [
     title: "Ads, affiliate links, and donations",
     body: [
       "We show ads (via Google AdSense) to help cover hosting costs.",
-      "Some outbound links on the site, for example to TCGplayer, eBay, and Railway, are affiliate links, meaning we may earn a small commission if you buy or sign up through them, at no extra cost to you. These are disclosed on the \"Built with & partners\" page.",
+      "Some outbound links on the site, for example to TCGplayer, eBay, and Railway, are affiliate links, meaning we may earn a small commission if you buy or sign up through them, at no extra cost to you. These are disclosed on the \"Support us\" page.",
       "If you choose to support the project through the Ko-fi donation link, donations are voluntary, non-refundable, and do not entitle you to any product, service, or feature.",
       "Third-party sites we link to have their own terms and privacy policies, which we do not control.",
     ],

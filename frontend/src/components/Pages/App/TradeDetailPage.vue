@@ -23,15 +23,32 @@ import { describeEvent } from "@/lib/tradeEvents";
 import { tradeErrorKey, isStaleTradeError } from "@/lib/tradeErrors";
 import {
   fetchMyProposals, fetchTradeEvents, acceptTradeProposal, declineTradeProposal,
-  cancelTradeProposal, completeTradeProposal,
+  cancelTradeProposal, completeTradeProposal, confirmTradeAgreement, reviseTradeTerms,
 } from "@/lib/proposals";
+import { tradeNextAction, tradePhase } from "@/lib/tradeWorkflow";
 import { handleIfPhoneRequired } from "@/lib/phoneGate";
 import TradePhotosPanel from "@/components/trade/TradePhotosPanel.vue";
-import TradeChatPanel   from "@/components/trade/TradeChatPanel.vue";
+import TradeChatSleeve  from "@/components/trade/TradeChatSleeve.vue";
 import ProposeTradeDialog from "@/components/trade/ProposeTradeDialog.vue";
 import TraderLink       from "@/components/trade/TraderLink.vue";
+import CardPrice        from "@/components/trade/CardPrice.vue";
+import { fetchCardPrices, sumPrices, tradeGap, formatMoney } from "@/lib/cardmarketPrice";
 
 const { t, locale } = useI18n();
+
+// Card id -> resolved Cardmarket price, for both sides of the proposal.
+//
+// This is the screen where somebody decides whether to accept, so it is the one
+// place the numbers most need to be present -- and the one place they must
+// agree with what the proposer saw when they built the offer. Both call
+// card_prices, so they do by construction. See cardmarketPrice.js.
+const prices = ref(new Map());
+
+const sideTotal = (cards) => sumPrices(
+  (cards ?? []).map(c => ({ price: prices.value.get(c.id), quantity: c.quantity })),
+);
+const money = (v) => formatMoney(v, locale.value);
+
 const route  = useRoute();
 const router = useRouter();
 
@@ -54,6 +71,10 @@ const currentUserId = computed(() => props.login?.user?.id ?? null);
 const proposal   = ref(null);
 const loading    = ref(true);
 const loadFailed = ref(false);
+const comparison = computed(() => tradeGap(
+  sideTotal(proposal.value?.i_give),
+  sideTotal(proposal.value?.i_receive),
+));
 
 async function load({ quiet = false } = {}) {
   if (!currentUserId.value) { loading.value = false; return; }
@@ -87,6 +108,19 @@ watch(() => proposal.value?.id, async (id) => {
   finally { loadingEvents.value = false; }
 }, { immediate: true });
 
+/**
+ * Prices for both sides, whenever the proposal is (re)loaded.
+ *
+ * Declared down here rather than beside `prices` above, because watch() runs
+ * its source getter synchronously to capture the initial value -- reading
+ * `proposal` from above its own `const` is a temporal dead zone error, and it
+ * takes the whole page down to a blank screen rather than just this line.
+ */
+watch(() => proposal.value?.id, async () => {
+  const cards = [...(proposal.value?.i_give ?? []), ...(proposal.value?.i_receive ?? [])];
+  prices.value = cards.length ? await fetchCardPrices(cards.map(c => c.id)) : new Map();
+}, { immediate: true });
+
 // ── Photo state, lifted from the panel (it holds the realtime subscription) ──
 const bothUploaded   = ref(false);
 const mineUploaded   = ref(false);
@@ -106,6 +140,8 @@ const statusMeta = computed(() => {
 
 const isPending      = computed(() => proposal.value?.status === "pending");
 const isAccepted     = computed(() => proposal.value?.status === "accepted");
+const workflowPhase  = computed(() => tradePhase(proposal.value));
+const nextAction     = computed(() => tradeNextAction(proposal.value));
 const showPhotoPanel = computed(() => isPending.value || isAccepted.value);
 const iConfirmed     = computed(() => proposal.value?.i_confirmed    ?? false);
 const theyConfirmed  = computed(() => proposal.value?.they_confirmed ?? false);
@@ -128,6 +164,80 @@ const confirmKey = computed(() => confirmHintKey({
   i_uploaded:    mineUploaded.value,
   they_uploaded: theirsUploaded.value,
 }));
+
+/* ── Where the trade has got to ────────────────────────────────────────────
+   The four stages of the staged workflow, as a line with named stops. The
+   status pill says one word about a trade; this says which of four steps you
+   are standing on, which is the thing the buttons in the rail change with and
+   which the page otherwise only implies.
+
+   Legacy trades have no `workflow_phase`, and tradePhase() maps them to
+   "negotiation". They are shown on the agreement stop with selection behind
+   them, which is true rather than convenient: a legacy proposer chose both
+   sides in one go, so the cards were picked -- just not in two passes. */
+const PHASES = [
+  { key: "selection", labelKey: "tradeDetail.phaseSelection" },
+  { key: "agreement", labelKey: "tradeDetail.phaseAgreement" },
+  { key: "exchange",  labelKey: "tradeDetail.phaseExchange"  },
+  { key: "completed", labelKey: "tradeDetail.phaseDone"      },
+];
+
+const phaseStops = computed(() => {
+  const here = workflowPhase.value === "negotiation" ? "agreement" : workflowPhase.value;
+  const at = PHASES.findIndex(p => p.key === here);
+  return PHASES.map((p, i) => ({
+    key: p.key,
+    label: t(p.labelKey),
+    done: at > i,
+    here: at === i,
+  }));
+});
+
+// Cancelled and declined trades stop somewhere rather than finishing, so they
+// get the status pill instead: a four-stop line with the last two greyed reads
+// as "still to come" for a trade that is over.
+const isTerminal = computed(() =>
+  ["declined", "cancelled"].includes(proposal.value?.status));
+const showSpine = computed(() => Boolean(proposal.value) && !isTerminal.value);
+
+/* ── Which way the deal leans ──────────────────────────────────────────────
+   tradeGap works in the viewer's direction here -- receive minus give -- so a
+   positive low means every plausible reading has you receiving more.
+
+   The third answer is the useful one. When the two bands overlap, neither side
+   is ahead by any reading of the prices, and saying so is worth more than the
+   em-dash the old centre column showed whenever a single card had more than
+   one printing. */
+const balance = computed(() => {
+  const g = comparison.value;
+  const give = sideTotal(proposal.value?.i_give);
+  const get  = sideTotal(proposal.value?.i_receive);
+  if (!give.priced || !get.priced) return null;
+
+  if (g.low > 0)  return { lean: "you",  low: g.low,   high: g.high };
+  if (g.high < 0) return { lean: "them", low: -g.high, high: -g.low };
+  return { lean: "even" };
+});
+
+const balanceLabel = computed(() => ({
+  you:  t('tradeDetail.gapYouAhead'),
+  them: t('tradeDetail.gapTheyAhead', { name: counterpartyName.value }),
+  even: t('tradeDetail.gapEven'),
+}[balance.value?.lean] ?? ""));
+
+const balanceAmount = computed(() => {
+  const b = balance.value;
+  if (!b || b.lean === "even") return "";
+  return comparison.value.exact
+    ? money(b.low)
+    : `${money(b.low)} – ${money(b.high)}`;
+});
+
+// Teal is the colour of agreement, so the seam only reaches it once there is
+// one to mark (DESIGN.md, The Agreement Rule). Everything before that is a
+// line between two piles, and is drawn like one.
+const sealed = computed(() =>
+  ["accepted", "completed"].includes(proposal.value?.status));
 
 const hasSettlement = computed(() => Boolean(
   proposal.value?.trade_method || proposal.value?.cash_amount ||
@@ -209,6 +319,28 @@ const cancelConfirm = ref({ open: false, working: false });
 
 const editOpen    = ref(false);
 const editMode    = ref(null); // 'edit' | 'counter'
+const termsOpen   = ref(false);
+const terms = ref({ trade_method: 'in_person', cash_amount: null, cash_payer: 'proposer' });
+
+function openTerms() {
+  terms.value = {
+    trade_method: proposal.value.trade_method ?? 'in_person',
+    cash_amount: proposal.value.cash_amount ?? null,
+    cash_payer: proposal.value.cash_payer ?? 'proposer',
+  };
+  termsOpen.value = true;
+}
+
+async function saveTerms() {
+  const amount = Number(terms.value.cash_amount);
+  const result = await run(() => reviseTradeTerms(proposal.value.id, proposal.value.revision, {
+    trade_method: terms.value.trade_method,
+    cash_amount: amount > 0 ? amount : null,
+    cash_payer: amount > 0 ? terms.value.cash_payer : null,
+    meetup_location: proposal.value.meetup_location ?? null,
+  }), { fallbackKey: 'proposal.failedToSave', success: () => t('tradeDetail.termsSuggested') });
+  if (result !== undefined) termsOpen.value = false;
+}
 
 function say(message, color = "var(--c-mutual)") {
   snackbar.value = { open: true, message, color };
@@ -242,6 +374,16 @@ const onAccept = () => run(() => acceptTradeProposal(proposal.value.id), {
   fallbackKey: 'tradeCenter.failedToAccept',
   success: () => t('tradeCenter.tradeAccepted'),
 });
+
+const onConfirmAgreement = () => run(
+  () => confirmTradeAgreement(proposal.value.id, proposal.value.revision),
+  {
+    fallbackKey: 'tradeCenter.failedToAccept',
+    success: result => result?.status === 'accepted'
+      ? t('tradeDetail.agreementComplete')
+      : t('tradeDetail.agreementConfirmed'),
+  },
+);
 
 async function onDecline() {
   const reason = declineReason.value.trim() || null;
@@ -359,36 +501,30 @@ function goBack() {
 
     <template v-else>
       <!-- ── Header ─────────────────────────────────────────────────────── -->
-      <header class="panel overflow-hidden">
-        <!-- Wraps rather than truncates: at 375px the status pill left so
-             little room that the title read "Trade #26 · T…", which hides the
-             one thing the heading is for. -->
-        <div class="flex flex-wrap items-center gap-3 md:gap-4 px-4 md:px-6 py-4">
-          <div class="relative shrink-0">
-            <div class="absolute -inset-1 rounded-full blur-md opacity-35"
-              :style="{ backgroundColor: proposal.i_am_proposer ? 'var(--c-trade)' : 'var(--c-accent)' }" />
-            <div
-              class="relative size-11 md:size-13 rounded-full flex items-center justify-center font-bold text-white ring-2 ring-white/10 overflow-hidden"
-              :style="{ backgroundColor: proposal.i_am_proposer ? 'var(--c-trade)' : 'var(--c-accent)' }"
-            >
-              <img v-if="proposal.counterparty_avatar_url" :src="proposal.counterparty_avatar_url"
-                alt="" class="w-full h-full object-cover" />
-              <span v-else>{{ counterpartyName[0].toUpperCase() }}</span>
-            </div>
+      <header class="panel td-head">
+        <div class="td-head__top">
+          <div class="td-head__face" :data-side="proposal.i_am_proposer ? 'give' : 'get'">
+            <img v-if="proposal.counterparty_avatar_url" :src="proposal.counterparty_avatar_url" alt="" />
+            <span v-else>{{ counterpartyName[0].toUpperCase() }}</span>
           </div>
 
-          <div class="flex flex-col min-w-0 flex-1" style="flex-basis: 12rem">
-            <h1 class="font-bold text-lg md:text-2xl leading-tight" style="color: var(--c-text)">
-              {{ t('tradeDetail.tradeNumber', { id: proposal.id }) }} ·
+          <div class="td-head__who">
+            <h1 class="td-head__title">
+              <span class="td-head__id">{{ t('tradeDetail.tradeNumber', { id: proposal.id }) }}</span>
               <TraderLink :trader-id="proposal.counterparty_id" underline>{{ counterpartyName }}</TraderLink>
             </h1>
-            <p class="text-xs md:text-sm mt-1" style="color: var(--c-muted)">
+            <p class="td-head__meta">
               {{ proposal.i_am_proposer ? t('proposal.youProposed') : t('proposal.proposedToYou') }} · {{ formattedDate }}
             </p>
           </div>
 
+          <!-- One state marker, not two. A live trade shows the spine below,
+               which says the same thing as the pill and three words more; a
+               trade that stopped shows the pill, because a four-stop line with
+               two stops that will never happen reads as unfinished business. -->
           <span
-            class="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-lg border shrink-0"
+            v-if="!showSpine"
+            class="td-pill"
             :style="{
               color: statusMeta.color,
               borderColor: `color-mix(in srgb, ${statusMeta.color} 45%, transparent)`,
@@ -399,30 +535,40 @@ function goBack() {
             {{ statusMeta.label }}
           </span>
         </div>
-        <div class="h-px w-full" style="background: linear-gradient(90deg, var(--c-accent), transparent 40%, transparent 60%, var(--c-trade))" />
+
+        <!-- The stages, as a line with named stops. -->
+        <ol v-if="showSpine" class="td-spine" :aria-label="t('tradeDetail.tradeProgress')">
+          <li
+            v-for="stop in phaseStops"
+            :key="stop.key"
+            class="td-spine__stop"
+            :class="{ 'is-done': stop.done, 'is-here': stop.here }"
+            :aria-current="stop.here ? 'step' : undefined"
+          >
+            <span class="td-spine__rail" aria-hidden="true" />
+            <span class="td-spine__label">{{ stop.label }}</span>
+          </li>
+        </ol>
       </header>
 
       <!-- ── Two columns ────────────────────────────────────────────────── -->
-      <div class="flex flex-col lg:flex-row gap-5 items-start">
+      <div class="td-cols flex flex-col lg:flex-row gap-5 items-start">
 
         <!-- Main: what is being traded -->
-        <div class="flex flex-col gap-5 min-w-0 w-full lg:flex-1">
+        <div class="td-main flex flex-col gap-5 min-w-0 w-full lg:flex-1">
 
           <!-- Card sides -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div class="trade-sides grid grid-cols-1 md:grid-cols-2 gap-5">
             <section v-for="side in [
               { key: 'give',    label: t('tradeDetail.youGive'),    icon: 'mdi-arrow-up-circle',   color: 'var(--c-accent)', cards: proposal.i_give },
               { key: 'receive', label: t('tradeDetail.youReceive'), icon: 'mdi-arrow-down-circle', color: 'var(--c-trade)',  cards: proposal.i_receive },
-            ]" :key="side.key" class="panel flex flex-col gap-3 !p-4" role="group"
-              :aria-labelledby="`side-${side.key}`"
+            ]" :key="side.key" class="panel trade-side" :class="`trade-side--${side.key}`" role="group"
+              :aria-labelledby="`side-${side.key}`" :style="{ '--td-side': side.color }"
             >
-              <div class="flex items-center gap-2 pb-2" style="border-bottom: 1px solid var(--c-border)">
-                <v-icon :icon="side.icon" size="18" :color="side.color" />
-                <h2 :id="`side-${side.key}`" class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">
-                  {{ side.label }}
-                </h2>
-                <span v-if="side.cards?.length" class="ml-auto text-[11px] font-semibold px-2 py-1 rounded-md"
-                  :style="{ background: `color-mix(in srgb, ${side.color} 15%, transparent)`, color: side.color }">
+              <div class="td-sidehead">
+                <v-icon :icon="side.icon" size="17" :color="side.color" />
+                <h2 :id="`side-${side.key}`" class="td-sidehead__label">{{ side.label }}</h2>
+                <span v-if="side.cards?.length" class="td-sidehead__n tabular-nums">
                   {{ t('tradeDetail.cardCount', side.cards.length) }}
                 </span>
               </div>
@@ -431,43 +577,80 @@ function goBack() {
                 {{ t('tradeDetail.nothingOnThisSide') }}
               </p>
 
-              <div v-for="card in side.cards" :key="card.id"
-                class="flex gap-3 rounded-lg px-3 py-3"
-                style="background-color: var(--c-surface-2); border: 1px solid var(--c-border)">
-                <img :src="cardImage(card.image_id)" :alt="card.name" loading="lazy"
-                  class="rounded-md object-contain shrink-0 ring-1 ring-white/10"
-                  style="width: 62px; height: 88px; background-color: var(--c-surface)" />
-                <div class="flex flex-col gap-2 min-w-0 grow">
-                  <p class="font-semibold text-sm leading-tight" style="color: var(--c-text)">{{ card.name }}</p>
-                  <div class="flex flex-wrap gap-2">
-                    <span v-if="card.extension" class="text-[11px] px-2 py-1 rounded font-mono"
-                      style="background: color-mix(in srgb, var(--c-trade) 15%, transparent); color: var(--c-trade)">{{ card.extension }}</span>
-                    <span v-if="card.rarity" class="text-[11px] px-2 py-1 rounded"
-                      style="background: color-mix(in srgb, var(--c-muted) 15%, transparent); color: var(--c-text)"
-                      :title="card.rarity">{{ shortenRarity(card.rarity) }}</span>
-                    <span v-if="card.condition" class="text-[11px] px-2 py-1 rounded"
-                      style="background: color-mix(in srgb, var(--c-muted) 12%, transparent); color: var(--c-muted)">{{ card.condition }}</span>
-                    <span v-if="card.language" class="text-[11px] px-2 py-1 rounded"
-                      style="background: color-mix(in srgb, var(--c-muted) 12%, transparent); color: var(--c-muted)">{{ card.language }}</span>
-                  </div>
-                  <p class="text-xs font-semibold mt-auto" style="color: var(--c-text)">
-                    {{ t('tradeDetail.qty') }} <span :style="{ color: side.color }">{{ card.quantity }}</span>
-                  </p>
-                  <div class="flex gap-3 mt-1 flex-wrap">
-                    <a v-for="m in marketLinks(card.name, card.extension)" :key="m.label"
-                      :href="m.url" target="_blank" rel="noopener noreferrer"
-                      class="text-[11px] flex items-center gap-1 no-underline transition-opacity hover:opacity-70"
-                      style="color: var(--c-muted)">
-                      <v-icon icon="mdi-open-in-new" size="11" />{{ m.label }}
-                    </a>
+              <div v-if="side.cards?.length" class="trade-card-list"
+                :tabindex="side.cards.length > 4 ? 0 : undefined"
+                :aria-label="side.cards.length > 4 ? `${side.label}: ${t('tradeDetail.cardCount', side.cards.length)}` : undefined">
+                <div v-for="card in side.cards" :key="card.id" class="td-row">
+                  <img :src="cardImage(card.image_id)" :alt="card.name" loading="lazy" class="td-row__art" />
+                  <div class="td-row__body">
+                    <div class="td-row__top">
+                      <p class="td-row__name">{{ card.name }}</p>
+                      <CardPrice v-if="prices.get(card.id)" :price="prices.get(card.id)" size="sm" class="shrink-0" />
+                    </div>
+
+                    <div class="td-tags">
+                      <span v-if="card.extension" class="td-tag td-tag--code">{{ card.extension }}</span>
+                      <span v-if="card.rarity" class="td-tag" :title="card.rarity">{{ shortenRarity(card.rarity) }}</span>
+                      <span v-if="card.condition" class="td-tag td-tag--dim">{{ card.condition }}</span>
+                      <span v-if="card.language" class="td-tag td-tag--dim">{{ card.language }}</span>
+                      <!-- Quantity is a fact about this card, so it sits with
+                           the card's other facts rather than on a line of its
+                           own. Tinted by the side, because how many you hand
+                           over and how many you get back are different news. -->
+                      <span v-if="card.quantity > 1" class="td-tag td-tag--qty">×{{ card.quantity }}</span>
+                    </div>
+
+                    <!-- One icon for the group, not one per link: three cards a
+                         side turned twenty-one open-in-new glyphs into the most
+                         repeated shape on the page. -->
+                    <p class="td-links">
+                      <v-icon icon="mdi-open-in-new" size="11" aria-hidden="true" />
+                      <a v-for="m in marketLinks(card.name, card.extension)" :key="m.label"
+                        :href="m.url" target="_blank" rel="noopener noreferrer">{{ m.label }}</a>
+                    </p>
                   </div>
                 </div>
               </div>
+
+              <!-- What this side comes to. Inside the panel it belongs to, so
+                   the two figures sit under the two piles rather than being
+                   collected somewhere else and needing to be matched back up. -->
+              <div v-if="side.cards?.length && sideTotal(side.cards).priced" class="td-total">
+                <span class="td-total__label">{{ t('price.sourceShort') }}</span>
+                <span class="td-total__amount tabular-nums">
+                  <template v-if="sideTotal(side.cards).exact">{{ money(sideTotal(side.cards).low) }}</template>
+                  <template v-else>{{ money(sideTotal(side.cards).low) }} – {{ money(sideTotal(side.cards).high) }}</template>
+                </span>
+              </div>
+            </section>
+
+            <!-- ── The seam ──────────────────────────────────────────────
+                 The two piles lean into one line. It is drawn as a line while
+                 the deal is open and turns teal the moment both sides have
+                 agreed, so the colour is earned rather than decorative.
+
+                 It carries the lean, not the totals: each pile already prints
+                 its own figure at its own foot, and repeating both here was
+                 asking the reader to match four numbers up. -->
+            <section
+              v-if="proposal.i_give?.length && proposal.i_receive?.length"
+              class="td-seam"
+              :class="{ 'is-sealed': sealed }"
+              :aria-label="t('tradeDetail.valueDifference')"
+            >
+              <span class="td-seam__line" aria-hidden="true" />
+              <div class="td-seam__disc">
+                <v-icon :icon="sealed ? 'mdi-handshake-outline' : 'mdi-swap-horizontal'" size="20" />
+              </div>
+              <p v-if="balance" class="td-seam__read" :data-lean="balance.lean">
+                <span class="td-seam__lean">{{ balanceLabel }}</span>
+                <strong v-if="balanceAmount" class="td-seam__amount tabular-nums">{{ balanceAmount }}</strong>
+              </p>
             </section>
           </div>
 
           <!-- Verification photos -->
-          <div v-if="showPhotoPanel" class="panel">
+          <div v-if="showPhotoPanel" class="panel td-photos">
             <TradePhotosPanel
               :open="true"
               :proposal="proposal"
@@ -477,19 +660,58 @@ function goBack() {
               v-model:theirs-uploaded="theirsUploaded"
             />
           </div>
+
         </div>
 
-        <!-- Rail: what to do about it -->
-        <aside class="flex flex-col gap-4 w-full lg:w-[360px] shrink-0">
+        <!-- Rail: what to do about it. Sticky, because the main column is now
+             the longer of the two -- cards, photos and a conversation -- and
+             the panel that says what to do next used to scroll away while you
+             read the thing you were deciding about. -->
+        <aside class="td-rail flex flex-col gap-4 w-full lg:w-[360px] shrink-0">
 
           <!-- Action panel -->
-          <section v-if="isPending || isAccepted" class="panel !p-4 flex flex-col gap-3">
-            <h2 class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">
+          <section v-if="isPending || isAccepted" class="panel td-act flex flex-col gap-3">
+            <h2 class="td-h">
               {{ t('tradeDetail.whatNext') }}
             </h2>
 
             <!-- Pending -->
             <template v-if="isPending">
+              <template v-if="workflowPhase === 'selection'">
+                <p class="text-xs" style="color: var(--c-muted); line-height: 1.6">
+                  {{ nextAction === 'chooseReturnCards'
+                    ? t('tradeDetail.chooseReturnCardsHelp', { name: counterpartyName })
+                    : t('tradeDetail.waitingForReturnSelection', { name: counterpartyName }) }}
+                </p>
+                <v-btn v-if="nextAction === 'chooseReturnCards'" block variant="flat" prepend-icon="mdi-cards-outline"
+                  style="background: var(--c-trade); color: var(--c-on-accent)"
+                  @click="openEdit('return')">{{ t('tradeDetail.chooseReturnCards') }}</v-btn>
+                <v-btn block variant="outlined" prepend-icon="mdi-cancel" :disabled="busy"
+                  style="border-color: var(--c-accent); color: var(--c-accent)"
+                  @click="onCancel">{{ t('proposal.cancelTrade') }}</v-btn>
+              </template>
+
+              <template v-else-if="workflowPhase === 'agreement'">
+                <p class="text-xs" style="color: var(--c-muted); line-height: 1.6">
+                  {{ nextAction === 'confirmAgreement'
+                    ? t('tradeDetail.confirmRevisionHelp', { revision: proposal.revision })
+                    : t('tradeDetail.waitingAgreement', { name: counterpartyName }) }}
+                </p>
+                <v-btn v-if="nextAction === 'confirmAgreement'" block variant="flat" prepend-icon="mdi-handshake-outline" :loading="busy"
+                  style="background: var(--c-mutual); color: var(--c-on-accent)"
+                  @click="onConfirmAgreement">{{ t('tradeDetail.confirmAgreement') }}</v-btn>
+                <v-btn block variant="outlined" prepend-icon="mdi-cards-outline" :disabled="busy"
+                  style="border-color: var(--c-trade); color: var(--c-trade)"
+                  @click="openEdit('revise')">{{ t('tradeDetail.changeCardsIWant') }}</v-btn>
+                <v-btn block variant="outlined" prepend-icon="mdi-scale-balance" :disabled="busy"
+                  style="border-color: var(--c-border); color: var(--c-text)"
+                  @click="openTerms">{{ t('tradeDetail.suggestTerms') }}</v-btn>
+                <v-btn block variant="outlined" prepend-icon="mdi-cancel" :disabled="busy"
+                  style="border-color: var(--c-accent); color: var(--c-accent)"
+                  @click="onCancel">{{ t('proposal.cancelTrade') }}</v-btn>
+              </template>
+
+              <template v-else>
               <p
                 v-if="!proposal.i_am_proposer && !bothUploaded"
                 class="flex items-start gap-2 text-xs rounded-lg px-3 py-2"
@@ -546,6 +768,7 @@ function goBack() {
                     @click="onCancel">{{ t('proposal.cancelTrade') }}</v-btn>
                 </template>
               </div>
+              </template>
             </template>
 
             <!-- Accepted -->
@@ -583,8 +806,8 @@ function goBack() {
           </section>
 
           <!-- Settlement -->
-          <section v-if="hasSettlement" class="panel !p-4 flex flex-col gap-3">
-            <h2 class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">
+          <section v-if="hasSettlement" class="panel td-sub td-sub--settle flex flex-col gap-3">
+            <h2 class="td-h">
               {{ t('tradeDetail.settlement') }}
             </h2>
 
@@ -629,27 +852,18 @@ function goBack() {
           <!-- Decline reason, for a trade that was declined -->
           <section
             v-if="proposal.status === 'declined' && proposal.decline_reason"
-            class="panel !p-4 flex flex-col gap-2"
+            class="panel td-sub td-sub--decline flex flex-col gap-2"
             style="border-color: color-mix(in srgb, var(--c-accent) 30%, transparent)"
           >
-            <h2 class="text-xs font-bold uppercase tracking-wide" style="color: var(--c-accent)">
+            <h2 class="td-h td-h--warn">
               {{ t('tradeDetail.declineReason') }}
             </h2>
             <p class="text-sm" style="color: var(--c-text); line-height: 1.55">{{ proposal.decline_reason }}</p>
           </section>
 
-          <!-- Chat: a panel now, not a modal on top of a modal -->
-          <section class="panel !px-0 !pt-0 !pb-2">
-            <TradeChatPanel
-              :open="true"
-              :proposal="proposal"
-              :current-user-id="currentUserId"
-            />
-          </section>
-
           <!-- Activity log -->
-          <section class="panel !p-4 flex flex-col gap-3">
-            <h2 class="text-sm font-bold uppercase tracking-wide" style="color: var(--c-text)">
+          <section class="panel td-sub td-sub--log flex flex-col gap-3">
+            <h2 class="td-h">
               {{ t('tradeDetail.activityLog') }}
             </h2>
             <p v-if="loadingEvents" class="text-xs" style="color: var(--c-muted)">{{ t('common.loading') }}</p>
@@ -704,13 +918,50 @@ function goBack() {
         </v-card>
       </v-dialog>
 
+      <!-- The conversation, docked to the corner. Suspended while this page
+           raises a dialog of its own, so a panel can never end up stranded
+           behind a modal. -->
+      <TradeChatSleeve
+        :proposal="proposal"
+        :current-user-id="currentUserId"
+        :suspended="editOpen || termsOpen || cancelConfirm.open"
+      />
+
       <ProposeTradeDialog
         v-model="editOpen"
         :edit-proposal="editMode === 'edit' ? proposal : null"
         :counter-proposal="editMode === 'counter' ? proposal : null"
+        :return-proposal="editMode === 'return' ? proposal : null"
+        :revision-proposal="editMode === 'revise' ? proposal : null"
         @updated="onEdited('edit')"
         @countered="onEdited('counter')"
       />
+
+      <v-dialog v-model="termsOpen" max-width="480">
+        <v-card class="!rounded-2xl !p-5 flex flex-col gap-4" style="background: var(--c-surface); color: var(--c-text); border: 1px solid var(--c-border)">
+          <h2 class="text-lg font-bold">{{ t('tradeDetail.suggestTerms') }}</h2>
+          <div class="flex flex-col gap-2 text-sm">
+            <v-select v-model="terms.trade_method" :items="[
+              { title: t('proposal.tradeMethodInPerson'), value: 'in_person' },
+              { title: t('proposal.tradeMethodMail'), value: 'mail' },
+            ]" :label="t('tradeDetail.tradeMethod')" item-title="title" item-value="value" hide-details density="comfortable" />
+          </div>
+          <label class="flex flex-col gap-2 text-sm">
+            <span>{{ t('proposeDialog.addCashOffset') }}</span>
+            <input v-model.number="terms.cash_amount" type="number" min="0" step="0.01" class="rounded-lg border px-3 py-2" style="background: var(--c-surface-2); border-color: var(--c-border); color: var(--c-text)" />
+          </label>
+          <div v-if="Number(terms.cash_amount) > 0" class="flex flex-col gap-2 text-sm">
+            <v-select v-model="terms.cash_payer" :items="[
+              { title: proposal.i_am_proposer ? t('proposeDialog.youPay') : t('proposeDialog.theyPay'), value: 'proposer' },
+              { title: proposal.i_am_proposer ? t('proposeDialog.theyPay') : t('proposeDialog.youPay'), value: 'counterparty' },
+            ]" :label="t('tradeDetail.cashPayer')" item-title="title" item-value="value" hide-details density="comfortable" />
+          </div>
+          <div class="flex justify-end gap-2">
+            <v-btn variant="text" :disabled="busy" @click="termsOpen=false">{{ t('common.cancel') }}</v-btn>
+            <v-btn variant="flat" :loading="busy" style="background: var(--c-trade); color: var(--c-on-accent)" @click="saveTerms">{{ t('tradeDetail.suggestTerms') }}</v-btn>
+          </div>
+        </v-card>
+      </v-dialog>
     </template>
 
     <v-snackbar v-model="snackbar.open" :timeout="4000" :color="snackbar.color ?? 'var(--c-mutual)'">
@@ -720,25 +971,495 @@ function goBack() {
 </template>
 
 <style scoped>
-/*
-  Wider than the app's reading pages on purpose. The two columns only earn
-  their keep if the main one still fits two card lists side by side once the
-  360px rail is taken out of it.
-*/
+/* ──────────────────────────────────────────────────────────────────────────
+   The page borrows the landing page's surface vocabulary -- a panel ground one
+   tonal step under the surface, borders at partial alpha, a 1px lit top edge
+   instead of an outer shadow, and the 24/18/12 radius family -- so arriving
+   here from the marketing site does not feel like arriving at a different
+   product. What it does not borrow is the landing's body face or its pill
+   buttons: running text and controls stay the app's, because this page is one
+   route inside an app and the seam would show on every navigation into it.
+
+   Space Grotesk is the one type borrow, and only on the trade's own number and
+   the seam's figure. DESIGN.md §3 says the system uses the device sans
+   throughout; this is a deliberate, page-scoped exception, and the reason is
+   that a trade is the one screen in the app somebody sends to another person.
+   ────────────────────────────────────────────────────────────────────────── */
 .trade-page {
+  /* Wider than the app's reading pages on purpose: the two columns only earn
+     their keep if the main one still fits two card lists side by side once the
+     360px rail is taken out of it. */
   max-width: 1400px;
+
+  --td-panel: color-mix(in srgb, var(--c-surface) 94%, var(--c-bg));
+  --td-line: color-mix(in srgb, var(--c-border) 60%, transparent);
+  --td-line-soft: color-mix(in srgb, var(--c-border) 34%, transparent);
+  --td-lit: inset 0 1px 0 color-mix(in srgb, var(--c-text) 8%, transparent);
+  --td-r: 22px;
+  --td-r-card: 14px;
+  --td-r-sm: 9px;
+  --td-display: "Space Grotesk", system-ui, -apple-system, sans-serif;
+  --td-mono: ui-monospace, "Cascadia Code", SFMono-Regular, Menlo, monospace;
 }
 
 .panel {
-  background-color: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: 16px;
+  background-color: var(--td-panel);
+  border: 1px solid var(--td-line);
+  border-radius: var(--td-r);
+  box-shadow: var(--td-lit);
+  padding: 18px;
 }
 
+/* The collector's register: monospace, uppercase, widely tracked. Every label
+   on the page that names a section rather than saying something is set in it,
+   which is the same voice the binder and the set codes already use
+   (DESIGN.md, The Mono Identifier Rule / The Uppercase Section Rule). */
+.td-h {
+  margin: 0;
+  font-family: var(--td-mono);
+  font-size: 0.69rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+}
+.td-h--warn { color: var(--c-accent); }
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.td-head { padding: 18px 20px; overflow: hidden; }
+
+.td-head__top {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+/* Flat. The avatar used to sit on a blurred disc of its own colour, which is a
+   drop shadow wearing a hat (DESIGN.md, The Flat-By-Default Rule) and which
+   the seam's one earned glow now has to be louder than. */
+.td-head__face {
+  position: relative;
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--c-on-accent);
+  background: var(--c-trade);
+}
+.td-head__face[data-side="get"] { background: var(--c-accent); }
+.td-head__face img { width: 100%; height: 100%; object-fit: cover; }
+
+.td-head__who { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1 1 12rem; }
+
+.td-head__title {
+  margin: 0;
+  font-family: var(--td-display);
+  font-weight: 700;
+  font-size: clamp(1.25rem, 2.2vw, 1.7rem);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--c-text);
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 10px;
+}
+/* The trade's number is an identifier, so it is set like one, and it is the
+   half of the heading that stays the same length in every language. */
+.td-head__id {
+  font-family: var(--td-mono);
+  font-size: 0.72em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--c-muted);
+}
+.td-head__meta { margin: 0; font-size: 0.8rem; color: var(--c-muted); }
+
+.td-pill {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-family: var(--td-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ── The spine: four named stops on one line ──────────────────────────────
+   A real sequence, so it is drawn as one. Each stop owns the length of rail to
+   its left, which is what lets the line fill as the trade advances without a
+   second element to keep in step. Reached stops are amethyst because moving a
+   trade along is offering, not agreeing -- teal belongs to the seam. */
+.td-spine {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.td-spine__stop { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.td-spine__rail {
+  height: 2px;
+  border-radius: 2px;
+  background: var(--td-line-soft);
+  transition: background-color 0.25s ease;
+}
+.td-spine__stop.is-done .td-spine__rail,
+.td-spine__stop.is-here .td-spine__rail { background: var(--c-trade); }
+
+.td-spine__label {
+  font-family: var(--td-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  /* Not 0.6, which measures 3.18:1 on the header ground -- a stop you have not
+     reached yet is still a label somebody has to read, not disabled chrome.
+     0.82 puts it at 4.96:1 dark and 4.96:1 light, both over AA.
+     The reached/unreached difference is carried by the rail's colour and by
+     the current stop being amethyst, so the opacity is a third cue rather
+     than the only one. */
+  opacity: 0.82;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.td-spine__stop.is-done .td-spine__label { opacity: 0.92; }
+.td-spine__stop.is-here .td-spine__label { color: var(--c-trade); opacity: 1; }
+
+/* ── The two piles ───────────────────────────────────────────────────────── */
+.trade-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.td-sidehead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid var(--td-line-soft);
+}
+.td-sidehead__label {
+  margin: 0;
+  font-family: var(--td-mono);
+  font-size: 0.69rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--td-side);
+}
+.td-sidehead__n {
+  margin-left: auto;
+  font-family: var(--td-mono);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--c-muted);
+}
+
+.trade-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: min(620px, 65vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+}
+.trade-card-list:focus-visible {
+  outline: 2px solid var(--c-trade);
+  outline-offset: 2px;
+  border-radius: var(--td-r-card);
+}
+
+/* ── A card in a pile ────────────────────────────────────────────────────── */
+.td-row {
+  display: flex;
+  gap: 12px;
+  padding: 11px;
+  border-radius: var(--td-r-card);
+  background: color-mix(in srgb, var(--c-surface-2) 62%, transparent);
+  border: 1px solid var(--td-line-soft);
+}
+.td-row__art {
+  flex: none;
+  width: 58px;
+  aspect-ratio: 59 / 86;
+  height: auto;
+  object-fit: contain;
+  border-radius: 6px;
+  background: var(--c-surface);
+}
+.td-row__body { display: flex; flex-direction: column; gap: 7px; min-width: 0; flex: 1; }
+.td-row__top { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.td-row__name {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--c-text);
+}
+
+.td-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.td-tag {
+  padding: 3px 7px;
+  border-radius: var(--td-r-sm);
+  font-size: 0.66rem;
+  font-weight: 600;
+  line-height: 1.35;
+  background: color-mix(in srgb, var(--c-muted) 13%, transparent);
+  color: var(--c-text);
+}
+.td-tag--code {
+  font-family: var(--td-mono);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: color-mix(in srgb, var(--c-trade) 15%, transparent);
+  color: var(--c-trade);
+}
+.td-tag--dim { color: var(--c-muted); background: color-mix(in srgb, var(--c-muted) 10%, transparent); }
+.td-tag--qty {
+  font-family: var(--td-mono);
+  font-weight: 700;
+  background: color-mix(in srgb, var(--td-side) 16%, transparent);
+  color: var(--td-side);
+}
+
+.td-links {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 1px 0 0;
+  font-size: 0.68rem;
+  color: var(--c-muted);
+}
+.td-links .v-icon { opacity: 0.65; }
+.td-links a { color: inherit; text-decoration: none; transition: color 0.15s ease; }
+.td-links a:hover { color: var(--c-text); text-decoration: underline; }
+.td-links a:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; border-radius: 3px; }
+
+/* ── What a pile comes to ─────────────────────────────────────────────────
+   A rule across the foot of the panel, not another bordered box: the panel is
+   already framed and the cards inside it each are, so a third frame would be
+   the fourth edge in 40px (DESIGN.md, The Flat-By-Default Rule). Neutral --
+   the panel heading already carries the side's colour, and repeating it on the
+   figure would say the money is amethyst or pink, which is not a thing money
+   is here (The Three-Role Rule). */
+.td-total {
+  display: flex; align-items: baseline; gap: 10px;
+  margin-top: auto; padding-top: 12px;
+  border-top: 1px solid var(--td-line-soft);
+}
+.td-total__label {
+  font-family: var(--td-mono);
+  font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.16em; color: var(--c-muted);
+}
+.td-total__amount {
+  margin-left: auto;
+  font-family: var(--td-display);
+  font-size: 1rem; font-weight: 700; letter-spacing: -0.02em;
+  color: var(--c-text); white-space: nowrap;
+}
+
+/* ── The seam ─────────────────────────────────────────────────────────────
+   The page's signature, and its one loud moment. Two piles leaning into a
+   single line, with a disc on it that says which way the deal leans -- and
+   which turns teal only once both sides have agreed. Teal is the colour of
+   agreement and of nothing else (DESIGN.md, The Agreement Rule), so it is
+   absent from a trade that has not got one yet, and its arrival is the visual
+   event that marks the moment the whole product exists to produce.
+
+   It runs down the gutter on a wide screen and across the join on a narrow
+   one. The old centre column simply vanished under 1100px, which took the one
+   reading of who is ahead off the screen exactly where the two piles are
+   furthest apart and hardest to compare by eye. */
+.td-seam {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 18px 6px;
+  /* Below the three-column layout the piles stack or sit two-up and the seam
+     is the rule under both of them, so it takes the whole row rather than
+     centring itself inside the left-hand column. */
+  grid-column: 1 / -1;
+}
+
+.td-seam__line {
+  position: absolute;
+  background: var(--td-line);
+  transition: background-color 0.35s ease;
+  /* Narrow: a rule across the join. */
+  left: 8px; right: 8px; top: 50%; height: 1px;
+  transform: translateY(-50%);
+}
+.td-seam.is-sealed .td-seam__line {
+  background: color-mix(in srgb, var(--c-mutual) 60%, transparent);
+}
+
+.td-seam__disc {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  background: var(--td-panel);
+  border: 1px solid var(--td-line);
+  color: var(--c-muted);
+  transition: background-color 0.35s ease, border-color 0.35s ease, color 0.35s ease, box-shadow 0.35s ease;
+}
+/* The one glow on the page, on the one thing worth glowing. */
+.td-seam.is-sealed .td-seam__disc {
+  background: var(--c-mutual);
+  border-color: var(--c-mutual);
+  color: var(--c-on-accent);
+  box-shadow: 0 0 0 8px color-mix(in srgb, var(--c-mutual) 14%, transparent);
+}
+
+/* The lean. Never an em-dash: when the two price bands overlap, neither side
+   is ahead on any reading of the numbers, and saying that is worth more than
+   admitting the subtraction did not resolve. */
+.td-seam__read {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--td-panel);
+}
+.td-seam__lean {
+  font-family: var(--td-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  line-height: 1.3;
+}
+.td-seam__amount {
+  font-family: var(--td-display);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--c-text);
+  /* Allowed to break at the en dash rather than run out of the gutter: a
+     150px column and a four-figure band do not both fit on one line. */
+  text-wrap: balance;
+}
+
+@media (min-width: 1100px) {
+  .trade-sides { grid-template-columns: minmax(0, 1fr) 152px minmax(0, 1fr); align-items: stretch; }
+  .trade-side--give { order: 1; }
+  .trade-side--receive { order: 3; }
+  .td-seam { order: 2; grid-column: auto; flex-direction: column; padding: 24px 4px; gap: 0; }
+
+  /* Wide: the rule stands up and runs the height of both piles. */
+  .td-seam .td-seam__line {
+    left: 50%; right: auto; top: 10px; bottom: 10px; height: auto; width: 1px;
+    transform: translateX(-50%);
+    background: linear-gradient(180deg, transparent, var(--td-line) 12%, var(--td-line) 88%, transparent);
+  }
+  .td-seam.is-sealed .td-seam__line {
+    background: linear-gradient(
+      180deg,
+      transparent,
+      color-mix(in srgb, var(--c-mutual) 60%, transparent) 12%,
+      color-mix(in srgb, var(--c-mutual) 60%, transparent) 88%,
+      transparent
+    );
+  }
+  .td-seam__read {
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-top: 12px;
+    padding: 8px 6px;
+    text-align: center;
+  }
+}
+
+/* ── The rail ─────────────────────────────────────────────────────────────
+   The action panel is why somebody opened this page, so it stops looking like
+   the activity log: it sits on the surface proper rather than the recessed
+   panel ground, and its border carries the amethyst of an offer. Ground and
+   position, not a second button vocabulary -- the controls stay the app's. */
+.td-act {
+  background: var(--c-surface);
+  border-color: color-mix(in srgb, var(--c-trade) 38%, transparent);
+  box-shadow: var(--td-lit);
+  padding: 16px;
+}
+.td-sub { padding: 16px; }
+.td-photos { padding: 16px; }
+
+/* ── The stacked order ────────────────────────────────────────────────────
+   Below the two-column layout the rail's panels have to interleave with the
+   main column's, not queue up behind them: the chat moving into the main
+   column would otherwise push "what happens next" below the whole
+   conversation, which is the one panel that must stay near the top of a
+   phone screen. Both columns dissolve so every panel is a child of the same
+   stack, and the stack is ordered the way somebody reads a trade -- what is
+   being swapped, what to do about it, how it settles, the evidence, the
+   conversation, then the history. */
+@media (max-width: 1023px) {
+  .td-main, .td-rail { display: contents; }
+  .trade-sides       { order: 1; }
+  .td-act            { order: 2; }
+  .td-sub--settle    { order: 3; }
+  .td-sub--decline   { order: 4; }
+  .td-photos         { order: 5; }
+  .td-sub--log       { order: 6; }
+}
+
+@media (min-width: 1024px) {
+  .td-rail {
+    position: sticky;
+    top: 12px;
+    align-self: flex-start;
+    /* Usually shorter than the window now that the chat has left it, so no
+       scrollbar appears. The cap is for the trade that has a long settlement
+       note and a long history: an inner scroll is worse than none, and much
+       better than the bottom of the rail being unreachable. */
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+/* ── States ──────────────────────────────────────────────────────────────── */
 .state-card {
-  background-color: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: 16px;
+  background-color: var(--td-panel);
+  border: 1px solid var(--td-line);
+  border-radius: var(--td-r);
   padding: 48px 24px;
 }
 
@@ -757,7 +1478,7 @@ function goBack() {
 }
 
 .skeleton {
-  border-radius: 16px;
+  border-radius: var(--td-r);
   background: linear-gradient(90deg, var(--c-surface) 25%, var(--c-surface-2) 50%, var(--c-surface) 75%);
   background-size: 200% 100%;
   animation: skeleton-pan 1.4s ease-in-out infinite;
@@ -768,7 +1489,30 @@ function goBack() {
   to   { background-position: -200% 0; }
 }
 
+@media (max-width: 640px) {
+  .trade-page { --td-r: 18px; }
+  .td-head { padding: 16px; }
+
+  /* Four labels across 375px ellipsise into each other -- "CHOOSING CA…"
+     abutting "AGREEING" reads as one run-on string rather than as two stops.
+     The rail keeps all four segments, because that is what carries how far
+     along the trade is; only the stop you are standing on is named. */
+  .td-spine { position: relative; padding-bottom: 22px; }
+  .td-spine__stop { gap: 0; }
+  .td-spine__label { display: none; }
+  .td-spine__stop.is-here .td-spine__label {
+    display: block;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    max-width: 100%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .skeleton { animation: none; }
+  .td-seam__line,
+  .td-seam__disc,
+  .td-spine__rail { transition: none; }
 }
 </style>

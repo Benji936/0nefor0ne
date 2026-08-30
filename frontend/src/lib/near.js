@@ -10,6 +10,7 @@
 // until somebody subscribes, which is why unclaimedNear exists next to it.
 import { getClient } from "@/lib/supabaseClient";
 import { kindsOf } from "@/lib/communityKinds";
+import { resolveCountry } from "@/lib/countries";
 
 /** How far out to look, in km. The first is the default. */
 export const RADII = [10, 25, 50, 100];
@@ -77,18 +78,72 @@ export function unclaimedNear(opts) { return callNear("unclaimed_near", { limit:
  * The near functions take a position and a radius and nothing else. Pushing
  * kind, name and remote-duel into SQL would mean three more arguments on three
  * functions to narrow a list that is already capped at a hundred rows. What
- * does matter is that the answers match: `contains(kinds, [kind])` and
- * `ilike('%q%')` from fetchDirectory are reproduced here, so turning Near me on
- * cannot silently change what "Stores" means.
+ * does matter is that the answers match: `contains(kinds, [kind])` and the
+ * finder's name/city/country search from fetchDirectory are reproduced here, so
+ * turning Near me on cannot silently change what a query means.
  */
-export function filterNear(rows, { kind = "", q = "", remoteDuel = false } = {}) {
+export function filterNear(rows, { kind = "", q = "", remoteDuel = false, locale } = {}) {
   const needle = String(q ?? "").trim().toLowerCase();
+  // The same three columns the finder searches, and the same country-name
+  // resolution, so a query that finds a shop in the full list still finds it
+  // once Near me is on. When they disagreed, turning the mode on looked like
+  // the shop had moved out of range.
+  const canon = needle ? resolveCountry(needle, locale)?.name?.toLowerCase() : null;
+  const hit = (v) => String(v ?? "").toLowerCase().includes(needle);
   return (rows ?? []).filter((row) => {
     if (kind && !kindsOf(row).includes(kind)) return false;
     if (remoteDuel && row.remote_duel !== true) return false;
-    if (needle && !String(row.name ?? "").toLowerCase().includes(needle)) return false;
+    if (needle && !hit(row.name) && !hit(row.city) && !hit(row.country)
+      && !(canon && String(row.country ?? "").toLowerCase() === canon)) return false;
     return true;
   });
+}
+
+/**
+ * A latitude/longitude box that contains everything within `km` of a point.
+ *
+ * Coarse on purpose: it is a pre-filter, and whatever it lets through is
+ * measured properly with distanceKm afterwards. A degree of latitude is 111 km
+ * anywhere; a degree of longitude is 111 km at the equator and narrows with the
+ * cosine of the latitude, which is why the two are not the same number.
+ *
+ * Returns null for the longitude pair when the box crosses the antimeridian,
+ * because "lng between 179 and -179" is not a range PostgREST can be asked for
+ * and the two shops in Fiji are not worth a second query. The latitude bound
+ * still narrows it, and the distance sort still sorts it.
+ */
+export function boundingBox({ lat, lng }, km) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || !(km > 0)) return null;
+  const dLat = km / 111;
+  const cos = Math.cos((lat * Math.PI) / 180);
+  const dLng = Math.abs(cos) < 0.01 ? 180 : km / (111 * Math.abs(cos));
+  const west = lng - dLng;
+  const east = lng + dLng;
+  return {
+    minLat: Math.max(-90, lat - dLat),
+    maxLat: Math.min(90, lat + dLat),
+    ...(west >= -180 && east <= 180 ? { minLng: west, maxLng: east } : {}),
+  };
+}
+
+/**
+ * Great-circle kilometres between two points.
+ *
+ * The near-me functions do this in SQL because they do it for a hundred rows at
+ * a time and have to sort by the answer. A single profile page asking "how far
+ * is this one shop from me" would be a round trip to ask the database something
+ * it can work out in six lines, so it works it out here.
+ */
+export function distanceKm(a, b) {
+  const ok = (p) => p && Number.isFinite(p.lat) && Number.isFinite(p.lng);
+  if (!ok(a) || !ok(b)) return null;
+  const R = 6371;
+  const rad = (d) => (d * Math.PI) / 180;
+  const dLat = rad(b.lat - a.lat);
+  const dLng = rad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2
+    + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
 /**

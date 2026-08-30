@@ -4,7 +4,7 @@
       <v-btn
         density="comfortable"
         variant="flat"
-        :style="{ backgroundColor: meta.color, color: 'white' }"
+        :style="{ backgroundColor: meta.color, color: 'var(--c-on-accent)' }"
         prepend-icon="mdi-playlist-plus"
         v-bind="activatorProps"
       >
@@ -14,13 +14,16 @@
 
     <v-card style="min-height: 480px; background-color: var(--c-surface); color: var(--c-text)">
       <!-- Banner -->
-      <div class="flex flex-row items-center gap-3 px-5 py-3" :style="{ backgroundColor: meta.color, color: 'white' }">
+      <!-- var(--c-on-accent), never a literal white: the brand colours invert
+           between themes, so a fixed white label passes in one and fails in the
+           other (DESIGN.md, The Label Contrast Rule). -->
+      <div class="flex flex-row items-center gap-3 px-5 py-3" :style="{ backgroundColor: meta.color, color: 'var(--c-on-accent)' }">
         <v-icon icon="mdi-playlist-plus" size="22" />
         <div class="flex flex-col grow min-w-0">
           <span class="font-bold leading-tight">{{ $t('bulkAdd.title') }}</span>
           <span class="text-xs opacity-80">{{ $t('bulkAdd.subtitle') }}</span>
         </div>
-        <v-btn icon="mdi-close" variant="text" color="white" density="compact" @click="dialogOpen = false" />
+        <v-btn icon="mdi-close" variant="text" color="var(--c-on-accent)" density="compact" @click="dialogOpen = false" />
       </div>
 
       <!-- ── Step: Paste ── -->
@@ -62,7 +65,7 @@
             class="w-full mt-1"
             size="large"
             prepend-icon="mdi-magnify"
-            :style="{ backgroundColor: meta.color, color: 'white' }"
+            :style="{ backgroundColor: meta.color, color: 'var(--c-on-accent)' }"
             variant="flat"
             :disabled="parsedCount === 0"
             @click="onResolve"
@@ -165,7 +168,7 @@
             class="w-full mt-1"
             size="large"
             prepend-icon="mdi-content-save-all"
-            :style="{ backgroundColor: meta.color, color: 'white' }"
+            :style="{ backgroundColor: meta.color, color: 'var(--c-on-accent)' }"
             variant="flat"
             :loading="inserting"
             :disabled="includedCount === 0"
@@ -365,7 +368,14 @@ export default {
           included
             .map((row) => {
               const card = this.rowCard(row);
-              return card ? buildRow({ card, qty: row.qty, isWish, userId }) : null;
+              // setCode/setRarity are populated only for a line pasted as a set
+              // code; a name line leaves them '' and the row says so.
+              return card
+                ? buildRow({
+                    card, qty: row.qty, isWish, userId,
+                    setCode: row.setCode, setRarity: row.setRarity,
+                  })
+                : null;
             })
             .filter((r) => r != null),
         );

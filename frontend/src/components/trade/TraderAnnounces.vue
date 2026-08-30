@@ -19,6 +19,9 @@ import { timeAgo } from "@/lib/notifications";
 const props = defineProps({
   traderId: { type: String, default: null },
 });
+// The parent decides whether the whole page is empty, and it cannot see inside
+// a section that fetches for itself.
+const emit = defineEmits(["count"]);
 
 const { t } = useI18n();
 const route = useRoute();
@@ -29,10 +32,11 @@ const rows = ref([]);
 let reqId = 0;
 watch(() => props.traderId, async (id) => {
   const mine = ++reqId;
-  if (!id) { rows.value = []; return; }
+  if (!id) { rows.value = []; emit("count", 0); return; }
   const data = await fetchAnnouncesBySeller(id);
   if (mine !== reqId) return;
   rows.value = data;
+  emit("count", data.length);
 }, { immediate: true });
 
 function headline(a) {
@@ -83,12 +87,17 @@ function price(a) {
 </template>
 
 <style scoped>
+/* Inherits --tpb-* from TraderProfileBody, with fallbacks so the section is
+   still correct if it is ever mounted somewhere else. */
 .ta { margin-top: 30px; }
 
+/* The collector's register, matching every other section label in this pass
+   (DESIGN.md, The Mono Identifier Rule). */
 .ta__title {
-  margin: 0 0 10px;
-  font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.08em; color: var(--c-muted);
+  margin: 0 0 11px;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.16em; color: var(--c-muted);
 }
 
 .ta__list { list-style: none; margin: 0; padding: 0; }
@@ -98,10 +107,10 @@ function price(a) {
 .ta__row {
   display: flex; align-items: center; gap: 10px;
   padding: 9px 2px;
-  border-top: 1px solid var(--c-border);
+  border-top: 1px solid var(--tpb-line, var(--c-border));
   font-size: 13.5px;
 }
-.ta__row:last-child { border-bottom: 1px solid var(--c-border); }
+.ta__row:last-child { border-bottom: 1px solid var(--tpb-line, var(--c-border)); }
 
 .ta__kind {
   flex-shrink: 0; min-width: 42px; text-align: center;
@@ -109,8 +118,13 @@ function price(a) {
   font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
 }
 /* Pink is want, amethyst is offer, per the three-role rule. */
-.ta__kind--lf   { background: color-mix(in srgb, var(--c-accent) 16%, transparent); color: var(--c-accent); }
-.ta__kind--sell { background: color-mix(in srgb, var(--c-trade) 16%, transparent);  color: var(--c-trade); }
+/* 8%, not 16%. Same colours, same meaning — a want is pink and a listing is
+   amethyst — but a label set in a brand colour on a wash of that same colour
+   pays for the wash out of its own contrast. At 16% three of these four
+   combinations missed 4.5:1: pink at 4.17 light and 4.34 dark, amethyst at
+   4.28 dark. At 8% the worst of them reads 4.75. */
+.ta__kind--lf   { background: color-mix(in srgb, var(--c-accent) 8%, transparent); color: var(--c-accent); }
+.ta__kind--sell { background: color-mix(in srgb, var(--c-trade) 8%, transparent);  color: var(--c-trade); }
 
 .ta__name {
   flex: 1; min-width: 0; color: var(--c-text); font-weight: 600;
