@@ -96,10 +96,14 @@ export function traderInitial(name) {
  * message. The `ago` key is null when the timestamp will not parse, and the
  * row then renders without a date: a bad timestamp must not cost us the person
  * it belongs to.
+ *
+ * `now` is injectable for the same reason joinedAgo's is: a test that builds
+ * its fixture from a frozen clock while this reads the live one drifts across
+ * a bucket boundary and fails weeks after it was written.
  */
-export function decorateRecent(traders = []) {
+export function decorateRecent(traders = [], now = new Date()) {
   return (traders ?? []).map((t) => {
-    const ago = joinedAgo(t?.created_at);
+    const ago = joinedAgo(t?.created_at, now);
     return {
       ...t,
       place: traderPlace(t),

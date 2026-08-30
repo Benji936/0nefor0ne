@@ -63,7 +63,7 @@ describe("decorateRecent", () => {
   it("works out everything a row needs to render", () => {
     const [row] = decorateRecent([
       { id: "a", Name: "Dosu", City: "Vernier", country_code: "ch", created_at: daysBefore(14) },
-    ]);
+    ], NOW);
     expect(row).toMatchObject({
       id: "a",
       place: "Vernier, CH",
