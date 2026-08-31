@@ -25,7 +25,7 @@ defineProps({
   prices:    { type: Map,     default: () => new Map() },
 });
 
-const emit = defineEmits(["deleted", "move", "printing-picked"]);
+const emit = defineEmits(["deleted", "move", "printing-picked", "edit"]);
 </script>
 
 <template>
@@ -57,10 +57,14 @@ const emit = defineEmits(["deleted", "move", "printing-picked"]);
 
     <!-- Cards -->
     <template v-else>
+      <!-- Tiles lay out on a real grid rather than a wrapping flex row. The
+           flex version sized each tile to a fixed 160px and let the remainder
+           fall off the right edge, so every pile ended in a ragged gap the
+           width of a card. -->
       <TransitionGroup
         name="card-slide"
         tag="div"
-        :class="view === 'grid' ? 'grid grid-cols-2 sm:flex sm:flex-wrap gap-3' : 'flex flex-col gap-2'"
+        :class="view === 'grid' ? 'ls-tiles' : 'flex flex-col gap-2'"
       >
         <CardElement
           v-for="card in cards"
@@ -73,6 +77,7 @@ const emit = defineEmits(["deleted", "move", "printing-picked"]);
           :lists="lists"
           @deleted="emit('deleted', $event)"
           @move="emit('move', $event)"
+          @edit="emit('edit', $event)"
         />
       </TransitionGroup>
       <!-- A named list that is empty says so in one line. The full empty state,
@@ -104,6 +109,17 @@ const emit = defineEmits(["deleted", "move", "printing-picked"]);
 </template>
 
 <style scoped>
+/* auto-fill, not auto-fit: a pile holding two cards should show two card-sized
+   tiles, not two tiles stretched across the whole binder. */
+.ls-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 12px;
+}
+@media (max-width: 420px) {
+  .ls-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 .card-slide-enter-active { transition: all 0.25s ease-out; }
 .card-slide-enter-from   { opacity: 0; transform: translateY(-6px); }
 @media (prefers-reduced-motion: reduce) {

@@ -43,6 +43,8 @@ import AnnounceDetailDialog from "@/components/trade/AnnounceDetailDialog.vue";
       :location-country="locationCountry"
       :location-city="locationCity"
       :available-countries="availableCountries"
+      :my-country="myCountry"
+      :my-city="myCity"
       :filter-card-name="filterCardName"
       :buckets="buckets"
       :total-matches="totalMatches"

@@ -1,9 +1,12 @@
 <script setup>
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRoute } from "vue-router";
 import UserCard from "@/components/trade/UserCard.vue";
 
 const { t } = useI18n();
+const route = useRoute();
+const locale = computed(() => route.params.locale || "en");
 
 const props = defineProps({
   login:             { type: Object,  default: null },
@@ -13,6 +16,13 @@ const props = defineProps({
   locationCity:      { type: String,  default: "" },
   availableCountries:{ type: Array,   default: () => [] },
   filterCardName:    { type: String,  default: "" },
+  // Where the viewer says they are, off their own Trader row. Traders carry a
+  // city and a country and no coordinates, so "near me" can only be the place
+  // they wrote down — which is also exactly what the two filters below match
+  // on, so the button fills them rather than introducing a second notion of
+  // nearness that could disagree with them.
+  myCountry:         { type: String,  default: "" },
+  myCity:            { type: String,  default: "" },
   buckets:           { type: Object,  required: true },
   totalMatches:      { type: Number,  default: 0 },
 });
@@ -56,6 +66,47 @@ const groups = computed(() => [
 ].filter((g) => g.users.length > 0));
 
 const filtered = computed(() => !!(props.locationCountry || props.locationCity));
+
+// ── Near me ─────────────────────────────────────────────────────────────────
+/** The whole place, for the tooltip and the accessible name. */
+const myPlace = computed(() =>
+  [props.myCity, props.myCountry].filter(Boolean).join(", "));
+
+/**
+ * The place as the button shows it: the city alone where there is one.
+ *
+ * "Geneva, Switzerland" is what the filter will actually apply, but on a
+ * control this size it truncated to "Geneva, Switze…" — which is longer than
+ * the city and says less. The country stays in the title and the label.
+ */
+const myPlaceShort = computed(() => props.myCity || props.myCountry);
+
+/** Nothing to fill the filters with until the profile says where you are. */
+const canNearMe = computed(() => !!(props.myCity || props.myCountry));
+
+/** Already showing your own place, so the next press is a way back out. */
+const nearMeOn = computed(() =>
+  canNearMe.value
+  && props.locationCountry === props.myCountry
+  && props.locationCity === props.myCity);
+
+function toggleNearMe() {
+  const on = nearMeOn.value;
+  emit("update:locationCountry", on ? "" : props.myCountry);
+  emit("update:locationCity", on ? "" : props.myCity);
+}
+
+/**
+ * The countries to offer, which is the ones the matches are in plus whichever
+ * is currently chosen.
+ *
+ * Without that second half a country that filters everything out would vanish
+ * from its own select: near me can pick a country no match is in, and the
+ * control would then sit blank next to an empty list, reading as broken rather
+ * than as an honest "nobody here yet".
+ */
+const countryOptions = computed(() =>
+  [...new Set([...props.availableCountries, props.locationCountry].filter(Boolean))].sort());
 </script>
 
 <template>
@@ -78,7 +129,7 @@ const filtered = computed(() => !!(props.locationCountry || props.locationCity))
         @change="emit('update:locationCountry', $event.target.value)"
       >
         <option value="">{{ t('matches.allCountries') }}</option>
-        <option v-for="c in availableCountries" :key="c" :value="c">{{ c }}</option>
+        <option v-for="c in countryOptions" :key="c" :value="c">{{ c }}</option>
       </select>
 
       <input
@@ -88,6 +139,28 @@ const filtered = computed(() => !!(props.locationCountry || props.locationCity))
         class="mt-field"
         @input="emit('update:locationCity', $event.target.value)"
       />
+
+      <!-- Your own place, in one press. It names the place it will fill in
+           rather than only saying "near me", because a filter that changes what
+           the page shows should say what it is about to do. -->
+      <button
+        v-if="canNearMe"
+        type="button"
+        class="mt-near"
+        :aria-pressed="nearMeOn"
+        :title="myPlace"
+        :aria-label="`${t('matches.nearMe')} — ${myPlace}`"
+        @click="toggleNearMe"
+      >
+        <v-icon icon="mdi-map-marker-outline" size="13" />
+        {{ t('matches.nearMe') }}
+        <span class="mt-near__place">{{ myPlaceShort }}</span>
+      </button>
+      <!-- No location on the profile means nothing to be near. A link to go and
+           say so beats a button that would do nothing. -->
+      <router-link v-else class="mt-near mt-near--empty" :to="{ name: 'account', params: { locale } }">
+        <v-icon icon="mdi-map-marker-plus-outline" size="13" />{{ t('matches.setLocation') }}
+      </router-link>
 
       <button
         v-if="filtered"
@@ -231,6 +304,55 @@ const filtered = computed(() => !!(props.locationCountry || props.locationCity))
 }
 .mt-clear:hover { color: var(--c-text); border-color: var(--mt-line); }
 .mt-clear:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+
+/* ── Near me ──
+   A filter, so it is built like the fields beside it rather than like a call to
+   action: same radius, same hairline, same panel ground. Amethyst arrives only
+   when it is on, because that is the app's colour for a trade you could
+   actually make and this button exists to shorten the distance to one. */
+.mt-near {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 11px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--c-text);
+  background: var(--mt-panel);
+  border: 1px solid var(--mt-line);
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+.mt-near:hover { border-color: color-mix(in srgb, var(--c-trade) 45%, transparent); }
+.mt-near:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 1px; }
+.mt-near[aria-pressed="true"] {
+  color: var(--c-trade);
+  border-color: var(--c-trade);
+  background: color-mix(in srgb, var(--c-trade) 12%, transparent);
+}
+.mt-near .v-icon { color: currentColor; }
+
+/* The place itself, quieter than the label — it says what the button will do,
+   and on a narrow row it is the half that can go. */
+.mt-near__place {
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--c-muted);
+  max-width: 16ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mt-near[aria-pressed="true"] .mt-near__place { color: inherit; opacity: 0.75; }
+@media (max-width: 560px) { .mt-near__place { display: none; } }
+
+/* Nothing to be near yet: an invitation, not a dead control. */
+.mt-near--empty { color: var(--c-muted); font-weight: 600; }
+.mt-near--empty:hover { color: var(--c-trade); }
 
 .mt-cardfilter {
   display: flex;

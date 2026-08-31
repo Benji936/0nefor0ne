@@ -5,6 +5,7 @@ import { cardImage } from "@/lib/cardImage";
 import { fetchMyLibrary, fetchUserWishlist, fetchUserTradePile, fetchMyWishlistNames } from "@/lib/matches";
 import { createTradeRequest, submitTradeReturnSelection, reviseMyTradeRequest, updateTradeProposal, counterTradeProposal, uploadTradePhoto } from "@/lib/proposals";
 import { handleIfPhoneRequired } from "@/lib/phoneGate";
+import { settlementTerms } from "@/lib/tradeWorkflow";
 import { searchById } from "@/api";
 import { getClient, getCurrentSession } from "@/lib/supabaseClient";
 import AddCard from "@/components/library/AddCard.vue";
@@ -16,6 +17,7 @@ import PickedPile from "@/components/trade/PickedPile.vue";
 import CardLinksSheet from "@/components/trade/CardLinksSheet.vue";
 import { fetchCardPrices, sumPrices, tradeGap, formatMoney } from "@/lib/cardmarketPrice";
 import { applyFilters, NO_FILTERS } from "@/lib/binderFilters";
+import { cardmarketUrl } from "@/lib/cardmarketLink";
 
 const props = defineProps({
   modelValue:      { type: Boolean, default: false },
@@ -345,13 +347,14 @@ async function submit() {
   if (!canSubmit.value) return;
   submitting.value = true;
   errorMessage.value = "";
-  const isMail = settlement.value.deliveryMode === 'mail';
-  const settlementPayload = {
-    trade_method:    isMail ? 'mail' : (settlement.value.meetup_location ? 'in_person' : null),
-    meetup_location: isMail ? null : (settlement.value.meetup_location ?? null),
-    cash_amount:     settlement.value.hasCash && settlement.value.cash_amount > 0 ? settlement.value.cash_amount : null,
-    cash_payer:      settlement.value.hasCash && settlement.value.cash_amount > 0 ? settlement.value.cash_payer : null,
-  };
+  const settlementPayload = settlementTerms({
+    deliveryMode:   settlement.value.deliveryMode,
+    meetupLocation: settlement.value.meetup_location,
+    // The checkbox is the gate here; the shared helper still ignores an amount
+    // of zero, so unticking it and leaving a number behind cannot smuggle one in.
+    cashAmount:     settlement.value.hasCash ? settlement.value.cash_amount : null,
+    cashPayer:      settlement.value.cash_payer,
+  });
   try {
     const me = (await getCurrentSession())?.user?.id;
     let tradeId;
@@ -503,7 +506,11 @@ function marketLinks(name, setCode) {
   const q = encodeURIComponent(name);
   return [
     { label: 'TCGPlayer', url: `https://www.tcgplayer.com/search/yugioh/product?q=${q}` },
-    { label: 'Cardmarket', url: setCode ? `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${encodeURIComponent(setCode)}` : `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${q}` },
+    // No route and no copy here: this builds a link from a name and a print
+    // code, which is all a suggestion row has. cardmarketUrl with neither is
+    // the search link by construction, so this is the same URL as before —
+    // routed through the one place that knows how to build it.
+    { label: 'Cardmarket', url: cardmarketUrl({ name, extension: setCode }) },
     { label: 'eBay', url: `https://www.ebay.com/sch/i.html?_nkw=${q}+yugioh` },
   ];
 }

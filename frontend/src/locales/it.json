@@ -266,7 +266,15 @@
     "viewLabel": "Vista collezione",
     "viewList": "Vista elenco",
     "viewGrid": "Vista griglia",
-    "allLists": "Tutte le liste"
+    "allLists": "Tutte le liste",
+    "viewBinder": "Raccoglitore",
+    "sortLabel": "Ordina",
+    "sort": {
+      "name": "Nome",
+      "value": "Valore",
+      "printing": "Codice set",
+      "added": "Aggiunte di recente"
+    }
   },
   "addCard": {
     "addToTrade": "Aggiungi al mazzo di scambio",
@@ -332,6 +340,8 @@
   "matches": {
     "loginRequired": "Accedi per vedere le tue corrispondenze di scambio.",
     "near": "Vicino a",
+    "nearMe": "Vicino a me",
+    "setLocation": "Aggiungi la tua città",
     "allCountries": "Tutti i paesi",
     "city": "Città",
     "clearFilters": "cancella filtri",
@@ -915,7 +925,12 @@
   "cardElement": {
     "acceptedTrade": "Scambio accettato",
     "copyLocked": "1 copia bloccata",
-    "copiesLocked": "{count} copie bloccate"
+    "copiesLocked": "{count} copie bloccate",
+    "firstEdition": "1ª edizione",
+    "firstEditionShort": "1ED",
+    "changeQuantity": "Cambia quante ne hai",
+    "noPrinting": "Nessun codice",
+    "openOnCardmarket": "Cerca su Cardmarket"
   },
   "tradePhotos": {
     "desc": "Una traccia di ciò che ogni parte invia. Un consiglio, non un obbligo — puoi accettare e confermare anche senza.",
@@ -1016,6 +1031,7 @@
     "tallyMissing": "{n} mancanti",
     "tallyUnknown": "{n} illeggibili",
     "tallyAria": "{owned} carte su {total} possedute, {missing} ancora mancanti",
+    "copiesNote": "{owned} di {qty} copie nella tua pila di scambio",
     "dropNow": "Rilascialo in un punto qualsiasi della pagina"
   },
   "meta": {
@@ -1096,6 +1112,7 @@
   },
   "deckIgnore": {
     "markSourced": "Segna {name} come trovata altrove",
+    "markCopy": "Segna un altro {name} come ottenuto altrove — finora {n} di {max}",
     "countAgain": "Conta di nuovo {name} come mancante"
   },
   "cards": {
@@ -1815,5 +1832,23 @@
     "cardmarketProduct": "Prodotto Cardmarket",
     "checkOnCardmarket": "Controlla su Cardmarket",
     "cardmarketTrend": "Tendenza Cardmarket"
+  },
+  "editCard": {
+    "title": "Modifica questa copia",
+    "edit": "Modifica",
+    "save": "Salva modifiche",
+    "saving": "Salvataggio…",
+    "saved": "Copia aggiornata",
+    "remove": "Rimuovi",
+    "removeConfirm": "Rimuovi definitivamente",
+    "removing": "Rimozione…",
+    "needPrinting": "Scegli di quale stampa è questa copia.",
+    "needQuantity": "Indica quante copie hai — almeno una.",
+    "reservedFloor": "{count} impegnate in uno scambio che hai accettato.",
+    "reservedRemove": "Impegnata in uno scambio accettato, quindi non si può rimuovere.",
+    "saveFailed": "Non è stato salvato. Riprova."
+  },
+  "cardLinks": {
+    "cardmarketProduct": "Cardmarket si apre esattamente su questa stampa e mostra la lingua e la condizione della tua copia o migliore."
   }
 }

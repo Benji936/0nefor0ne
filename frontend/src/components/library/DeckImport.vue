@@ -91,11 +91,10 @@
         </p>
         <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(68px, 1fr))">
           <CardSlot
-            v-for="item in mainCards"
+            v-for="item in mainAlloc"
             :key="item.id"
             :item="item"
             :card-map="cardMap"
-            :owned-ids="ownedIds"
             :missing-badge="$t('deckImport.missingBadge')"
             :unknown-badge="$t('deckImport.unknownBadge')"
           />
@@ -109,11 +108,10 @@
         </p>
         <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(68px, 1fr))">
           <CardSlot
-            v-for="item in extraCards"
+            v-for="item in extraAlloc"
             :key="item.id"
             :item="item"
             :card-map="cardMap"
-            :owned-ids="ownedIds"
             :missing-badge="$t('deckImport.missingBadge')"
             :unknown-badge="$t('deckImport.unknownBadge')"
           />
@@ -127,11 +125,10 @@
         </p>
         <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(68px, 1fr))">
           <CardSlot
-            v-for="item in sideCards"
+            v-for="item in sideAlloc"
             :key="item.id"
             :item="item"
             :card-map="cardMap"
-            :owned-ids="ownedIds"
             :missing-badge="$t('deckImport.missingBadge')"
             :unknown-badge="$t('deckImport.unknownBadge')"
           />
@@ -156,18 +153,24 @@ import { parseYdk } from '@/lib/ydk';
 import { getCardsByIds } from '@/api';
 import { getClient } from '@/lib/supabaseClient';
 import { cardImage } from '@/lib/cardImage';
+import { countCopies } from '@/lib/decks';
+import { allocateCopies, deckTally, missingEntries as outstanding } from '@/lib/deckStats';
 
 /**
  * Inner card slot sub-component — renders a single card entry in one of the
  * three visual states (owned / missing / unrecognized).  Defined inline here
  * so DeckImport.vue stays a single file with no extra imports in Library.vue.
+ *
+ * It reads an allocation row rather than an ownership Set, so a deck asking for
+ * three copies of a card you hold one of shows as still missing, with "1/3" in
+ * the corner instead of a flat "3".
  */
 const CardSlot = defineComponent({
   name: 'DeckImportCardSlot',
   props: {
-    item:         { type: Object, required: true },   // { id, qty }
+    // { id, qty, owned, sourced, missing, unknown } from allocateCopies()
+    item:         { type: Object, required: true },
     cardMap:      { type: Object, required: true },   // { [id]: cardData }
-    ownedIds:     { type: Object, required: true },   // Set<number>
     missingBadge: { type: String, default: 'Missing' },
     unknownBadge: { type: String, default: 'Unrecognized' },
   },
@@ -175,8 +178,11 @@ const CardSlot = defineComponent({
   computed: {
     card()         { return this.cardMap[this.item.id] ?? null; },
     isUnrecognized() { return !this.card; },
-    isOwned()      { return !this.isUnrecognized && this.ownedIds.has(this.item.id); },
-    isMissing()    { return !this.isUnrecognized && !this.isOwned; },
+    isMissing()    { return !this.isUnrecognized && this.item.missing > 0; },
+    isOwned()      { return !this.isUnrecognized && !this.isMissing; },
+    /** Held, over asked for — written only when it is neither all nor none. */
+    isPartial()    { return this.item.owned > 0 && this.item.owned < this.item.qty; },
+    qtyBadge()     { return this.isPartial ? `${this.item.owned}/${this.item.qty}` : String(this.item.qty); },
   },
   template: `
     <div class="flex flex-col gap-1 items-center">
@@ -215,12 +221,13 @@ const CardSlot = defineComponent({
           style="background: rgba(100,100,100,0.85); color: white; letter-spacing: 0.03em"
         >{{ unknownBadge }}</div>
 
-        <!-- Qty badge (>1) -->
+        <!-- Qty badge (>1), or how many of them you have when it is some -->
         <div
           v-if="item.qty > 1"
-          class="absolute top-0.5 right-0.5 rounded-full text-[9px] font-bold w-4 h-4 flex items-center justify-center"
+          class="absolute top-0.5 right-0.5 rounded-full text-[9px] font-bold h-4 flex items-center justify-center !px-1"
+          :class="isPartial ? '' : 'w-4'"
           style="background: rgba(0,0,0,0.7); color: white"
-        >{{ item.qty }}</div>
+        >{{ qtyBadge }}</div>
       </div>
 
       <!-- Card name -->
@@ -256,45 +263,49 @@ export default {
       /** { [numericId]: cardData } from YGOPRODeck API */
       cardMap: {},
 
-      /** Set<number> of passcode IDs the user owns (from Card table, wish=false) */
-      ownedIds: new Set(),
+      /** Map<number, number>: passcode id -> copies held (Card, wish=false) */
+      ownedCopies: new Map(),
 
       adding: false,
     };
   },
 
   computed: {
-    /** Flat list of all unique card entries across all sections */
+    /** Flat list of all card entries across all sections */
     allEntries() {
       return [...this.mainCards, ...this.extraCards, ...this.sideCards];
     },
 
+    ctx() {
+      return { cardMap: this.cardMap, ownedCopies: this.ownedCopies, ignoredIds: new Set() };
+    },
+
+    /**
+     * The copies, split across the four states — once for the whole list,
+     * because the pool is shared. A card in the main deck twice and the side
+     * deck once needs three copies, and allocating per section would let one
+     * copy cover all three entries.
+     */
+    alloc() {
+      return allocateCopies(this.allEntries, this.ctx);
+    },
+    mainAlloc()  { return this.alloc.slice(0, this.mainCards.length); },
+    extraAlloc() { return this.alloc.slice(this.mainCards.length, this.mainCards.length + this.extraCards.length); },
+    sideAlloc()  { return this.alloc.slice(this.mainCards.length + this.extraCards.length); },
+
+    tally() {
+      return deckTally(this.allEntries, this.ctx);
+    },
+
     /** Total card count (counting duplicates) */
-    totalCards() {
-      return this.allEntries.reduce((s, c) => s + c.qty, 0);
-    },
+    totalCards()        { return this.tally.total; },
+    ownedCount()        { return this.tally.owned; },
+    missingCount()      { return this.tally.missing; },
+    unrecognizedCount() { return this.tally.unknown; },
 
-    ownedCount() {
-      return this.allEntries
-        .filter(c => this.cardMap[c.id] && this.ownedIds.has(c.id))
-        .reduce((s, c) => s + c.qty, 0);
-    },
-
-    missingCount() {
-      return this.allEntries
-        .filter(c => this.cardMap[c.id] && !this.ownedIds.has(c.id))
-        .reduce((s, c) => s + c.qty, 0);
-    },
-
-    unrecognizedCount() {
-      return this.allEntries
-        .filter(c => !this.cardMap[c.id])
-        .reduce((s, c) => s + c.qty, 0);
-    },
-
-    /** Missing card entries (recognized but not owned) */
+    /** What is still to find, carrying the outstanding count as its qty. */
     missingEntries() {
-      return this.allEntries.filter(c => this.cardMap[c.id] && !this.ownedIds.has(c.id));
+      return outstanding(this.allEntries, this.ctx);
     },
   },
 
@@ -333,27 +344,24 @@ export default {
         // Batch-fetch card data
         const cardMap = await getCardsByIds(allIds);
 
-        // Ownership cross-reference (only when logged in)
-        const ownedIds = new Set();
+        // Ownership cross-reference (only when logged in). Copies, not ids:
+        // one Ash Blossom does not cover a deck that asks for three.
+        let ownedCopies = new Map();
         const userId = this.login?.user?.id ?? null;
         if (userId) {
           const supabase = getClient();
           const { data } = await supabase
             .from('Card')
-            .select('image_id')
+            .select('image_id, quantity')
             .eq('trader', userId)
             .eq('wish', false)
             .not('status', 'in', '("traded","locked")');
 
-          if (data) {
-            for (const row of data) {
-              if (row.image_id != null) ownedIds.add(Number(row.image_id));
-            }
-          }
+          ownedCopies = countCopies(data);
         }
 
-        this.cardMap    = cardMap;
-        this.ownedIds   = ownedIds;
+        this.cardMap     = cardMap;
+        this.ownedCopies = ownedCopies;
         this.mainCards  = parsed.main;
         this.extraCards = parsed.extra;
         this.sideCards  = parsed.side;
@@ -426,8 +434,8 @@ export default {
       this.mainCards  = [];
       this.extraCards = [];
       this.sideCards  = [];
-      this.cardMap    = {};
-      this.ownedIds   = new Set();
+      this.cardMap     = {};
+      this.ownedCopies = new Map();
       this.adding     = false;
     },
   },

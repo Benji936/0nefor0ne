@@ -36,6 +36,18 @@ const { t } = useI18n();
       </div>
 
       <div class="lib-tools">
+        <!-- Order comes before layout: it changes what you are looking at,
+             where the view buttons only change how it is drawn. Native select
+             on purpose — four options, no styling worth a custom listbox, and
+             it is the one control here a phone already knows how to present. -->
+        <label class="lib-sort">
+          <span class="lib-sort__label">{{ $t('library.sortLabel') }}</span>
+          <select v-model="sortKey" class="lib-sort__select">
+            <option v-for="opt in sortOptions" :key="opt.key" :value="opt.key">{{ opt.label }}</option>
+          </select>
+          <v-icon icon="mdi-chevron-down" size="15" class="lib-sort__chev" />
+        </label>
+
         <div
           class="lib-view"
           role="group"
@@ -83,7 +95,7 @@ const { t } = useI18n();
              the button wears its colour, so spelling it out again is the label
              doing the tab's job — and on a phone it made this the only control
              wide enough to need its own row. -->
-        <AddCard :key="mode" :mode="mode" @added="onCardAdded" />
+        <AddCard ref="addCardRef" :key="mode" :mode="mode" @added="onCardAdded" />
       </div>
     </div>
 
@@ -119,18 +131,43 @@ const { t } = useI18n();
         <span class="lib-value__src">{{ t('price.sourceShort') }}</span>
       </div>
 
+      <!-- ── The binder ────────────────────────────────────────────────────
+           Your own pile in the same nine-pocket spread a trade partner sees on
+           your profile, and the same one the proposal dialog deals from — so
+           "what does my binder look like to them" stops being a question you
+           have to leave the page to answer.
+
+           It opens on the whole half rather than on one wishlist: a binder's
+           own pages are already its structure, and subdividing it by list as
+           well would leave you turning pages inside a filter inside a tab. -->
+      <CardBinder
+        v-if="viewMode === 'binder'"
+        :cards="binderCards"
+        :tone="pile === 'trade' ? 'trade' : 'accent'"
+        :empty-label="pile === 'trade' ? t('library.emptyTrade') : t('library.emptyWish')"
+        :locked-label="t('cardElement.acceptedTrade')"
+        :add-label="mode === 'wish' ? t('addCard.addToWishlist') : t('addCard.addToTrade')"
+        fit="width"
+        activate
+        links-on-context
+        @activate="editing = $event"
+        @links="linksCard = $event; linksOpen = true"
+        @add="$refs.addCardRef?.open()"
+      />
+
       <!-- Trade pile: one pile, no dividers inside it. -->
       <LibrarySection
-        v-if="pile === 'trade'"
+        v-else-if="pile === 'trade'"
         mode="trade"
         :view="viewMode"
         :prices="prices"
-        :cards="trade_cards"
+        :cards="sortedTradeCards"
         :loading="loading"
         :new-card-id="newCardId"
         :empty-text="t('library.emptyTrade')"
         @deleted="onCardDeleted"
         @printing-picked="onPrintingPicked"
+        @edit="editing = $event"
       />
 
       <template v-else>
@@ -175,7 +212,7 @@ const { t } = useI18n();
              a single list is. -->
         <div class="flex flex-col gap-7">
           <LibrarySection
-            v-for="group in visibleGroups"
+            v-for="group in sortedGroups"
             :key="group.id ?? 'unsorted'"
             :title="group.name ?? t('wishlists.unsorted')"
             mode="wish"
@@ -191,6 +228,7 @@ const { t } = useI18n();
             @deleted="onCardDeleted"
             @move="onCardMoved"
             @printing-picked="onPrintingPicked"
+            @edit="editing = $event"
           />
         </div>
       </template>
@@ -207,6 +245,22 @@ const { t } = useI18n();
     @requireAuth="$emit('requireAuth')"
     @added="onBulkAdded"
   />
+
+  <!-- Correct a copy. Page-level rather than one per row: a dialog per card
+       would mount several hundred of them behind a 300-card binder. -->
+  <EditCardCopy
+    :model-value="!!editing"
+    :card="editing"
+    @update:model-value="v => { if (!v) editing = null; }"
+    @saved="onCopySaved"
+    @deleted="onCardDeleted"
+  />
+
+  <!-- Where a card's market links live in the binder. The binder has raised
+       this on right click and long press since it was written, but behind an
+       opt-in prop that only the proposal dialog ever set — so the gesture
+       worked on a trade partner's binder and did nothing on your own. -->
+  <CardLinksSheet v-model="linksOpen" :card="linksCard" />
 
   <!-- Name a list: used for both creating and renaming. -->
   <v-dialog v-model="listDialog.open" max-width="420">
@@ -243,11 +297,15 @@ import { getClient } from "@/lib/supabaseClient";
 import DeckImport from "@/components/library/DeckImport.vue";
 import BulkAddCards from "@/components/library/BulkAddCards.vue";
 import AddCard from "@/components/library/AddCard.vue";
+import EditCardCopy from "@/components/library/EditCardCopy.vue";
+import CardBinder from "@/components/trade/CardBinder.vue";
+import CardLinksSheet from "@/components/trade/CardLinksSheet.vue";
 import {
   fetchWishlists, createWishlist, renameWishlist, deleteWishlist,
   moveCardToList, groupByList, nameProblem, MAX_NAME_LEN,
 } from "@/lib/wishlists";
 import { fetchCardPrices, sumPrices, formatMoney } from "@/lib/cardmarketPrice";
+import { SORT_KEYS, DEFAULT_SORT, sortCollection } from "@/lib/collectionSort";
 
 /** The two halves, in order. First one is what a bare /library means. Kept in
  *  step with the route's `:pile` matcher in router/index.js. These read as URLs
@@ -256,7 +314,7 @@ import { fetchCardPrices, sumPrices, formatMoney } from "@/lib/cardmarketPrice";
 const PILES = ["trade", "wishlist"];
 
 export default {
-  components: { DeckImport, BulkAddCards, AddCard },
+  components: { DeckImport, BulkAddCards, AddCard, EditCardCopy, CardBinder, CardLinksSheet },
   props: ['login'],
   emits: ['requireAuth'],
   data() {
@@ -282,9 +340,19 @@ export default {
       newCardId: null,
       snackbar: { open: false, message: '', color: '', icon: '' },
       showDeckImport: false,
-      // Collection layout: 'list' (compact rows, default) | 'grid' (card tiles).
+      // The binder's link sheet: which card raised it, and whether it is up.
+      linksOpen: false,
+      linksCard: null,
+      // Collection layout: 'list' (compact rows, default), 'grid' (card tiles),
+      // or 'binder' (the nine-pocket spread a trade partner sees).
       // Restored from localStorage in mounted().
       viewMode: 'list',
+      // How the open half is ordered. Until this existed the collection had no
+      // order at all — the fetch asks for no `.order()`, and an unordered scan
+      // promises nothing, so a pile could come back rearranged on a refresh.
+      sortKey: DEFAULT_SORT,
+      // The copy the edit dialog is pointed at, or null.
+      editing: null,
     };
   },
   computed: {
@@ -375,14 +443,42 @@ export default {
     },
     viewOptions() {
       return [
-        { key: 'list', icon: 'mdi-view-list',        label: this.$t('library.viewList') },
-        { key: 'grid', icon: 'mdi-view-grid-outline', label: this.$t('library.viewGrid') },
+        { key: 'list',   icon: 'mdi-view-list',         label: this.$t('library.viewList') },
+        { key: 'grid',   icon: 'mdi-view-grid-outline', label: this.$t('library.viewGrid') },
+        { key: 'binder', icon: 'mdi-book-open-outline', label: this.$t('library.viewBinder') },
       ];
+    },
+    sortOptions() {
+      return SORT_KEYS.map(key => ({ key, label: this.$t(`library.sort.${key}`) }));
+    },
+    /** The open half, in one array, however it is filed. What the binder reads. */
+    openPile() {
+      return this.pile === 'trade' ? this.trade_cards : this.wished_cards;
+    },
+    /** The trade half in the chosen order. */
+    sortedTradeCards() {
+      return sortCollection(this.trade_cards, this.sortKey, this.prices);
+    },
+    /** The binder is one spread over the whole open half: its own pages are the
+     *  structure, so the wants half's list chips do not subdivide it further. */
+    binderCards() {
+      return sortCollection(this.openPile, this.sortKey, this.prices);
+    },
+    /** Each wants group, sorted inside itself — the groups are the lists, and
+     *  the order applies within a list rather than across them. */
+    sortedGroups() {
+      return this.visibleGroups.map(group => ({
+        ...group,
+        cards: sortCollection(group.cards, this.sortKey, this.prices),
+      }));
     },
   },
   watch: {
     viewMode(val) {
       if (typeof localStorage !== 'undefined') localStorage.setItem('libraryView', val);
+    },
+    sortKey(val) {
+      if (typeof localStorage !== 'undefined') localStorage.setItem('librarySort', val);
     },
     // A watcher rather than a line in mounted(): arriving at /library from
     // inside the app reuses this component, so mounted() would not run and the
@@ -569,6 +665,24 @@ export default {
       await this.loadPrices();
     },
 
+    /**
+     * A corrected copy, straight from the update's RETURNING row.
+     *
+     * Replaces the row in place rather than reloading the pile: a reload would
+     * re-sort under the reader and lose their scroll position at the exact
+     * moment they are checking that the fix landed. Prices are re-read because
+     * a printing change releases the pinned Cardmarket product, so the figure
+     * on the row is stale until the server answers again.
+     */
+    async onCopySaved(row) {
+      for (const list of [this.trade_cards, this.wished_cards]) {
+        const i = list.findIndex(c => c.id === row.id);
+        if (i !== -1) list.splice(i, 1, { ...list[i], ...row });
+      }
+      this.snackbar = { open: true, message: this.$t('editCard.saved'), color: 'var(--c-trade)', icon: 'mdi-check-circle-outline' };
+      await this.loadPrices();
+    },
+
     async loadPrices() {
       const ids = [...this.trade_cards, ...this.wished_cards].map(c => c.id);
       this.prices = await fetchCardPrices(ids);
@@ -610,9 +724,17 @@ export default {
     },
   },
   async mounted() {
-    // Restore the saved collection layout (default: compact rows).
-    const savedView = typeof localStorage !== 'undefined' ? localStorage.getItem('libraryView') : null;
-    if (savedView === 'grid' || savedView === 'list') this.viewMode = savedView;
+    // Restore the saved collection layout (default: compact rows) and order.
+    // Both are validated against the current option lists rather than trusted:
+    // a key left in storage by an older build must not put the page into a
+    // state it can no longer draw.
+    if (typeof localStorage !== 'undefined') {
+      const savedView = localStorage.getItem('libraryView');
+      if (this.viewOptions.some(o => o.key === savedView)) this.viewMode = savedView;
+
+      const savedSort = localStorage.getItem('librarySort');
+      if (SORT_KEYS.includes(savedSort)) this.sortKey = savedSort;
+    }
 
     await this.loadEverything();
   },
@@ -716,6 +838,62 @@ export default {
   gap: 8px;
   flex-wrap: wrap;
   padding-bottom: 9px;
+}
+
+/* ── Order ────────────────────────────────────────────────────────────────
+   A native select wearing the toolbar's own border, so it sits in the row
+   without a custom listbox behind it. The label is part of the control rather
+   than floating above it: at this size a stacked label would make the sort the
+   tallest thing in the toolbar and push everything else out of line. */
+.lib-sort {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 30px 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--lb-line);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.lib-sort:hover { background: var(--lb-panel); }
+.lib-sort:focus-within {
+  border-color: color-mix(in srgb, var(--pile) 55%, transparent);
+}
+.lib-sort__label {
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  pointer-events: none;
+}
+.lib-sort__select {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text);
+  cursor: pointer;
+  outline: none;
+}
+/* The menu itself is drawn by the OS, which does not inherit the page's
+   colours — so the options are painted explicitly or a dark theme opens a
+   white list. */
+.lib-sort__select option { background: var(--c-surface); color: var(--c-text); }
+.lib-sort__chev {
+  position: absolute;
+  right: 9px;
+  color: var(--c-muted);
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) { .lib-sort { transition: none; } }
+@media (max-width: 700px) {
+  .lib-sort__label { display: none; }
+  .lib-sort { padding-left: 10px; }
 }
 
 .lib-view {

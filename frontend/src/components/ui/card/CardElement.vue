@@ -1,11 +1,9 @@
 <script setup>
-import LanguageTooltip from '@/components/tooltips/LanguageTooltip.vue';
-import ConditionTooltip from '@/components/tooltips/ConditionTooltip.vue';
 import CardPrice from '@/components/trade/CardPrice.vue';
 import PrintingPicker from '@/components/trade/PrintingPicker.vue';
 import { RANGE } from '@/lib/cardmarketPrice';
 import { cardImage } from '@/lib/cardImage';
-defineEmits(['deleted', 'move', 'printing-picked']);
+defineEmits(['deleted', 'move', 'printing-picked', 'edit']);
 </script>
 
 <template>
@@ -14,215 +12,131 @@ defineEmits(['deleted', 'move', 'printing-picked']);
        both layouts during a view switch). -->
   <div class="ce-root">
   <PrintingPicker v-model="pickerOpen" :card="wish" @picked="$emit('printing-picked', $event)" />
-  <!-- ── Compact list row (basic view) ── -->
+
+  <!-- ── Compact list row (basic view) ──────────────────────────────────────
+       Two metadata lines, because a copy is two separate facts and only one of
+       them is about the card. The first line says *which card object this is*
+       — print code and rarity, the pair that decides what it is worth. The
+       second says *what state your copy is in*. Filing them together, as one
+       undifferentiated chip row, is what made a wrong entry invisible: a card
+       recorded as unlimited when it is 1st Edition looked exactly like a card
+       recorded correctly. -->
   <div
     v-if="layout === 'list'"
-    class="card-row flex items-center gap-3 rounded-lg border px-3 py-2 transition-colors"
-    :style="{
-      backgroundColor: 'var(--c-surface)',
-      borderColor: wish.status === 'locked'
-        ? 'color-mix(in srgb, var(--c-mutual) 60%, transparent)'
-        : 'var(--c-border)',
-      opacity: wish.status === 'locked' ? '0.85' : '1',
-    }"
+    class="card-row"
+    :class="{ 'is-locked': wish.status === 'locked' }"
   >
     <!-- Thumbnail -->
-    <div class="relative shrink-0">
-      <img :src="cardImage(wish.image_id)" :alt="wish.name" loading="lazy" class="rounded block" style="width: 38px; aspect-ratio: 59/86; object-fit: cover" />
-      <div
-        v-if="wish.status === 'locked'"
-        class="absolute inset-0 flex items-center justify-center rounded"
-        style="background: rgba(0,0,0,0.55)"
-      >
+    <div class="ce-thumb">
+      <img :src="cardImage(wish.image_id)" :alt="wish.name" loading="lazy" class="ce-thumb__img" />
+      <div v-if="wish.status === 'locked'" class="ce-thumb__lock">
         <v-icon icon="mdi-handshake" size="14" color="var(--c-mutual)" />
       </div>
     </div>
 
-    <!-- Name + meta -->
-    <div class="min-w-0 flex-1 flex flex-col gap-1">
-      <p class="font-semibold text-sm leading-tight truncate" style="color: var(--c-text)">{{ wish.name }}</p>
-      <div class="flex flex-wrap items-center gap-2">
-        <ConditionTooltip v-if="wish.condition" :condition="wish.condition" />
-        <LanguageTooltip v-if="wish.language" :language="wish.language" />
-        <v-tooltip v-if="wish.rarity" :text="wish.rarity" location="top">
-          <template #activator="{ props: tip }">
-            <span v-bind="tip" class="ce-rarity cursor-default">{{ shortenRarity(wish.rarity) }}</span>
-          </template>
-        </v-tooltip>
+    <!-- Name, then the two lines -->
+    <div class="ce-ident">
+      <p class="ce-name">{{ wish.name }}</p>
+
+      <p class="ce-print">
         <a
-          :href="`https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${encodeURIComponent(wish.name)}`"
+          :href="cardmarketUrl"
           target="_blank"
           rel="noopener noreferrer"
-          class="shrink-0 transition-opacity hover:opacity-70 flex items-center gap-1 no-underline text-[11px]"
-          style="color: var(--c-muted)"
-        ><v-icon icon="mdi-open-in-new" size="12" />{{ wish.extension }}</a>
-      </div>
+          class="ce-print__code"
+          :title="$t('cardElement.openOnCardmarket')"
+        >{{ wish.extension || $t('cardElement.noPrinting') }}<v-icon icon="mdi-open-in-new" size="11" /></a>
+        <span v-if="wish.rarity" class="ce-print__rarity">{{ wish.rarity }}</span>
+      </p>
+
+      <p class="ce-state">
+        <span v-if="wish.condition">{{ wish.condition }}</span>
+        <span v-if="wish.language">{{ wish.language }}</span>
+        <!-- Stored since the beginning and displayed nowhere until now, which
+             is why nobody could see the field they wanted to correct. It only
+             appears when true: "Unlimited" on every other row would be noise. -->
+        <span v-if="wish.first_edition" class="ce-state__first">{{ $t('cardElement.firstEdition') }}</span>
+      </p>
     </div>
 
-    <!-- What it is worth. Right of the meta and left of the quantity, so a
-         scrolled binder reads as a column of figures rather than a price
-         buried among the chips.
-
-         When the printing is unknown the figure itself is the prompt: the wide
-         range is the reason to answer, so the answer is offered on it rather
-         than parked in a separate control somebody has to notice. -->
+    <!-- What it is worth. When the printing is unknown the figure itself is the
+         prompt: the wide range is the reason to answer, so the answer is offered
+         on it rather than parked in a separate control somebody has to notice. -->
     <button
       v-if="price && price.kind === RANGE"
       type="button"
-      class="ce-price ce-price--ask shrink-0"
+      class="ce-price ce-price--ask"
       :title="$t('price.whichPrinting')"
       @click.stop="pickerOpen = true"
     >
       <CardPrice :price="price" size="sm" />
       <span class="ce-ask">{{ $t('price.pickPrinting') }}</span>
     </button>
-    <CardPrice v-else-if="price" :price="price" size="sm" class="ce-price shrink-0" />
+    <CardPrice v-else-if="price" :price="price" size="sm" class="ce-price" />
 
-    <!-- Move to another wishlist -->
-    <v-menu v-if="canFile" location="bottom end">
-      <template #activator="{ props: menu }">
-        <button
-          v-bind="menu"
-          class="shrink-0 flex items-center justify-center rounded-md transition-colors ce-file"
-          style="width: 30px; height: 30px"
-          :title="$t('wishlists.moveTo')"
-          :aria-label="$t('wishlists.moveTo')"
-        >
-          <v-icon icon="mdi-folder-move-outline" size="16" />
-        </button>
-      </template>
-      <v-list density="compact" style="background: var(--c-surface); border: 1px solid var(--c-border)">
-        <v-list-item
-          v-for="opt in fileOptions"
-          :key="opt.id ?? 'unsorted'"
-          @click="$emit('move', { cardId: wish.id, listId: opt.id })"
-        >
-          <v-list-item-title class="text-sm" style="color: var(--c-text)">{{ opt.name }}</v-list-item-title>
-        </v-list-item>
-      </v-list>
-    </v-menu>
-
-    <!-- Quantity / locked status -->
-    <div class="shrink-0 ce-qty">
-      <div
-        v-if="wish.status === 'locked'"
-        class="flex items-center gap-1.5 rounded-md px-2 !py-1.5"
-        style="background: color-mix(in srgb, var(--c-mutual) 10%, transparent); border: 1px solid color-mix(in srgb, var(--c-mutual) 30%, transparent)"
-      >
+    <!-- Quantity. A stamp at rest and a stepper when wanted: the count is read
+         far more often than it is changed, and a spinner on every row of a
+         200-card binder made the page read as a form. The locked state has
+         always rendered a static count; this makes the ordinary case agree
+         with it. -->
+    <div
+      class="ce-qty"
+      :class="{ 'is-open': qtyOpen }"
+      @focusout="onQtyFocusOut"
+    >
+      <div v-if="wish.status === 'locked'" class="ce-qty__locked">
         <v-icon icon="mdi-lock-outline" size="13" color="var(--c-mutual)" />
-        <span class="text-xs font-semibold tabular-nums" style="color: var(--c-mutual)">{{ wish.quantity }}</span>
-      </div>
-      <div v-else class="card-row-qty">
-        <v-number-input
-          hide-details
-          density="compact"
-          variant="outlined"
-          control-variant="split"
-          v-model="quantityCount"
-          @update:model-value="onQuantityChange"
-          :min="minQuantity"
-        />
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Card tile (grid view) ── -->
-  <div
-    v-else
-    class="card-element flex flex-col rounded-b-lg border overflow-hidden transition-colors"
-    :style="{
-      backgroundColor: 'transparent',
-      borderColor: wish.status === 'locked'
-        ? 'color-mix(in srgb, var(--c-mutual) 60%, transparent)'
-        : 'var(--c-border)',
-      opacity: wish.status === 'locked' ? '0.8' : '1',
-    }"
-  >
-    <!-- Card image -->
-    <div class="relative">
-      <img :src="cardImage(wish.image_id)" :alt="wish.name" loading="lazy" class="w-full object-cover" style="aspect-ratio: 59/86">
-
-      <!-- Locked overlay (accepted trade) -->
-      <div
-        v-if="wish.status === 'locked'"
-        class="absolute inset-0 flex flex-col items-center justify-center gap-2"
-        style="background: rgba(0,0,0,0.6)"
-      >
-        <v-icon icon="mdi-handshake" size="22" color="var(--c-mutual)" />
-        <span class="text-[10px] font-bold uppercase tracking-wide text-center px-2 leading-tight" style="color: var(--c-mutual)">{{ $t('cardElement.acceptedTrade') }}</span>
+        <span class="ce-qty__lockednum tabular-nums">{{ wish.quantity }}</span>
       </div>
 
-    </div>
-
-    <!-- Data -->
-    <div class="flex flex-col gap-2 px-3 pt-2 pb-1" style="background-color: var(--c-surface)">
-      <div class="flex items-baseline gap-2 min-w-0">
-        <p class="font-semibold text-xs leading-tight truncate flex-1" style="color: var(--c-text)">{{ wish.name }}</p>
-        <button
-          v-if="price && price.kind === RANGE"
-          type="button"
-          class="ce-price--ask shrink-0"
-          :title="$t('price.whichPrinting')"
-          @click.stop="pickerOpen = true"
-        ><CardPrice :price="price" size="sm" /></button>
-        <CardPrice v-else-if="price" :price="price" size="sm" class="shrink-0" />
-      </div>
-      <div class="flex flex-wrap gap-3">
-        <ConditionTooltip v-if="wish.condition" :condition="wish.condition" />
-        <LanguageTooltip v-if="wish.language" :language="wish.language" />
-        <v-tooltip v-if="wish.rarity" :text="wish.rarity" location="top">
-          <template #activator="{ props: tip }">
-            <span v-bind="tip" class="ce-rarity cursor-default">{{ shortenRarity(wish.rarity) }}</span>
-          </template>
-        </v-tooltip>
-        <a
-          :href="`https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${encodeURIComponent(wish.name)}`"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="shrink-0 transition-opacity hover:opacity-70 flex gap-1 no-underline text-xs"
-          style="color: var(--c-muted)"
-        ><v-icon icon="mdi-open-in-new" size="13" />{{ wish.extension }}</a>
-      </div>
-    </div>
-
-    <!-- Quantity -->
-    <div class="px-2 pb-2 flex flex-col gap-1" style="background-color: var(--c-surface)">
-
-      <!-- Locked card: static quantity display, no controls -->
-      <div
-        v-if="wish.status === 'locked'"
-        class="flex items-center justify-center gap-2 rounded-md py-2"
-        style="background: color-mix(in srgb, var(--c-mutual) 10%, transparent); border: 1px solid color-mix(in srgb, var(--c-mutual) 30%, transparent)"
-      >
-        <v-icon icon="mdi-lock-outline" size="13" color="var(--c-mutual)" />
-        <span class="text-xs font-semibold tabular-nums" style="color: var(--c-mutual)">
-          {{ wish.quantity === 1 ? $t('cardElement.copyLocked') : $t('cardElement.copiesLocked', { count: wish.quantity }) }}
-        </span>
-      </div>
-
-      <!-- Normal / reserved card: editable quantity input -->
       <template v-else>
-        <v-number-input
-          hide-details
-          density="compact"
-          variant="outlined"
-          control-variant="split"
-          v-model="quantityCount"
-          @update:model-value="onQuantityChange"
-          :min="minQuantity"
-        />
-      </template>
+        <button
+          type="button"
+          class="ce-qty__stamp tabular-nums"
+          :aria-label="$t('cardElement.changeQuantity')"
+          :title="$t('cardElement.changeQuantity')"
+          @click="openQty"
+          @focus="openQty"
+        >×{{ wish.quantity }}</button>
 
-      <!-- Move to another wishlist -->
+        <div class="ce-qty__step">
+          <v-number-input
+            ref="qtyInput"
+            hide-details
+            density="compact"
+            variant="outlined"
+            control-variant="split"
+            v-model="quantityCount"
+            @update:model-value="onQuantityChange"
+            :min="minQuantity"
+          />
+        </div>
+      </template>
+    </div>
+
+    <!-- Correcting an entry and filing it are both occasional, so they share
+         one quiet column rather than each taking a button on every row. -->
+    <div class="ce-acts">
+      <button
+        v-if="wish.status !== 'locked'"
+        type="button"
+        class="ce-act"
+        :title="$t('editCard.title')"
+        :aria-label="$t('editCard.title')"
+        @click="$emit('edit', wish)"
+      >
+        <v-icon icon="mdi-pencil-outline" size="16" />
+      </button>
+
       <v-menu v-if="canFile" location="bottom end">
         <template #activator="{ props: menu }">
           <button
             v-bind="menu"
-            class="flex items-center justify-center gap-1 rounded-md py-1 text-[11px] font-semibold transition-colors ce-file"
+            class="ce-act"
             :title="$t('wishlists.moveTo')"
+            :aria-label="$t('wishlists.moveTo')"
           >
-            <v-icon icon="mdi-folder-move-outline" size="13" />
-            {{ $t('wishlists.moveTo') }}
+            <v-icon icon="mdi-folder-move-outline" size="16" />
           </button>
         </template>
         <v-list density="compact" style="background: var(--c-surface); border: 1px solid var(--c-border)">
@@ -237,11 +151,97 @@ defineEmits(['deleted', 'move', 'printing-picked']);
       </v-menu>
     </div>
   </div>
+
+  <!-- ── Card tile (grid view) ── -->
+  <div
+    v-else
+    class="card-element"
+    :class="{ 'is-locked': wish.status === 'locked' }"
+  >
+    <div class="ce-tile__art">
+      <img :src="cardImage(wish.image_id)" :alt="wish.name" loading="lazy" class="ce-tile__img" />
+
+      <!-- The count rides on the art, where a binder shows it, instead of
+           taking a control-sized row under every tile. -->
+      <button
+        v-if="wish.status !== 'locked'"
+        type="button"
+        class="ce-tile__qty tabular-nums"
+        :aria-label="$t('cardElement.changeQuantity')"
+        :title="$t('cardElement.changeQuantity')"
+        @click="$emit('edit', wish)"
+      >×{{ wish.quantity }}</button>
+
+      <span v-if="wish.first_edition" class="ce-tile__first">{{ $t('cardElement.firstEditionShort') }}</span>
+
+      <div v-if="wish.status === 'locked'" class="ce-tile__lock">
+        <v-icon icon="mdi-handshake" size="22" color="var(--c-mutual)" />
+        <span class="ce-tile__locktext">{{ $t('cardElement.acceptedTrade') }}</span>
+      </div>
+    </div>
+
+    <div class="ce-tile__data">
+      <div class="ce-tile__top">
+        <p class="ce-name ce-name--tile">{{ wish.name }}</p>
+        <button
+          v-if="price && price.kind === RANGE"
+          type="button"
+          class="ce-price--ask ce-price--tile"
+          :title="$t('price.whichPrinting')"
+          @click.stop="pickerOpen = true"
+        ><CardPrice :price="price" size="sm" /></button>
+        <CardPrice v-else-if="price" :price="price" size="sm" class="shrink-0" />
+      </div>
+
+      <p class="ce-print ce-print--tile">
+        <span class="ce-print__code">{{ wish.extension || $t('cardElement.noPrinting') }}</span>
+        <span v-if="wish.rarity" class="ce-print__rarity">{{ shortRarity }}</span>
+      </p>
+
+      <p class="ce-state ce-state--tile">
+        <span v-if="wish.condition">{{ wish.condition }}</span>
+        <span v-if="wish.language">{{ languageShort }}</span>
+      </p>
+
+      <div class="ce-tile__acts">
+        <button
+          v-if="wish.status !== 'locked'"
+          type="button"
+          class="ce-act ce-act--wide"
+          @click="$emit('edit', wish)"
+        >
+          <v-icon icon="mdi-pencil-outline" size="13" />
+          {{ $t('editCard.edit') }}
+        </button>
+
+        <v-menu v-if="canFile" location="bottom end">
+          <template #activator="{ props: menu }">
+            <button v-bind="menu" class="ce-act" :title="$t('wishlists.moveTo')" :aria-label="$t('wishlists.moveTo')">
+              <v-icon icon="mdi-folder-move-outline" size="13" />
+            </button>
+          </template>
+          <v-list density="compact" style="background: var(--c-surface); border: 1px solid var(--c-border)">
+            <v-list-item
+              v-for="opt in fileOptions"
+              :key="opt.id ?? 'unsorted'"
+              @click="$emit('move', { cardId: wish.id, listId: opt.id })"
+            >
+              <v-list-item-title class="text-sm" style="color: var(--c-text)">{{ opt.name }}</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </div>
+    </div>
+  </div>
   </div>
 </template>
 
 <script>
 import { getClient } from "@/lib/supabaseClient";
+import { shortenRarity, languageTag } from "@/lib/cardCopy";
+// Aliased: the computed below is also called cardmarketUrl, and it is the name
+// the template already uses.
+import { cardmarketUrl as buildCardmarketUrl } from "@/lib/cardmarketLink";
 
 export default {
   props: {
@@ -259,6 +259,7 @@ export default {
   data() {
     return {
       pickerOpen: false,
+      qtyOpen: false,
       quantityCount: this.wish.quantity,
       reservedQty: 0,
       loadingReserved: false,
@@ -286,6 +287,31 @@ export default {
     minQuantity() {
       return this.reservedQty;
     },
+    /** A tile has no room for "Quarter Century Secret Rare". */
+    shortRarity() {
+      return shortenRarity(this.wish.rarity);
+    },
+    languageShort() {
+      return languageTag(this.wish.language);
+    },
+    /**
+     * The row's Cardmarket link.
+     *
+     * No expansion route: a list row is one of several hundred on screen and
+     * is not worth a lookup each. The copy's own language and condition still
+     * reach the URL, which is the half that needs no request — the binder's
+     * link sheet is where a reader who wants the printing itself goes.
+     */
+    cardmarketUrl() {
+      return buildCardmarketUrl(this.wish);
+    },
+  },
+  watch: {
+    // The edit dialog writes the same row, so a saved quantity has to reach the
+    // stepper's own copy of it or the next nudge starts from a stale number.
+    'wish.quantity'(next) {
+      this.quantityCount = next;
+    },
   },
   async mounted() {
     // Always check for active-trade reservations, regardless of wish.status.
@@ -294,8 +320,17 @@ export default {
     await this.fetchReservedQty();
   },
   methods: {
-    shortenRarity(rarity) {
-      return rarity.split(' ').map(w => w[0]).join('');
+    /** Open the stepper, and put the caret in it so a keyboard reaches the
+     *  control the stamp stands for rather than skipping past it. */
+    openQty() {
+      this.qtyOpen = true;
+      this.$nextTick(() => {
+        this.$refs.qtyInput?.$el?.querySelector('input')?.focus();
+      });
+    },
+    /** Close again once focus leaves the whole quantity cell. */
+    onQtyFocusOut(event) {
+      if (!event.currentTarget.contains(event.relatedTarget)) this.qtyOpen = false;
     },
 
     /**
@@ -340,13 +375,98 @@ export default {
 </script>
 
 <style scoped>
-/* ── Price in a list row ──────────────────────────────────────────────────
-   A column on a wide row, its own line on a narrow one. At 375px a band like
-   "€72.26 – €158.68" is a third of the row: held beside the chips it squeezed
-   the name down to "Clo…" and pushed NM/EN/SR out from under it into the
-   figure. Below 620px the row wraps and the price takes the line under the
-   name, indented past the thumbnail so it still reads as belonging to it. */
-.ce-price { margin-left: auto; }
+/* ── The row ─────────────────────────────────────────────────────────────── */
+.card-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.card-row:hover { background: var(--c-surface-2); }
+.card-row.is-locked {
+  border-color: color-mix(in srgb, var(--c-mutual) 60%, transparent);
+  opacity: 0.85;
+}
+@media (prefers-reduced-motion: reduce) { .card-row { transition: none; } }
+
+.ce-thumb { position: relative; flex-shrink: 0; }
+.ce-thumb__img {
+  display: block;
+  width: 38px;
+  aspect-ratio: 59 / 86;
+  object-fit: cover;
+  border-radius: 4px;
+}
+.ce-thumb__lock {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 0.55);
+}
+
+.ce-ident { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+
+.ce-name {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.875rem;
+  line-height: 1.25;
+  color: var(--c-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Line one: which card object this is. Monospace because a print code is an
+   identifier (DESIGN.md, The Mono Identifier Rule) — and because it lets the
+   eye find the code without reading the row. */
+.ce-print {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0; min-width: 0;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  color: var(--c-muted);
+}
+.ce-print__code {
+  display: inline-flex; align-items: center; gap: 3px;
+  color: var(--c-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+a.ce-print__code:hover { color: var(--c-trade); }
+a.ce-print__code:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; border-radius: 3px; }
+.ce-print__rarity {
+  min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: color-mix(in srgb, var(--c-muted) 82%, transparent);
+}
+
+/* Line two: the state of your copy, in the register a collector says it in.
+   Full words, not NM/EN chips behind tooltips — a tooltip is not a label, and
+   the whole point of this line is that a wrong value should be readable. */
+.ce-state {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: 0 8px;
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--c-muted);
+}
+.ce-state > span + span::before {
+  content: "·";
+  margin-right: 8px;
+  opacity: 0.55;
+}
+/* The one fact on this line that changes what the copy is worth. */
+.ce-state__first {
+  font-weight: 700;
+  color: var(--c-trade);
+}
+
+.ce-price { margin-left: auto; flex-shrink: 0; }
 
 /* The unknown-printing price is a control, so it looks like one on hover and
    carries the question under the figure. Dashed, not solid: the number inside
@@ -370,54 +490,152 @@ export default {
 }
 @media (prefers-reduced-motion: reduce) { .ce-price--ask { transition: none; } }
 
+/* ── Quantity: stamp, then stepper ───────────────────────────────────────── */
+.ce-qty { flex-shrink: 0; display: flex; align-items: center; justify-content: flex-end; min-width: 52px; }
+
+.ce-qty__stamp {
+  padding: 3px 9px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--c-text);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+/* Only announces itself as a control once you are on the row, so a scrolled
+   binder is a column of counts rather than a column of buttons. */
+.card-row:hover .ce-qty__stamp {
+  border-color: var(--c-border);
+  background: var(--c-surface);
+}
+.ce-qty__stamp:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .ce-qty__stamp { transition: none; } }
+
+.ce-qty__step { display: none; width: 124px; }
+.ce-qty.is-open .ce-qty__step { display: block; }
+.ce-qty.is-open .ce-qty__stamp { display: none; }
+
+/* A pointer that can hover gets the stepper by hovering the row; touch taps
+   the stamp instead, which is what .is-open above is for. */
+@media (hover: hover) and (pointer: fine) {
+  .card-row:hover .ce-qty__step { display: block; }
+  .card-row:hover .ce-qty__stamp { display: none; }
+}
+
+.ce-qty__locked {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--c-mutual) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-mutual) 30%, transparent);
+}
+.ce-qty__lockednum { font-size: 0.75rem; font-weight: 600; color: var(--c-mutual); }
+
+/* ── The quiet action column ─────────────────────────────────────────────── */
+.ce-acts { flex-shrink: 0; display: flex; align-items: center; gap: 4px; }
+
+.ce-act {
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--c-muted);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.card-row:hover .ce-act { border-color: var(--c-border); }
+.ce-act:hover { color: var(--c-text); background: var(--c-surface-2); border-color: var(--c-border); }
+.ce-act:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
+.ce-act--wide { width: auto; flex: 1; height: 26px; font-size: 11px; font-weight: 700; border-color: var(--c-border); }
+@media (prefers-reduced-motion: reduce) { .ce-act { transition: none; } }
+
+/* ── Narrow rows ─────────────────────────────────────────────────────────── */
 @media (max-width: 620px) {
   .card-row { flex-wrap: wrap; row-gap: 8px; }
-  /* Thumbnail and name take the first line whole, so the name never has to
-     compete with a figure for width. Price and quantity then share the second
-     line -- the two things you act on, side by side, rather than stacked into a
-     third row that makes every card in the binder taller. */
-  .card-row > .min-w-0 { flex: 1 1 calc(100% - 62px); }
-  .ce-price { order: 5;  margin-left: 0; padding-left: 50px; }
+  /* Thumbnail and the identity block take the first line whole, so the name
+     never has to compete with a figure for width. Price, count and actions
+     then share the second line — the things you act on, side by side. */
+  .ce-ident { flex: 1 1 calc(100% - 62px); }
+  .ce-price { order: 5; margin-left: 50px; }
   .ce-qty   { order: 10; margin-left: auto; }
-}
-/* A rarity code is an identifier, so it is set like one: monospace, in the same
-   tinted-neutral chip the collection uses for its counts (DESIGN.md, The Mono
-   Identifier Rule). It used to be Tailwind amber — a hue outside the palette,
-   and at 1.8:1 on a light row it was not readable at all. */
-.ce-rarity {
-  flex-shrink: 0;
-  padding: 1px 6px;
-  border-radius: 5px;
-  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1.5;
-  height: fit-content;
-  color: var(--c-muted);
-  background: color-mix(in srgb, var(--c-muted) 14%, transparent);
+  .ce-acts  { order: 15; }
+  /* A touch row has no hover to reveal the stepper, so the stamp stays put
+     and opens on tap. */
+  .ce-qty__stamp { border-color: var(--c-border); background: var(--c-surface); }
 }
 
-/* Quiet until wanted: filing is a thing you do occasionally, and a button per
-   card at full contrast would compete with the card itself. */
-.ce-file {
-  color: var(--c-muted);
+/* ── The tile ────────────────────────────────────────────────────────────── */
+.card-element {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border-radius: 10px;
   border: 1px solid var(--c-border);
-  background: transparent;
+  overflow: hidden;
+  background: var(--c-surface);
+  transition: border-color 0.15s ease;
+}
+.card-element.is-locked {
+  border-color: color-mix(in srgb, var(--c-mutual) 60%, transparent);
+  opacity: 0.8;
+}
+@media (prefers-reduced-motion: reduce) { .card-element { transition: none; } }
+
+.ce-tile__art { position: relative; }
+.ce-tile__img { display: block; width: 100%; aspect-ratio: 59 / 86; object-fit: cover; }
+
+/* The count sits on the art the way a sleeve label does, which buys the tile
+   a whole row back. Tapping it opens the full edit form — on a tile there is
+   no room for a stepper that is only ever used occasionally. */
+.ce-tile__qty {
+  position: absolute; right: 6px; bottom: 6px;
+  padding: 2px 8px;
+  border-radius: 7px;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--c-text);
+  background: color-mix(in srgb, var(--c-surface) 88%, transparent);
+  border: 1px solid var(--c-border);
+  backdrop-filter: blur(3px);
   cursor: pointer;
 }
-.ce-file:hover {
-  color: var(--c-text);
-  background: var(--c-surface-2);
+.ce-tile__qty:hover { background: var(--c-surface); }
+.ce-tile__qty:focus-visible { outline: 2px solid var(--c-trade); outline-offset: 2px; }
+
+.ce-tile__first {
+  position: absolute; left: 6px; top: 6px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--c-on-accent);
+  background: var(--c-trade);
 }
 
-.card-element {
-  width: 160px;
+.ce-tile__lock {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  background: rgb(0 0 0 / 0.6);
 }
-@media (max-width: 639px) {
-  .card-element { width: 100%; }
+.ce-tile__locktext {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em; text-align: center; line-height: 1.2;
+  padding: 0 8px;
+  color: var(--c-mutual);
 }
 
-/* Compact stepper for the list row — keep the +/- control from stretching. */
-.card-row-qty { width: 124px; }
-.card-row:hover { background-color: var(--c-surface-2) !important; }
+.ce-tile__data { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px 10px; }
+.ce-tile__top { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.ce-name--tile { font-size: 0.78rem; flex: 1; }
+.ce-price--tile { padding: 1px 6px; }
+.ce-print--tile { font-size: 0.66rem; }
+.ce-state--tile { font-size: 0.68rem; }
+.ce-tile__acts { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
 </style>

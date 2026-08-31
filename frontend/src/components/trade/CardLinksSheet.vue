@@ -8,9 +8,10 @@
 //
 // Long press fires `contextmenu` on both iOS and Android, so the binder's one
 // handler covers finger and pointer without a touch-specific path.
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { cardImage } from "@/lib/cardImage";
+import { cardmarketUrl, resolveCardLink } from "@/lib/cardmarketLink";
 import CardPrice from "@/components/trade/CardPrice.vue";
 
 const props = defineProps({
@@ -28,24 +29,56 @@ const meta = computed(() => {
   return [c.extension, c.rarity, c.condition, c.language].filter(Boolean).join(" · ");
 });
 
+/**
+ * Which Cardmarket product this copy is, once we know.
+ *
+ * Usually already known: the card carries the price the collection loaded, and
+ * a price carries the product it resolved to, so this settles without asking
+ * anything. Only a card opened without a price costs a lookup. Until it lands
+ * the link is the search one -- the link that was there before -- so the sheet
+ * is useful immediately and exact a moment later.
+ */
+const resolved = ref(null);
+
+watch(
+  () => [props.modelValue, props.card?.id],
+  async ([open]) => {
+    resolved.value = null;
+    const card = props.card;
+    if (!open || !card) return;
+    // No viewer argument: the reader's country is the same reader on every
+    // surface this sheet opens from, so the lib looks it up once and caches it
+    // rather than every binder and dialog threading a prop down to reach one
+    // query parameter.
+    const found = await resolveCardLink(card);
+    // The reader can close this sheet and open another before the request
+    // lands; without this the second card would show the first card's page.
+    if (props.card?.id === card.id) resolved.value = found;
+  },
+  { immediate: true },
+);
+
 const links = computed(() => {
   const c = props.card;
   if (!c?.name) return [];
   const q = encodeURIComponent(c.name);
-  // Cardmarket is searched by print code when we have one: a set code lands on
-  // the exact product, where the card name lands on every printing of it.
+  // Cardmarket is addressed by product id, which names the printing outright --
+  // one of nine Aleisters in a set, not the card. Language and condition come
+  // off the copy. Everything not recorded is left out rather than defaulted, so
+  // a copy with no printing gets exactly the search link this sheet always built.
   return [
-    {
-      label: "Cardmarket",
-      icon: "mdi-currency-eur",
-      url: c.extension
-        ? `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${encodeURIComponent(c.extension)}`
-        : `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${q}`,
-    },
+    { label: "Cardmarket", icon: "mdi-currency-eur", url: resolved.value?.url ?? cardmarketUrl(c) },
     { label: "TCGPlayer", icon: "mdi-cards-outline", url: `https://www.tcgplayer.com/search/yugioh/product?q=${q}` },
     { label: "eBay",      icon: "mdi-tag-outline",   url: `https://www.ebay.com/sch/i.html?_nkw=${q}+yugioh` },
   ];
 });
+
+// Said only when it is true. A link that opens on the exact printing is a
+// different promise from a search, and a reader who lands on four listings
+// instead of four hundred should know the page did that on purpose. A plain
+// search says nothing: it is what has always happened and needs no explaining.
+const note = computed(() =>
+  resolved.value?.kind === "product" ? t("cardLinks.cardmarketProduct") : "");
 </script>
 
 <template>
@@ -89,6 +122,11 @@ const links = computed(() => {
             <v-icon icon="mdi-open-in-new" size="13" class="ls__out" aria-hidden="true" />
           </a>
         </div>
+
+        <!-- Said once, under the links, and only when it is true: a reader who
+             opens Cardmarket and sees four listings instead of four hundred
+             should know the page did that on purpose. -->
+        <p v-if="note" class="ls__note">{{ note }}</p>
       </div>
     </v-card>
   </v-dialog>
@@ -115,6 +153,7 @@ const links = computed(() => {
 .ls__price { margin-top: 2px; }
 
 .ls__lead { margin: 0; font-size: 12.5px; color: var(--c-muted); }
+.ls__note { margin: 0; font-size: 11.5px; line-height: 1.4; color: var(--c-muted); }
 
 .ls__links { display: flex; flex-direction: column; gap: 6px; }
 .ls__link {

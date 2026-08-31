@@ -5,6 +5,10 @@ import {
   computeTypeBreakdown,
   computeEstimatedValue,
   cardState,
+  allocateCopies,
+  entryState,
+  stateRuns,
+  missingEntries,
   deckTally,
   completionRuns,
   OWNED,
@@ -258,5 +262,271 @@ describe('completionRuns', () => {
 
   it('is an empty strip for an empty deck', () => {
     expect(completionRuns([], ctx)).toEqual([])
+  })
+})
+
+
+// ---------------------------------------------------------------------------
+// Copies, not cards.
+//
+// `ownedCopies` is a Map of id -> how many copies the collection holds. It used
+// to be a Set, which could only answer "at all", so a deck asking for three of
+// something you had one of read as complete. A Set is still accepted, meaning
+// what it always meant — enough of them — so an un-migrated caller keeps its
+// old answer instead of quietly getting one copy of everything.
+// ---------------------------------------------------------------------------
+const copies = (pairs) => new Map(pairs)
+
+describe('allocateCopies', () => {
+  it('splits an entry the collection only partly covers', () => {
+    const [a] = allocateCopies([{ id: 1, qty: 3 }], {
+      cardMap, ownedCopies: copies([[1, 1]]), ignoredIds: new Set(),
+    })
+    expect(a).toEqual({ id: 1, qty: 3, owned: 1, sourced: 0, missing: 2, unknown: 0 })
+  })
+
+  it('the four states always sum to the entry quantity', () => {
+    const entries = [{ id: 1, qty: 3 }, { id: 2, qty: 2 }, { id: 10, qty: 1 }, { id: 999, qty: 2 }]
+    const ctx = { cardMap, ownedCopies: copies([[1, 1], [10, 5]]), ignoredIds: new Set([2]) }
+    for (const a of allocateCopies(entries, ctx)) {
+      expect(a.owned + a.sourced + a.missing + a.unknown).toBe(a.qty)
+    }
+  })
+
+  it('never credits more copies than the deck asks for', () => {
+    const [a] = allocateCopies([{ id: 1, qty: 2 }], {
+      cardMap, ownedCopies: copies([[1, 9]]), ignoredIds: new Set(),
+    })
+    expect(a.owned).toBe(2)
+    expect(a.missing).toBe(0)
+  })
+
+  it('spends the pool once across the whole list, not once per entry', () => {
+    // Two copies in the main deck and one in the side: three cards, one held.
+    const entries = [{ id: 1, qty: 2 }, { id: 1, qty: 1 }]
+    const out = allocateCopies(entries, {
+      cardMap, ownedCopies: copies([[1, 1]]), ignoredIds: new Set(),
+    })
+    expect(out[0]).toMatchObject({ owned: 1, missing: 1 })
+    expect(out[1]).toMatchObject({ owned: 0, missing: 1 })
+  })
+
+  it('sources only the copies you do not already hold', () => {
+    const [a] = allocateCopies([{ id: 1, qty: 3 }], {
+      cardMap, ownedCopies: copies([[1, 1]]), ignoredIds: new Set([1]),
+    })
+    expect(a).toMatchObject({ owned: 1, sourced: 2, missing: 0 })
+  })
+
+  it('an unrecognized id is only unreadable — never owned, wanted or sourced', () => {
+    const [a] = allocateCopies([{ id: 999, qty: 2 }], {
+      cardMap, ownedCopies: copies([[999, 5]]), ignoredIds: new Set([999]),
+    })
+    expect(a).toEqual({ id: 999, qty: 2, owned: 0, sourced: 0, missing: 0, unknown: 2 })
+  })
+
+  it('a Set still means "enough of them", so an un-migrated caller is unchanged', () => {
+    const [a] = allocateCopies([{ id: 1, qty: 3 }], {
+      cardMap, ownedIds: new Set([1]), ignoredIds: new Set(),
+    })
+    expect(a).toMatchObject({ owned: 3, missing: 0 })
+  })
+
+  it('no ownership at all leaves every copy missing', () => {
+    const [a] = allocateCopies([{ id: 1, qty: 3 }], { cardMap })
+    expect(a).toMatchObject({ owned: 0, missing: 3 })
+  })
+
+  it('an empty list allocates nothing', () => {
+    expect(allocateCopies([], { cardMap })).toEqual([])
+    expect(allocateCopies(undefined, { cardMap })).toEqual([])
+  })
+})
+
+describe('entryState', () => {
+  const of = (o) => ({ owned: 0, sourced: 0, missing: 0, unknown: 0, ...o })
+
+  it('an entry one copy short still reads as missing', () => {
+    expect(entryState(of({ owned: 2, missing: 1 }))).toBe(MISSING)
+  })
+
+  it('only an entry with nothing outstanding reads as owned', () => {
+    expect(entryState(of({ owned: 3 }))).toBe(OWNED)
+  })
+
+  it('sourced once the remainder is handled elsewhere', () => {
+    expect(entryState(of({ owned: 1, sourced: 2 }))).toBe(SOURCED)
+  })
+
+  it('missing beats sourced when some copies are neither', () => {
+    expect(entryState(of({ sourced: 1, missing: 1 }))).toBe(MISSING)
+  })
+
+  it('unreadable wins over everything', () => {
+    expect(entryState(of({ owned: 1, unknown: 1 }))).toBe(UNKNOWN)
+  })
+})
+
+describe('stateRuns', () => {
+  it('returns runs in display order with the empty ones dropped', () => {
+    expect(stateRuns({ owned: 1, sourced: 0, missing: 2, unknown: 0 })).toEqual([
+      { state: OWNED, count: 1 },
+      { state: MISSING, count: 2 },
+    ])
+  })
+
+  it('a whole tally works the same as one entry', () => {
+    const runs = stateRuns({ owned: 30, sourced: 2, missing: 8, unknown: 0 })
+    expect(runs.map((r) => r.state)).toEqual([OWNED, SOURCED, MISSING])
+  })
+
+  it('nothing to draw is an empty list, not a run of zero', () => {
+    expect(stateRuns({})).toEqual([])
+    expect(stateRuns(null)).toEqual([])
+  })
+})
+
+describe('deckTally with copies', () => {
+  it('counts the copies you are short, not the cards', () => {
+    // Three of id 1 (one held) and two of id 2 (none held) -> 1 owned, 4 missing.
+    const tally = deckTally([{ id: 1, qty: 3 }, { id: 2, qty: 2 }], {
+      cardMap, ownedCopies: copies([[1, 1]]), ignoredIds: new Set(),
+    })
+    expect(tally).toMatchObject({ total: 5, owned: 1, missing: 4, sourced: 0, unknown: 0 })
+  })
+
+  it('the states still sum to the total', () => {
+    const entries = [{ id: 1, qty: 3 }, { id: 2, qty: 2 }, { id: 999, qty: 1 }]
+    const tally = deckTally(entries, {
+      cardMap, ownedCopies: copies([[1, 2]]), ignoredIds: new Set([2]),
+    })
+    expect(tally.owned + tally.sourced + tally.missing + tally.unknown).toBe(tally.total)
+  })
+
+  it('a deck fully covered leaves nothing missing', () => {
+    const tally = deckTally([{ id: 1, qty: 3 }], {
+      cardMap, ownedCopies: copies([[1, 3]]), ignoredIds: new Set(),
+    })
+    expect(tally).toMatchObject({ owned: 3, missing: 0 })
+  })
+})
+
+describe('completionRuns with copies', () => {
+  it('draws a partly held entry as both an owned and a missing run', () => {
+    const runs = completionRuns([{ id: 1, qty: 3 }], {
+      cardMap, ownedCopies: copies([[1, 1]]), ignoredIds: new Set(),
+    })
+    expect(runs).toEqual([
+      { state: OWNED, count: 1 },
+      { state: MISSING, count: 2 },
+    ])
+  })
+})
+
+describe('missingEntries', () => {
+  it('carries the outstanding count, not the deck quantity', () => {
+    const out = missingEntries([{ id: 1, qty: 3 }, { id: 2, qty: 2 }], {
+      cardMap, ownedCopies: copies([[1, 1], [2, 2]]), ignoredIds: new Set(),
+    })
+    // id 1 is two short; id 2 is fully covered and drops out entirely.
+    expect(out).toEqual([{ id: 1, qty: 2 }])
+  })
+
+  it('leaves out what is sourced elsewhere and what cannot be read', () => {
+    const out = missingEntries([{ id: 1, qty: 2 }, { id: 2, qty: 1 }, { id: 999, qty: 1 }], {
+      cardMap, ownedCopies: new Map(), ignoredIds: new Set([2]),
+    })
+    expect(out).toEqual([{ id: 1, qty: 2 }])
+  })
+
+  it('is empty for a deck with nothing outstanding', () => {
+    expect(missingEntries([{ id: 1, qty: 1 }], {
+      cardMap, ownedCopies: copies([[1, 1]]), ignoredIds: new Set(),
+    })).toEqual([])
+  })
+})
+
+describe('cardState with copies', () => {
+  it('is owned once you hold one, however many the deck wants', () => {
+    expect(cardState(1, { cardMap, ownedCopies: copies([[1, 1]]), ignoredIds: new Set() })).toBe(OWNED)
+  })
+
+  it('a count of zero is not ownership', () => {
+    expect(cardState(1, { cardMap, ownedCopies: copies([[1, 0]]), ignoredIds: new Set() })).toBe(MISSING)
+  })
+
+  it('still reads a Set', () => {
+    expect(cardState(1, { cardMap, ownedIds: new Set([1]), ignoredIds: new Set() })).toBe(OWNED)
+  })
+})
+
+
+// ---------------------------------------------------------------------------
+// A sourced mark counts too. It used to be a Set, so it could only claim a
+// whole entry: a deck asking for three could not be told that one is handled.
+// ---------------------------------------------------------------------------
+describe('sourcedCopies', () => {
+  it('marks only the copies asked for, leaving the rest missing', () => {
+    const [a] = allocateCopies([{ id: 1, qty: 3 }], {
+      cardMap, ownedCopies: new Map(), sourcedCopies: new Map([[1, 1]]),
+    })
+    expect(a).toMatchObject({ owned: 0, sourced: 1, missing: 2 })
+  })
+
+  it('takes owned copies first, so a mark never un-owns one', () => {
+    const [a] = allocateCopies([{ id: 1, qty: 3 }], {
+      cardMap, ownedCopies: new Map([[1, 1]]), sourcedCopies: new Map([[1, 1]]),
+    })
+    expect(a).toMatchObject({ owned: 1, sourced: 1, missing: 1 })
+  })
+
+  it('saturates rather than double-counting when the mark outlives the need', () => {
+    // Marked three, then two of them turned up in the collection.
+    const [a] = allocateCopies([{ id: 1, qty: 3 }], {
+      cardMap, ownedCopies: new Map([[1, 2]]), sourcedCopies: new Map([[1, 3]]),
+    })
+    expect(a).toMatchObject({ owned: 2, sourced: 1, missing: 0 })
+    expect(a.owned + a.sourced + a.missing).toBe(a.qty)
+  })
+
+  it('spends the marks once across the list, as the owned pool is spent', () => {
+    const entries = [{ id: 1, qty: 2 }, { id: 1, qty: 1 }]
+    const out = allocateCopies(entries, {
+      cardMap, ownedCopies: new Map(), sourcedCopies: new Map([[1, 2]]),
+    })
+    expect(out[0]).toMatchObject({ sourced: 2, missing: 0 })
+    expect(out[1]).toMatchObject({ sourced: 0, missing: 1 })
+  })
+
+  it('a partly marked entry is still missing, and shows both runs', () => {
+    const ctx = { cardMap, ownedCopies: new Map(), sourcedCopies: new Map([[1, 1]]) }
+    const [a] = allocateCopies([{ id: 1, qty: 3 }], ctx)
+    expect(entryState(a)).toBe(MISSING)
+    expect(stateRuns(a)).toEqual([
+      { state: SOURCED, count: 1 },
+      { state: MISSING, count: 2 },
+    ])
+  })
+
+  it('an entry fully covered by owning and marking is settled', () => {
+    const [a] = allocateCopies([{ id: 1, qty: 2 }], {
+      cardMap, ownedCopies: new Map([[1, 1]]), sourcedCopies: new Map([[1, 1]]),
+    })
+    expect(entryState(a)).toBe(SOURCED)
+    expect(a.missing).toBe(0)
+  })
+
+  it('marked copies stay off the wishlist', () => {
+    const out = missingEntries([{ id: 1, qty: 3 }], {
+      cardMap, ownedCopies: new Map(), sourcedCopies: new Map([[1, 2]]),
+    })
+    expect(out).toEqual([{ id: 1, qty: 1 }])
+  })
+
+  it('an ignoredIds Set still claims the whole entry', () => {
+    const [a] = allocateCopies([{ id: 1, qty: 3 }], {
+      cardMap, ownedCopies: new Map(), ignoredIds: new Set([1]),
+    })
+    expect(a).toMatchObject({ sourced: 3, missing: 0 })
   })
 })

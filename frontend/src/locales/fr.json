@@ -266,7 +266,15 @@
     "viewLabel": "Affichage de la collection",
     "viewList": "Vue liste",
     "viewGrid": "Vue grille",
-    "allLists": "Toutes les listes"
+    "allLists": "Toutes les listes",
+    "viewBinder": "Classeur",
+    "sortLabel": "Tri",
+    "sort": {
+      "name": "Nom",
+      "value": "Valeur",
+      "printing": "Code d'extension",
+      "added": "Ajoutées récemment"
+    }
   },
   "addCard": {
     "addToTrade": "Ajouter à ma pile d'échange",
@@ -332,6 +340,8 @@
   "matches": {
     "loginRequired": "Connectez-vous pour voir vos correspondances d'échange.",
     "near": "Près de",
+    "nearMe": "Près de moi",
+    "setLocation": "Ajouter votre ville",
     "allCountries": "Tous les pays",
     "city": "Ville",
     "clearFilters": "effacer les filtres",
@@ -915,7 +925,12 @@
   "cardElement": {
     "acceptedTrade": "Échange accepté",
     "copyLocked": "1 copie verrouillée",
-    "copiesLocked": "{count} copies verrouillées"
+    "copiesLocked": "{count} copies verrouillées",
+    "firstEdition": "1re édition",
+    "firstEditionShort": "1RE",
+    "changeQuantity": "Modifier le nombre d'exemplaires",
+    "noPrinting": "Aucun code",
+    "openOnCardmarket": "Rechercher sur Cardmarket"
   },
   "tradePhotos": {
     "desc": "Une trace de ce que chaque partie envoie. Un conseil, pas une obligation — vous pouvez accepter et confirmer sans elles.",
@@ -1016,6 +1031,7 @@
     "tallyMissing": "{n} manquantes",
     "tallyUnknown": "{n} illisibles",
     "tallyAria": "{owned} cartes sur {total} possédées, {missing} encore manquantes",
+    "copiesNote": "{owned} exemplaire(s) sur {qty} dans votre pile d'échange",
     "dropNow": "Lâche-le n'importe où sur cette page"
   },
   "meta": {
@@ -1096,6 +1112,7 @@
   },
   "deckIgnore": {
     "markSourced": "Marquer {name} comme trouvée ailleurs",
+    "markCopy": "Marquer un {name} de plus comme obtenu ailleurs — {n} sur {max} jusqu'ici",
     "countAgain": "Recompter {name} comme manquante"
   },
   "cards": {
@@ -1815,5 +1832,23 @@
     "cardmarketProduct": "Produit Cardmarket",
     "checkOnCardmarket": "Vérifier sur Cardmarket",
     "cardmarketTrend": "Tendance Cardmarket"
+  },
+  "editCard": {
+    "title": "Modifier cet exemplaire",
+    "edit": "Modifier",
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "saved": "Exemplaire mis à jour",
+    "remove": "Retirer",
+    "removeConfirm": "Retirer définitivement",
+    "removing": "Retrait…",
+    "needPrinting": "Choisissez l'édition de cet exemplaire.",
+    "needQuantity": "Indiquez le nombre d'exemplaires — au moins un.",
+    "reservedFloor": "{count} engagé(s) dans un échange que vous avez accepté.",
+    "reservedRemove": "Engagé dans un échange que vous avez accepté : impossible de le retirer.",
+    "saveFailed": "L'enregistrement a échoué. Réessayez."
+  },
+  "cardLinks": {
+    "cardmarketProduct": "Cardmarket s'ouvre sur cette impression précise et affiche la langue et l'état de votre exemplaire ou mieux."
   }
 }

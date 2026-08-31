@@ -266,7 +266,15 @@
     "viewLabel": "Collection view",
     "viewList": "List view",
     "viewGrid": "Grid view",
-    "allLists": "All lists"
+    "allLists": "All lists",
+    "viewBinder": "Binder",
+    "sortLabel": "Sort",
+    "sort": {
+      "name": "Name",
+      "value": "Value",
+      "printing": "Set code",
+      "added": "Recently added"
+    }
   },
   "addCard": {
     "addToTrade": "Add to trade pile",
@@ -332,6 +340,8 @@
   "matches": {
     "loginRequired": "Log in to see your trade matches.",
     "near": "Near",
+    "nearMe": "Near me",
+    "setLocation": "Add your city",
     "allCountries": "All countries",
     "city": "City",
     "clearFilters": "clear filters",
@@ -915,7 +925,12 @@
   "cardElement": {
     "acceptedTrade": "Accepted trade",
     "copyLocked": "1 copy locked",
-    "copiesLocked": "{count} copies locked"
+    "copiesLocked": "{count} copies locked",
+    "firstEdition": "1st Edition",
+    "firstEditionShort": "1ST",
+    "changeQuantity": "Change how many you have",
+    "noPrinting": "No set code",
+    "openOnCardmarket": "Look up on Cardmarket"
   },
   "tradePhotos": {
     "desc": "A record of what each side is sending. Advice, not a requirement — you can accept and confirm without them.",
@@ -1016,6 +1031,7 @@
     "tallyMissing": "{n} missing",
     "tallyUnknown": "{n} unreadable",
     "tallyAria": "{owned} of {total} cards owned, {missing} still missing",
+    "copiesNote": "{owned} of {qty} copies in your trade pile",
     "dropNow": "Drop it anywhere on this page"
   },
   "meta": {
@@ -1096,6 +1112,7 @@
   },
   "deckIgnore": {
     "markSourced": "Mark {name} as coming from elsewhere",
+    "markCopy": "Mark another {name} as coming from elsewhere — {n} of {max} so far",
     "countAgain": "Count {name} as missing again"
   },
   "cards": {
@@ -1815,5 +1832,23 @@
     "cardmarketProduct": "Cardmarket product",
     "checkOnCardmarket": "Check on Cardmarket",
     "cardmarketTrend": "Cardmarket trend"
+  },
+  "editCard": {
+    "title": "Edit this copy",
+    "edit": "Edit",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "saved": "Copy updated",
+    "remove": "Remove",
+    "removeConfirm": "Remove for good",
+    "removing": "Removing…",
+    "needPrinting": "Pick which printing this copy is.",
+    "needQuantity": "Enter how many copies you have — at least one.",
+    "reservedFloor": "{count} committed to a trade you have accepted.",
+    "reservedRemove": "Committed to a trade you have accepted, so it cannot be removed.",
+    "saveFailed": "That did not save. Try again."
+  },
+  "cardLinks": {
+    "cardmarketProduct": "Cardmarket opens on this exact printing, showing your copy's language and condition or better."
   }
 }
