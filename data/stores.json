@@ -1,7 +1,7 @@
 {
-  "last_updated": "2026-08-24T07:04:52.632545+00:00",
+  "last_updated": "2026-08-31T12:43:39.545869+00:00",
   "source": "https://www.yugioh-card.com/en/events/ots-locations/",
-  "count": 4536,
+  "count": 4549,
   "data": [
     {
       "id": "633469197cf87c0dbc37dda0",
@@ -109,6 +109,24 @@
       "website": null,
       "latitude": 21.3169058,
       "longitude": -157.8707558,
+      "remote_duel": false
+    },
+    {
+      "id": "6a7bb9800f387d0dd25dfd66",
+      "name": "Aloha Card Shop Hilo",
+      "address": {
+        "street": "116 Hualalai St #202, Hilo, HI 96720",
+        "city": "Hilo",
+        "state": "Hawaii",
+        "zip": "96720",
+        "country": null
+      },
+      "region": "LATAM",
+      "phone": "8084445488",
+      "email": "hilo@alohacardshop.com",
+      "website": null,
+      "latitude": 19.7175035,
+      "longitude": -155.0826164,
       "remote_duel": false
     },
     {
@@ -2776,6 +2794,24 @@
       "remote_duel": false
     },
     {
+      "id": "6a86532c1beebd0de68004c7",
+      "name": "Prestige Games",
+      "address": {
+        "street": "177 Main St. Unionville, Floor 2",
+        "city": "Markham",
+        "state": "Ontario",
+        "zip": "L3R 2G8",
+        "country": "Canada"
+      },
+      "region": "NA",
+      "phone": "6478542068",
+      "email": "support@prestigegames.ca",
+      "website": null,
+      "latitude": 43.8672859,
+      "longitude": -79.3118906,
+      "remote_duel": false
+    },
+    {
       "id": "6393d3460ecef27311355cb3",
       "name": "RetroPlay Games",
       "address": {
@@ -2812,6 +2848,24 @@
       "remote_duel": false
     },
     {
+      "id": "6a7dcff85065c80de88a945f",
+      "name": "Slab Sharks Breaks",
+      "address": {
+        "street": "6760 Davand Dr",
+        "city": "Mississauga",
+        "state": "Ontario",
+        "zip": "L5T 2L9",
+        "country": "Canada"
+      },
+      "region": "NA",
+      "phone": "18006127522",
+      "email": "support@slabsharks.com",
+      "website": null,
+      "latitude": 43.6684913,
+      "longitude": -79.66958699999999,
+      "remote_duel": false
+    },
+    {
       "id": "685dd1ccb6495e111c25de19",
       "name": "TKO TOY CO",
       "address": {
@@ -2845,6 +2899,24 @@
       "website": null,
       "latitude": 43.8972856,
       "longitude": -78.8664186,
+      "remote_duel": false
+    },
+    {
+      "id": "6a7b72f09c34ab0de83fcc8e",
+      "name": "The Elite 4 Store",
+      "address": {
+        "street": "398 manning road",
+        "city": "tecumseh",
+        "state": "Ontario",
+        "zip": "N8N4W5",
+        "country": "Canada"
+      },
+      "region": "NA",
+      "phone": "2266760389",
+      "email": "support@elite4.ca",
+      "website": null,
+      "latitude": 42.315549,
+      "longitude": -82.86859539999999,
       "remote_duel": false
     },
     {
@@ -17968,6 +18040,24 @@
       "remote_duel": false
     },
     {
+      "id": "470989JP",
+      "name": "TSUTAYA 今市店",
+      "address": {
+        "street": null,
+        "city": null,
+        "state": null,
+        "zip": null,
+        "country": "Japan"
+      },
+      "region": "APAC",
+      "phone": null,
+      "email": null,
+      "website": null,
+      "latitude": 36.724536,
+      "longitude": 139.69677,
+      "remote_duel": false
+    },
+    {
       "id": "470990JP",
       "name": "カードラボ 川崎店",
       "address": {
@@ -21103,7 +21193,7 @@
       "id": "470868JP",
       "name": "ふるいち トップブックスフォレオ菖蒲店",
       "address": {
-        "street": "菖蒲町菖蒲６００６－１ 蔦屋書店フォレオ菖蒲店内",
+        "street": "菖蒲町菖蒲6006-1 蔦屋書店フォレオ菖蒲店",
         "city": "久喜市",
         "state": "埼玉県",
         "zip": "3460106",
@@ -21113,8 +21203,8 @@
       "phone": null,
       "email": null,
       "website": null,
-      "latitude": 36.071,
-      "longitude": 139.61724,
+      "latitude": null,
+      "longitude": null,
       "remote_duel": false
     },
     {
@@ -29668,24 +29758,6 @@
       "remote_duel": false
     },
     {
-      "id": "470989JP",
-      "name": "TSUTAYA 今市店",
-      "address": {
-        "street": "今市1091-1",
-        "city": "日光市",
-        "state": "栃木県",
-        "zip": "321-1261",
-        "country": "Japan"
-      },
-      "region": "APAC",
-      "phone": null,
-      "email": null,
-      "website": null,
-      "latitude": 36.724536,
-      "longitude": 139.69677,
-      "remote_duel": false
-    },
-    {
       "id": "470158JP",
       "name": "TSUTAYA 佐野店",
       "address": {
@@ -31141,24 +31213,6 @@
       "website": null,
       "latitude": 35.46408,
       "longitude": 139.61646,
-      "remote_duel": false
-    },
-    {
-      "id": "470057JP",
-      "name": "カードボックス 横浜西口店",
-      "address": {
-        "street": "南幸2丁目12-5 城勘ビル2階",
-        "city": "横浜市西区",
-        "state": "神奈川県",
-        "zip": "220-0005",
-        "country": "Japan"
-      },
-      "region": "APAC",
-      "phone": null,
-      "email": null,
-      "website": null,
-      "latitude": 35.46338,
-      "longitude": 139.61623,
       "remote_duel": false
     },
     {
@@ -35194,42 +35248,6 @@
       "remote_duel": false
     },
     {
-      "id": "100161AS",
-      "name": "ACE CARDS & COLLECTIBLES",
-      "address": {
-        "street": "59200 KUALA LUMPUR T-059,3rd FLOOR MEZZANINE, MID VALLEY MEGAMALL",
-        "city": null,
-        "state": null,
-        "zip": null,
-        "country": "Malaysia"
-      },
-      "region": "APAC",
-      "phone": null,
-      "email": null,
-      "website": null,
-      "latitude": 3.117986,
-      "longitude": 101.67486,
-      "remote_duel": false
-    },
-    {
-      "id": "100294AS",
-      "name": "APEX BLADERS ENTERPRISE",
-      "address": {
-        "street": "14000 BM SECOND FLOOR OF NO.20,LEBUH ASTON,TAMAN ASTON,,PENANG OFFICE",
-        "city": null,
-        "state": null,
-        "zip": null,
-        "country": "Malaysia"
-      },
-      "region": "APAC",
-      "phone": null,
-      "email": null,
-      "website": null,
-      "latitude": 5.352003,
-      "longitude": 100.468993,
-      "remote_duel": false
-    },
-    {
       "id": "100318AS",
       "name": "Buddy Connection",
       "address": {
@@ -35428,24 +35446,6 @@
       "remote_duel": false
     },
     {
-      "id": "100479AS",
-      "name": "JTF Official Card Shop",
-      "address": {
-        "street": "81300 Johor Bahru 23-01, Jalan Kempas Indah 6, Taman Kempas Indah, 81300 Johor, Johor Darul Ta'zim, Malaysia",
-        "city": null,
-        "state": null,
-        "zip": null,
-        "country": "Malaysia"
-      },
-      "region": "APAC",
-      "phone": null,
-      "email": null,
-      "website": null,
-      "latitude": 1.5556,
-      "longitude": 103.713835,
-      "remote_duel": false
-    },
-    {
       "id": "100226AS",
       "name": "MDSxAtomSquare",
       "address": {
@@ -35479,24 +35479,6 @@
       "website": null,
       "latitude": 1.573547,
       "longitude": 110.29278,
-      "remote_duel": false
-    },
-    {
-      "id": "000090AS",
-      "name": "TING TONG ENTERPRISE",
-      "address": {
-        "street": "31450 Perak 60, Persiaran Kledang Timur 19 Taman Bandar Baru, Ipoh",
-        "city": null,
-        "state": null,
-        "zip": null,
-        "country": "Malaysia"
-      },
-      "region": "APAC",
-      "phone": null,
-      "email": null,
-      "website": null,
-      "latitude": 4.574582,
-      "longitude": 101.04906,
       "remote_duel": false
     },
     {
@@ -36076,60 +36058,6 @@
       "remote_duel": false
     },
     {
-      "id": "100190AS",
-      "name": "Courtside One Ayala",
-      "address": {
-        "street": "1226 Makati City No. 1, Ayala Avenue One Ayala Mall",
-        "city": null,
-        "state": null,
-        "zip": null,
-        "country": "Philippines"
-      },
-      "region": "APAC",
-      "phone": null,
-      "email": null,
-      "website": null,
-      "latitude": 14.5505,
-      "longitude": 121.0279,
-      "remote_duel": false
-    },
-    {
-      "id": "100444AS",
-      "name": "Entei Cards & Collectibles Toy Shop",
-      "address": {
-        "street": "1673 Taguig City, Metro Manila Block 53 Lot 3 Phase 2 A. Bonifacio, Upper Bicutan Upperview Apartelle and Events Place",
-        "city": null,
-        "state": null,
-        "zip": null,
-        "country": "Philippines"
-      },
-      "region": "APAC",
-      "phone": null,
-      "email": null,
-      "website": null,
-      "latitude": 14.496193,
-      "longitude": 121.050513,
-      "remote_duel": false
-    },
-    {
-      "id": "100493AS",
-      "name": "ForgeHobbyPlace Southside",
-      "address": {
-        "street": "4104 Cavite Unit B131-132, 1F, Mana Town Center, Centennial Road, Tabon, Kawit, Cavite, 4104 Mana Town Center",
-        "city": null,
-        "state": null,
-        "zip": null,
-        "country": "Philippines"
-      },
-      "region": "APAC",
-      "phone": null,
-      "email": null,
-      "website": null,
-      "latitude": 14.436845,
-      "longitude": 120.907513,
-      "remote_duel": false
-    },
-    {
       "id": "100445AS",
       "name": "Kimochi Hobby Shop",
       "address": {
@@ -36145,24 +36073,6 @@
       "website": null,
       "latitude": 14.601517,
       "longitude": 120.989633,
-      "remote_duel": false
-    },
-    {
-      "id": "100282AS",
-      "name": "Madcap Gaming PH",
-      "address": {
-        "street": "4023 Brgy. San Antonio, San Pedro City, Laguna National Highway 2/F Unit 7, #5820 Maclane Center Bldg",
-        "city": null,
-        "state": null,
-        "zip": null,
-        "country": "Philippines"
-      },
-      "region": "APAC",
-      "phone": null,
-      "email": null,
-      "website": null,
-      "latitude": 14.366483,
-      "longitude": 121.051883,
       "remote_duel": false
     },
     {
@@ -36274,24 +36184,6 @@
       "remote_duel": false
     },
     {
-      "id": "100491AS",
-      "name": "Tadaima Hobbies and Toy Shop",
-      "address": {
-        "street": "City of Malolos, Balacan Blk Lot 5 Maunlad Ph.2, 24 de Agosto St., Brgy. Caingin",
-        "city": null,
-        "state": null,
-        "zip": null,
-        "country": "Philippines"
-      },
-      "region": "APAC",
-      "phone": null,
-      "email": null,
-      "website": null,
-      "latitude": 14.847839,
-      "longitude": 120.80336,
-      "remote_duel": false
-    },
-    {
       "id": "100329AS",
       "name": "Toy Shogun",
       "address": {
@@ -36307,24 +36199,6 @@
       "website": null,
       "latitude": 14.7159,
       "longitude": 121.038476,
-      "remote_duel": false
-    },
-    {
-      "id": "100340AS",
-      "name": "Uni Aqua Toy Shop",
-      "address": {
-        "street": "Brgy, Del Paz, Pasig City Eulogio Amang Rodriguez Ave., cor. J. P. Rizal St. 4th Floor, Ayala Malls Feliz",
-        "city": null,
-        "state": null,
-        "zip": null,
-        "country": "Philippines"
-      },
-      "region": "APAC",
-      "phone": null,
-      "email": null,
-      "website": null,
-      "latitude": 14.619652,
-      "longitude": 121.091383,
       "remote_duel": false
     },
     {
@@ -37138,6 +37012,24 @@
       "remote_duel": false
     },
     {
+      "id": "100421AS",
+      "name": "Invaders Board Game Station",
+      "address": {
+        "street": "15332 Tangerang Ruko Maggiore Square, Jl. Springs Boulevard No.31 LB, Cihuni, Kec. Pagedangan, Kabupaten Tangerang, Banten 15332 Ruko Maggiore Square",
+        "city": null,
+        "state": null,
+        "zip": null,
+        "country": "Republic of Indonesia"
+      },
+      "region": "APAC",
+      "phone": null,
+      "email": null,
+      "website": null,
+      "latitude": -6.273247,
+      "longitude": 106.639139,
+      "remote_duel": false
+    },
+    {
       "id": "100441AS",
       "name": "Kolektibles",
       "address": {
@@ -37303,7 +37195,7 @@
       "id": "100477AS",
       "name": "Semarang TCG",
       "address": {
-        "street": "50232 Semarang Jl. Letnan Jenderal S. Parman No.51 Bendungan, Kec. Gajahmungkur",
+        "street": "Jalan Letjen S. Parman no. 51 Semarang TCG",
         "city": null,
         "state": null,
         "zip": null,
@@ -37313,8 +37205,8 @@
       "phone": null,
       "email": null,
       "website": null,
-      "latitude": -7.006275,
-      "longitude": 110.414334,
+      "latitude": null,
+      "longitude": null,
       "remote_duel": false
     },
     {
@@ -37333,24 +37225,6 @@
       "website": null,
       "latitude": -6.183328,
       "longitude": 106.816449,
-      "remote_duel": false
-    },
-    {
-      "id": "100474AS",
-      "name": "Soloiss Card Game",
-      "address": {
-        "street": "51151 Kabupaten Pekalongan Jalan Wiroto no. 49, Rt 01 Rw 02, Desa Dadirejo, Kecamatan Tirto, Kabupaten Pekalongan",
-        "city": null,
-        "state": null,
-        "zip": null,
-        "country": "Republic of Indonesia"
-      },
-      "region": "APAC",
-      "phone": null,
-      "email": null,
-      "website": null,
-      "latitude": -6.898241,
-      "longitude": 109.621096,
       "remote_duel": false
     },
     {
@@ -37459,24 +37333,6 @@
       "website": null,
       "latitude": 3.578483,
       "longitude": 98.663214,
-      "remote_duel": false
-    },
-    {
-      "id": "100456AS",
-      "name": "Vitazi",
-      "address": {
-        "street": "36122 Jambi \"Jl. Kol Pol M Taher No.53, RW.05, Pakuan Baru, Jambi Selatan, Jambi City, Jambi \"",
-        "city": null,
-        "state": null,
-        "zip": null,
-        "country": "Republic of Indonesia"
-      },
-      "region": "APAC",
-      "phone": null,
-      "email": null,
-      "website": null,
-      "latitude": -1.606704,
-      "longitude": 103.629271,
       "remote_duel": false
     },
     {
@@ -40108,24 +39964,6 @@
       "remote_duel": false
     },
     {
-      "id": "100467AS",
-      "name": "8號卡牌屋",
-      "address": {
-        "street": "新北市土城區樂利街9號1樓",
-        "city": null,
-        "state": null,
-        "zip": null,
-        "country": "Taiwan"
-      },
-      "region": "APAC",
-      "phone": null,
-      "email": null,
-      "website": null,
-      "latitude": 24.985998,
-      "longitude": 121.448476,
-      "remote_duel": false
-    },
-    {
       "id": "100309AS",
       "name": "Cardmaster",
       "address": {
@@ -41368,24 +41206,6 @@
       "remote_duel": false
     },
     {
-      "id": "100395AS",
-      "name": "Fizzy Game and Hobby Store",
-      "address": {
-        "street": "Fifth Avenue Meechoke 555/220 Moo 2, San Sai District, Chiang Mai, 50210",
-        "city": null,
-        "state": null,
-        "zip": null,
-        "country": "Thailand"
-      },
-      "region": "APAC",
-      "phone": null,
-      "email": null,
-      "website": null,
-      "latitude": 18.8294,
-      "longitude": 99.014,
-      "remote_duel": false
-    },
-    {
       "id": "100391AS",
       "name": "GH cardgames",
       "address": {
@@ -41422,10 +41242,10 @@
       "remote_duel": false
     },
     {
-      "id": "100240AS",
-      "name": "Level Up",
+      "id": "100238AS",
+      "name": "Halouis's Home",
       "address": {
-        "street": "30000 นครราชสีมา ไอทีพลาซ่า ชั้น 2 ถ.มิตรภาพ ต.ในเมือง อ.เมือง",
+        "street": "10200 กรุงเทพมหานคร 921 อาคารออล์เวย์วัน ถ.มหาชัย แขวงวังบูรพาภิรมย์ เขตพระนคร",
         "city": null,
         "state": null,
         "zip": null,
@@ -41435,8 +41255,26 @@
       "phone": null,
       "email": null,
       "website": null,
-      "latitude": 14.98149,
-      "longitude": 102.09754,
+      "latitude": 13.74543,
+      "longitude": 100.50317,
+      "remote_duel": false
+    },
+    {
+      "id": "100259AS",
+      "name": "Jakarade",
+      "address": {
+        "street": "445/5, Niche 3, Pradit Manutham Rd",
+        "city": null,
+        "state": null,
+        "zip": null,
+        "country": "Thailand"
+      },
+      "region": "APAC",
+      "phone": null,
+      "email": null,
+      "website": null,
+      "latitude": 13.776442,
+      "longitude": 100.606341,
       "remote_duel": false
     },
     {
@@ -47110,6 +46948,24 @@
       "remote_duel": false
     },
     {
+      "id": "6a88c4b35951590de7bc5997",
+      "name": "Nexus",
+      "address": {
+        "street": "3753E US Highway 431 N",
+        "city": "PHENIX CITY",
+        "state": "Alabama",
+        "zip": "36867",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "2054515215",
+      "email": "nexusjpstore@gmail.com",
+      "website": null,
+      "latitude": 32.5024039,
+      "longitude": -85.0499138,
+      "remote_duel": false
+    },
+    {
       "id": "65032457564e950dc9206e5b",
       "name": "Oxford Gaming Center LLC",
       "address": {
@@ -47287,6 +47143,24 @@
       "website": null,
       "latitude": 32.6963597,
       "longitude": -114.6210065,
+      "remote_duel": false
+    },
+    {
+      "id": "6a756379e8eec10dad91e798",
+      "name": "Card Stooges",
+      "address": {
+        "street": "10720 W Indian School Rd",
+        "city": "Phoenix",
+        "state": "Arizona",
+        "zip": "85037",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "4807090182",
+      "email": "cardstooges@gmail.com",
+      "website": null,
+      "latitude": 33.4947656,
+      "longitude": -112.2917274,
       "remote_duel": false
     },
     {
@@ -51088,6 +50962,24 @@
       "remote_duel": false
     },
     {
+      "id": "6a76a7d59310e90dd8ec5f9b",
+      "name": "Degen Collectible",
+      "address": {
+        "street": "2266 Senter Rd, San Jose, CA 95112",
+        "city": "San Jose",
+        "state": "California",
+        "zip": "95014",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "4256910864",
+      "email": "degencollectiblesllc@gmail.com",
+      "website": null,
+      "latitude": 37.3107463,
+      "longitude": -121.8497302,
+      "remote_duel": false
+    },
+    {
       "id": "698555eb6b241a7867ce977c",
       "name": "Do-We Collectibles",
       "address": {
@@ -51502,6 +51394,24 @@
       "remote_duel": false
     },
     {
+      "id": "6a8659e81beebd0de68006a3",
+      "name": "IMPERIUM CARDS & GAMES",
+      "address": {
+        "street": "1199 butte house rd",
+        "city": "Yuba city",
+        "state": "California",
+        "zip": "95991",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "5304430767",
+      "email": "imperium@imperiumcardstore.com",
+      "website": null,
+      "latitude": 39.1457172,
+      "longitude": -121.634467,
+      "remote_duel": false
+    },
+    {
       "id": "69684efe3d89360dea9c041d",
       "name": "IT'S TIME! TCG",
       "address": {
@@ -51697,6 +51607,24 @@
       "website": null,
       "latitude": 34.1482261,
       "longitude": -118.2565625,
+      "remote_duel": false
+    },
+    {
+      "id": "6a87d34f1beebd0de680a59e",
+      "name": "Leowalkers TCG",
+      "address": {
+        "street": "1792 N Waterman Ave",
+        "city": "San Bernardino",
+        "state": "California",
+        "zip": "92404",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "9093522331",
+      "email": "ceeorantes@gmail.com",
+      "website": null,
+      "latitude": 34.1312503,
+      "longitude": -117.2789933,
       "remote_duel": false
     },
     {
@@ -51963,7 +51891,7 @@
       },
       "region": "NA",
       "phone": "2136006820",
-      "email": "support@arphantom.com",
+      "email": "Shop@arphantom.com",
       "website": null,
       "latitude": 34.049037,
       "longitude": -118.242155,
@@ -52867,6 +52795,24 @@
       "website": null,
       "latitude": 41.8078721,
       "longitude": -72.5464807,
+      "remote_duel": false
+    },
+    {
+      "id": "6a8726e41beebd0de680301c",
+      "name": "World's Greatest Card Shop",
+      "address": {
+        "street": "1803 Post Road East",
+        "city": "Westport",
+        "state": "Connecticut",
+        "zip": "06880",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "4759998558",
+      "email": "worldsgreatestcardshop@gmail.com",
+      "website": null,
+      "latitude": 41.1385641,
+      "longitude": -73.3009295,
       "remote_duel": false
     },
     {
@@ -53839,6 +53785,24 @@
       "website": null,
       "latitude": 27.9010547,
       "longitude": -81.5861819,
+      "remote_duel": false
+    },
+    {
+      "id": "6a78b9893db5780de8fe403c",
+      "name": "Blue Rune Hobby and Games",
+      "address": {
+        "street": "1102 E Semoran Blvd",
+        "city": "Apopka",
+        "state": "Florida",
+        "zip": "32703",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "4079067863",
+      "email": "accounts@bluerune.shop",
+      "website": null,
+      "latitude": 28.672697,
+      "longitude": -81.4896164,
       "remote_duel": false
     },
     {
@@ -58144,6 +58108,24 @@
       "remote_duel": false
     },
     {
+      "id": "6a7cb9348b43e50de70d1060",
+      "name": "BananaHandles",
+      "address": {
+        "street": "5144 w irving park rd",
+        "city": "chicago",
+        "state": "Illinois",
+        "zip": "60641",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "3123690894",
+      "email": "bananahandlestcg@gmail.com",
+      "website": null,
+      "latitude": 41.9535324,
+      "longitude": -87.7565167,
+      "remote_duel": false
+    },
+    {
       "id": "66fc9063adda5e0d848f8a04",
       "name": "Battle City Gym Cards and Collectibles",
       "address": {
@@ -58411,6 +58393,24 @@
       "website": null,
       "latitude": 41.9310224,
       "longitude": -87.8011926,
+      "remote_duel": false
+    },
+    {
+      "id": "6a82294a1beebd0de67e2932",
+      "name": "Logan Arch Chicago",
+      "address": {
+        "street": "2066 N. Milwaukee Ave",
+        "city": "Chicago",
+        "state": "Illinois",
+        "zip": "60647",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "8155178028",
+      "email": "loganarchchicago@gmail.com",
+      "website": null,
+      "latitude": 41.9187375,
+      "longitude": -87.6909828,
       "remote_duel": false
     },
     {
@@ -59278,6 +59278,24 @@
       "remote_duel": false
     },
     {
+      "id": "6a7fa77dbe08ac0de802e0d7",
+      "name": "The Queue Arena",
+      "address": {
+        "street": "418 E. Oskaloosa st.",
+        "city": "Pella",
+        "state": "Iowa",
+        "zip": "50219",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "6417804712",
+      "email": "thequeueesportsarena@gmail.com",
+      "website": null,
+      "latitude": 41.3973556,
+      "longitude": -92.9000722,
+      "remote_duel": false
+    },
+    {
       "id": "6a1e38cccfe9e50df220d887",
       "name": "the hollow archive",
       "address": {
@@ -59887,6 +59905,24 @@
       "website": null,
       "latitude": 38.2209872,
       "longitude": -85.5828074,
+      "remote_duel": false
+    },
+    {
+      "id": "6a8dff531beebd0de68414da",
+      "name": "BraceyTCG",
+      "address": {
+        "street": "222 W 6th st",
+        "city": "Junction City",
+        "state": "Kansas",
+        "zip": "66441",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "7852368364",
+      "email": "support@braceytcg.com",
+      "website": null,
+      "latitude": 39.0286006,
+      "longitude": -96.8326527,
       "remote_duel": false
     },
     {
@@ -63904,6 +63940,24 @@
       "remote_duel": false
     },
     {
+      "id": "6a8dfbac1beebd0de6840f06",
+      "name": "Game Goblins",
+      "address": {
+        "street": "226 N Central Ave",
+        "city": "Duluth",
+        "state": "Minnesota",
+        "zip": "55807",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "2187200938",
+      "email": "gamegoblinsduluth@gmail.com",
+      "website": null,
+      "latitude": 46.7373393,
+      "longitude": -92.1662004,
+      "remote_duel": false
+    },
+    {
       "id": "69e25b20d38cc74ab16af425",
       "name": "Got-It",
       "address": {
@@ -67684,6 +67738,24 @@
       "remote_duel": false
     },
     {
+      "id": "6a873e0f1beebd0de68041d7",
+      "name": "Omniscience Cards & Games LLC",
+      "address": {
+        "street": "6825 W Russell Rd",
+        "city": "Las Vegas",
+        "state": "Nevada",
+        "zip": "89118",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "7024827726",
+      "email": "administrator@omnisciencecardsandgames.com",
+      "website": null,
+      "latitude": 36.0844887,
+      "longitude": -115.2412209,
+      "remote_duel": false
+    },
+    {
       "id": "68b252e7f0ac4c0dc17adaa4",
       "name": "Stomping Grounds",
       "address": {
@@ -67735,6 +67807,24 @@
       "website": null,
       "latitude": 36.2159094,
       "longitude": -115.2412143,
+      "remote_duel": false
+    },
+    {
+      "id": "6a7cb2a5df963b0de79a09a8",
+      "name": "what in cardnation",
+      "address": {
+        "street": "45 w cedar st",
+        "city": "fernley",
+        "state": "Nevada",
+        "zip": "89408",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "7753023178",
+      "email": "whatincardnation@gmail.com",
+      "website": null,
+      "latitude": 39.6048441,
+      "longitude": -119.2515777,
       "remote_duel": false
     },
     {
@@ -68260,6 +68350,24 @@
       "remote_duel": false
     },
     {
+      "id": "6a7a54023db5780de8fedfb5",
+      "name": "Cards Corner",
+      "address": {
+        "street": "199-02 32nd Ave",
+        "city": "Flushing",
+        "state": "New York",
+        "zip": "11358",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "3478049123",
+      "email": "cardscornernyc@gmail.com",
+      "website": null,
+      "latitude": 40.7692783,
+      "longitude": -73.7898996,
+      "remote_duel": false
+    },
+    {
       "id": "6a61766aa82fb50de9b1b307",
       "name": "CountingCards TCG",
       "address": {
@@ -68779,6 +68887,24 @@
       "website": null,
       "latitude": 40.76556799999999,
       "longitude": -73.0096489,
+      "remote_duel": false
+    },
+    {
+      "id": "6a80c48f1beebd0de67da32d",
+      "name": "The FUN Zone",
+      "address": {
+        "street": "213 North Jensen Road",
+        "city": "Vestal",
+        "state": "New York",
+        "zip": "13850",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "6077610943",
+      "email": "cusmiller1597@yahoo.com",
+      "website": null,
+      "latitude": 42.1001932,
+      "longitude": -75.9969206,
       "remote_duel": false
     },
     {
@@ -76378,6 +76504,24 @@
       "remote_duel": false
     },
     {
+      "id": "633468b01a00f10d877edc41",
+      "name": "Phoenix Rise",
+      "address": {
+        "street": "10716 N. Beach St.",
+        "city": "Ft. Worth",
+        "state": "TX",
+        "zip": "76244",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "(817) 743-2497",
+      "email": "keller@phoenixrisetx.com",
+      "website": null,
+      "latitude": 32.9290582,
+      "longitude": -97.2889338,
+      "remote_duel": false
+    },
+    {
       "id": "633468621a00f10d877ed8a5",
       "name": "Play Packets",
       "address": {
@@ -76429,24 +76573,6 @@
       "website": null,
       "latitude": 29.8638073,
       "longitude": -95.6086314,
-      "remote_duel": false
-    },
-    {
-      "id": "633468b01a00f10d877edc41",
-      "name": "Sci Fi Factory",
-      "address": {
-        "street": "10716 N. Beach St.",
-        "city": "Ft. Worth",
-        "state": "TX",
-        "zip": "76244",
-        "country": "United States"
-      },
-      "region": "NA",
-      "phone": "(817) 337-3073",
-      "email": "scififactory@gmail.com",
-      "website": null,
-      "latitude": 32.9290582,
-      "longitude": -97.2889338,
       "remote_duel": false
     },
     {
@@ -77116,6 +77242,24 @@
       "remote_duel": false
     },
     {
+      "id": "6a873fbc1beebd0de6804269",
+      "name": "T's Game Lounge",
+      "address": {
+        "street": "206 East 9th st.",
+        "city": "cookeville",
+        "state": "Tennessee",
+        "zip": "38501",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "9312603238",
+      "email": "Tsvapelounge@gmail.com",
+      "website": null,
+      "latitude": 36.1744814,
+      "longitude": -85.5020431,
+      "remote_duel": false
+    },
+    {
       "id": "698cd75f06c98f0dd26a7956",
       "name": "The Celestite",
       "address": {
@@ -77149,6 +77293,24 @@
       "website": null,
       "latitude": 35.9684856,
       "longitude": -83.2009254,
+      "remote_duel": false
+    },
+    {
+      "id": "6a8770421beebd0de6806ffc",
+      "name": "The PUG",
+      "address": {
+        "street": "513 Wears Valley Rd",
+        "city": "Pigeon Forge",
+        "state": "Tennessee",
+        "zip": "37863",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "8657740712",
+      "email": "sales@thepuggaming.com",
+      "website": null,
+      "latitude": 35.798437,
+      "longitude": -83.58746909999999,
       "remote_duel": false
     },
     {
@@ -77239,6 +77401,24 @@
       "website": null,
       "latitude": 31.1050668,
       "longitude": -97.3658468,
+      "remote_duel": false
+    },
+    {
+      "id": "6a7f26e877a4ed0de9a3c00c",
+      "name": "Bulba’s Games",
+      "address": {
+        "street": "5137 69th St",
+        "city": "Lubbock",
+        "state": "Texas",
+        "zip": "79424",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "8065028618",
+      "email": "bulbasgames@gmail.com",
+      "website": null,
+      "latitude": 33.5307785,
+      "longitude": -101.9190184,
       "remote_duel": false
     },
     {
@@ -78121,6 +78301,24 @@
       "website": null,
       "latitude": 33.5216482,
       "longitude": -101.889083,
+      "remote_duel": false
+    },
+    {
+      "id": "6a84ea841beebd0de67f7317",
+      "name": "SSG Hobby",
+      "address": {
+        "street": "3511 Lone Tree Rd",
+        "city": "Victoria",
+        "state": "Texas",
+        "zip": "77901",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "3619354805",
+      "email": "ssghobby@gmail.com",
+      "website": null,
+      "latitude": 28.8004475,
+      "longitude": -96.96642829999999,
       "remote_duel": false
     },
     {
@@ -81040,6 +81238,24 @@
       "remote_duel": false
     },
     {
+      "id": "6a8650401beebd0de680048c",
+      "name": "Drum Island Trading Company",
+      "address": {
+        "street": "11613 Rainier Ave S.",
+        "city": "Seattle",
+        "state": "Washington",
+        "zip": "96817",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "2068864821",
+      "email": "info@drumislandtrading.com",
+      "website": null,
+      "latitude": 47.4989292,
+      "longitude": -122.2209074,
+      "remote_duel": false
+    },
+    {
       "id": "69d6fea457520503103f97ab",
       "name": "Dusk Mart",
       "address": {
@@ -81343,6 +81559,24 @@
       "website": null,
       "latitude": 39.2792226,
       "longitude": -81.53012179999999,
+      "remote_duel": false
+    },
+    {
+      "id": "6a7cb96c8b43e50de70d1071",
+      "name": "2 Bros & A Box New Richmond",
+      "address": {
+        "street": "215 S Knowles Ave",
+        "city": "New Richmond",
+        "state": "Wisconsin",
+        "zip": "54017",
+        "country": "United States"
+      },
+      "region": "NA",
+      "phone": "6123981039",
+      "email": "2brosandabox2@gmail.com",
+      "website": null,
+      "latitude": 45.1212353,
+      "longitude": -92.5380138,
       "remote_duel": false
     },
     {
