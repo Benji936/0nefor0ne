@@ -242,3 +242,8 @@ Near me and the meetup location, 2026-08-30:
   with another trader's agreement on it, and saving would have cleared that. Trade 37 confirmed unchanged after.
 - Not fixed here: `.mobile-bottom-nav` overflows a 375px viewport by 49px on every page. Pre-existing and
   app-wide, so it is raised separately rather than folded into this change.
+- Sitemap: the committed file held 16 card pages, the exact length of the `TOP_CARD_IDS` fallback that
+  `generate-sitemap.mjs` uses when Supabase is unreachable — so a degraded run had been committed. Regenerated
+  from `get_trending_cards`: 194 card pages, 771 URLs. The build's own check confirms every URL has a
+  prerendered page behind it and no duplicates. Worth watching: a sitemap generated without database access
+  silently shrinks to 16 cards rather than failing.
