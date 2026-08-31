@@ -340,6 +340,8 @@
   "matches": {
     "loginRequired": "Accedi per vedere le tue corrispondenze di scambio.",
     "near": "Vicino a",
+    "nearMe": "Vicino a me",
+    "setLocation": "Aggiungi la tua città",
     "allCountries": "Tutti i paesi",
     "city": "Città",
     "clearFilters": "cancella filtri",

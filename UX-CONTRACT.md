@@ -39,6 +39,17 @@
 - Teal appears on `TradeDetailPage.vue` only on the seam between the two piles, and only once both sides have
   agreed (`DESIGN.md`, The Agreement Rule).
 - Card art uses the Yu-Gi-Oh card ratio, `59 / 86`, with `object-fit: contain`.
+- Where a trade happens is settled in one place, the Suggest terms dialog, and by one component, `LocationPicker`,
+  which owns both the choice between meeting and posting and the place that goes with the first. A trade is only
+  `in_person` once somewhere is actually named; choosing to post clears any place already on it. `settlementTerms`
+  is the single derivation of those four columns, so the propose dialog and the trade page cannot disagree about
+  what "in person, nowhere named" means. Changing either bumps the revision and clears both confirmations —
+  where you meet is part of what the two of you agreed to.
+- Matches are filtered by the city and country a trader wrote on their profile, because that is all a trader row
+  carries: there are no coordinates, so there is no distance to sort by. "Near me" fills those same two filters
+  from the viewer's own profile rather than introducing a second notion of nearness that could disagree with
+  them, and it is a toggle — pressing it again is the way back out. A profile with no location gets a link to go
+  and set one instead of a button that would do nothing.
 - A deck counts in copies, not in cards. Ownership is a count per card id, and every entry's copies are split
   across owned, sourced, missing and unreadable so that holding one of the three a deck asks for reads as one
   owned and two missing. The completion strip draws a tick per copy and the rule under each card tile is that
@@ -82,6 +93,8 @@ Legacy proposals remain usable. A proposal without `workflow_phase` follows the 
 | Deck completion | `lib/deckStats.js` | strip, card grid, list row, import preview | `deckStats.test.js` |
 | Owned copies | `lib/decks.js` `countCopies` | deck pages, import preview | `decks.test.js` |
 | Sourced copies | `lib/deckIgnore.js` | per-copy mark on a deck card | `deckIgnore.test.js` |
+| Settlement terms | `lib/tradeWorkflow.js` `settlementTerms` | propose dialog, Suggest terms | `tradeWorkflow.test.js` |
+| Meetup location | `LocationPicker.vue` | Suggest terms, legacy edit/counter | trade-page browser check |
 | Trade review | `TradeDetailPage.vue` | selection, agreement, exchange, history | responsive browser check |
 | Proposal queue | `ProposalsTab.vue` | your move, their move, done, closed | segment counts against pile contents |
 | Proposal summary | `ProposalRow.vue` | selection, agreement, exchange, done, closed | overflow and action-state check |
@@ -96,7 +109,7 @@ Legacy proposals remain usable. A proposal without `workflow_phase` follows the 
 | Request cards | User 1 selects one or more cards and sends. | Disable duplicate submission and show button progress. | Open the staged proposal in selection. | Keep selections and show the server error. |
 | Choose return cards | User 2 selects one or more cards and submits. | Lock the dialog action. | Move the trade to agreement and increment its revision. | Keep selections and allow retry. |
 | Revise wanted cards | Either trader changes cards owned by the other trader. | Lock the dialog action. | Replace only that trader's wanted side, increment the revision, and clear both confirmations. | Keep edits and reload on a stale revision. |
-| Suggest terms | Either trader changes method or cash offset. | Keep the terms dialog open and show progress. | Increment the revision, clear both confirmations, reload, and close the dialog. | Keep the dialog and values open for retry. |
+| Suggest terms | Either trader changes how the trade settles: meeting somewhere and where, or by mail, and any cash offset. | Keep the terms dialog open and show progress. | Increment the revision, clear both confirmations, reload, and close the dialog. | Keep the dialog and values open for retry. |
 | Confirm agreement | Either trader confirms the visible revision. | Disable duplicate confirmation. | Record that revision; when both match, advance to exchange. | Reload if the revision changed and show the error. |
 | Complete exchange | Either trader confirms receipt through the existing action. | Show progress. | Preserve the existing two-person completion and rating flow. | Preserve the current exchange state and allow retry. |
 | Cancel | A participant chooses cancel and confirms when required. | Disable duplicate cancellation. | Keep the existing cancelled history record. | Return to the current state with an error. |
@@ -211,3 +224,21 @@ Per-copy sourcing, 2026-08-30:
   → 23/34), the rule under the card splitting into one sourced and one missing segment at the halfway stop, and
   the entry correctly reading as missing while a copy was outstanding. The deck was left exactly as found.
 - Keyboard: the mark is a real button, focusable, and becomes visible on focus rather than only on hover.
+
+Near me and the meetup location, 2026-08-30:
+
+- Full frontend suite: 1,186 passed, including 10 covering `settlementTerms`.
+- Client production build: passed, 30 of 30 routes and 777 prerendered pages.
+- Gap this closed: `LocationPicker` rendered only under `isEditing || isCountering`, both legacy paths, so a
+  trade created through the staged workflow had no way to name a place. Trade 37 was live in exactly that state —
+  `agreement` phase, `trade_method` `in_person`, `meetup_location` null. The database side already accepted it:
+  `revise_trade_terms` writes the place and nulls it for mail, so no migration was needed.
+- Browser check, matches: the button reads its place off the viewer's profile, fills both filters, narrows the
+  list, shows `clear filters`, and un-fills on a second press. A profile country no match is in stays visible in
+  its own select rather than leaving it blank next to an empty list. With no profile location the control is a
+  link to the account page. On a phone the place is dropped from the label and kept in the accessible name.
+- Browser check, terms: the dialog opens on the trade's current mode, a searched place lands with its address,
+  and the payload derives as `in_person` with the place attached. Verified without saving — the trade was live
+  with another trader's agreement on it, and saving would have cleared that. Trade 37 confirmed unchanged after.
+- Not fixed here: `.mobile-bottom-nav` overflows a 375px viewport by 49px on every page. Pre-existing and
+  app-wide, so it is raised separately rather than folded into this change.

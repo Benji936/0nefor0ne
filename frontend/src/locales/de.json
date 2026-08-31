@@ -340,6 +340,8 @@
   "matches": {
     "loginRequired": "Melde dich an, um deine Tauschpartner zu sehen.",
     "near": "In der Nähe",
+    "nearMe": "In Deiner Nähe",
+    "setLocation": "Stadt hinzufügen",
     "allCountries": "Alle Länder",
     "city": "Stadt",
     "clearFilters": "Filter löschen",

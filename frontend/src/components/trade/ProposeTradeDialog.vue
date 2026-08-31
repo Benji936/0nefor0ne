@@ -5,6 +5,7 @@ import { cardImage } from "@/lib/cardImage";
 import { fetchMyLibrary, fetchUserWishlist, fetchUserTradePile, fetchMyWishlistNames } from "@/lib/matches";
 import { createTradeRequest, submitTradeReturnSelection, reviseMyTradeRequest, updateTradeProposal, counterTradeProposal, uploadTradePhoto } from "@/lib/proposals";
 import { handleIfPhoneRequired } from "@/lib/phoneGate";
+import { settlementTerms } from "@/lib/tradeWorkflow";
 import { searchById } from "@/api";
 import { getClient, getCurrentSession } from "@/lib/supabaseClient";
 import AddCard from "@/components/library/AddCard.vue";
@@ -345,13 +346,14 @@ async function submit() {
   if (!canSubmit.value) return;
   submitting.value = true;
   errorMessage.value = "";
-  const isMail = settlement.value.deliveryMode === 'mail';
-  const settlementPayload = {
-    trade_method:    isMail ? 'mail' : (settlement.value.meetup_location ? 'in_person' : null),
-    meetup_location: isMail ? null : (settlement.value.meetup_location ?? null),
-    cash_amount:     settlement.value.hasCash && settlement.value.cash_amount > 0 ? settlement.value.cash_amount : null,
-    cash_payer:      settlement.value.hasCash && settlement.value.cash_amount > 0 ? settlement.value.cash_payer : null,
-  };
+  const settlementPayload = settlementTerms({
+    deliveryMode:   settlement.value.deliveryMode,
+    meetupLocation: settlement.value.meetup_location,
+    // The checkbox is the gate here; the shared helper still ignores an amount
+    // of zero, so unticking it and leaving a number behind cannot smuggle one in.
+    cashAmount:     settlement.value.hasCash ? settlement.value.cash_amount : null,
+    cashPayer:      settlement.value.cash_payer,
+  });
   try {
     const me = (await getCurrentSession())?.user?.id;
     let tradeId;

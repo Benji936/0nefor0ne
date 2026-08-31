@@ -340,6 +340,8 @@
   "matches": {
     "loginRequired": "Log in to see your trade matches.",
     "near": "Near",
+    "nearMe": "Near me",
+    "setLocation": "Add your city",
     "allCountries": "All countries",
     "city": "City",
     "clearFilters": "clear filters",

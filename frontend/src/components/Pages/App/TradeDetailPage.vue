@@ -25,9 +25,10 @@ import {
   fetchMyProposals, fetchTradeEvents, acceptTradeProposal, declineTradeProposal,
   cancelTradeProposal, completeTradeProposal, confirmTradeAgreement, reviseTradeTerms,
 } from "@/lib/proposals";
-import { tradeNextAction, tradePhase } from "@/lib/tradeWorkflow";
+import { tradeNextAction, tradePhase, settlementTerms } from "@/lib/tradeWorkflow";
 import { handleIfPhoneRequired } from "@/lib/phoneGate";
 import TradePhotosPanel from "@/components/trade/TradePhotosPanel.vue";
+import LocationPicker from "@/components/trade/LocationPicker.vue";
 import TradeChatSleeve  from "@/components/trade/TradeChatSleeve.vue";
 import ProposeTradeDialog from "@/components/trade/ProposeTradeDialog.vue";
 import TraderLink       from "@/components/trade/TraderLink.vue";
@@ -324,7 +325,12 @@ const terms = ref({ trade_method: 'in_person', cash_amount: null, cash_payer: 'p
 
 function openTerms() {
   terms.value = {
-    trade_method: proposal.value.trade_method ?? 'in_person',
+    // LocationPicker owns this choice in its own vocabulary, and it owns the
+    // place that goes with it — which is why the plain trade_method select that
+    // used to sit here is gone. It could say "in person" and never say where,
+    // and nothing else in the staged workflow asks.
+    deliveryMode: proposal.value.trade_method === 'mail' ? 'mail' : 'location',
+    meetup_location: proposal.value.meetup_location ?? null,
     cash_amount: proposal.value.cash_amount ?? null,
     cash_payer: proposal.value.cash_payer ?? 'proposer',
   };
@@ -332,13 +338,16 @@ function openTerms() {
 }
 
 async function saveTerms() {
-  const amount = Number(terms.value.cash_amount);
-  const result = await run(() => reviseTradeTerms(proposal.value.id, proposal.value.revision, {
-    trade_method: terms.value.trade_method,
-    cash_amount: amount > 0 ? amount : null,
-    cash_payer: amount > 0 ? terms.value.cash_payer : null,
-    meetup_location: proposal.value.meetup_location ?? null,
-  }), { fallbackKey: 'proposal.failedToSave', success: () => t('tradeDetail.termsSuggested') });
+  // Shared with the propose dialog, so the two surfaces cannot disagree about
+  // what "in person, nowhere named" means.
+  const payload = settlementTerms({
+    deliveryMode: terms.value.deliveryMode,
+    meetupLocation: terms.value.meetup_location,
+    cashAmount: terms.value.cash_amount,
+    cashPayer: terms.value.cash_payer,
+  });
+  const result = await run(() => reviseTradeTerms(proposal.value.id, proposal.value.revision, payload),
+    { fallbackKey: 'proposal.failedToSave', success: () => t('tradeDetail.termsSuggested') });
   if (result !== undefined) termsOpen.value = false;
 }
 
@@ -940,12 +949,14 @@ function goBack() {
       <v-dialog v-model="termsOpen" max-width="480">
         <v-card class="!rounded-2xl !p-5 flex flex-col gap-4" style="background: var(--c-surface); color: var(--c-text); border: 1px solid var(--c-border)">
           <h2 class="text-lg font-bold">{{ t('tradeDetail.suggestTerms') }}</h2>
-          <div class="flex flex-col gap-2 text-sm">
-            <v-select v-model="terms.trade_method" :items="[
-              { title: t('proposal.tradeMethodInPerson'), value: 'in_person' },
-              { title: t('proposal.tradeMethodMail'), value: 'mail' },
-            ]" :label="t('tradeDetail.tradeMethod')" item-title="title" item-value="value" hide-details density="comfortable" />
-          </div>
+          <!-- How you settle it, and where. Changing either clears both
+               confirmations and bumps the revision, which is right: where you
+               meet is part of what the two of you agreed to. -->
+          <LocationPicker
+            v-model="terms.meetup_location"
+            v-model:deliveryMode="terms.deliveryMode"
+            :counterparty-name="counterpartyName"
+          />
           <label class="flex flex-col gap-2 text-sm">
             <span>{{ t('proposeDialog.addCashOffset') }}</span>
             <input v-model.number="terms.cash_amount" type="number" min="0" step="0.01" class="rounded-lg border px-3 py-2" style="background: var(--c-surface-2); border-color: var(--c-border); color: var(--c-text)" />
