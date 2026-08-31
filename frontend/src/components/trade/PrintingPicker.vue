@@ -30,6 +30,7 @@ import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { fetchPrintings, needsVersionChoice, setCardPrinting } from "@/lib/printings";
 import { formatMoney } from "@/lib/cardmarketPrice";
+import { cardmarketUrl } from "@/lib/cardmarketLink";
 import CardPrice from "@/components/trade/CardPrice.vue";
 
 const props = defineProps({
@@ -47,9 +48,11 @@ const saving = ref(null);
 /** The printing chosen in step one, while step two asks which of its products. */
 const chosen = ref(null);
 
-const search = computed(
-  () => `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${encodeURIComponent(props.card?.name ?? "")}`,
-);
+// A name search on purpose: this dialog is open precisely because nobody knows
+// which printing the copy is yet, so there is no id to link to and no print code
+// to narrow by. Built through the shared helper so there is one place that knows
+// how a Cardmarket URL is spelled.
+const search = computed(() => cardmarketUrl({ name: props.card?.name }));
 
 watch(() => props.modelValue, async (open) => {
   // Reset on both edges: reopening the dialog on a different card must not

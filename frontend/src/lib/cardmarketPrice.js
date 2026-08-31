@@ -40,8 +40,15 @@ export function readPrice(row) {
   const inSet = row.in_set === true;
   const asOf = row.as_of ?? null;
 
+  // The product the ladder settled on, when it settled on one. Carried rather
+  // than dropped because it is the only place the app learns which *printing* a
+  // Card row is, and a Cardmarket link that names the printing needs it. Null
+  // whenever several candidates remain, which is the same condition that makes
+  // the price a band rather than a figure.
+  const productId = row.product_id == null ? null : Number(row.product_id);
+
   if (printings === 1) {
-    return { kind: EXACT, value: Number(row.price), printings, inSet, asOf, metric: row.metric ?? null };
+    return { kind: EXACT, value: Number(row.price), printings, inSet, asOf, productId, metric: row.metric ?? null };
   }
   return {
     kind: inSet ? NARROWED : RANGE,
@@ -50,6 +57,7 @@ export function readPrice(row) {
     printings,
     inSet,
     asOf,
+    productId,
     metric: row.metric ?? null,
   };
 }

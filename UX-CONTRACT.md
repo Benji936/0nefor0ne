@@ -69,6 +69,33 @@
   apart from the old whole-entry format. An untagged array is read the old way — every copy of that entry — and
   rewritten in counted form the next time a mark is touched, so no existing mark changes meaning.
 
+A Cardmarket link says which printing, and which copy. It is addressed by product id —
+`/en/YuGiOh/Products?idProduct=820817&sellerCountry=4&language=1&minCondition=2` — which resolves straight to
+that product's page. There is no slug to build, no expansion to look up and no search to disambiguate, so a
+card printed at nine rarities in one set is answerable exactly: nine ids, one of which is the copy in hand.
+
+The id costs nothing to obtain. `card_prices` already returns `product_id` and already keys on rarity, so
+every surface showing a price has the id already; `readPrice` now carries it through instead of discarding it.
+Only a card opened without a loaded price pays for a lookup, and only the first link on a page pays for the
+reader's country.
+
+There are two outcomes, and the second is not a failure: a card whose printing is identified gets the product
+link, and a card whose owner never recorded a printing falls back to a search. There is no third rung — every
+card in the collection that carries a set code resolves to exactly one product id, checked, so an
+expansion-listing fallback would be unreachable code.
+
+The search term is the print code with its region removed: `RA04-EN024` becomes `ra04-024`. Cardmarket files a
+card by set and number, so the printed code finds nothing and the bare set code finds the whole set; dropping
+just the region is the form that lands on the card, and it is the form the repo owner tested. The region is
+whatever letters sit between the hyphen and the number, so no list of region codes has to be maintained.
+
+Nothing is defaulted. A copy with no language recorded omits that filter rather than assuming English; a
+reader in a country Cardmarket does not sell from omits `sellerCountry` rather than guessing a neighbour.
+Seller-country ids are ordered by ISO code, not by name — Germany 7, Switzerland 4, the United Kingdom 13 —
+and were read from Cardmarket's own filter markup rather than assembled from a list of country names, which
+would have put Switzerland at 34 and sent every Swiss reader to Croatia's sellers. The ids run to 37 but 32
+and 34 do not exist. Portuguese is language 8, not 6.
+
 ## Trade lifecycle
 
 | Stage | User 1 | User 2 | Exit condition |
@@ -94,6 +121,7 @@ Legacy proposals remain usable. A proposal without `workflow_phase` follows the 
 | Owned copies | `lib/decks.js` `countCopies` | deck pages, import preview | `decks.test.js` |
 | Sourced copies | `lib/deckIgnore.js` | per-copy mark on a deck card | `deckIgnore.test.js` |
 | Settlement terms | `lib/tradeWorkflow.js` `settlementTerms` | propose dialog, Suggest terms | `tradeWorkflow.test.js` |
+| Cardmarket links | `lib/cardmarketLink.js` | binder link sheet, list row, proposal suggestions | `cardmarketLink.test.js` |
 | Meetup location | `LocationPicker.vue` | Suggest terms, legacy edit/counter | trade-page browser check |
 | Trade review | `TradeDetailPage.vue` | selection, agreement, exchange, history | responsive browser check |
 | Proposal queue | `ProposalsTab.vue` | your move, their move, done, closed | segment counts against pile contents |
@@ -247,3 +275,36 @@ Near me and the meetup location, 2026-08-30:
   from `get_trending_cards`: 194 card pages, 771 URLs. The build's own check confirms every URL has a
   prerendered page behind it and no duplicates. Worth watching: a sitemap generated without database access
   silently shrinks to 16 cards rather than failing.
+
+Cardmarket links, 2026-08-31:
+
+- Full frontend suite: 1,226 passed across 67 files, including 40 link-building tests.
+- Fixed in passing: the trade page and the card page both searched the full print code ("RA04-EN024"), which
+  Cardmarket files nothing under, so those links returned no results at all.
+- Client production build: passed, 30 of 30 routes, 777 prerendered pages, 771 sitemap URLs all backed by a page.
+- Locale parity: 1,522 keys in each of the four files, no drift.
+- Every Cardmarket URL in the app is built by this module; nothing hand-builds one. Checked by grep: the
+  literal `cardmarket.com` appears in `src/` exactly once, as the module's own `ORIGIN`.
+- Browser check, signed in, against real data. Collection binder: all 27 cards resolve to `kind: "product"`;
+  Aleister the Invoker (RA04-EN024, Collector's Rare) resolves to `idProduct=820817` — the V.6 Collector's
+  Rare, one of nine products for that card in that one set, confirmed against the live product page earlier in
+  the session. Trade 37: both cards resolve by id with the reader's `sellerCountry=4`. Card page
+  (Tour Guide From the Underworld): per-printing rows link by id where the printing resolves to one product —
+  BLGG-EN005 at two rarities gives two different ids — and to `searchString=ra05-090` where it does not.
+- Two links that stay a search, on purpose. `PrintingPicker` is open precisely because the printing is not yet
+  known, so there is no id to link to. The card page's JSON-LD offers use the deterministic search form
+  because that page is prerendered and prices load after mount; an id-based URL there would differ between the
+  prerendered HTML and the hydrated page. The card page also omits `sellerCountry`, for the same reason — it
+  is a public page with no session at build time.
+- Seller-country and language ids were read from the `sellerCountry[N]` / `language[N]` checkbox labels on a
+  live product page, and `minCondition` from its own select (which does number Poor 7; the app still omits it,
+  because "at least Poor" excludes nothing).
+- Not verified: that Cardmarket visibly applies these parameters on the rendered page. cardmarket.com began
+  serving its challenge page to this environment after earlier requests and did not clear; the check was
+  abandoned rather than worked around. The parameter names, ids and spelling are the site's own, taken from its
+  markup and from a working URL supplied by the repo owner.
+- Rejected on evidence, recorded so it is not retried: building the product path from name and version label.
+  Sixteen slugs were generated and fetched — eleven right, five wrong, and all five returned 200 while
+  silently serving the expansion listing. The same card's printings use `Dragon-s-Fighting-Spirit-V-2`,
+  `Dragons-Fighting-Spirit-V-3-Secret-Rare` and `Dragons-Fighting-Spirit` across three expansions. The
+  `idProduct` route makes the whole question moot.

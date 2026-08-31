@@ -239,6 +239,9 @@ defineEmits(['deleted', 'move', 'printing-picked', 'edit']);
 <script>
 import { getClient } from "@/lib/supabaseClient";
 import { shortenRarity, languageTag } from "@/lib/cardCopy";
+// Aliased: the computed below is also called cardmarketUrl, and it is the name
+// the template already uses.
+import { cardmarketUrl as buildCardmarketUrl } from "@/lib/cardmarketLink";
 
 export default {
   props: {
@@ -291,8 +294,16 @@ export default {
     languageShort() {
       return languageTag(this.wish.language);
     },
+    /**
+     * The row's Cardmarket link.
+     *
+     * No expansion route: a list row is one of several hundred on screen and
+     * is not worth a lookup each. The copy's own language and condition still
+     * reach the URL, which is the half that needs no request — the binder's
+     * link sheet is where a reader who wants the printing itself goes.
+     */
     cardmarketUrl() {
-      return `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${encodeURIComponent(this.wish.name)}`;
+      return buildCardmarketUrl(this.wish);
     },
   },
   watch: {

@@ -1847,5 +1847,8 @@
     "reservedFloor": "{count} engagé(s) dans un échange que vous avez accepté.",
     "reservedRemove": "Engagé dans un échange que vous avez accepté : impossible de le retirer.",
     "saveFailed": "L'enregistrement a échoué. Réessayez."
+  },
+  "cardLinks": {
+    "cardmarketProduct": "Cardmarket s'ouvre sur cette impression précise et affiche la langue et l'état de votre exemplaire ou mieux."
   }
 }

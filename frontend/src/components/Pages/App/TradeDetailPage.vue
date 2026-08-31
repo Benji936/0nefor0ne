@@ -27,6 +27,7 @@ import {
 } from "@/lib/proposals";
 import { tradeNextAction, tradePhase, settlementTerms } from "@/lib/tradeWorkflow";
 import { handleIfPhoneRequired } from "@/lib/phoneGate";
+import { cardmarketUrl, fetchViewerCountry } from "@/lib/cardmarketLink";
 import TradePhotosPanel from "@/components/trade/TradePhotosPanel.vue";
 import LocationPicker from "@/components/trade/LocationPicker.vue";
 import TradeChatSleeve  from "@/components/trade/TradeChatSleeve.vue";
@@ -97,6 +98,13 @@ async function load({ quiet = false } = {}) {
 // unmounting — a bare onMounted would leave trade #26 on screen at /trade/31.
 watch(() => [tradeId.value, currentUserId.value], () => load(), { immediate: false });
 onMounted(load);
+
+// The reader's country, for the Cardmarket seller filter. Fetched once and
+// cached in the lib, so the two traders' piles and every card in them share one
+// lookup. Null until it lands and null for a profile with no country, both of
+// which simply leave the filter off.
+const viewer = ref(null);
+onMounted(async () => { viewer.value = await fetchViewerCountry(); });
 
 // ── Activity log ──────────────────────────────────────────────────────────
 const events        = ref([]);
@@ -266,14 +274,17 @@ function shortenRarity(r) {
   return r ? r.split(" ").map(w => w[0]).join("") : "";
 }
 
-function marketLinks(name, extension) {
-  const q = encodeURIComponent(name ?? "");
-  const s = encodeURIComponent(extension ?? "");
+function marketLinks(card) {
+  const q = encodeURIComponent(card?.name ?? "");
   return [
     { label: "TCGPlayer",  url: `https://www.tcgplayer.com/search/yugioh/product?q=${q}` },
-    { label: "Cardmarket", url: extension
-        ? `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${s}`
-        : `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${q}` },
+    // The id comes from the prices this page already loaded, which is where
+    // the printing was identified -- the card rows themselves are keyed against
+    // that map rather than carrying it. With an id this is the printing's own
+    // page; without one it is a search for the print code, which also fixes
+    // what the two branches here used to do: search the full "RA04-EN024",
+    // which Cardmarket files nothing under.
+    { label: "Cardmarket", url: cardmarketUrl(card, { productId: prices.value.get(card?.id)?.productId ?? null, viewer: viewer.value }) },
     { label: "eBay",       url: `https://www.ebay.com/sch/i.html?_nkw=${q}+yugioh` },
   ];
 }
@@ -614,7 +625,7 @@ function goBack() {
                          repeated shape on the page. -->
                     <p class="td-links">
                       <v-icon icon="mdi-open-in-new" size="11" aria-hidden="true" />
-                      <a v-for="m in marketLinks(card.name, card.extension)" :key="m.label"
+                      <a v-for="m in marketLinks(card)" :key="m.label"
                         :href="m.url" target="_blank" rel="noopener noreferrer">{{ m.label }}</a>
                     </p>
                   </div>

@@ -149,7 +149,9 @@ const { t } = useI18n();
         :add-label="mode === 'wish' ? t('addCard.addToWishlist') : t('addCard.addToTrade')"
         fit="width"
         activate
+        links-on-context
         @activate="editing = $event"
+        @links="linksCard = $event; linksOpen = true"
         @add="$refs.addCardRef?.open()"
       />
 
@@ -254,6 +256,12 @@ const { t } = useI18n();
     @deleted="onCardDeleted"
   />
 
+  <!-- Where a card's market links live in the binder. The binder has raised
+       this on right click and long press since it was written, but behind an
+       opt-in prop that only the proposal dialog ever set — so the gesture
+       worked on a trade partner's binder and did nothing on your own. -->
+  <CardLinksSheet v-model="linksOpen" :card="linksCard" />
+
   <!-- Name a list: used for both creating and renaming. -->
   <v-dialog v-model="listDialog.open" max-width="420">
     <div class="lib-dlg">
@@ -291,6 +299,7 @@ import BulkAddCards from "@/components/library/BulkAddCards.vue";
 import AddCard from "@/components/library/AddCard.vue";
 import EditCardCopy from "@/components/library/EditCardCopy.vue";
 import CardBinder from "@/components/trade/CardBinder.vue";
+import CardLinksSheet from "@/components/trade/CardLinksSheet.vue";
 import {
   fetchWishlists, createWishlist, renameWishlist, deleteWishlist,
   moveCardToList, groupByList, nameProblem, MAX_NAME_LEN,
@@ -305,7 +314,7 @@ import { SORT_KEYS, DEFAULT_SORT, sortCollection } from "@/lib/collectionSort";
 const PILES = ["trade", "wishlist"];
 
 export default {
-  components: { DeckImport, BulkAddCards, AddCard, EditCardCopy, CardBinder },
+  components: { DeckImport, BulkAddCards, AddCard, EditCardCopy, CardBinder, CardLinksSheet },
   props: ['login'],
   emits: ['requireAuth'],
   data() {
@@ -331,6 +340,9 @@ export default {
       newCardId: null,
       snackbar: { open: false, message: '', color: '', icon: '' },
       showDeckImport: false,
+      // The binder's link sheet: which card raised it, and whether it is up.
+      linksOpen: false,
+      linksCard: null,
       // Collection layout: 'list' (compact rows, default), 'grid' (card tiles),
       // or 'binder' (the nine-pocket spread a trade partner sees).
       // Restored from localStorage in mounted().

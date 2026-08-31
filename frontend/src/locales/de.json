@@ -1847,5 +1847,8 @@
     "reservedFloor": "{count} in einem Tausch gebunden, den du angenommen hast.",
     "reservedRemove": "In einem angenommenen Tausch gebunden und daher nicht entfernbar.",
     "saveFailed": "Das wurde nicht gespeichert. Versuch es erneut."
+  },
+  "cardLinks": {
+    "cardmarketProduct": "Cardmarket öffnet sich genau bei dieser Auflage und zeigt Dir die Sprache und den Zustand Deiner Karte oder besser."
   }
 }

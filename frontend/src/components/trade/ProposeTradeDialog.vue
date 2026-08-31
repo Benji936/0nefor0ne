@@ -17,6 +17,7 @@ import PickedPile from "@/components/trade/PickedPile.vue";
 import CardLinksSheet from "@/components/trade/CardLinksSheet.vue";
 import { fetchCardPrices, sumPrices, tradeGap, formatMoney } from "@/lib/cardmarketPrice";
 import { applyFilters, NO_FILTERS } from "@/lib/binderFilters";
+import { cardmarketUrl } from "@/lib/cardmarketLink";
 
 const props = defineProps({
   modelValue:      { type: Boolean, default: false },
@@ -505,7 +506,11 @@ function marketLinks(name, setCode) {
   const q = encodeURIComponent(name);
   return [
     { label: 'TCGPlayer', url: `https://www.tcgplayer.com/search/yugioh/product?q=${q}` },
-    { label: 'Cardmarket', url: setCode ? `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${encodeURIComponent(setCode)}` : `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${q}` },
+    // No route and no copy here: this builds a link from a name and a print
+    // code, which is all a suggestion row has. cardmarketUrl with neither is
+    // the search link by construction, so this is the same URL as before —
+    // routed through the one place that knows how to build it.
+    { label: 'Cardmarket', url: cardmarketUrl({ name, extension: setCode }) },
     { label: 'eBay', url: `https://www.ebay.com/sch/i.html?_nkw=${q}+yugioh` },
   ];
 }

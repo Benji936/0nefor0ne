@@ -1847,5 +1847,8 @@
     "reservedFloor": "{count} committed to a trade you have accepted.",
     "reservedRemove": "Committed to a trade you have accepted, so it cannot be removed.",
     "saveFailed": "That did not save. Try again."
+  },
+  "cardLinks": {
+    "cardmarketProduct": "Cardmarket opens on this exact printing, showing your copy's language and condition or better."
   }
 }

@@ -282,7 +282,7 @@
             <span v-else class="cx__print-unavailable">{{ $t('price.unavailable') }}</span>
             <a
               class="cx__print-buy"
-              :href="`https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${encodeURIComponent(s.set_code)}`"
+              :href="printingLink(s)"
               target="_blank"
               rel="noopener noreferrer"
               :aria-label="$t('cardPage.findPrinting', { code: s.set_code })"
@@ -327,6 +327,7 @@ import { searchById, searchByArchetype, getCardsByIds, getCardArtworks, getSetRe
 import { fetchTradersWithCard } from "@/lib/matches";
 import { fetchCardMarket } from "@/lib/cardMarket";
 import { fetchPrintingPrices, printingRarity, rarityKey } from "@/lib/printings";
+import { cardmarketUrl } from "@/lib/cardmarketLink";
 import { getCurrentSession } from "@/lib/supabaseClient";
 import { ldScript }   from "@/lib/jsonLd";
 
@@ -494,7 +495,10 @@ export default {
             "@type": "Offer",
             sku: s.set_code,
             name: s.set_rarity,
-            url: `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${encodeURIComponent(s.set_code)}`,
+            // Deliberately not printingLink(): prices load after mount, so an
+            // id-based URL here would differ between the prerendered HTML and
+            // the hydrated page. The search form is the same at both.
+            url: cardmarketUrl({ name: card.name, extension: s.set_code }),
             seller: { "@type": "Organization", name: "One for One" },
           })),
         } : {}),
@@ -577,9 +581,12 @@ export default {
       selectedImageId:    null, // which printing art the hero image shows (null → main id)
       artworks:           [],   // all printing artworks (fetched by name; id query returns only one)
       setDates:           {},   // set_name → release date, for sorting printings by recency
-      // print code → the price band Cardmarket holds for that printing, from
-      // fetchPrintingPrices. Client-only: this page is prerendered, and a build
-      // that read the price table would bake yesterday's figures into the HTML.
+      // print code → the merged printing row from fetchPrintingPrices: its price
+      // band and, where the printing resolved to exactly one Cardmarket
+      // product, that product's id. The id is what turns this page's per-row
+      // "buy" link from a search into the printing's own page.
+      // Client-only: this page is prerendered, and a build that read the price
+      // table would bake yesterday's figures into the HTML.
       printingPrices:     {},
       loadingPrintingPrices: false,
     };
@@ -692,7 +699,7 @@ export default {
       return [
         { label: "TCGPlayer",  short: "TCG",  symbol: "$", priceKey: "tcg",  logo: "/logos/tcgplayer.svg",        logoDark: "/logos/tcgplayer-white.png", url: `https://www.tcgplayer.com/search/yugioh/product?q=${name}` },
         { label: "eBay",       short: "eBay", symbol: "$", priceKey: "ebay", logo: "/logos/ebay.png",             url: `https://www.ebay.com/sch/i.html?_nkw=${name}+yugioh` },
-        { label: "Cardmarket", short: "CM",   symbol: "\u20ac", priceKey: "cm",   logo: "/logos/cardmarket-white.png", filterLight: "brightness(0)", url: `https://www.cardmarket.com/en/YuGiOh/Products/Search?searchString=${name}` },
+        { label: "Cardmarket", short: "CM",   symbol: "\u20ac", priceKey: "cm",   logo: "/logos/cardmarket-white.png", filterLight: "brightness(0)", url: cardmarketUrl({ name: this.card?.name }) },
       ];
     },
     // Outbound Yugipedia strategy-tips link — only present when the crawler
@@ -844,8 +851,11 @@ export default {
       try {
         const priced = await fetchPrintingPrices(card.name_en ?? card.name, sets);
         if (this.card?.id !== card.id) return; // navigated away mid-flight
+        // Rows with no price are kept now, not filtered out: a printing can
+        // resolve to a product Cardmarket has never sold, and that row still
+        // has an id worth linking to even though it has no figure to show.
         this.printingPrices = Object.fromEntries(
-          priced.filter((p) => p.price).map((p) => [priceKey(p.printCode, p.rarity), p.price]),
+          priced.map((p) => [priceKey(p.printCode, p.rarity), p]),
         );
       } catch {
         this.printingPrices = {}; // no price beats a wrong one; the row just omits it
@@ -862,7 +872,31 @@ export default {
      *  Secret. That is the honest answer, and it stops being the answer for a
      *  printing somebody has read. */
     printingPrice(s) {
+      return this.printingRow(s)?.price ?? null;
+    },
+
+    /** The merged printing row for one ledger line, or null. */
+    printingRow(s) {
       return this.printingPrices[priceKey(s?.set_code, printingRarity(s?.set_rarity))] ?? null;
+    },
+
+    /**
+     * Where the "buy" arrow on one printing row goes.
+     *
+     * The printing's own Cardmarket product when it resolved to exactly one,
+     * which is what makes this row's link different from every other row's on a
+     * card printed six times. Otherwise a search for the print code — with its
+     * region dropped, because Cardmarket files a card by set and number and
+     * finds nothing under "RA04-EN024".
+     *
+     * Prices load after mount, so before they land this is the search link and
+     * upgrades in place. That is the same behaviour as the price beside it.
+     */
+    printingLink(s) {
+      return cardmarketUrl(
+        { name: this.card?.name, extension: s?.set_code },
+        { productId: this.printingRow(s)?.productId ?? null },
+      );
     },
 
     /** The year a printing came out. The list has always been sorted by this

@@ -1847,5 +1847,8 @@
     "reservedFloor": "{count} impegnate in uno scambio che hai accettato.",
     "reservedRemove": "Impegnata in uno scambio accettato, quindi non si può rimuovere.",
     "saveFailed": "Non è stato salvato. Riprova."
+  },
+  "cardLinks": {
+    "cardmarketProduct": "Cardmarket si apre esattamente su questa stampa e mostra la lingua e la condizione della tua copia o migliore."
   }
 }
