@@ -147,9 +147,9 @@
       "eyebrow": "Per negozi e community",
       "heading": "Gestisci un negozio, un Discord o un gruppo locale?",
       "body": "Mettiti sulla mappa. Le community verificate sono quelle che i collezionisti trovano cercando vicino a loro, e le uniche che possono pubblicare eventi.",
-      "freeYear": "Il primo anno è gratis.",
+      "freeYear": "I primi sei mesi sono gratis.",
       "thenYear": "Poi {year} all'anno.",
-      "monthly": "Oppure {month} al mese, con sei mesi gratis. Disdici quando vuoi.",
+      "monthly": "Oppure {month} al mese, con il primo mese gratis. Disdici quando vuoi.",
       "cta": "Trova la tua, o aggiungila",
       "mockName": "Il tuo negozio"
     },
@@ -1575,7 +1575,7 @@
     "titleLapsed": "La verifica è terminata",
     "titleProcessing": "Ci siamo quasi",
     "titlePending": "In attesa di revisione",
-    "lede": "La verifica dice agli altri collezionisti che questo posto esiste davvero e che sei tu a gestirlo. È un solo passaggio, e il primo anno non costa nulla.",
+    "lede": "La verifica dice agli altri collezionisti che questo posto esiste davvero e che lo gestisci tu. È un passaggio solo, e i primi sei mesi non costano nulla.",
     "unlocksTitle": "Cosa sblocca",
     "unlockNear": "Compari quando un collezionista vicino a te cerca un negozio o un evento",
     "unlockEvents": "Pubblicare eventi sul tuo profilo e nella pagina Annunci",
@@ -1617,21 +1617,21 @@
     "payBody": "La tua identità è dimostrata. Manca un passaggio.",
     "payCancel": "Disdici quando vuoi, la community resta tua in ogni caso",
     "plansLegend": "Come vuoi pagare",
-    "plansWhy": "L'annuale è gratuito per il doppio del tempo e costa meno sull'anno. Il mensile c'è per chi preferisce non pagare un anno in una volta.",
-    "costUpfront": "Il primo anno è gratuito, poi {year} all'anno. C'è anche un piano mensile a {month} con sei mesi gratuiti. Disdici quando vuoi.",
+    "plansWhy": "Il piano annuale è gratis sei mesi invece di uno e sull'anno non costa di più. Quello mensile c'è se preferisci non pagare un anno intero in una volta.",
+    "costUpfront": "I primi sei mesi sono gratis, poi {year} all'anno. C'è un piano mensile a {month} con il primo mese gratis. Disdici quando vuoi.",
     "intervalUnavailable": "Il piano mensile non è ancora disponibile. Scegli l'annuale, o riprova più tardi.",
     "plans": {
       "year": {
         "name": "Annuale",
-        "free": "Gratis per un anno",
+        "free": "Sei mesi gratis",
         "then": "poi {price} all'anno",
-        "action": "Inizia l'anno gratuito"
+        "action": "Inizia i sei mesi gratis"
       },
       "month": {
         "name": "Mensile",
-        "free": "Gratis per sei mesi",
+        "free": "Un mese gratis",
         "then": "poi {price} al mese",
-        "action": "Inizia i sei mesi gratuiti"
+        "action": "Inizia il mese gratis"
       }
     },
     "processingBody": "Pagamento ricevuto. Stiamo attivando la verifica.",
@@ -1653,7 +1653,8 @@
     "verifyPromptAction": "Verificala",
     "titleDeclined": "Non verificata",
     "declinedBody": "Qualcuno ha letto la tua richiesta e non ha potuto verificare questa community.",
-    "declinedNext": "Sistema quanto indicato sopra e richiedila, oppure scrivici se pensi che sia un errore."
+    "declinedNext": "Sistema quanto indicato sopra e richiedila, oppure scrivici se pensi che sia un errore.",
+    "unlockDiscord": "Accesso al nostro bot di trading Discord e alla sua activity"
   },
   "adminReview": {
     "title": "Coda di revisione",
@@ -1850,5 +1851,9 @@
   },
   "cardLinks": {
     "cardmarketProduct": "Cardmarket si apre esattamente su questa stampa e mostra la lingua e la condizione della tua copia o migliore."
+  },
+  "claimSheet": {
+    "eyebrow": "Stai rivendicando",
+    "chargeOn": "La tua carta viene registrata ora. Nessun addebito fino al {date}."
   }
 }

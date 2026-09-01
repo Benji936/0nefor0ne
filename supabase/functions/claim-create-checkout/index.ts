@@ -1,7 +1,7 @@
 // claim-create-checkout: create a subscription-mode Stripe Checkout Session for
-// an already identity-verified claimer. Two plans: yearly with the first year
-// free, or monthly with the first six months free, both with a card on file and
-// both billed in the store's local currency. Ownership is granted later by
+// an already identity-verified claimer. Two plans: yearly with the first six
+// months free, or monthly with the first month free, both with a card on file
+// and both billed in the store's local currency. Ownership is granted later by
 // stripe-webhook, not here. Success/cancel return to the community profile.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@17.7.0?target=deno";
@@ -36,11 +36,11 @@ function currencyFor(countryCode: string | null): string {
   return "usd";
 }
 
-// Mirror of FREE_DAYS. 182 is six months to the nearest day. A Map rather than
+// Mirror of FREE_DAYS. 182 is six months to the nearest day; 30 is a month. A Map rather than
 // an object literal so that membership is membership: `"constructor" in {}` is
 // true, and that is not the kind of thing to leave in the path that decides how
 // long somebody goes unbilled.
-const TRIAL_DAYS = new Map<string, number>([["year", 365], ["month", 182]]);
+const TRIAL_DAYS = new Map<string, number>([["year", 182], ["month", 30]]);
 
 /**
  * The stored customer id, but only if Stripe still has it. Returns null when

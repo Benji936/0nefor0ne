@@ -147,9 +147,9 @@
       "eyebrow": "Für Läden und Communities",
       "heading": "Betreibst du einen Laden, einen Discord oder eine lokale Gruppe?",
       "body": "Zeig dich auf der Karte. Verifizierte Communities sind die, die Sammler finden, wenn sie in ihrer Nähe suchen, und die einzigen, die Events posten können.",
-      "freeYear": "Das erste Jahr ist kostenlos.",
+      "freeYear": "Die ersten sechs Monate sind gratis.",
       "thenYear": "Danach {year} pro Jahr.",
-      "monthly": "Oder {month} pro Monat, mit sechs Monaten gratis. Jederzeit kündbar.",
+      "monthly": "Oder {month} pro Monat, mit dem ersten Monat gratis. Jederzeit kündbar.",
       "cta": "Finde deine, oder füge sie hinzu",
       "mockName": "Dein Laden"
     },
@@ -1575,7 +1575,7 @@
     "titleLapsed": "Die Verifizierung ist beendet",
     "titleProcessing": "Fast geschafft",
     "titlePending": "Wartet auf Prüfung",
-    "lede": "Die Verifizierung zeigt anderen Sammlern, dass es diesen Ort wirklich gibt und dass du ihn führst. Ein Schritt, und das erste Jahr kostet nichts.",
+    "lede": "Die Verifizierung zeigt anderen Sammlern, dass es diesen Ort wirklich gibt und dass Du ihn führst. Ein Schritt, und die ersten sechs Monate kosten nichts.",
     "unlocksTitle": "Was es freischaltet",
     "unlockNear": "Tauche auf, wenn ein Sammler in deiner Nähe nach einem Laden oder Event sucht",
     "unlockEvents": "Events auf deinem Profil und auf der Anzeigen-Seite posten",
@@ -1617,21 +1617,21 @@
     "payBody": "Deine Identität ist nachgewiesen. Ein Schritt fehlt noch.",
     "payCancel": "Jederzeit kündbar, die Community bleibt in jedem Fall deine",
     "plansLegend": "Zahlungsweise",
-    "plansWhy": "Jährlich ist doppelt so lange kostenlos und über das Jahr günstiger. Monatlich gibt es für alle, die nicht ein ganzes Jahr auf einmal zahlen möchten.",
-    "costUpfront": "Das erste Jahr ist kostenlos, danach {year} pro Jahr. Es gibt auch einen Monatstarif für {month} mit sechs Gratismonaten. Jederzeit kündbar.",
+    "plansWhy": "Jährlich ist sechs Monate statt einen Monat gratis und kostet übers Jahr nicht mehr. Monatlich gibt es, falls Du nicht gleich ein ganzes Jahr zahlen möchtest.",
+    "costUpfront": "Die ersten sechs Monate sind gratis, danach {year} pro Jahr. Es gibt einen Monatsplan für {month} mit dem ersten Monat gratis. Jederzeit kündbar.",
     "intervalUnavailable": "Der Monatstarif ist noch nicht verfügbar. Bitte jährlich wählen oder später erneut versuchen.",
     "plans": {
       "year": {
         "name": "Jährlich",
-        "free": "Ein Jahr kostenlos",
+        "free": "Sechs Monate gratis",
         "then": "danach {price} pro Jahr",
-        "action": "Gratisjahr starten"
+        "action": "Sechs Gratismonate starten"
       },
       "month": {
         "name": "Monatlich",
-        "free": "Sechs Monate kostenlos",
+        "free": "Einen Monat gratis",
         "then": "danach {price} pro Monat",
-        "action": "Sechs Gratismonate starten"
+        "action": "Gratismonat starten"
       }
     },
     "processingBody": "Zahlung erhalten. Die Verifizierung wird gerade eingerichtet.",
@@ -1653,7 +1653,8 @@
     "verifyPromptAction": "Jetzt verifizieren",
     "titleDeclined": "Nicht verifiziert",
     "declinedBody": "Jemand hat deine Anfrage gelesen und konnte diese Community nicht verifizieren.",
-    "declinedNext": "Behebe das oben Genannte und frag erneut, oder schreib uns, wenn du das für falsch hältst."
+    "declinedNext": "Behebe das oben Genannte und frag erneut, oder schreib uns, wenn du das für falsch hältst.",
+    "unlockDiscord": "Zugang zu unserem Discord-Trading-Bot und der Activity"
   },
   "adminReview": {
     "title": "Warteschlange",
@@ -1850,5 +1851,9 @@
   },
   "cardLinks": {
     "cardmarketProduct": "Cardmarket öffnet sich genau bei dieser Auflage und zeigt Dir die Sprache und den Zustand Deiner Karte oder besser."
+  },
+  "claimSheet": {
+    "eyebrow": "Du beanspruchst",
+    "chargeOn": "Deine Karte wird jetzt hinterlegt. Abgebucht wird erst am {date}."
   }
 }
