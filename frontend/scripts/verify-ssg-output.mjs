@@ -84,6 +84,18 @@ function bodyOf(html) {
     .replace(/<noscript[\s\S]*?<\/noscript>/g, ' ')
 }
 
+// An <h1> that exists but says nothing is the same page to a crawler as one
+// with no heading at all, and it passed the old presence-only check. The
+// community directory shipped exactly that: a heading holding one empty
+// loading-skeleton <span>, waiting on a count no prerender can have. Require
+// the heading to carry text, not just a tag.
+function h1HasText(body) {
+  for (const [, inner] of body.matchAll(/<h1(?:\s[^>]*)?>([\s\S]*?)<\/h1>/g)) {
+    if (inner.replace(/<[^>]+>/g, ' ').replace(/\s|&nbsp;/g, '').length > 0) return true
+  }
+  return false
+}
+
 // With ssgOptions.dirStyle 'nested', every route is a directory holding an
 // index.html — /en/ and /en/privacy alike. Vercel resolves those without the
 // cleanUrls flag, which is the whole point of the nested layout.
@@ -135,7 +147,7 @@ for (const { path, type } of ROUTES) {
       const body = bodyOf(html)
       const text = body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
       return [
-        ['<h1> in rendered body', /<h1[\s>]/.test(body)],
+        ['<h1> with text in rendered body', h1HasText(body)],
         [`body over ${MIN_BODY_CHARS} chars (got ${text.length})`, text.length > MIN_BODY_CHARS],
       ]
     })() : []),
@@ -254,7 +266,7 @@ let skeletons = 0
     const html = readFileSync(p, 'utf8')
     const body = bodyOf(html)
     const text = body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-    if (!/<h1[\s>]/.test(body) || text.length <= MIN_BODY_CHARS) {
+    if (!h1HasText(body) || text.length <= MIN_BODY_CHARS) {
       bad.push([p.slice(DIST.length), text.length])
     }
   }

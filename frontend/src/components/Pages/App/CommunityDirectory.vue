@@ -272,6 +272,15 @@ const filteredOut = computed(() => {
 // the heading strobe.
 const answerReady = computed(() => (nearOn.value ? !nearLoading.value && !nearErrorText.value : count.value !== null));
 
+// Before the very first answer there is no number to state, and the skeleton
+// that stood in for one left prerendered pages shipping an <h1> containing
+// nothing but a pulsing span. Crawlers read that as a page with no heading.
+// So the first render says what the page is for, which is true at any count,
+// and only *later* waits behind the skeleton: once an answer has been given,
+// swapping back to a sentence would be the strobe the skeleton exists to stop.
+const hasAnswered = ref(false);
+watch(answerReady, (ready) => { if (ready) hasAnswered.value = true; }, { immediate: true });
+
 // Most-specific first: a radius beats a query, a query beats a country, and
 // anything at all beats the bare count.
 const answer = computed(() => {
@@ -319,10 +328,14 @@ function onCreated(row) {
   router.push({ name: "communityProfile", params: { locale: route.params.locale || "en", slug: row.slug } });
 }
 
+// meta.community.* rather than the on-page copy: directoryTitle is the eyebrow
+// above the heading and carries no brand, which left this the one page in the
+// site shipping a <title> that never said whose site it was. The meta keys
+// existed for this all along and were simply not wired up.
 useHead(computed(() => {
   const loc = route.params?.locale || "en";
-  const title = t("community.directoryTitle", {}, { locale: loc });
-  const desc = t("community.directorySubtitle", {}, { locale: loc });
+  const title = t("meta.community.title", {}, { locale: loc });
+  const desc = t("meta.community.desc", {}, { locale: loc });
   return { title, meta: [{ name: "description", content: desc }] };
 }));
 
@@ -385,7 +398,8 @@ onBeforeUnmount(() => { if (typeof stopAuth === "function") stopAuth(); });
 
       <h1 class="cd-answer" aria-live="polite">
         <template v-if="answerReady">{{ answer }}</template>
-        <span v-else class="cd-answer__sk animate-pulse motion-reduce:animate-none" />
+        <span v-else-if="hasAnswered" class="cd-answer__sk animate-pulse motion-reduce:animate-none" />
+        <template v-else>{{ t('community.directoryHeading') }}</template>
       </h1>
 
       <!-- The finder. One field for the three things a place is findable by —

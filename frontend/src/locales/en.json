@@ -25,7 +25,7 @@
   "hero": {
     "headline": "Trade duplicates.<br>Hunt your targets.",
     "subheadline": "One for One connects Yu-Gi-Oh! collectors who have what each other wants. No fees, no auctions, just direct peer-to-peer trades.",
-    "cta": "Get started  it's free",
+    "cta": "Get started, it's free",
     "learnMore": "How it works",
     "steps": {
       "01": {
@@ -56,8 +56,8 @@
       "eyebrowAuthed": "Welcome back",
       "productName": "One for One",
       "headline": "Trade duplicates.<br>Hunt your targets.",
-      "subheadline": "One for One connects Yu-Gi-Oh! collectors who have what each other wants. No fees, no auctions  just direct peer-to-peer trades, plus a full card search engine, deck builder, and a wishlist.",
-      "ctaGetStarted": "Get started  it's free",
+      "subheadline": "One for One connects Yu-Gi-Oh! collectors who have what each other wants. No fees, no auctions: just direct peer-to-peer trades, plus a full card search engine, deck builder, and a wishlist.",
+      "ctaGetStarted": "Get started, it's free",
       "ctaGetStartedShort": "Get started",
       "ctaGoToApp": "Go to app",
       "ctaBrowse": "Browse cards",
@@ -95,16 +95,16 @@
     },
     "features": {
       "heading": "Everything for the cards you collect",
-      "subheading": "Search, build, track, and trade  one place for your whole Yu-Gi-Oh! collection.",
+      "subheading": "Search, build, track, and trade: one place for your whole Yu-Gi-Oh! collection.",
       "coreBadge": "CORE",
       "search": {
         "title": "Search cards",
-        "body": "A fast, full card search engine  every set, rarity, and printing at your fingertips.",
+        "body": "A fast, full card search engine: every set, rarity, and printing at your fingertips.",
         "cta": "Search the database"
       },
       "decks": {
         "title": "Decks",
-        "body": "Build decks from scratch or import a list  see exactly what you own and what you need.",
+        "body": "Build decks from scratch or import a list. See exactly what you own and what you need.",
         "cta": "Build or import a deck"
       },
       "piles": {
@@ -114,14 +114,14 @@
       },
       "trade": {
         "title": "Trade",
-        "body": "Add cards to your trade pile and wishlist  we surface mutual matches for direct, one-for-one trades.",
+        "body": "Add cards to your trade pile and wishlist. We surface mutual matches for direct, one-for-one trades.",
         "cta": "Find your matches"
       }
     },
     "tradeShowcase": {
       "eyebrow": "The core flow",
       "heading": "One card for one card",
-      "body": "When your trade pile holds a card on someone's wishlist  and they hold one on yours  One for One flags the mutual match. No money, no bidding. Just a fair, direct swap.",
+      "body": "When your trade pile holds a card on someone's wishlist, and they hold one on yours, One for One flags the mutual match. No money, no bidding. Just a fair, direct swap.",
       "cta": "Open the Trade Center",
       "labelPile": "Your pile",
       "labelMatch": "MATCH",
@@ -259,8 +259,8 @@
     "tradePileEmpty": "No cards to trade yet. Add some to get started.",
     "wishlistEmpty": "Your wishlist is empty. Add cards you're looking for.",
     "searchCards": "Search for cards to add",
-    "emptyTrade": "Nothing here yet — add cards you have for trade.",
-    "emptyWish": "Nothing here yet — add cards you're hunting for.",
+    "emptyTrade": "Nothing here yet. Add cards you have for trade.",
+    "emptyWish": "Nothing here yet. Add cards you're hunting for.",
     "addedToWishlist": "\"{name}\" added to wishlist.",
     "addedToTrade": "\"{name}\" added to trade pile.",
     "viewLabel": "Collection view",
@@ -314,14 +314,14 @@
     "adding": "Adding…",
     "added": "{count} card added | {count} cards added",
     "skipped": "{count} line skipped | {count} lines skipped",
-    "noLines": "Nothing to add  paste at least one card."
+    "noLines": "Nothing to add. Paste at least one card."
   },
   "tradeCenter": {
     "matches": "Matches",
     "proposals": "Proposals",
     "announces": "Announces",
     "proposalUpdated": "Proposal updated.",
-    "exchangeComplete": "Exchange complete  cards have been updated.",
+    "exchangeComplete": "Exchange complete. Cards have been updated.",
     "yourSideConfirmed": "Your side confirmed. Waiting for the other trader.",
     "failedToConfirm": "Failed to confirm.",
     "tradeAccepted": "Trade accepted!",
@@ -612,9 +612,9 @@
     "noEvents": "No events recorded yet.",
     "anonymous": "Anonymous",
     "cardCount": "0 cards | 1 card | {count} cards",
-    "confirmWithoutPhotos": "Photos are missing on at least one side. You can still confirm — they're a record, not a requirement.",
+    "confirmWithoutPhotos": "Photos are missing on at least one side. You can still confirm. They're a record, not a requirement.",
     "waitingForConfirmDetail": "Waiting for {name} to confirm.",
-    "bothUploadedConfirmHint": "Both sides have uploaded  confirm when you've received your cards.",
+    "bothUploadedConfirmHint": "Both sides have uploaded. Confirm when you've received your cards.",
     "chooseReturnCards": "Choose cards from their binder",
     "chooseReturnCardsHelp": "{name} picked cards from your binder. Now choose what you would like from theirs.",
     "waitingForReturnSelection": "Waiting for {name} to look through your binder and choose cards.",
@@ -629,8 +629,8 @@
     "agreementConfirmed": "Agreement confirmed.",
     "agreementComplete": "Both sides agreed. The exchange is now in progress.",
     "valueDifference": "Value difference",
-    "photosVerifiedCanAccept": "Photos verified  you can now accept.",
-    "declinePlaceholder": "Optional  let them know why you're declining…",
+    "photosVerifiedCanAccept": "Photos verified. You can now accept.",
+    "declinePlaceholder": "Optional: let them know why you're declining…",
     "acceptWithoutPhotos": "Neither side has shown their cards yet. You can accept anyway, but photos are the only record of what was promised.",
     "phaseSelection": "Choosing cards",
     "phaseAgreement": "Agreeing",
@@ -671,7 +671,7 @@
     "reviewCount": "{count} review | {count} reviews",
     "openFullPage": "Open full page",
     "back": "Back",
-    "metaTitle": "{name} — Trader profile",
+    "metaTitle": "{name} {'|'} Trader profile",
     "wishlistEmpty": "Wishlist is empty.",
     "noCardsForTrade": "No cards listed for trade.",
     "noReviewsYet": "No reviews yet.",
@@ -806,7 +806,7 @@
     }
   },
   "setPage": {
-    "title": "{setName}  Yu-Gi-Oh! Set | One for One",
+    "title": "{setName} {'|'} Yu-Gi-Oh! Set {'|'} One for One",
     "cardCount": "0 cards | 1 card | {count} cards",
     "notFound": "Set not found",
     "backToSearch": "Back to search",
@@ -933,7 +933,7 @@
     "openOnCardmarket": "Look up on Cardmarket"
   },
   "tradePhotos": {
-    "desc": "A record of what each side is sending. Advice, not a requirement — you can accept and confirm without them.",
+    "desc": "A record of what each side is sending. Advice, not a requirement. You can accept and confirm without them.",
     "waitingOne": "Waiting on 1 side",
     "noPhotosYet": "No photos yet",
     "addPhoto": "Add photo",
@@ -997,7 +997,7 @@
     "mainDeck": "Main Deck",
     "extraDeck": "Extra Deck",
     "sideDeck": "Side Deck",
-    "allOwned": "Nothing missing — this deck is playable.",
+    "allOwned": "Nothing missing. This deck is playable.",
     "wishlistMissing": "Wishlist the {n} missing",
     "costToFinish": "about {value} to finish",
     "deckValue": "deck value {value}"
@@ -1024,7 +1024,7 @@
     "orderMissing": "Most missing",
     "orderNewest": "Newest",
     "emptyTitle": "No decks yet",
-    "emptyBody": "Drop a .ydk file anywhere on this page — exported from EDOPro, YGOPRODeck or Master Duel — and every card in it gets checked against the cards you already own.",
+    "emptyBody": "Drop a .ydk file anywhere on this page, exported from EDOPro, YGOPRODeck or Master Duel, and every card in it gets checked against the cards you already own.",
     "wishlistMissing": "Wishlist {n}",
     "tallyOwned": "{n} owned",
     "tallySourced": "{n} sourced",
@@ -1040,53 +1040,53 @@
       "desc": "Review a trade proposal, its cards, photos and settlement."
     },
     "home": {
-      "title": "One for One — Peer-to-peer Yu-Gi-Oh! card trading",
-      "desc": "Trade Yu-Gi-Oh! duplicates and hunt your targets with One for One — direct peer-to-peer trades with no fees and no auctions, plus a full card search engine, deck builder, and a wishlist."
+      "title": "One for One {'|'} Peer-to-peer Yu-Gi-Oh! card trading",
+      "desc": "Trade Yu-Gi-Oh! duplicates and hunt your targets with One for One: direct peer-to-peer trades with no fees and no auctions, plus a full card search engine, deck builder, and a wishlist."
     },
     "search": {
-      "title": "One for One  Yu-Gi-Oh! Card Trading",
-      "titleWithQuery": "{query}  Yu-Gi-Oh! Trading | One for One",
+      "title": "One for One {'|'} Yu-Gi-Oh! Card Trading",
+      "titleWithQuery": "{query} {'|'} Yu-Gi-Oh! Trading {'|'} One for One",
       "desc": "Trade Yu-Gi-Oh! cards directly with other collectors. List your trade pile, build your wishlist, and find perfect one-for-one matches near you.",
       "descWithQuery": "Find traders for {query} on One for One, the free Yu-Gi-Oh! card trading platform."
     },
     "library": {
-      "title": "My Collection  One for One",
+      "title": "My Collection {'|'} One for One",
       "desc": "Manage your Yu-Gi-Oh! card collection, trade pile, and wishlist on One for One."
     },
     "trade": {
-      "title": "Trade Center  One for One",
+      "title": "Trade Center {'|'} One for One",
       "desc": "Browse your trade matches, send proposals, and complete card trades on One for One."
     },
     "account": {
-      "title": "My Account  One for One",
+      "title": "My Account {'|'} One for One",
       "desc": "Manage your One for One profile, location, and trade preferences."
     },
     "card": {
-      "title": "Yu-Gi-Oh! Card  One for One",
+      "title": "Yu-Gi-Oh! Card {'|'} One for One",
       "desc": "Trade Yu-Gi-Oh! cards on One for One. Find collectors who have it or want it."
     },
     "privacy": {
-      "title": "Privacy Policy  One for One",
+      "title": "Privacy Policy {'|'} One for One",
       "desc": "Privacy policy for One for One, the free Yu-Gi-Oh! card trading platform."
     },
     "terms": {
-      "title": "Terms of Service  One for One",
+      "title": "Terms of Service {'|'} One for One",
       "desc": "Terms of Service for One for One, the free peer-to-peer Yu-Gi-Oh! card trading platform operated by Benjamin Sitbon."
     },
     "cards": {
-      "title": "Browse Yu-Gi-Oh! Cards  One for One",
+      "title": "Browse Yu-Gi-Oh! Cards {'|'} One for One",
       "desc": "Search and filter the full Yu-Gi-Oh! card database by type, attribute, level, and more. Find cards to add to your trade pile or wishlist on One for One."
     },
     "combo": {
-      "title": "Combo Explorer  One for One",
+      "title": "Combo Explorer {'|'} One for One",
       "desc": "See every card a Yu-Gi-Oh! effect can search, Special Summon, or send to the GY. Explore what this card's effect can fetch on One for One."
     },
     "built-with": {
-      "title": "Support One for One — free, no trading fees",
+      "title": "Support One for One: free, no trading fees",
       "desc": "One for One takes no cut of a trade. Two ways to help keep it that way: a one-off tip, or shopping through our marketplace links at no extra cost."
     },
     "community": {
-      "title": "Stores & Communities",
+      "title": "Stores & Communities {'|'} One for One",
       "desc": "Find Yu-Gi-Oh stores, Discord servers and groups near you."
     },
     "trader": {
@@ -1098,21 +1098,21 @@
       "desc": "A Yu-Gi-Oh store or community on 0nefor.one."
     },
     "communityVerify": {
-      "title": "Verify your community | One for One",
+      "title": "Verify your community {'|'} One for One",
       "desc": "Prove the shop, server or group you run is real, and turn on its verified mark."
     },
     "TradeCenter": {
-      "title": "Trade Centre — matches, proposals and announces | One for One",
+      "title": "Trade Centre: matches, proposals and announces {'|'} One for One",
       "desc": "See who has what you want, answer trade proposals, and post what you are looking for."
     },
     "archetype": {
-      "title": "Yu-Gi-Oh! Archetypes | One for One",
+      "title": "Yu-Gi-Oh! Archetypes {'|'} One for One",
       "desc": "Browse every card in a Yu-Gi-Oh! archetype and find them in other collectors' trade piles on One for One."
     }
   },
   "deckIgnore": {
     "markSourced": "Mark {name} as coming from elsewhere",
-    "markCopy": "Mark another {name} as coming from elsewhere — {n} of {max} so far",
+    "markCopy": "Mark another {name} as coming from elsewhere ({n} of {max} so far)",
     "countAgain": "Count {name} as missing again"
   },
   "cards": {
@@ -1152,11 +1152,11 @@
     "noEffect": "No combo-relevant effect found",
     "noEffectHint": "This card has no parsed search / summon / send effect, or its effect is too complex to resolve automatically.",
     "resolving": "Resolving…",
-    "broad": "This effect matches a very broad pool (e.g. any monster)  too many cards to list usefully.",
+    "broad": "This effect matches a very broad pool (e.g. any monster): too many cards to list usefully.",
     "noMatches": "No matching cards found.",
     "count": "0 cards | 1 card | {count} cards",
     "approximate": "approximate",
-    "approximateHint": "The effect contains conditions (e.g. ATK, custom logic) the parser can't fully read  results may be approximate.",
+    "approximateHint": "The effect contains conditions (e.g. ATK, custom logic) the parser can't fully read. Results may be approximate.",
     "actions": {
       "search": "Searches",
       "special_summon": "Special Summons",
@@ -1353,6 +1353,7 @@
   "community": {
     "home": "Community",
     "directoryTitle": "Stores & Communities",
+    "directoryHeading": "Find a place to trade",
     "directorySubtitle": "Find Yu-Gi-Oh stores, Discord servers and groups near you.",
     "foundAll": "No places yet | 1 place | {n} places",
     "foundFor": "Nothing matching “{q}” | 1 place matching “{q}” | {n} places matching “{q}”",
@@ -1525,7 +1526,7 @@
     "billingEnds": "Ends on {date}",
     "billingEndsHint": "Reactivate before then to keep it.",
     "billingTrial": "Free until {date}",
-    "billingPastDue": "Payment failed — we're retrying. Update your card to avoid losing the badge.",
+    "billingPastDue": "Payment failed. We're retrying. Update your card to avoid losing the badge.",
     "billingLapsed": "This subscription has ended.",
     "billingNone": "No subscription.",
     "billingDiscord": "Your Guild Subscription pays for this. Cancel or change it in Discord's subscription settings.",
@@ -1544,7 +1545,7 @@
     "listingCount": "no listings | 1 listing | {n} listings",
     "listedOts": "Listed from Konami's Official Tournament Store directory.",
     "listedPlain": "Listed in the community directory.",
-    "listedBody": "No one from the shop has claimed it yet — claim it and the page becomes yours to fill in.",
+    "listedBody": "No one from the shop has claimed it yet. Claim it and the page becomes yours to fill in.",
     "gone": "This page is not here.",
     "fieldAddress": "Street address",
     "fieldPostal": "Postal code",
@@ -1745,7 +1746,7 @@
       "blurb": "Your collection is live. Matches keep updating on their own as other traders add cards.",
       "short": "Done",
       "matches": "{count} trader already matches you | {count} traders already match you",
-      "noMatchesYet": "No matches yet — they will appear as other traders add cards.",
+      "noMatchesYet": "No matches yet. They will appear as other traders add cards.",
       "cta": "See your matches",
       "toCollection": "Go to the app"
     },
@@ -1778,7 +1779,7 @@
     "inlineRetry": "Verify your number, then press send again. Your selection is kept.",
     "numberError": {
       "empty": "Enter your phone number.",
-      "notDigits": "Digits only — no letters or extensions.",
+      "notDigits": "Digits only. No letters or extensions.",
       "tooShort": "That number looks too short.",
       "tooLong": "That number looks too long.",
       "noCountry": "Pick your country first."
@@ -1792,7 +1793,7 @@
       "smsUnavailable": "SMS verification is not available right now. Please try again later.",
       "generic": "Something went wrong. Please try again.",
       "regionBlocked": "This country is not enabled for SMS on our side yet. Please let us know so we can switch it on.",
-      "providerAuth": "SMS verification isn't working right now. This is a problem on our side, not with your number — please try again later.",
+      "providerAuth": "SMS verification isn't working right now. This is a problem on our side, not with your number. Please try again later.",
       "trialNumber": "SMS verification is temporarily unavailable for this number. Please try again shortly.",
       "unsubscribed": "This number has opted out of our messages. Reply START to our SMS number, or use a different number."
     },
@@ -1844,7 +1845,7 @@
     "removeConfirm": "Remove for good",
     "removing": "Removing…",
     "needPrinting": "Pick which printing this copy is.",
-    "needQuantity": "Enter how many copies you have — at least one.",
+    "needQuantity": "Enter how many copies you have, at least one.",
     "reservedFloor": "{count} committed to a trade you have accepted.",
     "reservedRemove": "Committed to a trade you have accepted, so it cannot be removed.",
     "saveFailed": "That did not save. Try again."

@@ -36,7 +36,7 @@ const emit = defineEmits(["requireAuth"]);
 const { t } = useI18n();
 const route = useRoute();
 const locale = computed(() => route.params.locale || "en");
-useHead({ title: computed(() => `${t("decks.title")} — One for One`), meta: [{ name: "robots", content: "noindex" }] });
+useHead({ title: computed(() => `${t("decks.title")} | One for One`), meta: [{ name: "robots", content: "noindex" }] });
 
 const userId = computed(() => props.login?.user?.id ?? null);
 const isGuest = computed(() => !userId.value);

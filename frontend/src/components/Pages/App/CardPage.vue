@@ -426,8 +426,8 @@ export default {
         const fallbackId = route.params?.id;
         const fallbackImage = cardImage(fallbackId) || 'https://0nefor.one/logo.png';
         const fallbackUrl = `https://0nefor.one${route.path || '/en/card/unknown'}`;
-        const fallbackTitle = "Yu-Gi-Oh! Card — One for One";
-        const fallbackDesc = "Trade Yu-Gi-Oh! cards on One for One — the free card trading platform.";
+        const fallbackTitle = "Yu-Gi-Oh! Card | One for One";
+        const fallbackDesc = "Trade Yu-Gi-Oh! cards on One for One: the free card trading platform.";
         return {
           title: fallbackTitle,
           meta: [
@@ -451,7 +451,7 @@ export default {
       const loc = route.params?.locale || "en";
       const path = route.path || `/en/card/${card.id}`;
       const image = cardImage(card.id);
-      const title = `${card.name} — Yu-Gi-Oh! | One for One`;
+      const title = `${card.name} | Yu-Gi-Oh! | One for One`;
       const raw = card.desc ?? "";
 
       // Build a stats prefix line for monsters and typed spell/trap cards
@@ -465,7 +465,7 @@ export default {
 
       const effectText = raw.length > 0
         ? raw
-        : `Trade ${card.name} on One for One — the free Yu-Gi-Oh! card trading platform.`;
+        : `Trade ${card.name} on One for One: the free Yu-Gi-Oh! card trading platform.`;
       const candidate = statsLine ? `${statsLine} — ${effectText}` : effectText;
       const desc = candidate.length > 155 ? candidate.slice(0, 155) + "…" : candidate;
 
