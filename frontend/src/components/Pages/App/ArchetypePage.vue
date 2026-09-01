@@ -154,7 +154,7 @@ export default {
       const image = artId ? cardImage(artId) : `${BASE}/logo.png`
 
       const title = name
-        ? `${name} Archetype — Every Yu-Gi-Oh! Card | One for One`
+        ? `${name} Archetype: Every Yu-Gi-Oh! Card | One for One`
         : 'Yu-Gi-Oh! Archetype | One for One'
 
       const desc = data
@@ -200,6 +200,18 @@ export default {
                   url: `${BASE}/en/card/${c.id}`,
                 })),
               },
+            }),
+            // See SetPage: /en/cards is the middle rung because it exists and
+            // lists cards. There is no /en/archetypes index to point at, so
+            // this is the only hierarchy signal 529 archetype pages emit.
+            ldScript({
+              '@context': 'https://schema.org',
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Home',         item: `${BASE}/en/` },
+                { '@type': 'ListItem', position: 2, name: 'Browse Cards', item: `${BASE}/en/cards` },
+                { '@type': 'ListItem', position: 3, name: `${name} archetype`, item: canonical },
+              ],
             })]
           : [],
       }

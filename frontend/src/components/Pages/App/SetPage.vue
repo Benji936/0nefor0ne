@@ -203,7 +203,21 @@ export default {
                 url: `https://0nefor.one/${route.params.locale || 'en'}/card/${card.id}`,
               }))
             }
-          })
+          }),
+          // Breadcrumbs render as a trail under the result instead of the bare
+          // URL, and they are the only hierarchy signal these pages emit --
+          // there is no /en/sets index for a crawler to infer one from. The
+          // middle rung is /en/cards because that page exists and lists cards;
+          // pointing at /en/set/ would name a directory that serves nothing.
+          ldScript({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home',         item: 'https://0nefor.one/en/' },
+              { '@type': 'ListItem', position: 2, name: 'Browse Cards', item: 'https://0nefor.one/en/cards' },
+              { '@type': 'ListItem', position: 3, name: setName,        item: canonicalUrl },
+            ],
+          }),
         ]
       }
     }))

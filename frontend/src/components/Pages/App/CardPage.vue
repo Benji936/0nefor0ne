@@ -508,9 +508,13 @@ export default {
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Home",        item: `${BASE}/en/` },
-          { "@type": "ListItem", position: 2, name: "Card Search", item: `${BASE}/en/` },
-          { "@type": "ListItem", position: 3, name: card.name,     item: canonical },
+          // Rung 2 named "Card Search" but pointed at /en/, the same URL as
+          // rung 1 — two names for one page, which is not a hierarchy. /en/cards
+          // is a real distinct page that lists cards, and set and archetype
+          // pages now use the same middle rung, so all three agree.
+          { "@type": "ListItem", position: 1, name: "Home",         item: `${BASE}/en/` },
+          { "@type": "ListItem", position: 2, name: "Browse Cards", item: `${BASE}/en/cards` },
+          { "@type": "ListItem", position: 3, name: card.name,      item: canonical },
         ],
       };
 
