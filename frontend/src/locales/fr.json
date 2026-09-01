@@ -147,9 +147,9 @@
       "eyebrow": "Pour les boutiques et les communautés",
       "heading": "Vous tenez une boutique, un Discord ou un groupe local ?",
       "body": "Faites-vous une place sur la carte. Les communautés vérifiées sont celles que les collectionneurs trouvent en cherchant près de chez eux, et les seules qui peuvent publier des événements.",
-      "freeYear": "La première année est gratuite.",
+      "freeYear": "Les six premiers mois sont gratuits.",
       "thenYear": "Ensuite, {year} par an.",
-      "monthly": "Ou {month} par mois, avec six mois offerts. Résiliable à tout moment.",
+      "monthly": "Ou {month} par mois, avec le premier mois gratuit. Résiliable à tout moment.",
       "cta": "Trouvez la vôtre, ou ajoutez-la",
       "mockName": "Votre boutique"
     },
@@ -1575,7 +1575,7 @@
     "titleLapsed": "La vérification a pris fin",
     "titleProcessing": "Presque terminé",
     "titlePending": "En attente d'examen",
-    "lede": "La vérification montre aux autres collectionneurs que ce lieu existe vraiment et que vous le gérez. C'est une seule étape, et la première année est gratuite.",
+    "lede": "La vérification indique aux autres collectionneurs que ce lieu existe vraiment et que vous le gérez. C'est une étape, et les six premiers mois ne coûtent rien.",
     "unlocksTitle": "Ce que cela débloque",
     "unlockNear": "Apparaissez quand un collectionneur près de chez vous cherche une boutique ou un événement",
     "unlockEvents": "Publier des événements sur votre profil et sur la page Annonces",
@@ -1617,21 +1617,21 @@
     "payBody": "Votre identité est prouvée. Il reste une étape.",
     "payCancel": "Annulable à tout moment, la communauté reste la vôtre dans tous les cas",
     "plansLegend": "Comment vous voulez payer",
-    "plansWhy": "L'annuel est gratuit deux fois plus longtemps et revient moins cher sur l'année. Le mensuel existe pour ceux qui préfèrent ne pas payer un an d'un coup.",
-    "costUpfront": "La première année est gratuite, puis {year} par an. Il existe aussi un abonnement mensuel à {month} avec six mois gratuits. Annulable à tout moment.",
+    "plansWhy": "L'offre annuelle est gratuite six mois au lieu d'un et ne revient pas plus cher sur l'année. L'offre mensuelle existe si vous préférez ne pas payer une année entière d'avance.",
+    "costUpfront": "Les six premiers mois sont gratuits, puis {year} par an. Une offre mensuelle à {month} existe avec le premier mois gratuit. Résiliable à tout moment.",
     "intervalUnavailable": "L'abonnement mensuel n'est pas encore disponible. Choisissez l'annuel, ou réessayez plus tard.",
     "plans": {
       "year": {
         "name": "Annuel",
-        "free": "Gratuit pendant un an",
+        "free": "Six mois gratuits",
         "then": "puis {price} par an",
-        "action": "Commencer l'année gratuite"
+        "action": "Démarrer les six mois gratuits"
       },
       "month": {
         "name": "Mensuel",
-        "free": "Gratuit pendant six mois",
+        "free": "Un mois gratuit",
         "then": "puis {price} par mois",
-        "action": "Commencer les six mois gratuits"
+        "action": "Démarrer le mois gratuit"
       }
     },
     "processingBody": "Paiement reçu. Configuration de votre vérification en cours.",
@@ -1653,7 +1653,8 @@
     "verifyPromptAction": "La vérifier",
     "titleDeclined": "Non vérifiée",
     "declinedBody": "Quelqu'un a lu votre demande et n'a pas pu vérifier cette communauté.",
-    "declinedNext": "Corrigez ce qui est indiqué ci-dessus et redemandez, ou écrivez-nous si vous pensez que c'est une erreur."
+    "declinedNext": "Corrigez ce qui est indiqué ci-dessus et redemandez, ou écrivez-nous si vous pensez que c'est une erreur.",
+    "unlockDiscord": "Accès à notre bot de trading Discord et à son activité"
   },
   "adminReview": {
     "title": "File d'attente",
@@ -1850,5 +1851,9 @@
   },
   "cardLinks": {
     "cardmarketProduct": "Cardmarket s'ouvre sur cette impression précise et affiche la langue et l'état de votre exemplaire ou mieux."
+  },
+  "claimSheet": {
+    "eyebrow": "Revendication",
+    "chargeOn": "Votre carte est enregistrée maintenant. Aucun débit avant le {date}."
   }
 }

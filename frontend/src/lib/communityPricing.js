@@ -3,17 +3,27 @@
 // live FX); USD is the fallback. `currency` is the lowercase ISO code Stripe
 // expects; `display` is user-facing copy.
 //
-// Monthly costs about a fifth more over a year than yearly does, and comes with
-// half the free period. Both differences are deliberate and both are stated in
-// the UI: the point of yearly is that it is the better deal, which only works as
-// an argument if the reader can see it.
+// Yearly is the better deal and the UI says so, but only as far as it is true.
+// Monthly comes with a sixth of the free period in every currency. It used to
+// cost about a fifth more over a year as well -- and still does in EUR, USD and
+// GBP -- but CHF monthly is now 5, and 5 x 12 is exactly the CHF yearly 60. So
+// the copy claims "costs no more over a year", which holds everywhere, rather
+// than a saving that is not there for Swiss shops. The test below asserts the
+// weaker rule for the same reason.
 //
 // Switzerland was billed in USD until CHF was added here, because CH is neither
 // GB nor eurozone and fell through to the fallback.
 
 // Amounts only. How a price is written is a question about the reader, not
 // about the shop, so it is answered at render time by formatPrice below.
-const CHF = { currency: "chf", year: { amount: 60 }, month: { amount: 6 } };
+//
+// These figures are DISPLAY, not the charge. claim-create-checkout bills the
+// Stripe price named by STRIPE_PRICE_ID / STRIPE_PRICE_ID_MONTHLY and lets
+// Stripe pick the currency option, so a number changed here and not in Stripe
+// makes the page lie. Verified against the Stripe dashboard on 2026-09-01:
+// CHF 60 a year, CHF 5 a month. The other three currencies were not visible in
+// that view and have not been re-checked.
+const CHF = { currency: "chf", year: { amount: 60 }, month: { amount: 5 } };
 const GBP = { currency: "gbp", year: { amount: 50 }, month: { amount: 5 } };
 const EUR = { currency: "eur", year: { amount: 60 }, month: { amount: 6 } };
 const USD = { currency: "usd", year: { amount: 60 }, month: { amount: 6 } };
@@ -32,8 +42,10 @@ const SWISS = new Set(["CH", "LI"]);
 export const INTERVALS = ["year", "month"];
 
 /** Free days per interval, mirrored in claim-create-checkout as
- *  trial_period_days. 182 is six months to the nearest day. */
-export const FREE_DAYS = { year: 365, month: 182 };
+ *  trial_period_days. 182 is six months to the nearest day; 30 is a month.
+ *  Change one and the other must change with it, or the page promises a date
+ *  Stripe will not honour. */
+export const FREE_DAYS = { year: 182, month: 30 };
 
 /**
  * @param community          the row being priced

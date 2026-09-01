@@ -2,11 +2,11 @@ import { describe, it, expect } from "vitest";
 import { communityPricing, formatPrice, normalizeInterval, INTERVALS, FREE_DAYS } from "./communityPricing";
 
 describe("communityPricing", () => {
-  it("maps Switzerland to CHF, yearly 60 and monthly 6", () => {
+  it("maps Switzerland to CHF, yearly 60 and monthly 5", () => {
     expect(communityPricing({ country_code: "CH" })).toEqual({
       currency: "chf",
       year: { amount: 60 },
-      month: { amount: 6 },
+      month: { amount: 5 },
     });
   });
   it("maps Liechtenstein to CHF too", () => {
@@ -52,10 +52,14 @@ describe("communityPricing", () => {
     first.year.amount = 1;
     expect(communityPricing({ country_code: "CH" }).year.amount).toBe(60);
   });
-  it("prices monthly above yearly-per-month in every currency", () => {
+  it("never prices monthly below yearly over a year", () => {
+    // Greater-or-equal, not greater. CHF monthly is 5 and CHF yearly is 60, so
+    // twelve months costs exactly what a year costs. That is allowed; monthly
+    // being *cheaper* over a year is not, because it would make yearly the
+    // worse deal on both axes and the plan copy would be wrong.
     for (const cc of ["CH", "GB", "FR", "US"]) {
       const p = communityPricing({ country_code: cc });
-      expect(p.month.amount * 12).toBeGreaterThan(p.year.amount);
+      expect(p.month.amount * 12).toBeGreaterThanOrEqual(p.year.amount);
     }
   });
 });
@@ -162,7 +166,7 @@ describe("the offer", () => {
   });
   it("gives yearly the longer free period", () => {
     expect(FREE_DAYS.year).toBeGreaterThan(FREE_DAYS.month);
-    expect(FREE_DAYS.year).toBe(365);
-    expect(FREE_DAYS.month).toBe(182);
+    expect(FREE_DAYS.year).toBe(182);
+    expect(FREE_DAYS.month).toBe(30);
   });
 });

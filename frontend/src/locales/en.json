@@ -147,9 +147,9 @@
       "eyebrow": "For stores and communities",
       "heading": "Run a shop, a Discord, or a local group?",
       "body": "Put it on the map. Verified communities are the ones collectors find when they search near them, and the only ones that can post events.",
-      "freeYear": "The first year is free.",
+      "freeYear": "The first six months are free.",
       "thenYear": "After that, {year} a year.",
-      "monthly": "Or {month} a month, with six months free. Cancel any time.",
+      "monthly": "Or {month} a month, with the first month free. Cancel any time.",
       "cta": "Find yours, or add it",
       "mockName": "Your store"
     },
@@ -1575,7 +1575,7 @@
     "titleLapsed": "Verification has ended",
     "titleProcessing": "Almost there",
     "titlePending": "Waiting on a review",
-    "lede": "Verification tells other collectors this place is real and that you run it. It is one step, and the first year costs nothing.",
+    "lede": "Verification tells other collectors this place is real and that you run it. It is one step, and the first six months cost nothing.",
     "unlocksTitle": "What it unlocks",
     "unlockNear": "Appear when a collector nearby searches for a store or an event",
     "unlockEvents": "Post events to your profile and to the Announces page",
@@ -1617,21 +1617,21 @@
     "payBody": "Your identity is proved. One step left.",
     "payCancel": "Cancel any time, and the community stays yours either way",
     "plansLegend": "How you want to pay",
-    "plansWhy": "Yearly is free for twice as long and costs less over a year. Monthly is there if you would rather not pay a year at a time.",
-    "costUpfront": "The first year is free, then {year} a year. There is a monthly plan at {month} with six months free. Cancel any time.",
+    "plansWhy": "Yearly is free for six months instead of one, and costs no more over a year. Monthly is there if you would rather not pay a year at a time.",
+    "costUpfront": "The first six months are free, then {year} a year. There is a monthly plan at {month} with the first month free. Cancel any time.",
     "intervalUnavailable": "The monthly plan is not available yet. Choose yearly, or try again later.",
     "plans": {
       "year": {
         "name": "Yearly",
-        "free": "Free for a year",
+        "free": "Free for six months",
         "then": "then {price} a year",
-        "action": "Start the free year"
+        "action": "Start the six free months"
       },
       "month": {
         "name": "Monthly",
-        "free": "Free for six months",
+        "free": "Free for a month",
         "then": "then {price} a month",
-        "action": "Start the six free months"
+        "action": "Start the free month"
       }
     },
     "processingBody": "Payment received. Setting up your verification now.",
@@ -1653,7 +1653,8 @@
     "verifyPromptAction": "Verify it",
     "titleDeclined": "Not verified",
     "declinedBody": "Someone read your request and could not verify this community.",
-    "declinedNext": "Fix what is mentioned above and ask again, or write to us if you think this is wrong."
+    "declinedNext": "Fix what is mentioned above and ask again, or write to us if you think this is wrong.",
+    "unlockDiscord": "Access to our Discord trading bot and activity"
   },
   "adminReview": {
     "title": "Review queue",
@@ -1850,5 +1851,9 @@
   },
   "cardLinks": {
     "cardmarketProduct": "Cardmarket opens on this exact printing, showing your copy's language and condition or better."
+  },
+  "claimSheet": {
+    "eyebrow": "Claiming",
+    "chargeOn": "Your card is added now. Nothing is charged until {date}."
   }
 }

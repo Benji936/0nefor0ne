@@ -632,6 +632,9 @@ function signIn() {
                  and its events with it. -->
             <li><v-icon icon="mdi-map-marker-radius" size="15" />{{ t('communityVerify.unlockNear') }}</li>
             <li><v-icon icon="mdi-calendar-plus" size="15" />{{ t('communityVerify.unlockEvents') }}</li>
+            <!-- PlatformIcon, not an mdi icon: the bundled font has no discord
+                 glyph and renders an empty gap in its place. -->
+            <li><PlatformIcon platform="discord" :size="15" class="cv__unlockIcon" />{{ t('communityVerify.unlockDiscord') }}</li>
             <li><v-icon icon="mdi-check-decagram" size="15" />{{ t('communityVerify.unlockBadge') }}</li>
             <li><v-icon icon="mdi-sort-variant" size="15" />{{ t('communityVerify.unlockRanking') }}</li>
           </ul>
@@ -779,7 +782,8 @@ function signIn() {
   display: flex; align-items: flex-start; gap: 9px;
   font-size: 13px; line-height: 1.5; color: var(--c-text); max-width: 44ch;
 }
-.cv__unlocks .v-icon { color: var(--c-trade); flex-shrink: 0; margin-top: 2px; }
+.cv__unlocks .v-icon,
+.cv__unlocks .cv__unlockIcon { color: var(--c-trade); flex-shrink: 0; margin-top: 2px; }
 
 /* What it costs, said before the proving starts. Sits with the unlocks as one
    more fact about verification, because that is what it is. */

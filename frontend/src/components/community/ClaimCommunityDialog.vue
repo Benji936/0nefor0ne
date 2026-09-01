@@ -10,7 +10,7 @@ import { communityPricing, formatPrice } from "@/lib/communityPricing";
 import { isValidCode } from "@/lib/claimState";
 import { getCurrentSession, signInWithDiscord } from "@/lib/supabaseClient";
 import PlatformIcon from "@/components/community/PlatformIcon.vue";
-import PlanChooser from "@/components/community/PlanChooser.vue";
+import ClaimSubscribeSheet from "@/components/community/ClaimSubscribeSheet.vue";
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -133,8 +133,30 @@ async function sendManual() {
 </script>
 
 <template>
+  <!-- The pay step is not a step of this dialog any more. Asking for a card
+       number is a different kind of question from "enter the code we emailed
+       you", and it was being asked in the same 480px box with the directory
+       still legible behind it. It gets the whole screen; the small dialog
+       stands down while it is up. -->
+  <!-- Both dialogs stay mounted and only one is ever open. Swapping them with
+       v-if mounted the sheet already-open, so its enter transition never ran
+       and Vuetify left the content parked at translateY(100%) -- off the
+       bottom of the screen, with only the header showing. -->
+  <ClaimSubscribeSheet
+    v-if="community"
+    :model-value="modelValue && step === 'subscribe'"
+    :community="community"
+    :pricing="price"
+    :interval="interval"
+    :submitting="submitting"
+    :error="errorMsg"
+    @update:interval="interval = $event"
+    @update:model-value="emit('update:modelValue', $event)"
+    @confirm="startCheckout"
+  />
+
   <v-dialog
-    :model-value="modelValue"
+    :model-value="modelValue && step !== 'subscribe'"
     @update:model-value="emit('update:modelValue', $event)"
     max-width="480"
     content-class="!m-0 sm:!m-6 items-end sm:items-center"
@@ -147,7 +169,7 @@ async function sendManual() {
         <div class="dlg-head__icon">
           <v-icon icon="mdi-storefront-check-outline" size="18" />
         </div>
-        <span class="dlg-head__title">{{ step === 'manual' ? t('community.claimManualTitle') : (step === 'subscribe' ? t('community.claimSubscribeTitle') : t('community.claimTitle')) }}</span>
+        <span class="dlg-head__title">{{ step === 'manual' ? t('community.claimManualTitle') : t('community.claimTitle') }}</span>
         <button class="dlg-close" @click="close">
           <v-icon icon="mdi-close" size="19" />
         </button>
@@ -185,12 +207,6 @@ async function sendManual() {
             <button class="link-btn" :disabled="submitting" @click="sendCode">{{ t('community.claimResend') }}</button>
             <button class="link-btn link-btn--muted" :disabled="submitting" @click="goManual">{{ t('community.claimTryManual') }}</button>
           </div>
-        </template>
-
-        <!-- Subscribe: pick a plan, both of which start free -->
-        <template v-else-if="step === 'subscribe'">
-          <p class="claim-body">{{ t('community.claimSubscribeBody') }}</p>
-          <PlanChooser v-model="interval" :pricing="price" compact />
         </template>
 
         <!-- Manual review -->
@@ -240,11 +256,6 @@ async function sendManual() {
           <button v-else-if="step === 'code'" class="btn-submit" :disabled="!canVerify" @click="verify">
             <template v-if="submitting"><v-progress-circular indeterminate size="16" width="2" color="white" /></template>
             <template v-else><v-icon icon="mdi-check" size="16" />{{ t('community.claimVerify') }}</template>
-          </button>
-
-          <button v-else-if="step === 'subscribe'" class="btn-submit" :disabled="submitting" @click="startCheckout">
-            <template v-if="submitting"><v-progress-circular indeterminate size="16" width="2" color="white" /></template>
-            <template v-else><v-icon icon="mdi-credit-card-outline" size="16" />{{ t(`communityVerify.plans.${interval}.action`) }}</template>
           </button>
 
           <button v-else-if="step === 'manual'" class="btn-submit" :disabled="submitting || !manualReason.trim()" @click="sendManual">

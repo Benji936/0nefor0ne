@@ -96,6 +96,16 @@ and were read from Cardmarket's own filter markup rather than assembled from a l
 would have put Switzerland at 34 and sent every Swiss reader to Croatia's sellers. The ids run to 37 but 32
 and 34 do not exist. Portuguese is language 8, not 6.
 
+Asking for a card number is a full page, not a step in a dialog. The claim flow's pay step used to be the
+third panel of a 480px modal: it never said what the money bought (the reasons to verify are written on the
+`/verify` route, which a claimer never sees), never named the shop being claimed, and set the offer — the free
+period, which is the entire argument — at 14.5px between two paragraphs of the same weight. It is now
+`ClaimSubscribeSheet`, opaque and full-bleed, where the free period is the largest thing on screen, the shop's
+own directory row shows the verified mark going from hollow to lit, and the charge date is stated outright
+rather than softened into "cancel any time". Colour roles are unchanged: amethyst is the one commitment
+action, teal appears only on the mark (the colour the directory already draws a verified community in, so The
+Agreement Rule holds), and pink is absent because this is neither wanting nor cancelling.
+
 ## Trade lifecycle
 
 | Stage | User 1 | User 2 | Exit condition |
@@ -122,6 +132,7 @@ Legacy proposals remain usable. A proposal without `workflow_phase` follows the 
 | Sourced copies | `lib/deckIgnore.js` | per-copy mark on a deck card | `deckIgnore.test.js` |
 | Settlement terms | `lib/tradeWorkflow.js` `settlementTerms` | propose dialog, Suggest terms | `tradeWorkflow.test.js` |
 | Cardmarket links | `lib/cardmarketLink.js` | binder link sheet, list row, proposal suggestions | `cardmarketLink.test.js` |
+| Paying for a claim | `ClaimSubscribeSheet.vue` | claim flow (full page); `/verify` route keeps its own pay step | browser check, both themes and phone width |
 | Meetup location | `LocationPicker.vue` | Suggest terms, legacy edit/counter | trade-page browser check |
 | Trade review | `TradeDetailPage.vue` | selection, agreement, exchange, history | responsive browser check |
 | Proposal queue | `ProposalsTab.vue` | your move, their move, done, closed | segment counts against pile contents |
@@ -308,3 +319,28 @@ Cardmarket links, 2026-08-31:
   silently serving the expansion listing. The same card's printings use `Dragon-s-Fighting-Spirit-V-2`,
   `Dragons-Fighting-Spirit-V-3-Secret-Rare` and `Dragons-Fighting-Spirit` across three expansions. The
   `idProduct` route makes the whole question moot.
+
+Claim payment page, 2026-08-31:
+
+- Full frontend suite: 1,226 passed across 67 files. Build: 30 of 30 routes, 777 prerendered pages.
+- Locale parity: 1,525 keys in each of the four files, no drift. Three new keys (`claimSheet.eyebrow`,
+  `claimSheet.chargeOn`, `communityVerify.unlockDiscord`); everything else reuses the copy the `/verify` route
+  already had.
+- The unlocks list is rendered on two surfaces (this sheet and the `/verify` rail) and they are kept in step
+  by hand; two lists of what verification buys that disagree would be worse than one. Discord uses
+  `PlatformIcon`, not an mdi icon: the bundled font has no discord glyph and renders an empty gap.
+- The charge date is derived from `FREE_DAYS`, the same number the Edge Function sends Stripe as
+  `trial_period_days`, so it is the real date rather than an approximation. The two must be changed together
+  or the page promises a date Stripe will not honour. Verified live after the free periods were shortened to
+  six months (yearly) and one month (monthly): yearly resolves to 1 March 2027, monthly to 30 September 2026,
+  and switching plan updates the headline, the price line, the date and the button label together.
+- Browser check at 1280x860 and 375x812, both themes. On the phone the offer sits at y=180 and the pay button
+  is fully above the fold at y=595; grid areas reorder the three blocks so the decision leads on a phone and
+  the reasons rejoin the preview in the left column on a desktop.
+- Keyboard: all five controls reachable and focusable, each with a visible ring.
+- Fixed while building: Vuetify's `dialog-bottom-transition` never completes on a `fullscreen` dialog — the
+  content stays parked at `translateY(100%)` with the enter-from class still applied, showing only the header.
+  The sheet uses `fade-transition`. Both dialogs are also kept mounted and switched by `model-value` rather
+  than swapped with `v-if`, which was mounting the sheet already-open so no enter transition ever ran.
+- Also fixed: the pay button hardcoded `#B56EFF`, which is DESIGN.md's dark-theme `button-trade-hover`. In
+  light mode it lightened the button under white label text. It now dims on hover like every other primary.
