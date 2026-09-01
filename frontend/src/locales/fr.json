@@ -95,16 +95,16 @@
     },
     "features": {
       "heading": "Tout pour les cartes que vous collectionnez",
-      "subheading": "Cherchez, construisez, suivez et échangez  un seul endroit pour toute votre collection Yu-Gi-Oh!.",
+      "subheading": "Cherchez, construisez, suivez et échangez : un seul endroit pour toute votre collection Yu-Gi-Oh!.",
       "coreBadge": "ESSENTIEL",
       "search": {
         "title": "Rechercher des cartes",
-        "body": "Un moteur de recherche de cartes rapide et complet  chaque set, rareté et édition à portée de main.",
+        "body": "Un moteur de recherche de cartes rapide et complet : chaque set, rareté et édition à portée de main.",
         "cta": "Explorer la base de données"
       },
       "decks": {
         "title": "Decks",
-        "body": "Construisez vos decks de zéro ou importez une liste  voyez exactement ce que vous possédez et ce qu'il vous manque.",
+        "body": "Construisez vos decks de zéro ou importez une liste. Voyez exactement ce que vous possédez et ce qu'il vous manque.",
         "cta": "Construire ou importer un deck"
       },
       "piles": {
@@ -114,14 +114,14 @@
       },
       "trade": {
         "title": "Échanges",
-        "body": "Ajoutez des cartes à votre pile d'échange et à votre liste de souhaits  nous faisons ressortir les correspondances mutuelles pour des échanges directs, une carte contre une carte.",
+        "body": "Ajoutez des cartes à votre pile d'échange et à votre liste de souhaits. Nous faisons ressortir les correspondances mutuelles pour des échanges directs, une carte contre une carte.",
         "cta": "Trouver mes correspondances"
       }
     },
     "tradeShowcase": {
       "eyebrow": "Le principe clé",
       "heading": "Une carte contre une carte",
-      "body": "Quand votre pile d'échange contient une carte figurant sur la liste de souhaits de quelqu'un  et qu'il possède une carte de la vôtre  One for One signale la correspondance mutuelle. Pas d'argent, pas d'enchères. Juste un échange équitable et direct.",
+      "body": "Quand votre pile d'échange contient une carte figurant sur la liste de souhaits de quelqu'un, et qu'il possède une carte de la vôtre, One for One signale la correspondance mutuelle. Pas d'argent, pas d'enchères. Juste un échange équitable et direct.",
       "cta": "Ouvrir le centre d'échange",
       "labelPile": "Votre pile",
       "labelMatch": "MATCH",
@@ -259,8 +259,8 @@
     "tradePileEmpty": "Aucune carte à échanger pour l'instant. Ajoutez-en pour commencer.",
     "wishlistEmpty": "Votre liste de souhaits est vide. Ajoutez les cartes que vous recherchez.",
     "searchCards": "Rechercher des cartes à ajouter",
-    "emptyTrade": "Rien ici pour l'instant — ajoutez des cartes que vous avez à échanger.",
-    "emptyWish": "Rien ici pour l'instant — ajoutez des cartes que vous recherchez.",
+    "emptyTrade": "Rien ici pour l'instant. Ajoutez des cartes que vous avez à échanger.",
+    "emptyWish": "Rien ici pour l'instant. Ajoutez des cartes que vous recherchez.",
     "addedToWishlist": "\"{name}\" ajouté à la liste de souhaits.",
     "addedToTrade": "\"{name}\" ajouté à la pile d'échange.",
     "viewLabel": "Affichage de la collection",
@@ -314,14 +314,14 @@
     "adding": "Ajout en cours…",
     "added": "{count} carte ajoutée | {count} cartes ajoutées",
     "skipped": "{count} ligne ignorée | {count} lignes ignorées",
-    "noLines": "Rien à ajouter  collez au moins une carte."
+    "noLines": "Rien à ajouter. Collez au moins une carte."
   },
   "tradeCenter": {
     "matches": "Correspondances",
     "proposals": "Propositions",
     "announces": "Annonces",
     "proposalUpdated": "Proposition mise à jour.",
-    "exchangeComplete": "Échange terminé  les cartes ont été mises à jour.",
+    "exchangeComplete": "Échange terminé. Les cartes ont été mises à jour.",
     "yourSideConfirmed": "Votre côté confirmé. En attente de l'autre joueur.",
     "failedToConfirm": "Échec de la confirmation.",
     "tradeAccepted": "Échange accepté !",
@@ -612,9 +612,9 @@
     "noEvents": "Aucun événement enregistré.",
     "anonymous": "Anonyme",
     "cardCount": "0 carte | 1 carte | {count} cartes",
-    "confirmWithoutPhotos": "Il manque des photos d'au moins un côté. Vous pouvez confirmer quand même — elles servent de trace, pas de condition.",
+    "confirmWithoutPhotos": "Il manque des photos d'au moins un côté. Vous pouvez confirmer quand même. Elles servent de trace, pas de condition.",
     "waitingForConfirmDetail": "En attente que {name} confirme.",
-    "bothUploadedConfirmHint": "Les deux photos sont envoyées  confirmez quand vous avez reçu vos cartes.",
+    "bothUploadedConfirmHint": "Les deux photos sont envoyées. Confirmez quand vous avez reçu vos cartes.",
     "chooseReturnCards": "Choisir dans son classeur",
     "chooseReturnCardsHelp": "{name} a choisi des cartes dans votre classeur. Choisissez maintenant dans le sien.",
     "waitingForReturnSelection": "En attente que {name} consulte votre classeur et choisisse des cartes.",
@@ -629,8 +629,8 @@
     "agreementConfirmed": "Accord confirmé.",
     "agreementComplete": "Les deux parties sont d'accord. L'échange est en cours.",
     "valueDifference": "Différence de valeur",
-    "photosVerifiedCanAccept": "Photos vérifiées  vous pouvez maintenant accepter.",
-    "declinePlaceholder": "Optionnel  expliquez pourquoi vous refusez…",
+    "photosVerifiedCanAccept": "Photos vérifiées. Vous pouvez maintenant accepter.",
+    "declinePlaceholder": "Optionnel : expliquez pourquoi vous refusez…",
     "acceptWithoutPhotos": "Aucune des deux parties n'a montré ses cartes. Vous pouvez accepter quand même, mais les photos sont la seule trace de ce qui a été promis.",
     "phaseSelection": "Choix des cartes",
     "phaseAgreement": "Accord",
@@ -671,7 +671,7 @@
     "reviewCount": "{count} avis | {count} avis",
     "openFullPage": "Voir la page complète",
     "back": "Retour",
-    "metaTitle": "{name} — Profil de collectionneur",
+    "metaTitle": "{name} {'|'} Profil de collectionneur",
     "wishlistEmpty": "Liste de souhaits vide.",
     "noCardsForTrade": "Aucune carte listée pour l'échange.",
     "noReviewsYet": "Aucun avis pour l'instant.",
@@ -806,7 +806,7 @@
     }
   },
   "setPage": {
-    "title": "{setName}  Extension Yu-Gi-Oh! | One for One",
+    "title": "{setName} {'|'} Extension Yu-Gi-Oh! {'|'} One for One",
     "cardCount": "0 carte | 1 carte | {count} cartes",
     "notFound": "Extension introuvable",
     "backToSearch": "Retour à la recherche",
@@ -933,7 +933,7 @@
     "openOnCardmarket": "Rechercher sur Cardmarket"
   },
   "tradePhotos": {
-    "desc": "Une trace de ce que chaque partie envoie. Un conseil, pas une obligation — vous pouvez accepter et confirmer sans elles.",
+    "desc": "Une trace de ce que chaque partie envoie. Un conseil, pas une obligation. Vous pouvez accepter et confirmer sans elles.",
     "waitingOne": "En attente d'un côté",
     "noPhotosYet": "Aucune photo",
     "addPhoto": "Ajouter une photo",
@@ -997,7 +997,7 @@
     "mainDeck": "Main Deck",
     "extraDeck": "Extra Deck",
     "sideDeck": "Side Deck",
-    "allOwned": "Rien ne manque — ce deck est jouable.",
+    "allOwned": "Rien ne manque. Ce deck est jouable.",
     "wishlistMissing": "Ajouter les {n} manquantes à la wishlist",
     "costToFinish": "environ {value} pour finir",
     "deckValue": "valeur du deck {value}"
@@ -1024,7 +1024,7 @@
     "orderMissing": "Plus de manquantes",
     "orderNewest": "Plus récents",
     "emptyTitle": "Aucun deck pour l'instant",
-    "emptyBody": "Dépose un fichier .ydk n'importe où sur cette page — exporté d'EDOPro, YGOPRODeck ou Master Duel — et chaque carte sera comparée à celles que tu possèdes déjà.",
+    "emptyBody": "Dépose un fichier .ydk n'importe où sur cette page, exporté d'EDOPro, YGOPRODeck ou Master Duel, et chaque carte sera comparée à celles que tu possèdes déjà.",
     "wishlistMissing": "Wishlist {n}",
     "tallyOwned": "{n} possédées",
     "tallySourced": "{n} trouvées ailleurs",
@@ -1040,53 +1040,53 @@
       "desc": "Consultez une proposition d'échange, ses cartes, photos et modalités."
     },
     "home": {
-      "title": "One for One — Échange de cartes Yu-Gi-Oh! entre particuliers",
-      "desc": "Échangez vos doublons Yu-Gi-Oh! et trouvez les cartes que vous recherchez avec One for One — des échanges directs entre particuliers, sans frais ni enchères, avec un moteur de recherche de cartes complet, un constructeur de decks et une liste de souhaits."
+      "title": "One for One {'|'} Échange de cartes Yu-Gi-Oh! entre particuliers",
+      "desc": "Échangez vos doublons Yu-Gi-Oh! et trouvez les cartes que vous recherchez avec One for One : des échanges directs entre particuliers, sans frais ni enchères, avec un moteur de recherche de cartes complet, un constructeur de decks et une liste de souhaits."
     },
     "search": {
-      "title": "One for One  Échange de Cartes Yu-Gi-Oh!",
-      "titleWithQuery": "{query}  Échange Yu-Gi-Oh! | One for One",
+      "title": "One for One {'|'} Échange de Cartes Yu-Gi-Oh!",
+      "titleWithQuery": "{query} {'|'} Échange Yu-Gi-Oh! {'|'} One for One",
       "desc": "Échangez vos cartes Yu-Gi-Oh! directement avec d'autres collectionneurs. Gérez votre pile d'échange et trouvez des correspondances parfaites près de chez vous.",
       "descWithQuery": "Trouvez des échangeurs pour {query} sur One for One, la plateforme d'échange gratuite."
     },
     "library": {
-      "title": "Ma Collection  One for One",
+      "title": "Ma Collection {'|'} One for One",
       "desc": "Gérez votre collection de cartes Yu-Gi-Oh!, votre pile d'échange et votre liste de souhaits sur One for One."
     },
     "trade": {
-      "title": "Centre d'Échange  One for One",
+      "title": "Centre d'Échange {'|'} One for One",
       "desc": "Parcourez vos correspondances, envoyez des propositions et finalisez vos échanges de cartes sur One for One."
     },
     "account": {
-      "title": "Mon Compte  One for One",
+      "title": "Mon Compte {'|'} One for One",
       "desc": "Gérez votre profil One for One, votre localisation et vos préférences d'échange."
     },
     "card": {
-      "title": "Carte Yu-Gi-Oh!  One for One",
+      "title": "Carte Yu-Gi-Oh! {'|'} One for One",
       "desc": "Échangez des cartes Yu-Gi-Oh! sur One for One. Trouvez des collectionneurs qui les ont ou les cherchent."
     },
     "privacy": {
-      "title": "Politique de Confidentialité  One for One",
+      "title": "Politique de Confidentialité {'|'} One for One",
       "desc": "Politique de confidentialité de One for One, la plateforme d'échange gratuite de cartes Yu-Gi-Oh!."
     },
     "terms": {
-      "title": "Conditions d'utilisation  One for One",
+      "title": "Conditions d'utilisation {'|'} One for One",
       "desc": "Conditions d'utilisation de One for One, la plateforme d'échange gratuite de cartes Yu-Gi-Oh! exploitée par Benjamin Sitbon."
     },
     "cards": {
-      "title": "Parcourir les cartes Yu-Gi-Oh!  One for One",
+      "title": "Parcourir les cartes Yu-Gi-Oh! {'|'} One for One",
       "desc": "Recherchez et filtrez toute la base de cartes Yu-Gi-Oh! par type, attribut, niveau et plus. Trouvez des cartes à ajouter à votre pile d'échange ou votre liste de souhaits sur One for One."
     },
     "combo": {
-      "title": "Explorateur de combos  One for One",
+      "title": "Explorateur de combos {'|'} One for One",
       "desc": "Découvrez toutes les cartes qu'un effet Yu-Gi-Oh! peut rechercher, Invoquer Spécialement ou envoyer au Cimetière. Explorez ce que l'effet de cette carte peut récupérer sur One for One."
     },
     "built-with": {
-      "title": "Soutenir One for One — gratuit, sans frais d'échange",
+      "title": "Soutenir One for One : gratuit, sans frais d'échange",
       "desc": "One for One ne prend aucune commission sur un échange. Deux façons d'aider : un don ponctuel, ou vos achats via nos liens partenaires, sans frais supplémentaires."
     },
     "community": {
-      "title": "Boutiques & communautés",
+      "title": "Boutiques & communautés {'|'} One for One",
       "desc": "Trouvez des boutiques Yu-Gi-Oh, des serveurs Discord et des groupes près de chez vous."
     },
     "trader": {
@@ -1098,21 +1098,21 @@
       "desc": "Une boutique ou communauté Yu-Gi-Oh sur 0nefor.one."
     },
     "communityVerify": {
-      "title": "Vérifier votre communauté | One for One",
+      "title": "Vérifier votre communauté {'|'} One for One",
       "desc": "Prouvez que la boutique, le serveur ou le groupe que vous gérez existe, et activez sa marque de vérification."
     },
     "TradeCenter": {
-      "title": "Centre d'échange — correspondances, propositions et annonces | One for One",
+      "title": "Centre d'échange : correspondances, propositions et annonces {'|'} One for One",
       "desc": "Voyez qui a ce que vous cherchez, répondez aux propositions et publiez vos recherches."
     },
     "archetype": {
-      "title": "Archétypes Yu-Gi-Oh! | One for One",
+      "title": "Archétypes Yu-Gi-Oh! {'|'} One for One",
       "desc": "Parcourez toutes les cartes d'un archétype Yu-Gi-Oh! et trouvez-les chez d'autres collectionneurs sur One for One."
     }
   },
   "deckIgnore": {
     "markSourced": "Marquer {name} comme trouvée ailleurs",
-    "markCopy": "Marquer un {name} de plus comme obtenu ailleurs — {n} sur {max} jusqu'ici",
+    "markCopy": "Marquer un {name} de plus comme obtenu ailleurs ({n} sur {max} jusqu'ici)",
     "countAgain": "Recompter {name} comme manquante"
   },
   "cards": {
@@ -1152,11 +1152,11 @@
     "noEffect": "Aucun effet de combo trouvé",
     "noEffectHint": "Cette carte n'a aucun effet de recherche / invocation / envoi analysable, ou son effet est trop complexe pour être résolu automatiquement.",
     "resolving": "Résolution…",
-    "broad": "Cet effet correspond à un ensemble très large (par ex. n'importe quel monstre)  trop de cartes à lister.",
+    "broad": "Cet effet correspond à un ensemble très large (par ex. n'importe quel monstre) : trop de cartes à lister.",
     "noMatches": "Aucune carte correspondante trouvée.",
     "count": "0 carte | 1 carte | {count} cartes",
     "approximate": "approximatif",
-    "approximateHint": "L'effet contient des conditions (par ex. ATK, logique personnalisée) que l'analyseur ne peut pas lire entièrement  les résultats peuvent être approximatifs.",
+    "approximateHint": "L'effet contient des conditions (par ex. ATK, logique personnalisée) que l'analyseur ne peut pas lire entièrement. Les résultats peuvent être approximatifs.",
     "actions": {
       "search": "Recherche",
       "special_summon": "Invoque Spécialement",
@@ -1319,7 +1319,7 @@
   "builtWith": {
     "back": "Retour",
     "heading": "One for One ne prend aucune commission",
-    "intro": "Aucun frais sur un échange, rien à payer pour publier, pas d'abonnement. Le faire tourner coûte quand même de l'argent — vous pouvez aider de deux façons.",
+    "intro": "Aucun frais sur un échange, rien à payer pour publier, pas d'abonnement. Le faire tourner coûte quand même de l'argent. Vous pouvez aider de deux façons.",
     "ways": {
       "coffee": {
         "eyebrow": "Vous coûte un café",
@@ -1353,6 +1353,7 @@
   "community": {
     "home": "Communauté",
     "directoryTitle": "Boutiques & communautés",
+    "directoryHeading": "Trouvez un lieu où échanger",
     "directorySubtitle": "Trouvez des boutiques Yu-Gi-Oh, des serveurs Discord et des groupes près de chez vous.",
     "foundAll": "Aucun lieu pour l'instant | 1 lieu | {n} lieux",
     "foundFor": "Rien pour « {q} » | 1 lieu pour « {q} » | {n} lieux pour « {q} »",
@@ -1525,7 +1526,7 @@
     "billingEnds": "Se termine le {date}",
     "billingEndsHint": "Réactivez avant cette date pour le conserver.",
     "billingTrial": "Gratuit jusqu'au {date}",
-    "billingPastDue": "Le paiement a échoué — nous réessayons. Mettez votre carte à jour pour ne pas perdre le badge.",
+    "billingPastDue": "Le paiement a échoué. Nous réessayons. Mettez votre carte à jour pour ne pas perdre le badge.",
     "billingLapsed": "Cet abonnement est terminé.",
     "billingNone": "Aucun abonnement.",
     "billingDiscord": "Votre abonnement de serveur le finance. Résiliez-le ou modifiez-le dans les paramètres d'abonnement de Discord.",
@@ -1544,7 +1545,7 @@
     "listingCount": "aucune annonce | 1 annonce | {n} annonces",
     "listedOts": "Issue de l'annuaire des Official Tournament Stores de Konami.",
     "listedPlain": "Inscrite à l'annuaire des communautés.",
-    "listedBody": "Personne de la boutique ne l'a encore revendiquée — revendique-la et la page est à toi.",
+    "listedBody": "Personne de la boutique ne l'a encore revendiquée. Revendique-la et la page est à toi.",
     "gone": "Cette page n'existe pas.",
     "fieldAddress": "Numéro et rue",
     "fieldPostal": "Code postal",
@@ -1728,7 +1729,7 @@
     "loadFailed": "Impossible de lire votre collection. Actualisez pour réessayer.",
     "trade": {
       "title": "Que souhaitez-vous échanger ?",
-      "blurb": "Ajoutez les cartes dont vous acceptez de vous séparer. Nous les comparons à ce que les autres recherchent — cinq suffisent pour commencer.",
+      "blurb": "Ajoutez les cartes dont vous acceptez de vous séparer. Nous les comparons à ce que les autres recherchent. Cinq suffisent pour commencer.",
       "short": "Pile d'échange",
       "pileLabel": "Votre pile d'échange",
       "pileEmpty": "Rien pour l'instant. Ajoutez une carte ci-dessus."
@@ -1745,7 +1746,7 @@
       "blurb": "Votre collection est en ligne. Les correspondances se mettent à jour toutes seules à mesure que d'autres joueurs ajoutent des cartes.",
       "short": "Terminé",
       "matches": "{count} joueur vous correspond déjà | {count} joueurs vous correspondent déjà",
-      "noMatchesYet": "Aucune correspondance pour l'instant — elles apparaîtront dès que d'autres joueurs ajouteront des cartes.",
+      "noMatchesYet": "Aucune correspondance pour l'instant. Elles apparaîtront dès que d'autres joueurs ajouteront des cartes.",
       "cta": "Voir mes correspondances",
       "toCollection": "Aller à l'application"
     },
@@ -1778,7 +1779,7 @@
     "inlineRetry": "Vérifiez votre numéro, puis renvoyez. Votre sélection est conservée.",
     "numberError": {
       "empty": "Saisissez votre numéro de téléphone.",
-      "notDigits": "Chiffres uniquement — pas de lettres ni d'extension.",
+      "notDigits": "Chiffres uniquement. Pas de lettres ni d'extension.",
       "tooShort": "Ce numéro semble trop court.",
       "tooLong": "Ce numéro semble trop long.",
       "noCountry": "Choisissez d'abord votre pays."
@@ -1792,7 +1793,7 @@
       "smsUnavailable": "La vérification par SMS est indisponible pour le moment. Réessayez plus tard.",
       "generic": "Une erreur est survenue. Veuillez réessayer.",
       "regionBlocked": "Ce pays n'est pas encore activé pour les SMS de notre côté. Signalez-le-nous pour que nous l'activions.",
-      "providerAuth": "La vérification par SMS ne fonctionne pas pour le moment. Le problème vient de chez nous, pas de votre numéro — réessayez plus tard.",
+      "providerAuth": "La vérification par SMS ne fonctionne pas pour le moment. Le problème vient de chez nous, pas de votre numéro. Réessayez plus tard.",
       "trialNumber": "La vérification par SMS est temporairement indisponible pour ce numéro. Réessayez dans un instant.",
       "unsubscribed": "Ce numéro s'est désabonné de nos messages. Répondez START à notre numéro, ou utilisez un autre numéro."
     },
@@ -1844,7 +1845,7 @@
     "removeConfirm": "Retirer définitivement",
     "removing": "Retrait…",
     "needPrinting": "Choisissez l'édition de cet exemplaire.",
-    "needQuantity": "Indiquez le nombre d'exemplaires — au moins un.",
+    "needQuantity": "Indiquez le nombre d'exemplaires, au moins un.",
     "reservedFloor": "{count} engagé(s) dans un échange que vous avez accepté.",
     "reservedRemove": "Engagé dans un échange que vous avez accepté : impossible de le retirer.",
     "saveFailed": "L'enregistrement a échoué. Réessayez."

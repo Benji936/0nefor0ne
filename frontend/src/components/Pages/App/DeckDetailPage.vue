@@ -107,7 +107,7 @@ async function load() {
 }
 
 useHead(computed(() => ({
-  title: deck.value ? `${deck.value.name} — One for One` : `${t("decks.title")} — One for One`,
+  title: deck.value ? `${deck.value.name} | One for One` : `${t("decks.title")} | One for One`,
   meta: [{ name: "robots", content: "noindex" }],
 })));
 

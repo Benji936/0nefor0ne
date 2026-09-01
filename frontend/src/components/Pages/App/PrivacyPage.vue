@@ -59,11 +59,11 @@ const SECTIONS = [
   {
     title: "What we collect",
     body: [
-      "<strong style=\"color: inherit\">Account data</strong> — your email address and the password hash managed by Supabase Auth. We never see your raw password.",
-      "<strong style=\"color: inherit\">Profile data</strong> — your display name, optional avatar URL, and optional location (country and city) that you provide to help nearby traders find each other.",
-      "<strong style=\"color: inherit\">Phone number</strong> — only if you choose to trade. We ask for it before your first trade so that one account means one person, which is what stops somebody creating throwaway accounts to defraud other traders. It is stored by Supabase Auth, is never shown to other users, and is never used to contact you for anything other than the verification code.",
-      "<strong style=\"color: inherit\">Card data</strong> — the cards you add to your trade pile and wishlist, and the trade proposals you send or receive.",
-      "<strong style=\"color: inherit\">Usage data</strong> — standard server logs (IP address, browser type, pages visited) retained for up to 30 days for security and debugging.",
+      "<strong style=\"color: inherit\">Account data</strong>: your email address and the password hash managed by Supabase Auth. We never see your raw password.",
+      "<strong style=\"color: inherit\">Profile data</strong>: your display name, optional avatar URL, and optional location (country and city) that you provide to help nearby traders find each other.",
+      "<strong style=\"color: inherit\">Phone number</strong>: only if you choose to trade. We ask for it before your first trade so that one account means one person, which is what stops somebody creating throwaway accounts to defraud other traders. It is stored by Supabase Auth, is never shown to other users, and is never used to contact you for anything other than the verification code.",
+      "<strong style=\"color: inherit\">Card data</strong>: the cards you add to your trade pile and wishlist, and the trade proposals you send or receive.",
+      "<strong style=\"color: inherit\">Usage data</strong>: standard server logs (IP address, browser type, pages visited) retained for up to 30 days for security and debugging.",
     ],
   },
   {
@@ -77,10 +77,10 @@ const SECTIONS = [
   {
     title: "Third-party services",
     body: [
-      "<strong style=\"color: inherit\">Supabase</strong> — our database and authentication provider. Your data is stored on Supabase's infrastructure (EU region). See <a href=\"https://supabase.com/privacy\" target=\"_blank\" rel=\"noopener\" style=\"color: var(--c-trade)\">supabase.com/privacy</a>.",
-      "<strong style=\"color: inherit\">SMS delivery</strong> — if you verify a phone number, it is passed to the SMS provider configured by Supabase Auth solely to deliver your one-time code. It is not used for marketing.",
-      "<strong style=\"color: inherit\">YGOProdeck API</strong> — used to fetch public Yu-Gi-Oh! card information (names, images, set data). No personal data is sent to this service.",
-      "<strong style=\"color: inherit\">Google AdSense</strong> — we display ads to cover hosting costs. Google may use cookies to personalise ads. See <a href=\"https://policies.google.com/privacy\" target=\"_blank\" rel=\"noopener\" style=\"color: var(--c-trade)\">Google's Privacy Policy</a>.",
+      "<strong style=\"color: inherit\">Supabase</strong>: our database and authentication provider. Your data is stored on Supabase's infrastructure (EU region). See <a href=\"https://supabase.com/privacy\" target=\"_blank\" rel=\"noopener\" style=\"color: var(--c-trade)\">supabase.com/privacy</a>.",
+      "<strong style=\"color: inherit\">SMS delivery</strong>: if you verify a phone number, it is passed to the SMS provider configured by Supabase Auth solely to deliver your one-time code. It is not used for marketing.",
+      "<strong style=\"color: inherit\">YGOProdeck API</strong>: used to fetch public Yu-Gi-Oh! card information (names, images, set data). No personal data is sent to this service.",
+      "<strong style=\"color: inherit\">Google AdSense</strong>: we display ads to cover hosting costs. Google may use cookies to personalise ads. See <a href=\"https://policies.google.com/privacy\" target=\"_blank\" rel=\"noopener\" style=\"color: var(--c-trade)\">Google's Privacy Policy</a>.",
     ],
   },
   {

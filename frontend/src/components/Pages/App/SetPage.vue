@@ -137,7 +137,7 @@ export default {
         return {
           title: 'Yu-Gi-Oh! Set | One for One',
           meta: [
-            { name: 'description', content: 'Browse Yu-Gi-Oh! card sets on One for One — the free trading platform.' },
+            { name: 'description', content: 'Browse Yu-Gi-Oh! card sets on One for One: the free trading platform.' },
             { property: 'og:title', content: 'Yu-Gi-Oh! Set | One for One' },
             { property: 'og:description', content: 'Browse Yu-Gi-Oh! card sets on One for One.' },
             { property: 'og:image', content: 'https://0nefor.one/logo.png' },
@@ -163,22 +163,22 @@ export default {
       }
 
       const { setName, cards } = data
-      const desc = `Browse all ${cards.length} cards in the ${setName} Yu-Gi-Oh! set. Trade or find them on One for One — the free card trading platform.`
+      const desc = `Browse all ${cards.length} cards in the ${setName} Yu-Gi-Oh! set. Trade or find them on One for One: the free card trading platform.`
       const truncDesc = desc.length > 155 ? desc.slice(0, 155) + '…' : desc
       const ogImage = cards[0]?.image ?? 'https://0nefor.one/logo.png'
       const canonicalUrl = `https://0nefor.one/${route.params.locale || 'en'}/set/${encodeURIComponent(setName)}`
 
       return {
-        title: `${setName} — Yu-Gi-Oh! Set | One for One`,
+        title: `${setName} | Yu-Gi-Oh! Set | One for One`,
         meta: [
           { name: 'description', content: truncDesc },
-          { property: 'og:title', content: `${setName} — Yu-Gi-Oh! Set | One for One` },
+          { property: 'og:title', content: `${setName} | Yu-Gi-Oh! Set | One for One` },
           { property: 'og:description', content: truncDesc },
           { property: 'og:image', content: ogImage },
           { property: 'og:url', content: canonicalUrl },
           { property: 'og:type', content: 'website' },
           { name: 'twitter:card', content: 'summary' },
-          { name: 'twitter:title', content: `${setName} — Yu-Gi-Oh! Set | One for One` },
+          { name: 'twitter:title', content: `${setName} | Yu-Gi-Oh! Set | One for One` },
           { name: 'twitter:description', content: truncDesc },
           { name: 'twitter:image', content: ogImage },
         ],
