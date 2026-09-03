@@ -99,6 +99,10 @@ export default defineConfig(({ command }) => ({
         included.push(`/en/card/${id}`)
       }
 
+      // Hubs for the set and archetype spokes. English-only, same as they are.
+      included.push('/en/sets')
+      included.push('/en/archetypes')
+
       // Set pages — English-only (set names are always English)
       for (const setName of TOP_SET_SLUGS) {
         included.push('/en/set/' + encodeURIComponent(setName))

@@ -45,6 +45,8 @@ const ROUTES = [
   ...sampleCardIds(8).map(id => ({ path: `/en/card/${id}`, type: 'card' })),
   ...TOP_SET_SLUGS.slice(0, 3).map(s => ({ path: `/en/set/${encodeURIComponent(s)}`, type: 'set' })),
   ...ARCHETYPES.slice(0, 3).map(a => ({ path: `/en/archetype/${a.slug}`, type: 'archetype' })),
+  { path: '/en/sets',       type: 'hub' },
+  { path: '/en/archetypes', type: 'hub' },
 ]
 
 // Page types whose whole purpose is content a crawler can read. The skeleton
@@ -163,6 +165,24 @@ for (const { path, type } of ROUTES) {
       ['no fr/de/it hreflang alternates',
         !/hreflang="(fr|de|it)"/.test(html)],
     ] : []),
+    // Hubs: the whole point of /en/sets and /en/archetypes is to be the one
+    // internal route into 559 spoke pages, so assert the links are actually in
+    // the rendered body rather than trusting the head. The hreflang check
+    // guards a specific regression: the hubs are English-only and 301 from the
+    // other three locales, but they have no trailing path segment, so the
+    // English-only test in App.vue needs a second branch to catch them. Lose
+    // that branch and they advertise three alternates that redirect, which
+    // discards the whole cluster — exactly what happened to set pages once.
+    ...(type === 'hub' ? (() => {
+      const spoke = path.endsWith('/sets') ? '/en/set/' : '/en/archetype/'
+      const expected = path.endsWith('/sets') ? TOP_SET_SLUGS.length : ARCHETYPES.length
+      const links = new Set([...html.matchAll(/href="(\/en\/(?:set|archetype)\/[^"]+)"/g)].map(m => m[1]))
+      return [
+        ['no fr/de/it hreflang alternates', !/hreflang="(fr|de|it)"/.test(html)],
+        [`links to all ${expected} spokes (found ${links.size})`, links.size >= expected],
+        [`spoke links point at ${spoke}`, [...links].every(l => l.startsWith(spoke))],
+      ]
+    })() : []),
     // Archetype pages: the card list is the page, so assert the structured data
     // that describes it actually made it out.
     ...(type === 'archetype' ? (() => {

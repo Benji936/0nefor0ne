@@ -40,6 +40,12 @@ const localeChildren = [
   { path: "combo/:id", name: "combo",       component: () => import(/* webpackChunkName: "combo" */       "@/components/Pages/App/ComboExplorer.vue") },
   { path: 'set/:setSlug', name: 'set', component: () => import(/* webpackChunkName: "set" */ '@/components/Pages/App/SetPage.vue') },
   { path: 'archetype/:slug', name: 'archetype', component: () => import(/* webpackChunkName: "archetype" */ '@/components/Pages/App/ArchetypePage.vue') },
+  // Hubs for the two spoke families above. 559 set and archetype pages existed
+  // with nothing linking to them from one place, so they carried no internal
+  // PageRank and the site offered no page to rank for "yugioh archetypes" or
+  // "yugioh card sets". English-only for the same reason the spokes are.
+  { path: 'sets', name: 'sets', component: () => import(/* webpackChunkName: "sets" */ '@/components/Pages/App/SetsIndexPage.vue') },
+  { path: 'archetypes', name: 'archetypes', component: () => import(/* webpackChunkName: "archetypes" */ '@/components/Pages/App/ArchetypesIndexPage.vue') },
   { path: "privacy",   name: "privacy",     component: () => import(/* webpackChunkName: "privacy" */     "@/components/Pages/App/PrivacyPage.vue") },
   { path: "terms",     name: "terms",       component: () => import(/* webpackChunkName: "terms" */       "@/components/Pages/App/TermsPage.vue") },
   { path: "built-with", name: "built-with", component: () => import(/* webpackChunkName: "built-with" */  "@/components/Pages/App/BuiltWithPage.vue") },
@@ -80,6 +86,8 @@ export const routes = [
   { path: "/combo/:id", redirect: (to) => `/${detectLocale()}/combo/${to.params.id}` },
   { path: '/set/:setSlug', redirect: to => '/en/set/' + to.params.setSlug },
   { path: '/archetype/:slug', redirect: to => '/en/archetype/' + to.params.slug },
+  { path: '/sets', redirect: () => '/en/sets' },
+  { path: '/archetypes', redirect: () => '/en/archetypes' },
 
   // OAuth callback safety net: Supabase may strip the redirectTo and land on the
   // Site URL root, OR it may redirect to /auth/callback without a locale prefix.
@@ -90,6 +98,8 @@ export const routes = [
   // things that only exist in English, so a translated URL would be a duplicate.
   { path: '/:locale(fr|de|it)/set/:setSlug', redirect: to => '/en/set/' + to.params.setSlug },
   { path: '/:locale(fr|de|it)/archetype/:slug', redirect: to => '/en/archetype/' + to.params.slug },
+  { path: '/:locale(fr|de|it)/sets', redirect: () => '/en/sets' },
+  { path: '/:locale(fr|de|it)/archetypes', redirect: () => '/en/archetypes' },
 
   // Locale-prefixed parent — validates locale and activates it
   {

@@ -201,15 +201,14 @@ export default {
                 })),
               },
             }),
-            // See SetPage: /en/cards is the middle rung because it exists and
-            // lists cards. There is no /en/archetypes index to point at, so
-            // this is the only hierarchy signal 529 archetype pages emit.
+            // See SetPage: the middle rung is now /en/archetypes, the hub that
+            // lists all 529 of these and is their only internal parent.
             ldScript({
               '@context': 'https://schema.org',
               '@type': 'BreadcrumbList',
               itemListElement: [
                 { '@type': 'ListItem', position: 1, name: 'Home',         item: `${BASE}/en/` },
-                { '@type': 'ListItem', position: 2, name: 'Browse Cards', item: `${BASE}/en/cards` },
+                { '@type': 'ListItem', position: 2, name: 'Archetypes',  item: `${BASE}/en/archetypes` },
                 { '@type': 'ListItem', position: 3, name: `${name} archetype`, item: canonical },
               ],
             })]

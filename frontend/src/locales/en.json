@@ -1108,6 +1108,10 @@
     "archetype": {
       "title": "Yu-Gi-Oh! Archetypes {'|'} One for One",
       "desc": "Browse every card in a Yu-Gi-Oh! archetype and find them in other collectors' trade piles on One for One."
+    },
+    "archetypes": {
+      "title": "Every Yu-Gi-Oh! Archetype {'|'} One for One",
+      "desc": "Every Yu-Gi-Oh! archetype with its full card list, art and card text. Find the cards you need and the collectors trading them."
     }
   },
   "deckIgnore": {
@@ -1856,5 +1860,14 @@
   "claimSheet": {
     "eyebrow": "Claiming",
     "chargeOn": "Your card is added now. Nothing is charged until {date}."
+  },
+  "setsIndex": {
+    "heading": "Every Yu-Gi-Oh! card set",
+    "intro": "Browse all {count} Yu-Gi-Oh! sets on One for One. Open a set to see every card in it, with rarities and set codes, and find collectors trading them."
+  },
+  "archetypesIndex": {
+    "heading": "Every Yu-Gi-Oh! archetype",
+    "intro": "All {count} Yu-Gi-Oh! archetypes, from Abyss to Zoodiac. Open one to see every card it contains, with art and card text. The number beside each name is how many cards it has.",
+    "jumpLabel": "Jump to a letter"
   }
 }
