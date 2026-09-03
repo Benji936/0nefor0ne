@@ -5,6 +5,15 @@ import { fileURLToPath } from 'node:url'
 import { TOP_CARD_IDS } from '../src/data/card-ids.js'
 import { TOP_SET_SLUGS } from '../src/data/set-slugs.js'
 import { ARCHETYPES } from '../src/data/archetype-slugs.js'
+import EN from '../src/locales/en.json' with { type: 'json' }
+
+// App.vue resolves meta.<route.name>.* and falls back to meta.search.* when the
+// key is absent, so a page missing its meta entry does not fail or render a raw
+// key — it quietly serves the generic site title. /en/sets shipped that way:
+// meta.sets was dropped from the locale files while meta.archetypes survived,
+// and every other check passed because a title, a description and a canonical
+// were all present and well-formed. They were just the wrong ones.
+const GENERIC_TITLE = EN.meta.search.title.replace(/\{'\|'\}/g, '|')
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const DIST = resolve(__dirname, '../dist')
@@ -179,6 +188,8 @@ for (const { path, type } of ROUTES) {
       const links = new Set([...html.matchAll(/href="(\/en\/(?:set|archetype)\/[^"]+)"/g)].map(m => m[1]))
       return [
         ['no fr/de/it hreflang alternates', !/hreflang="(fr|de|it)"/.test(html)],
+        ['title is the hub\'s own, not the meta.search fallback',
+          (html.match(/<title>([^<]*)<\/title>/)?.[1] ?? '') !== GENERIC_TITLE],
         [`links to all ${expected} spokes (found ${links.size})`, links.size >= expected],
         [`spoke links point at ${spoke}`, [...links].every(l => l.startsWith(spoke))],
       ]

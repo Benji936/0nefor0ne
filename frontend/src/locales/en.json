@@ -1112,6 +1112,10 @@
     "archetypes": {
       "title": "Every Yu-Gi-Oh! Archetype {'|'} One for One",
       "desc": "Every Yu-Gi-Oh! archetype with its full card list, art and card text. Find the cards you need and the collectors trading them."
+    },
+    "sets": {
+      "title": "Every Yu-Gi-Oh! Card Set {'|'} One for One",
+      "desc": "Browse every Yu-Gi-Oh! card set with full card lists, rarities and set codes. Free on One for One."
     }
   },
   "deckIgnore": {

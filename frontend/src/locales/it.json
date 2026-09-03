@@ -1112,6 +1112,10 @@
     "archetypes": {
       "title": "Tutti gli archetipi Yu-Gi-Oh! {'|'} One for One",
       "desc": "Ogni archetipo Yu-Gi-Oh! con la lista completa delle carte, illustrazioni e testo. Trova le carte che ti servono."
+    },
+    "sets": {
+      "title": "Tutti i set di carte Yu-Gi-Oh! {'|'} One for One",
+      "desc": "Sfoglia ogni set di carte Yu-Gi-Oh! con liste complete, rarità e codici. Gratis su One for One."
     }
   },
   "deckIgnore": {
