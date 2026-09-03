@@ -411,7 +411,7 @@ describe("the support page keeps Ko-fi's blue on Ko-fi's button", () => {
   // #72A4F2 is Ko-fi's brand colour, and the page is entitled to it on the
   // button that goes to Ko-fi — the shop marks work the same way. What it is
   // not entitled to is the panel's border, its gradient and its drop shadow,
-  // which is where it was: the most saturated thing on a One for One page
+  // which is where it was: the most saturated thing on a NoBinder page
   // belonged to somebody else.
   const src = read("../components/Pages/App/BuiltWithPage.vue");
 

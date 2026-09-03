@@ -65,7 +65,7 @@ export function verifyStep({ community, claim, viewerId, justPaid = false } = {}
   if (community.owner !== viewerId) return { step: "not-owner" };
 
   // A Guild Subscription bought inside Discord pays for the same thing. It is
-  // checked before subscription_status, not after: One for One holds a
+  // checked before subscription_status, not after: NoBinder holds a
   // cancelled Stripe row and a live Discord entitlement, and reading the Stripe
   // column first would show "your subscription ended" to somebody who is paying
   // right now, then ask them to pay twice.

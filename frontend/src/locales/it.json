@@ -24,7 +24,7 @@
   },
   "hero": {
     "headline": "Scambia i tuoi doppioni.<br>Caccia i tuoi obiettivi.",
-    "subheadline": "One for One mette in contatto i collezionisti Yu-Gi-Oh! che hanno ciò che l'altro cerca. Senza commissioni, senza aste, solo scambi diretti.",
+    "subheadline": "NoBinder mette in contatto i collezionisti Yu-Gi-Oh! che hanno ciò che l'altro cerca. Senza commissioni, senza aste, solo scambi diretti.",
     "cta": "Inizia gratuitamente",
     "learnMore": "Come funziona",
     "steps": {
@@ -54,9 +54,9 @@
     "hero": {
       "eyebrow": "Scambi Yu-Gi-Oh! tra giocatori",
       "eyebrowAuthed": "Bentornato",
-      "productName": "One for One",
+      "productName": "NoBinder",
       "headline": "Scambia i doppioni.<br>Trova le carte che cerchi.",
-      "subheadline": "One for One mette in contatto i collezionisti Yu-Gi-Oh! che hanno ciò che gli altri cercano. Niente commissioni, niente aste: solo scambi diretti tra giocatori, con un motore di ricerca carte completo, un costruttore di deck e una lista desideri.",
+      "subheadline": "NoBinder mette in contatto i collezionisti Yu-Gi-Oh! che hanno ciò che gli altri cercano. Niente commissioni, niente aste: solo scambi diretti tra giocatori, con un motore di ricerca carte completo, un costruttore di deck e una lista desideri.",
       "ctaGetStarted": "Inizia, è gratis",
       "ctaGetStartedShort": "Inizia",
       "ctaGoToApp": "Vai all'app",
@@ -121,7 +121,7 @@
     "tradeShowcase": {
       "eyebrow": "Il principio fondamentale",
       "heading": "Una carta per una carta",
-      "body": "Quando il tuo mucchio di scambio contiene una carta presente nella lista dei desideri di qualcuno, e lui ne ha una della tua, One for One segnala la corrispondenza reciproca. Niente soldi, niente offerte. Solo uno scambio equo e diretto.",
+      "body": "Quando il tuo mucchio di scambio contiene una carta presente nella lista dei desideri di qualcuno, e lui ne ha una della tua, NoBinder segnala la corrispondenza reciproca. Niente soldi, niente offerte. Solo uno scambio equo e diretto.",
       "cta": "Apri il centro scambi",
       "labelPile": "Il tuo mucchio",
       "labelMatch": "MATCH",
@@ -155,8 +155,8 @@
     },
     "donate": {
       "eyebrow": "Supporto",
-      "heading": "Mantieni One for One gratuito",
-      "body": "One for One è creato e gestito da una sola persona, senza commissioni e senza pubblicità. Se il sito ti fa risparmiare tempo, una piccola mancia aiuta a coprire i server e mantiene ogni funzione gratuita per tutti.",
+      "heading": "Mantieni NoBinder gratuito",
+      "body": "NoBinder è creato e gestito da una sola persona, senza commissioni e senza pubblicità. Se il sito ti fa risparmiare tempo, una piccola mancia aiuta a coprire i server e mantiene ogni funzione gratuita per tutti.",
       "bullets": {
         "servers": "Copre l'hosting e i costi di gestione",
         "free": "Mantiene tutto il sito gratuito, senza pubblicità",
@@ -177,7 +177,7 @@
       "terms": "Termini",
       "termsOfService": "Termini di servizio",
       "contact": "Contatti",
-      "copyright": "© 2026 One for One di Benjamin Sitbon. Non affiliato a Konami. Yu-Gi-Oh! è un marchio dei rispettivi proprietari.",
+      "copyright": "© 2026 NoBinder di Benjamin Sitbon. Non affiliato a Konami. Yu-Gi-Oh! è un marchio dei rispettivi proprietari.",
       "privacyPolicy": "Informativa sulla privacy",
       "builtWith": "Realizzato con",
       "builtWithStripTitle": "Realizzato con & partner"
@@ -652,7 +652,7 @@
     "communitiesTitle": "Community",
     "signedOutLead": "{count} carta disponibile allo scambio. | {count} carte disponibili allo scambio.",
     "signedOutCta": "Accedi per vedere le tue corrispondenze",
-    "shareDesc": "{name} ha {count} carte disponibili allo scambio su One for One. {where}.",
+    "shareDesc": "{name} ha {count} carte disponibili allo scambio su NoBinder. {where}.",
     "binderRarity": "Filtra per rarità",
     "binderAllRarities": "Tutte le rarità",
     "listingsTitle": "Annunci attivi",
@@ -806,7 +806,7 @@
     }
   },
   "setPage": {
-    "title": "{setName} {'|'} Set Yu-Gi-Oh! {'|'} One for One",
+    "title": "{setName} {'|'} Set Yu-Gi-Oh! {'|'} NoBinder",
     "cardCount": "0 carte | 1 carta | {count} carte",
     "notFound": "Set non trovato",
     "backToSearch": "Torna alla ricerca",
@@ -1040,53 +1040,53 @@
       "desc": "Consulta una proposta di scambio, le carte, le foto e le modalità."
     },
     "home": {
-      "title": "One for One {'|'} Scambio di carte Yu-Gi-Oh! tra giocatori",
-      "desc": "Scambia i doppioni Yu-Gi-Oh! e trova le carte che cerchi con One for One: scambi diretti tra giocatori, senza commissioni né aste, con un motore di ricerca carte completo, un costruttore di deck e una lista desideri."
+      "title": "NoBinder {'|'} Scambio di carte Yu-Gi-Oh! tra giocatori",
+      "desc": "Scambia i doppioni Yu-Gi-Oh! e trova le carte che cerchi con NoBinder: scambi diretti tra giocatori, senza commissioni né aste, con un motore di ricerca carte completo, un costruttore di deck e una lista desideri."
     },
     "search": {
-      "title": "One for One {'|'} Scambio Carte Yu-Gi-Oh!",
-      "titleWithQuery": "{query} {'|'} Scambio Yu-Gi-Oh! {'|'} One for One",
+      "title": "NoBinder {'|'} Scambio Carte Yu-Gi-Oh!",
+      "titleWithQuery": "{query} {'|'} Scambio Yu-Gi-Oh! {'|'} NoBinder",
       "desc": "Scambia carte Yu-Gi-Oh! direttamente con altri collezionisti. Gestisci la tua pila di scambio e trova corrispondenze perfette vicino a te.",
-      "descWithQuery": "Trova trader per {query} su One for One, la piattaforma di scambio gratuita."
+      "descWithQuery": "Trova trader per {query} su NoBinder, la piattaforma di scambio gratuita."
     },
     "library": {
-      "title": "La Mia Collezione {'|'} One for One",
-      "desc": "Gestisci la tua collezione di carte Yu-Gi-Oh!, la pila di scambio e la lista dei desideri su One for One."
+      "title": "La Mia Collezione {'|'} NoBinder",
+      "desc": "Gestisci la tua collezione di carte Yu-Gi-Oh!, la pila di scambio e la lista dei desideri su NoBinder."
     },
     "trade": {
-      "title": "Centro Scambi {'|'} One for One",
-      "desc": "Sfoglia i tuoi match, invia proposte e completa gli scambi di carte su One for One."
+      "title": "Centro Scambi {'|'} NoBinder",
+      "desc": "Sfoglia i tuoi match, invia proposte e completa gli scambi di carte su NoBinder."
     },
     "account": {
-      "title": "Il Mio Account {'|'} One for One",
-      "desc": "Gestisci il tuo profilo One for One, la posizione e le preferenze di scambio."
+      "title": "Il Mio Account {'|'} NoBinder",
+      "desc": "Gestisci il tuo profilo NoBinder, la posizione e le preferenze di scambio."
     },
     "card": {
-      "title": "Carta Yu-Gi-Oh! {'|'} One for One",
-      "desc": "Scambia carte Yu-Gi-Oh! su One for One. Trova collezionisti che le possiedono o le cercano."
+      "title": "Carta Yu-Gi-Oh! {'|'} NoBinder",
+      "desc": "Scambia carte Yu-Gi-Oh! su NoBinder. Trova collezionisti che le possiedono o le cercano."
     },
     "privacy": {
-      "title": "Informativa sulla Privacy {'|'} One for One",
-      "desc": "Informativa sulla privacy di One for One, la piattaforma di scambio gratuita di carte Yu-Gi-Oh!."
+      "title": "Informativa sulla Privacy {'|'} NoBinder",
+      "desc": "Informativa sulla privacy di NoBinder, la piattaforma di scambio gratuita di carte Yu-Gi-Oh!."
     },
     "terms": {
-      "title": "Termini di servizio {'|'} One for One",
-      "desc": "Termini di servizio di One for One, la piattaforma gratuita di scambio di carte Yu-Gi-Oh! gestita da Benjamin Sitbon."
+      "title": "Termini di servizio {'|'} NoBinder",
+      "desc": "Termini di servizio di NoBinder, la piattaforma gratuita di scambio di carte Yu-Gi-Oh! gestita da Benjamin Sitbon."
     },
     "cards": {
-      "title": "Sfoglia le carte Yu-Gi-Oh! {'|'} One for One",
-      "desc": "Cerca e filtra l'intero database di carte Yu-Gi-Oh! per tipo, attributo, livello e altro. Trova carte da aggiungere al tuo mazzo di scambio o alla lista desideri su One for One."
+      "title": "Sfoglia le carte Yu-Gi-Oh! {'|'} NoBinder",
+      "desc": "Cerca e filtra l'intero database di carte Yu-Gi-Oh! per tipo, attributo, livello e altro. Trova carte da aggiungere al tuo mazzo di scambio o alla lista desideri su NoBinder."
     },
     "combo": {
-      "title": "Esploratore di combo {'|'} One for One",
-      "desc": "Scopri ogni carta che un effetto Yu-Gi-Oh! può cercare, Evocare Specialmente o mandare al Cimitero. Esplora cosa può recuperare l'effetto di questa carta su One for One."
+      "title": "Esploratore di combo {'|'} NoBinder",
+      "desc": "Scopri ogni carta che un effetto Yu-Gi-Oh! può cercare, Evocare Specialmente o mandare al Cimitero. Esplora cosa può recuperare l'effetto di questa carta su NoBinder."
     },
     "built-with": {
-      "title": "Sostieni One for One: gratis, senza commissioni",
-      "desc": "One for One non trattiene nulla sugli scambi. Due modi per aiutare: una donazione una tantum, o i tuoi acquisti tramite i nostri link, senza costi aggiuntivi."
+      "title": "Sostieni NoBinder: gratis, senza commissioni",
+      "desc": "NoBinder non trattiene nulla sugli scambi. Due modi per aiutare: una donazione una tantum, o i tuoi acquisti tramite i nostri link, senza costi aggiuntivi."
     },
     "community": {
-      "title": "Negozi & community {'|'} One for One",
+      "title": "Negozi & community {'|'} NoBinder",
       "desc": "Trova negozi Yu-Gi-Oh, server Discord e gruppi vicino a te."
     },
     "trader": {
@@ -1098,24 +1098,24 @@
       "desc": "Un negozio o una community Yu-Gi-Oh su 0nefor.one."
     },
     "communityVerify": {
-      "title": "Verifica la tua community {'|'} One for One",
+      "title": "Verifica la tua community {'|'} NoBinder",
       "desc": "Dimostra che il negozio, il server o il gruppo che gestisci esiste davvero, e attiva il segno di verifica."
     },
     "TradeCenter": {
-      "title": "Centro scambi: corrispondenze, proposte e annunci {'|'} One for One",
+      "title": "Centro scambi: corrispondenze, proposte e annunci {'|'} NoBinder",
       "desc": "Scopri chi ha ciò che cerchi, rispondi alle proposte e pubblica le tue richieste."
     },
     "archetype": {
-      "title": "Archetipi Yu-Gi-Oh! {'|'} One for One",
-      "desc": "Sfoglia tutte le carte di un archetipo Yu-Gi-Oh! e trovale nelle collezioni di altri giocatori su One for One."
+      "title": "Archetipi Yu-Gi-Oh! {'|'} NoBinder",
+      "desc": "Sfoglia tutte le carte di un archetipo Yu-Gi-Oh! e trovale nelle collezioni di altri giocatori su NoBinder."
     },
     "archetypes": {
-      "title": "Tutti gli archetipi Yu-Gi-Oh! {'|'} One for One",
+      "title": "Tutti gli archetipi Yu-Gi-Oh! {'|'} NoBinder",
       "desc": "Ogni archetipo Yu-Gi-Oh! con la lista completa delle carte, illustrazioni e testo. Trova le carte che ti servono."
     },
     "sets": {
-      "title": "Tutti i set di carte Yu-Gi-Oh! {'|'} One for One",
-      "desc": "Sfoglia ogni set di carte Yu-Gi-Oh! con liste complete, rarità e codici. Gratis su One for One."
+      "title": "Tutti i set di carte Yu-Gi-Oh! {'|'} NoBinder",
+      "desc": "Sfoglia ogni set di carte Yu-Gi-Oh! con liste complete, rarità e codici. Gratis su NoBinder."
     }
   },
   "deckIgnore": {
@@ -1326,7 +1326,7 @@
   },
   "builtWith": {
     "back": "Indietro",
-    "heading": "One for One non trattiene nulla",
+    "heading": "NoBinder non trattiene nulla",
     "intro": "Nessuna commissione sugli scambi, niente da pagare per pubblicare, nessun abbonamento. Tenerlo in piedi costa comunque. Puoi dare una mano in due modi.",
     "ways": {
       "coffee": {
@@ -1605,7 +1605,7 @@
     "discordTitle": "Dimostra il server",
     "discordBody": "Funzionano entrambe le strade e controllano la stessa cosa: che tu abbia il permesso Gestisci server sul Discord a cui punta questa community.",
     "discordBotTitle": "Usa il bot",
-    "discordBotBody": "Il più rapido se il bot One for One è già nel tuo server.",
+    "discordBotBody": "Il più rapido se il bot NoBinder è già nel tuo server.",
     "discordBotAction": "Ottieni un codice",
     "discordBotRun": "Esegui questo nel tuo server, in un canale qualsiasi:",
     "discordBotWaiting": "In attesa del comando",
@@ -1760,7 +1760,7 @@
     },
     "signedOut": {
       "title": "Accedi per creare la tua collezione",
-      "blurb": "One for One confronta il tuo mazzo di scambio con quello che cercano gli altri, quindi serve un account per avere qualcosa da confrontare.",
+      "blurb": "NoBinder confronta il tuo mazzo di scambio con quello che cercano gli altri, quindi serve un account per avere qualcosa da confrontare.",
       "cta": "Accedi o crea un account",
       "browse": "Esplora senza account"
     }
@@ -1867,7 +1867,7 @@
   },
   "setsIndex": {
     "heading": "Tutti i set Yu-Gi-Oh!",
-    "intro": "Sfoglia tutti i {count} set Yu-Gi-Oh! su One for One. Apri un set per vedere ogni carta al suo interno, con rarità e codici, e trova i collezionisti che le scambiano."
+    "intro": "Sfoglia tutti i {count} set Yu-Gi-Oh! su NoBinder. Apri un set per vedere ogni carta al suo interno, con rarità e codici, e trova i collezionisti che le scambiano."
   },
   "archetypesIndex": {
     "heading": "Tutti gli archetipi Yu-Gi-Oh!",

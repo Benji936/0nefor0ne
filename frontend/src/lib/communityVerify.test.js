@@ -190,7 +190,7 @@ describe("a community covered by a Discord Guild Subscription", () => {
   });
 
   it("is not lapsed just because an old Stripe row says canceled", () => {
-    // This is One for One exactly: a cancelled Stripe subscription and a live
+    // This is NoBinder exactly: a cancelled Stripe subscription and a live
     // Discord entitlement. Reading Stripe first showed "your subscription
     // ended" to somebody who is paying right now.
     const s = verifyStep({
