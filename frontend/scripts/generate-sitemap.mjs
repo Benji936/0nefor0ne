@@ -17,6 +17,7 @@ import { fileURLToPath } from "node:url";
 import { TOP_CARD_IDS } from "../src/data/card-ids.js";
 import { TOP_SET_SLUGS } from "../src/data/set-slugs.js";
 import { ARCHETYPES } from "../src/data/archetype-slugs.js";
+import { sitemapVerdict } from "../src/lib/sitemapGuard.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(__dirname, "../public/sitemap.xml");
@@ -39,6 +40,9 @@ const LOCALES   = ["en", "fr", "de", "it"];
 const BASE      = "https://0nefor.one";
 const TODAY     = new Date().toISOString().slice(0, 10);
 const LIMIT     = parseInt(process.argv.find(a => a.startsWith("--limit="))?.split("=")[1] ?? "200", 10);
+const ALLOW_DEGRADED = process.argv.includes("--allow-degraded");
+// Vercel sets both; either one means this run publishes something.
+const IS_CI     = Boolean(process.env.CI || process.env.VERCEL);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -143,7 +147,10 @@ const STATIC_PAGES = [
 // A stale sitemap is a minor SEO problem; a failed build is an outage. Every
 // Supabase failure below therefore degrades to the checked-in card ID list
 // rather than propagating. This function does not throw.
+let degraded = false;
+
 function staticCardFallback(reason) {
+  degraded = true;
   console.warn(`  ${reason}`);
   console.log(`  Using TOP_CARD_IDS fallback from src/data/card-ids.js (${TOP_CARD_IDS.length} IDs)`);
   return TOP_CARD_IDS.map(id => ({ image_id: id, name: null }));
@@ -229,6 +236,24 @@ async function main() {
     .map(name => setUrlEntry({ path: '/set/' + encodeURIComponent(name) }))
     .join('');
   const archetypeEntries = ARCHETYPES.map(a => archetypeUrlEntry(a.slug)).join('');
+
+  // Checked before the writes below, not after: on the fallback path both
+  // sitemap.xml and prerender-cards.generated.json would be overwritten with the
+  // 16-ID list, and the manifest is what includedRoutes prerenders from. Exiting
+  // first leaves the last good pair of files on disk.
+  const verdict = sitemapVerdict({
+    degraded, cardCount: cards.length, limit: LIMIT, isCI: IS_CI, allowDegraded: ALLOW_DEGRADED,
+  });
+  if (verdict.reason) {
+    if (verdict.fatal) {
+      console.error(`\n✗ Refusing to write a degraded sitemap: ${verdict.reason}.`);
+      console.error(`  Nothing was written — sitemap.xml and prerender-cards.generated.json are untouched.`);
+      console.error(`  Vercel will keep serving the last good deployment. Fix the Supabase fetch and redeploy,`);
+      console.error(`  or pass --allow-degraded if a short sitemap really is what you want.`);
+      process.exit(1);
+    }
+    console.warn(`\n⚠ Degraded sitemap: ${verdict.reason}. Continuing (not CI).`);
+  }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <!--
