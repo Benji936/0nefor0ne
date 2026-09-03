@@ -100,7 +100,12 @@ useHead(
     // target that does not resolve to itself gets the whole cluster discarded,
     // taking the valid en and x-default entries with it. Archetype pages are
     // the same shape, hence the widened test rather than a third special case.
-    const isEnglishOnly = /^\/[a-z]{2}\/(card|set|archetype)\//.test(path);
+    // The hubs (/en/sets, /en/archetypes) are English-only too and 301 from the
+    // other three locales, so they belong in this test — but they have no
+    // trailing segment, which the spoke pattern requires. Left out, they would
+    // advertise three alternates that redirect, and a hreflang target that does
+    // not resolve to itself discards the whole cluster.
+    const isEnglishOnly = /^\/[a-z]{2}\/((card|set|archetype)\/|(sets|archetypes)$)/.test(path);
     const enPath = path.replace(new RegExp(`^/${loc}(/|$)`), `/en$1`);
     const canonical = `${BASE}${isEnglishBody ? enPath : path}`;
     const hreflangLinks = [];

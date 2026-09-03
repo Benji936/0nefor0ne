@@ -1108,6 +1108,10 @@
     "archetype": {
       "title": "Archetipi Yu-Gi-Oh! {'|'} One for One",
       "desc": "Sfoglia tutte le carte di un archetipo Yu-Gi-Oh! e trovale nelle collezioni di altri giocatori su One for One."
+    },
+    "archetypes": {
+      "title": "Tutti gli archetipi Yu-Gi-Oh! {'|'} One for One",
+      "desc": "Ogni archetipo Yu-Gi-Oh! con la lista completa delle carte, illustrazioni e testo. Trova le carte che ti servono."
     }
   },
   "deckIgnore": {
@@ -1856,5 +1860,14 @@
   "claimSheet": {
     "eyebrow": "Stai rivendicando",
     "chargeOn": "La tua carta viene registrata ora. Nessun addebito fino al {date}."
+  },
+  "setsIndex": {
+    "heading": "Tutti i set Yu-Gi-Oh!",
+    "intro": "Sfoglia tutti i {count} set Yu-Gi-Oh! su One for One. Apri un set per vedere ogni carta al suo interno, con rarità e codici, e trova i collezionisti che le scambiano."
+  },
+  "archetypesIndex": {
+    "heading": "Tutti gli archetipi Yu-Gi-Oh!",
+    "intro": "Tutti i {count} archetipi Yu-Gi-Oh!, da Abyss a Zoodiac. Aprine uno per vedere ogni carta che contiene, con illustrazioni e testo. Il numero accanto a ogni nome indica quante carte ha.",
+    "jumpLabel": "Vai a una lettera"
   }
 }

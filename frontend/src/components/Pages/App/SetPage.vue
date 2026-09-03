@@ -205,16 +205,15 @@ export default {
             }
           }),
           // Breadcrumbs render as a trail under the result instead of the bare
-          // URL, and they are the only hierarchy signal these pages emit --
-          // there is no /en/sets index for a crawler to infer one from. The
-          // middle rung is /en/cards because that page exists and lists cards;
-          // pointing at /en/set/ would name a directory that serves nothing.
+          // URL. The middle rung was /en/cards while no set index existed; it
+          // now points at the real parent, /en/sets, so the trail describes the
+          // hierarchy a crawler can actually walk.
           ldScript({
             '@context': 'https://schema.org',
             '@type': 'BreadcrumbList',
             itemListElement: [
               { '@type': 'ListItem', position: 1, name: 'Home',         item: 'https://0nefor.one/en/' },
-              { '@type': 'ListItem', position: 2, name: 'Browse Cards', item: 'https://0nefor.one/en/cards' },
+              { '@type': 'ListItem', position: 2, name: 'Card Sets',    item: 'https://0nefor.one/en/sets' },
               { '@type': 'ListItem', position: 3, name: setName,        item: canonicalUrl },
             ],
           }),

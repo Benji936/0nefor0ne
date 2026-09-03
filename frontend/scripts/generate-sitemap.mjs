@@ -127,6 +127,12 @@ function setUrlEntry({ path, changefreq = 'monthly', priority = 0.7 }) {
   </url>`
 }
 
+// Hubs for the set and archetype families. English-only like their spokes, and
+// ranked above them: these are the pages that can hold "yugioh card sets" and
+// "yugioh archetypes", and they are the only internal route into 559 pages that
+// previously had none.
+const HUB_PAGES = ["/sets", "/archetypes"];
+
 // ── Static pages ──────────────────────────────────────────────────────────────
 
 // Only include publicly useful pages — auth-required pages (library, trade, account)
@@ -236,6 +242,9 @@ async function main() {
     .map(name => setUrlEntry({ path: '/set/' + encodeURIComponent(name) }))
     .join('');
   const archetypeEntries = ARCHETYPES.map(a => archetypeUrlEntry(a.slug)).join('');
+  const hubEntries     = HUB_PAGES
+    .map(path => cardUrlEntry({ path, changefreq: "weekly", priority: 0.8 }))
+    .join('');
 
   // Checked before the writes below, not after: on the fallback path both
   // sitemap.xml and prerender-cards.generated.json would be overwritten with the
@@ -263,11 +272,13 @@ async function main() {
   Card pages:   ${cards.length} × en only (non-English locales redirect to /en/card/:id)
   Set pages:    ${TOP_SET_SLUGS.length} × en only
   Archetypes:   ${ARCHETYPES.length} × en only (those under the card floor are pruned post-build)
-  Total <url> entries: ${staticCount + cards.length + TOP_SET_SLUGS.length + ARCHETYPES.length}
+  Hub pages:    ${HUB_PAGES.length} × en only (/en/sets, /en/archetypes)
+  Total <url> entries: ${staticCount + cards.length + TOP_SET_SLUGS.length + ARCHETYPES.length + HUB_PAGES.length}
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${staticEntries}
+${hubEntries}
 ${cardEntries}
 ${setEntries}
 ${archetypeEntries}
@@ -282,7 +293,8 @@ ${archetypeEntries}
   console.log(`  ${cards.length} card pages × en only = ${cards.length} entries`);
   console.log(`  ${TOP_SET_SLUGS.length} set pages × en only = ${TOP_SET_SLUGS.length} entries`);
   console.log(`  ${ARCHETYPES.length} archetype pages × en only = ${ARCHETYPES.length} entries`);
-  console.log(`  Total: ${staticCount + cards.length + TOP_SET_SLUGS.length + ARCHETYPES.length} <url> entries (before pruning)`);
+  console.log(`  ${HUB_PAGES.length} hub pages × en only = ${HUB_PAGES.length} entries`);
+  console.log(`  Total: ${staticCount + cards.length + TOP_SET_SLUGS.length + ARCHETYPES.length + HUB_PAGES.length} <url> entries (before pruning)`);
 }
 
 main().catch(err => { console.error(err); process.exit(1); });
