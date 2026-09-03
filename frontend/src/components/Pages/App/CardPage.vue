@@ -426,8 +426,8 @@ export default {
         const fallbackId = route.params?.id;
         const fallbackImage = cardImage(fallbackId) || 'https://0nefor.one/logo.png';
         const fallbackUrl = `https://0nefor.one${route.path || '/en/card/unknown'}`;
-        const fallbackTitle = "Yu-Gi-Oh! Card | One for One";
-        const fallbackDesc = "Trade Yu-Gi-Oh! cards on One for One: the free card trading platform.";
+        const fallbackTitle = "Yu-Gi-Oh! Card | NoBinder";
+        const fallbackDesc = "Trade Yu-Gi-Oh! cards on NoBinder: the free card trading platform.";
         return {
           title: fallbackTitle,
           meta: [
@@ -451,7 +451,7 @@ export default {
       const loc = route.params?.locale || "en";
       const path = route.path || `/en/card/${card.id}`;
       const image = cardImage(card.id);
-      const title = `${card.name} | Yu-Gi-Oh! | One for One`;
+      const title = `${card.name} | Yu-Gi-Oh! | NoBinder`;
       const raw = card.desc ?? "";
 
       // Build a stats prefix line for monsters and typed spell/trap cards
@@ -465,7 +465,7 @@ export default {
 
       const effectText = raw.length > 0
         ? raw
-        : `Trade ${card.name} on One for One: the free Yu-Gi-Oh! card trading platform.`;
+        : `Trade ${card.name} on NoBinder: the free Yu-Gi-Oh! card trading platform.`;
       const candidate = statsLine ? `${statsLine} — ${effectText}` : effectText;
       const desc = candidate.length > 155 ? candidate.slice(0, 155) + "…" : candidate;
 
@@ -499,7 +499,7 @@ export default {
             // id-based URL here would differ between the prerendered HTML and
             // the hydrated page. The search form is the same at both.
             url: cardmarketUrl({ name: card.name, extension: s.set_code }),
-            seller: { "@type": "Organization", name: "One for One" },
+            seller: { "@type": "Organization", name: "NoBinder" },
           })),
         } : {}),
       };
@@ -914,7 +914,7 @@ export default {
      *  This was `$router.back()` behind an href of "/". On the app's most
      *  crawled page most visitors arrive cold from a search engine, where the
      *  previous history entry is the results page they came from — so "Back to
-     *  search" took them off One for One. history.length does not help: it
+     *  search" took them off NoBinder. history.length does not help: it
      *  counts the whole tab, and reads 30-odd on a fresh landing. Vue Router's
      *  own state.back is null until we have navigated inside the app, which is
      *  exactly the question being asked. */

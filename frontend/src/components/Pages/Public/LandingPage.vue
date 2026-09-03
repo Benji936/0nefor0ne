@@ -1,6 +1,6 @@
 <script setup>
-// Public marketing landing page ("One for One"). Ported faithfully from the
-// exported design (frontend/One for One - Landing (offline).html): 7 sections —
+// Public marketing landing page ("NoBinder"). Ported faithfully from the
+// exported design (frontend/NoBinder - Landing (offline).html): 7 sections —
 // header/nav, hero (3D-tilted app-window mockup + floating mutual-match card),
 // card-art marquee, how-it-works, features, trade showcase, footer.
 //

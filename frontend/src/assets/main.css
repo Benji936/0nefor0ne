@@ -22,7 +22,7 @@
   --c-mutual:    #076B82;
   --c-nav:       #FFFFFF;
   --c-skeleton:  #E2D2F8;
-  /* Landing-page design tokens (exact values from the "One for One" design).
+  /* Landing-page design tokens (exact values from the "NoBinder" design).
      --c-surface-2 already exists above as the rail hover surface; the landing
      design's secondary surface (inputs, progress track) is a distinct, paler
      value, so it gets its own token to avoid changing the rail. */

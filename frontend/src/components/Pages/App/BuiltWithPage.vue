@@ -119,7 +119,7 @@ const STACK        = computed(() => BUILT_WITH_TOOLS.filter((t) => t.group === "
   --sp-lit: inset 0 1px 0 color-mix(in srgb, var(--c-text) 8%, transparent);
   /* Ko-fi's own blue. It belongs on Ko-fi's button and nowhere else: as the
      panel's border, gradient and shadow it made a third party's brand the most
-     saturated thing on a One for One page. */
+     saturated thing on a NoBinder page. */
   --sp-kofi: #72A4F2;
 
   width: var(--sp-w);

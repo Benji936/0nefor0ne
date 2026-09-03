@@ -24,7 +24,7 @@
   },
   "hero": {
     "headline": "Trade duplicates.<br>Hunt your targets.",
-    "subheadline": "One for One connects Yu-Gi-Oh! collectors who have what each other wants. No fees, no auctions, just direct peer-to-peer trades.",
+    "subheadline": "NoBinder connects Yu-Gi-Oh! collectors who have what each other wants. No fees, no auctions, just direct peer-to-peer trades.",
     "cta": "Get started, it's free",
     "learnMore": "How it works",
     "steps": {
@@ -54,9 +54,9 @@
     "hero": {
       "eyebrow": "Peer-to-peer Yu-Gi-Oh! trading",
       "eyebrowAuthed": "Welcome back",
-      "productName": "One for One",
+      "productName": "NoBinder",
       "headline": "Trade duplicates.<br>Hunt your targets.",
-      "subheadline": "One for One connects Yu-Gi-Oh! collectors who have what each other wants. No fees, no auctions: just direct peer-to-peer trades, plus a full card search engine, deck builder, and a wishlist.",
+      "subheadline": "NoBinder connects Yu-Gi-Oh! collectors who have what each other wants. No fees, no auctions: just direct peer-to-peer trades, plus a full card search engine, deck builder, and a wishlist.",
       "ctaGetStarted": "Get started, it's free",
       "ctaGetStartedShort": "Get started",
       "ctaGoToApp": "Go to app",
@@ -121,7 +121,7 @@
     "tradeShowcase": {
       "eyebrow": "The core flow",
       "heading": "One card for one card",
-      "body": "When your trade pile holds a card on someone's wishlist, and they hold one on yours, One for One flags the mutual match. No money, no bidding. Just a fair, direct swap.",
+      "body": "When your trade pile holds a card on someone's wishlist, and they hold one on yours, NoBinder flags the mutual match. No money, no bidding. Just a fair, direct swap.",
       "cta": "Open the Trade Center",
       "labelPile": "Your pile",
       "labelMatch": "MATCH",
@@ -155,8 +155,8 @@
     },
     "donate": {
       "eyebrow": "Support",
-      "heading": "Keep One for One free",
-      "body": "One for One is built and run by one person, with no fees and no ads. If it saves you time, a small tip helps cover the servers and keeps every feature free for everyone.",
+      "heading": "Keep NoBinder free",
+      "body": "NoBinder is built and run by one person, with no fees and no ads. If it saves you time, a small tip helps cover the servers and keeps every feature free for everyone.",
       "bullets": {
         "servers": "Covers hosting and running costs",
         "free": "Keeps the whole site free, no ads",
@@ -177,7 +177,7 @@
       "terms": "Terms",
       "termsOfService": "Terms of Service",
       "contact": "Contact",
-      "copyright": "© 2026 One for One by Benjamin Sitbon. Not affiliated with Konami. Yu-Gi-Oh! is a trademark of its respective owners.",
+      "copyright": "© 2026 NoBinder by Benjamin Sitbon. Not affiliated with Konami. Yu-Gi-Oh! is a trademark of its respective owners.",
       "privacyPolicy": "Privacy Policy",
       "builtWith": "Built with",
       "builtWithStripTitle": "Built with & partners"
@@ -652,7 +652,7 @@
     "communitiesTitle": "Communities",
     "signedOutLead": "{count} card up for trade. | {count} cards up for trade.",
     "signedOutCta": "Sign in to see your matches",
-    "shareDesc": "{name} has {count} cards up for trade on One for One. {where}.",
+    "shareDesc": "{name} has {count} cards up for trade on NoBinder. {where}.",
     "binderRarity": "Filter by rarity",
     "binderAllRarities": "All rarities",
     "listingsTitle": "Active listings",
@@ -806,7 +806,7 @@
     }
   },
   "setPage": {
-    "title": "{setName} {'|'} Yu-Gi-Oh! Set {'|'} One for One",
+    "title": "{setName} {'|'} Yu-Gi-Oh! Set {'|'} NoBinder",
     "cardCount": "0 cards | 1 card | {count} cards",
     "notFound": "Set not found",
     "backToSearch": "Back to search",
@@ -1040,53 +1040,53 @@
       "desc": "Review a trade proposal, its cards, photos and settlement."
     },
     "home": {
-      "title": "One for One {'|'} Peer-to-peer Yu-Gi-Oh! card trading",
-      "desc": "Trade Yu-Gi-Oh! duplicates and hunt your targets with One for One: direct peer-to-peer trades with no fees and no auctions, plus a full card search engine, deck builder, and a wishlist."
+      "title": "NoBinder {'|'} Peer-to-peer Yu-Gi-Oh! card trading",
+      "desc": "Trade Yu-Gi-Oh! duplicates and hunt your targets with NoBinder: direct peer-to-peer trades with no fees and no auctions, plus a full card search engine, deck builder, and a wishlist."
     },
     "search": {
-      "title": "One for One {'|'} Yu-Gi-Oh! Card Trading",
-      "titleWithQuery": "{query} {'|'} Yu-Gi-Oh! Trading {'|'} One for One",
+      "title": "NoBinder {'|'} Yu-Gi-Oh! Card Trading",
+      "titleWithQuery": "{query} {'|'} Yu-Gi-Oh! Trading {'|'} NoBinder",
       "desc": "Trade Yu-Gi-Oh! cards directly with other collectors. List your trade pile, build your wishlist, and find perfect one-for-one matches near you.",
-      "descWithQuery": "Find traders for {query} on One for One, the free Yu-Gi-Oh! card trading platform."
+      "descWithQuery": "Find traders for {query} on NoBinder, the free Yu-Gi-Oh! card trading platform."
     },
     "library": {
-      "title": "My Collection {'|'} One for One",
-      "desc": "Manage your Yu-Gi-Oh! card collection, trade pile, and wishlist on One for One."
+      "title": "My Collection {'|'} NoBinder",
+      "desc": "Manage your Yu-Gi-Oh! card collection, trade pile, and wishlist on NoBinder."
     },
     "trade": {
-      "title": "Trade Center {'|'} One for One",
-      "desc": "Browse your trade matches, send proposals, and complete card trades on One for One."
+      "title": "Trade Center {'|'} NoBinder",
+      "desc": "Browse your trade matches, send proposals, and complete card trades on NoBinder."
     },
     "account": {
-      "title": "My Account {'|'} One for One",
-      "desc": "Manage your One for One profile, location, and trade preferences."
+      "title": "My Account {'|'} NoBinder",
+      "desc": "Manage your NoBinder profile, location, and trade preferences."
     },
     "card": {
-      "title": "Yu-Gi-Oh! Card {'|'} One for One",
-      "desc": "Trade Yu-Gi-Oh! cards on One for One. Find collectors who have it or want it."
+      "title": "Yu-Gi-Oh! Card {'|'} NoBinder",
+      "desc": "Trade Yu-Gi-Oh! cards on NoBinder. Find collectors who have it or want it."
     },
     "privacy": {
-      "title": "Privacy Policy {'|'} One for One",
-      "desc": "Privacy policy for One for One, the free Yu-Gi-Oh! card trading platform."
+      "title": "Privacy Policy {'|'} NoBinder",
+      "desc": "Privacy policy for NoBinder, the free Yu-Gi-Oh! card trading platform."
     },
     "terms": {
-      "title": "Terms of Service {'|'} One for One",
-      "desc": "Terms of Service for One for One, the free peer-to-peer Yu-Gi-Oh! card trading platform operated by Benjamin Sitbon."
+      "title": "Terms of Service {'|'} NoBinder",
+      "desc": "Terms of Service for NoBinder, the free peer-to-peer Yu-Gi-Oh! card trading platform operated by Benjamin Sitbon."
     },
     "cards": {
-      "title": "Browse Yu-Gi-Oh! Cards {'|'} One for One",
-      "desc": "Search and filter the full Yu-Gi-Oh! card database by type, attribute, level, and more. Find cards to add to your trade pile or wishlist on One for One."
+      "title": "Browse Yu-Gi-Oh! Cards {'|'} NoBinder",
+      "desc": "Search and filter the full Yu-Gi-Oh! card database by type, attribute, level, and more. Find cards to add to your trade pile or wishlist on NoBinder."
     },
     "combo": {
-      "title": "Combo Explorer {'|'} One for One",
-      "desc": "See every card a Yu-Gi-Oh! effect can search, Special Summon, or send to the GY. Explore what this card's effect can fetch on One for One."
+      "title": "Combo Explorer {'|'} NoBinder",
+      "desc": "See every card a Yu-Gi-Oh! effect can search, Special Summon, or send to the GY. Explore what this card's effect can fetch on NoBinder."
     },
     "built-with": {
-      "title": "Support One for One: free, no trading fees",
-      "desc": "One for One takes no cut of a trade. Two ways to help keep it that way: a one-off tip, or shopping through our marketplace links at no extra cost."
+      "title": "Support NoBinder: free, no trading fees",
+      "desc": "NoBinder takes no cut of a trade. Two ways to help keep it that way: a one-off tip, or shopping through our marketplace links at no extra cost."
     },
     "community": {
-      "title": "Stores & Communities {'|'} One for One",
+      "title": "Stores & Communities {'|'} NoBinder",
       "desc": "Find Yu-Gi-Oh stores, Discord servers and groups near you."
     },
     "trader": {
@@ -1098,24 +1098,24 @@
       "desc": "A Yu-Gi-Oh store or community on 0nefor.one."
     },
     "communityVerify": {
-      "title": "Verify your community {'|'} One for One",
+      "title": "Verify your community {'|'} NoBinder",
       "desc": "Prove the shop, server or group you run is real, and turn on its verified mark."
     },
     "TradeCenter": {
-      "title": "Trade Centre: matches, proposals and announces {'|'} One for One",
+      "title": "Trade Centre: matches, proposals and announces {'|'} NoBinder",
       "desc": "See who has what you want, answer trade proposals, and post what you are looking for."
     },
     "archetype": {
-      "title": "Yu-Gi-Oh! Archetypes {'|'} One for One",
-      "desc": "Browse every card in a Yu-Gi-Oh! archetype and find them in other collectors' trade piles on One for One."
+      "title": "Yu-Gi-Oh! Archetypes {'|'} NoBinder",
+      "desc": "Browse every card in a Yu-Gi-Oh! archetype and find them in other collectors' trade piles on NoBinder."
     },
     "archetypes": {
-      "title": "Every Yu-Gi-Oh! Archetype {'|'} One for One",
+      "title": "Every Yu-Gi-Oh! Archetype {'|'} NoBinder",
       "desc": "Every Yu-Gi-Oh! archetype with its full card list, art and card text. Find the cards you need and the collectors trading them."
     },
     "sets": {
-      "title": "Every Yu-Gi-Oh! Card Set {'|'} One for One",
-      "desc": "Browse every Yu-Gi-Oh! card set with full card lists, rarities and set codes. Free on One for One."
+      "title": "Every Yu-Gi-Oh! Card Set {'|'} NoBinder",
+      "desc": "Browse every Yu-Gi-Oh! card set with full card lists, rarities and set codes. Free on NoBinder."
     }
   },
   "deckIgnore": {
@@ -1326,7 +1326,7 @@
   },
   "builtWith": {
     "back": "Back",
-    "heading": "One for One takes no cut",
+    "heading": "NoBinder takes no cut",
     "intro": "No fee on a trade, nothing to pay to list, no subscription. Running it still costs money, and there are two ways you can help with that.",
     "ways": {
       "coffee": {
@@ -1605,7 +1605,7 @@
     "discordTitle": "Prove the server",
     "discordBody": "Either route works. Both check the same thing: that you hold Manage Server on the Discord this community points at.",
     "discordBotTitle": "Use the bot",
-    "discordBotBody": "Fastest if the One for One bot is already in your server.",
+    "discordBotBody": "Fastest if the NoBinder bot is already in your server.",
     "discordBotAction": "Get a code",
     "discordBotRun": "Run this in your server, in any channel:",
     "discordBotWaiting": "Waiting for the command",
@@ -1760,7 +1760,7 @@
     },
     "signedOut": {
       "title": "Sign in to set up your collection",
-      "blurb": "One for One matches your trade pile against what other people are looking for, so it needs an account to have anything to match.",
+      "blurb": "NoBinder matches your trade pile against what other people are looking for, so it needs an account to have anything to match.",
       "cta": "Sign in or create an account",
       "browse": "Browse without an account"
     }
@@ -1867,7 +1867,7 @@
   },
   "setsIndex": {
     "heading": "Every Yu-Gi-Oh! card set",
-    "intro": "Browse all {count} Yu-Gi-Oh! sets on One for One. Open a set to see every card in it, with rarities and set codes, and find collectors trading them."
+    "intro": "Browse all {count} Yu-Gi-Oh! sets on NoBinder. Open a set to see every card in it, with rarities and set codes, and find collectors trading them."
   },
   "archetypesIndex": {
     "heading": "Every Yu-Gi-Oh! archetype",

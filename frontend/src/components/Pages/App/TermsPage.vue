@@ -25,7 +25,7 @@
     >{{ $t('terms.englishNote') }}</p>
 
     <p class="text-sm leading-relaxed" style="color: var(--c-muted)">
-      One for One (the "Service") is a free, peer-to-peer Yu-Gi-Oh! card trading platform
+      NoBinder (the "Service") is a free, peer-to-peer Yu-Gi-Oh! card trading platform
       operated by <strong style="color: inherit">Benjamin Sitbon</strong>, an individual based in
       Switzerland ("we", "us", "our"). By creating an account or using the Service, you agree to
       these Terms. We keep them plain English, no legalese. If you do not agree, please do not use
@@ -56,23 +56,23 @@
 <script setup>
 const SECTIONS = [
   {
-    title: "Who runs One for One",
+    title: "Who runs NoBinder",
     body: [
-      "One for One is owned and operated by Benjamin Sitbon as an individual (a sole operator, not a company) based in Switzerland. Where these Terms say \"we\" or \"us\", they mean Benjamin Sitbon.",
+      "NoBinder is owned and operated by Benjamin Sitbon as an individual (a sole operator, not a company) based in Switzerland. Where these Terms say \"we\" or \"us\", they mean Benjamin Sitbon.",
       "You can reach us for any legal or account matter at <a href=\"mailto:benjsit@gmail.com\" style=\"color: var(--c-trade)\">benjsit@gmail.com</a>.",
     ],
   },
   {
     title: "Who can use it",
     body: [
-      "You must be able to form a binding agreement to use the Service. If you are a minor under the law of your country, you may only use One for One with the consent and supervision of a parent or legal guardian.",
+      "You must be able to form a binding agreement to use the Service. If you are a minor under the law of your country, you may only use NoBinder with the consent and supervision of a parent or legal guardian.",
       "One account per person. You are responsible for keeping your login details safe and for everything that happens under your account.",
     ],
   },
   {
     title: "What the Service is (and isn't)",
     body: [
-      "One for One is a tool that helps collectors find each other and arrange trades of physical Yu-Gi-Oh! cards. It is completely free to use.",
+      "NoBinder is a tool that helps collectors find each other and arrange trades of physical Yu-Gi-Oh! cards. It is completely free to use.",
       "<strong style=\"color: inherit\">We are not a party to your trades.</strong> We do not buy, sell, ship, hold, escrow, or handle payment for any card. We do not verify the condition, authenticity, ownership, or value of any card listed. We simply connect willing traders, the trade itself is arranged and completed directly between you and the other person.",
     ],
   },
@@ -86,7 +86,7 @@ const SECTIONS = [
   {
     title: "Acceptable use",
     body: [
-      "You agree not to use One for One to break the law, defraud or harass other users, list counterfeit or stolen cards, impersonate anyone, or post content that is illegal, hateful, or infringing.",
+      "You agree not to use NoBinder to break the law, defraud or harass other users, list counterfeit or stolen cards, impersonate anyone, or post content that is illegal, hateful, or infringing.",
       "You also agree not to scrape, crawl, or bulk-download the Service with automated tools, attempt to break its security, overload its infrastructure, or circumvent any limits we put in place.",
       "We may suspend or remove any account that breaks these rules, with or without notice.",
     ],
@@ -110,8 +110,8 @@ const SECTIONS = [
   {
     title: "Intellectual property",
     body: [
-      "The One for One name, logo, site design, and original content are owned by Benjamin Sitbon. You may not copy or reuse them without permission.",
-      "Yu-Gi-Oh! and all related names, card images, and marks are trademarks of Konami and their respective owners. One for One is an independent fan-made project and is <strong style=\"color: inherit\">not affiliated with, endorsed by, or sponsored by Konami</strong>. Card information and images are sourced from the public YGOProdeck API.",
+      "The NoBinder name, logo, site design, and original content are owned by Benjamin Sitbon. You may not copy or reuse them without permission.",
+      "Yu-Gi-Oh! and all related names, card images, and marks are trademarks of Konami and their respective owners. NoBinder is an independent fan-made project and is <strong style=\"color: inherit\">not affiliated with, endorsed by, or sponsored by Konami</strong>. Card information and images are sourced from the public YGOProdeck API.",
     ],
   },
   {
@@ -123,7 +123,7 @@ const SECTIONS = [
   {
     title: "Limitation of liability",
     body: [
-      "To the fullest extent permitted by law, Benjamin Sitbon is not liable for any indirect, incidental, or consequential damages, or for any loss arising from trades between users, downtime, data loss, or your use of the Service. Because One for One is a free service, our total liability to you is limited to the maximum extent the law allows.",
+      "To the fullest extent permitted by law, Benjamin Sitbon is not liable for any indirect, incidental, or consequential damages, or for any loss arising from trades between users, downtime, data loss, or your use of the Service. Because NoBinder is a free service, our total liability to you is limited to the maximum extent the law allows.",
       "Nothing in these Terms excludes liability that cannot legally be excluded.",
     ],
   },

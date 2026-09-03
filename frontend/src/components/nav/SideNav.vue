@@ -84,8 +84,8 @@ function activate(item) {
       @logout="emit('logout')"
     />
     <button v-else class="sn-logo" :aria-label="$t('nav.search')" @click="emit('navigate', 'search')">
-      <img src="/logo.png" alt="One for One" class="sn-logo-img" />
-      <span v-show="!collapsed" class="sn-wordmark">One for One</span>
+      <img src="/logo.png" alt="NoBinder" class="sn-logo-img" />
+      <span v-show="!collapsed" class="sn-wordmark">NoBinder</span>
     </button>
 
     <!-- Primary destinations (labels become tooltips when collapsed) -->

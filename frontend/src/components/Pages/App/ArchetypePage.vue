@@ -154,12 +154,12 @@ export default {
       const image = artId ? cardImage(artId) : `${BASE}/logo.png`
 
       const title = name
-        ? `${name} Archetype: Every Yu-Gi-Oh! Card | One for One`
-        : 'Yu-Gi-Oh! Archetype | One for One'
+        ? `${name} Archetype: Every Yu-Gi-Oh! Card | NoBinder`
+        : 'Yu-Gi-Oh! Archetype | NoBinder'
 
       const desc = data
-        ? `All ${data.cards.length} cards in the ${name} Yu-Gi-Oh! archetype, with art and card text. Find them in other collectors' trade piles on One for One.`
-        : `Every card in the ${name || 'Yu-Gi-Oh!'} archetype, with art and card text, on One for One.`
+        ? `All ${data.cards.length} cards in the ${name} Yu-Gi-Oh! archetype, with art and card text. Find them in other collectors' trade piles on NoBinder.`
+        : `Every card in the ${name || 'Yu-Gi-Oh!'} archetype, with art and card text, on NoBinder.`
       const truncDesc = desc.length > 155 ? desc.slice(0, 155) + '…' : desc
 
       return {

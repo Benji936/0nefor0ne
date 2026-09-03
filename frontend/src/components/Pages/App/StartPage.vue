@@ -2,7 +2,7 @@
 
      Signing up used to return people to the landing page: the marketing site
      for the product they had just joined. Following it into the app was worse,
-     because every surface that gives One for One its value is derived from
+     because every surface that gives NoBinder its value is derived from
      cards the account does not have yet — a match is your trade pile
      intersected with somebody else's wish list, so a new account matches
      nothing, has no proposals, and shows two empty collection sections.
@@ -188,7 +188,7 @@ const continueLabel = computed(() =>
     <div class="ob-frame">
       <!-- ── Header: where you are, and the way out ── -->
       <header class="ob-head">
-        <img src="/logo.png" alt="One for One" class="ob-logo" />
+        <img src="/logo.png" alt="NoBinder" class="ob-logo" />
 
         <ol class="ob-dots" :aria-label="t('onboarding.progressLabel')">
           <li
