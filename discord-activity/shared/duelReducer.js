@@ -14,21 +14,65 @@ export function initialState() {
     timer: { running: false, startedAt: null, baseElapsedMs: 0 },
     log: [], // [{ seq, text, at }]
     chat: [], // [{ seq, uid, name, text, at }]
-    // Set by the server from a verified store's grant, never by a client
-    // message. See CLIENT_ACTIONS below and the Worker's /api/tournament.
-    tournament: false,
+
+    // ── Set by the server from a signed grant, never by a client message ────
+    // See CLIENT_ACTIONS below and the Worker's /api/context.
+    //
+    // `tracked` used to be called `tournament`, and the rename is the point:
+    // it means "a verified store hosts this duel, so match tracking is
+    // unlocked". That is a monetisation gate. It has never meant "this duel is
+    // a round of a tournament", and once the field below existed the two
+    // readings of one word would have been unreadable within a month.
+    tracked: false,
     host: null, // { name, slug } — the verified community hosting this duel
+
+    // The actual tournament match this room is playing, or null for a casual
+    // duel. Shape: { tournamentId, matchId, roundNumber, tableNumber, bestOf,
+    // community, opponents: { <uid>: { entrantId, name } } }
+    tournament: null,
+    // A courtesy signal, not evidence: the client that successfully reported
+    // the result to 0nefor.one says so, and the reducer records it so the
+    // other player's screen stops asking. The record that counts is the row in
+    // Supabase, which this cannot write. See CLIENT_ACTIONS.
+    reported: null, // { scoreA, scoreB, draws, by, at }
+
     match: null, // { bestOf, rounds: [{ n, winner, lp, at }] }
     seq: 0,
   };
 }
 
 /**
+ * Bring a snapshot persisted by an older build up to date.
+ *
+ * A Durable Object drops its storage when the last socket closes, so this only
+ * ever matters for rooms that are open across a deploy — but those are exactly
+ * the rooms with people in them, and a live duel losing its match tracking
+ * mid-event is the worst moment for it.
+ */
+export function hydrate(saved) {
+  if (!saved || typeof saved !== 'object') return initialState();
+  const base = initialState();
+  const next = { ...base, ...saved };
+  // The old boolean lived under the name the object now uses.
+  if (typeof saved.tournament === 'boolean') {
+    next.tracked = saved.tournament;
+    next.tournament = null;
+  }
+  return next;
+}
+
+/**
  * Everything a client is allowed to ask for.
  *
  * Actions arrive as JSON over a socket, so without this list a player could
- * send `{ t: 'tournament:enable' }` and hand themselves a paid feature. The
- * server-only actions are deliberately absent.
+ * send `{ t: 'context:set' }` and hand themselves both a paid feature and a
+ * tournament match they are not in. The server-only actions are deliberately
+ * absent.
+ *
+ * `tournament:reported` is in the list on purpose. The worst a player can do
+ * with it is tell the room a result was filed when it was not, which changes
+ * nothing that counts — the standings come from Supabase, and this action
+ * cannot reach it.
  */
 export const CLIENT_ACTIONS = new Set([
   'adjustLp', 'setLp', 'resetDuel',
@@ -36,6 +80,7 @@ export const CLIENT_ACTIONS = new Set([
   'chat',
   'timer:start', 'timer:pause', 'timer:reset',
   'match:start', 'match:round', 'match:undo', 'match:reset',
+  'tournament:reported',
 ]);
 
 const BEST_OF = [1, 3, 5];
@@ -156,16 +201,46 @@ export function reduce(state, action) {
       );
     }
 
-    // ── Tournament, for a verified store ──────────────────────────────────────
-    // Server-only: set from the grant the Worker issues, not from a socket
-    // message. It is absent from CLIENT_ACTIONS on purpose.
-    case 'tournament:enable': {
-      if (state.tournament && !action.host) return state;
-      return commit(state, { tournament: true, host: action.host ?? state.host });
+    // ── Verified context, from a signed grant ────────────────────────────────
+    // Server-only: the Worker put this here after checking it, and it is absent
+    // from CLIENT_ACTIONS on purpose. One action rather than two because the
+    // Worker learns all of it in a single call.
+    case 'context:set': {
+      const patch = { tracked: true, host: action.host ?? state.host };
+
+      // A room binds to ONE tournament match: the first one presented to it.
+      // Two players from different tables sharing a voice channel is a real
+      // thing that happens, and the second grant must not move the room out
+      // from under the first player.
+      if (action.tournament && !state.tournament) {
+        patch.tournament = action.tournament;
+        // A tournament duel arrives knowing its format, so nobody taps "best
+        // of 3" at a table where the organizer already decided.
+        if (!state.match) {
+          patch.match = { bestOf: BEST_OF.includes(action.tournament.bestOf) ? action.tournament.bestOf : 3, rounds: [] };
+        }
+      }
+
+      // Nothing new to say. Without this, every reconnect would push a state
+      // update and a log line to both players.
+      if (state.tracked && !patch.tournament && (!action.host || state.host?.slug === action.host?.slug)) {
+        return state;
+      }
+
+      return commit(
+        state,
+        patch,
+        patch.tournament
+          ? `Round ${patch.tournament.roundNumber} · table ${patch.tournament.tableNumber} — best of ${patch.match?.bestOf ?? action.tournament.bestOf}`
+          : null,
+      );
     }
 
     case 'match:start': {
-      if (!state.tournament) return state;
+      if (!state.tracked) return state;
+      // The tournament decided the format. Restarting the match here would
+      // silently disagree with the row the result is going to be filed against.
+      if (state.tournament) return state;
       const bestOf = BEST_OF.includes(action.bestOf) ? action.bestOf : 3;
       return commit(
         state,
@@ -185,7 +260,7 @@ export function reduce(state, action) {
     // because the score line of a round is part of the result a judge is asked
     // to confirm afterwards.
     case 'match:round': {
-      if (!state.tournament || !state.match) return state;
+      if (!state.tracked || !state.match) return state;
       if (matchWinner(state.match)) return state;
       const winner = action.winner;
       if (!state.players[winner]) return state;
@@ -213,17 +288,43 @@ export function reduce(state, action) {
     // A misclick during a match is a result somebody has to argue about, so it
     // is undoable rather than only resettable.
     case 'match:undo': {
-      if (!state.tournament || !state.match?.rounds.length) return state;
+      if (!state.tracked || !state.match?.rounds.length) return state;
       const rounds = state.match.rounds.slice(0, -1);
       return commit(state, { match: { ...state.match, rounds } }, `Round ${rounds.length + 1} taken back`);
     }
 
     case 'match:reset': {
-      if (!state.tournament || !state.match) return state;
+      if (!state.tracked || !state.match) return state;
+      // A tournament match is the tournament's. Clearing it would leave the
+      // room bound to a table with no format and no score to file against it;
+      // a misreported round is what match:undo is for.
+      if (state.tournament) return state;
       return commit(
         state,
         { match: null, lp: freshLp(state), turn: null, timer: { ...STOPPED_TIMER } },
         'Match cleared',
+      );
+    }
+
+    // The result reached 0nefor.one. A courtesy signal so the other player's
+    // screen stops asking them to file it too — see CLIENT_ACTIONS. It records
+    // what was sent, never decides anything, and the row in Supabase is the
+    // only account of this match that counts.
+    case 'tournament:reported': {
+      if (!state.tournament || state.reported) return state;
+      const name = state.players[uid]?.name || 'A duelist';
+      return commit(
+        state,
+        {
+          reported: {
+            scoreA: Math.max(0, Math.floor(action.scoreA ?? 0)),
+            scoreB: Math.max(0, Math.floor(action.scoreB ?? 0)),
+            draws:  Math.max(0, Math.floor(action.draws ?? 0)),
+            by: uid,
+            at: Date.now(),
+          },
+        },
+        `${name} reported the result to 0nefor.one`,
       );
     }
 

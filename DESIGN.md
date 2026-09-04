@@ -279,6 +279,33 @@ Cards in the Trade Center, bucketed by match type. Colored top accent bar, avata
 - **Hover glow:** `box-shadow: 0 12px 40px var(--kind-glow)`, `transform: translateY(-3px)`. GPU-promoted via `will-change: transform` on card thumbnails.
 - **Top accent bar:** 3px linear gradient from the kind color — centered, fading to transparent at edges. Not a side stripe.
 
+### Standings Table (TournamentPage)
+
+The only data table in the product. Everything else here is a card or a row, and standings are the one place where a reader compares seven numbers down a column rather than reading one object at a time.
+
+- **Header cells:** the Label style — 0.66rem, 700, `0.08em` tracking, uppercase, `var(--c-muted)`, with a single `var(--c-border)` rule beneath. No fill; the table is not a panel.
+- **Numeric columns** are right-aligned with `font-variant-numeric: tabular-nums`, so digits line up down the column. Points are 800 weight; nothing else is.
+- **The reader's own row** is tinted `color-mix(in srgb, var(--c-trade) 10%, transparent)` rather than bordered or bolded — it has to be findable in a scan without competing with the points column.
+- **A dropped player** stays in the table in `var(--c-muted)` with a small uppercase tag. Removing them would make the ranks lie about what happened.
+- **Overflow:** the table has a `min-width` and scrolls inside its own `overflow-x: auto` box. The page body never scrolls sideways.
+
+### Status Chip (Tournament)
+
+A small uppercase pill carrying a state — a tournament's status, a match's format, which round it is on.
+
+- **Default:** `var(--c-surface-2)` fill, `var(--c-muted)` text. This is the resting state and covers draft, finished and cancelled.
+- **Live states** take amethyst, because registration is an invitation and amethyst is the color of offering: `color-mix(in srgb, var(--c-trade) 18%, transparent)` for registration and check-in, `28%` once the event is under way.
+- **Quiet variant** (format, round count) is transparent with a `var(--c-border)` outline. It labels rather than signals.
+- Never teal. A status is not an agreement — see The Agreement Rule.
+
+### Tournament Actions
+
+- **Report result** is amethyst (`var(--c-trade)`): a report is an offer, and the other player has not agreed to it yet.
+- **Confirm** and **Finish tournament** are teal (`var(--c-mutual)`), under The Agreement Rule. These are the two moments on the page where two parties line up, and they are the only teal controls on it.
+- **Dispute** is a quiet outline button, not a colored one. Disputing should be cheap and unloaded — a player who is unsure must find it easier to dispute than to confirm something wrong, because a confirmed result costs a judge far more to unwind.
+- **Disputed state** and destructive confirmations use the `#ef4444` tint already established by `.error-bar` in the community dialogs. It is a failure signal, not a palette color, and it never decorates.
+- **Table numbers** are monospace, under The Mono Identifier Rule: a table number is an identifier, read the same way as a set code.
+
 ### Navigation (NavItem)
 
 Icon-only nav items with tooltip and active indicator.

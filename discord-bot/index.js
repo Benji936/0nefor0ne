@@ -37,6 +37,13 @@ const { searchListings } = require('./lib/marketplace');
 const { commandDefinitions, buildSearchEmbed, escapeMd } = require('./lib/slashCommands');
 const { buildEventEmbed, eventAnnouncement } = require('./lib/eventPost');
 const { entitlementIsActive, syncGuildEntitlement } = require('./lib/entitlementSync');
+const {
+  buildRoundEmbed, roundAnnouncement, buildStandingsEmbed,
+  buildTournamentListEmbed, myPairingReply,
+} = require('./lib/tournamentPost');
+const {
+  pickTournament, pickMessage, friendlyError, roundStartedMessage,
+} = require('./lib/tournamentCommands');
 
 // ── Validate env ──────────────────────────────────────────────────────────────
 const {
@@ -1315,6 +1322,102 @@ async function retractEventPosts() {
   }
 }
 
+// ── Round pairings → the community's Discord server ───────────────────────────
+//
+// The same shape as the events loop above, for the same reasons: polling beats
+// another live connection to keep alive, and the ledger's primary key is what
+// makes two bot instances racing produce one failed insert rather than two
+// pairing sheets in the same channel.
+//
+// Faster than the event poll, because this one is time-critical in a way an
+// event announcement is not: players are standing around waiting to be told
+// where to sit. Fifteen seconds is the difference between the bot feeling like
+// part of the tournament and feeling like a mailing list.
+const ROUND_POLL_MS = 15000;
+
+// One line per process, not one line every fifteen seconds.
+let roundRpcWarned = false;
+
+/** Pairings go to the events channel if there is one, else wherever announces go. */
+function roundChannelFor(guildId) {
+  return eventsChannelFor(guildId);
+}
+
+async function postOneRound(row) {
+  const channelId = roundChannelFor(row.guild_id);
+  if (!channelId) {
+    if (!eventChannelWarned.has(row.guild_id)) {
+      eventChannelWarned.add(row.guild_id);
+      console.warn(`[rounds] guild ${row.guild_id} has no channel set — run !seteventchannel there`);
+    }
+    return;
+  }
+
+  // Claim the round before sending anything, exactly as postOneEvent does.
+  const { error: claimErr } = await supabase
+    .from('tournament_round_post')
+    .insert({ round: row.round_id, tournament: row.tournament_id, guild_id: row.guild_id, channel_id: channelId });
+  if (claimErr) {
+    if (claimErr.code !== '23505') console.error('[rounds] could not claim round:', claimErr);
+    return;
+  }
+
+  try {
+    const channel = await client.channels.fetch(channelId);
+    if (!channel?.isTextBased()) {
+      throw Object.assign(new Error('configured channel is not a text channel'), { code: 10003 });
+    }
+    const message = await channel.send({
+      content: roundAnnouncement(row),
+      embeds: [buildRoundEmbed(row, APP_URL)],
+    });
+    await supabase
+      .from('tournament_round_post')
+      .update({ message_id: message.id })
+      .eq('round', row.round_id);
+    console.log(`[rounds] posted round ${row.round_number} of #${row.tournament_id} to ${row.guild_id}/${channelId}`);
+  } catch (err) {
+    if (PERMANENT_DISCORD_ERRORS.has(err?.code)) {
+      // Keep the claim and record why, so the bot stops retrying a channel it
+      // cannot post in every fifteen seconds for the rest of the event.
+      await supabase
+        .from('tournament_round_post')
+        .update({ error: String(err?.message ?? err).slice(0, 300) })
+        .eq('round', row.round_id);
+      console.error(`[rounds] giving up on round ${row.round_id}: ${err?.message ?? err}`);
+    } else {
+      // Release the claim so the next poll tries again.
+      await supabase.from('tournament_round_post').delete().eq('round', row.round_id);
+      console.error(`[rounds] round ${row.round_id} will be retried: ${err?.message ?? err}`);
+    }
+  }
+}
+
+async function postPendingRounds() {
+  try {
+    const { data, error } = await supabase.rpc('discord_pending_round_posts', { p_limit: 5 });
+    if (error) {
+      // Until the tournament migrations are applied this RPC does not exist.
+      // That is a deployment ordering fact, not a fault, and it must not fill
+      // the log with one identical line every fifteen seconds forever.
+      if (error.code === 'PGRST202' || error.code === '42883') {
+        if (!roundRpcWarned) {
+          roundRpcWarned = true;
+          console.warn('[rounds] discord_pending_round_posts is not in the database yet — round announcements are off until the tournament migrations are applied');
+        }
+        return;
+      }
+      console.error('[rounds] pending fetch failed:', error);
+      return;
+    }
+    roundRpcWarned = false;
+    for (const row of data ?? []) await postOneRound(row);
+  } catch (err) {
+    console.error('postPendingRounds failed:', err);
+  }
+}
+
+
 // ── Slash commands ────────────────────────────────────────────────────────────
 // `set()` replaces the whole global command list, so lib/slashCommands.js stays
 // the single source of truth and re-running this is idempotent.
@@ -1489,12 +1592,112 @@ async function handleVerifyCommand(interaction) {
   );
 }
 
+// ── /tournament ───────────────────────────────────────────────────────────────
+//
+// Every reply here is ephemeral. A pairing is between two people, a standings
+// request is one person's curiosity, and a channel full of bot replies is how a
+// useful command becomes a muted one. The one thing that IS public is the round
+// announcement, which the poll loop below posts once per round.
+//
+// The bot never decides anything. It resolves which tournament was meant, hands
+// the interaction's Discord user id to a service-role RPC, and reports what the
+// database said. The permission checks are the same ones the website goes
+// through, because the RPC impersonates the account behind that snowflake and
+// then calls the ordinary function — see 20260904142050_tournament_discord.sql.
+
+/** The live tournaments of the community that runs this guild. */
+async function guildTournaments(guildId) {
+  const { data, error } = await supabase.rpc('discord_tournaments_for_guild', { p_guild_id: guildId });
+  if (error) throw error;
+  return data ?? [];
+}
+
+async function handleTournamentCommand(interaction) {
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+  if (!interaction.guild) {
+    return interaction.editReply('Run this in the server running the tournament, not in a DM.');
+  }
+
+  const sub = interaction.options.getSubcommand();
+  const rows = await guildTournaments(interaction.guild.id);
+
+  if (sub === 'list') {
+    return interaction.editReply({ embeds: [buildTournamentListEmbed(rows, APP_URL)] });
+  }
+
+  const requested = interaction.options.getInteger('id');
+  const picked = pickTournament(rows, requested, sub);
+  if (!picked.ok) return interaction.editReply(pickMessage(picked, sub));
+
+  const t = picked.tournament;
+  const id = t.tournament_id;
+  const who = interaction.user.id;
+  const link = `${APP_URL}/en/community/${t.community_slug}/tournament/${id}`;
+
+  try {
+    switch (sub) {
+      case 'join': {
+        await supabase.rpc('discord_tournament_register', { p_tournament: id, p_discord_user_id: who })
+          .then(throwOnRpcError);
+        return interaction.editReply(
+          `✅ You are in **${escapeMd(t.name)}**.\nYou will get your table when the round starts. ${link}`,
+        );
+      }
+      case 'checkin': {
+        await supabase.rpc('discord_tournament_check_in', { p_tournament: id, p_discord_user_id: who })
+          .then(throwOnRpcError);
+        return interaction.editReply(`✅ Checked in for **${escapeMd(t.name)}**.`);
+      }
+      case 'drop': {
+        await supabase.rpc('discord_tournament_drop', { p_tournament: id, p_discord_user_id: who })
+          .then(throwOnRpcError);
+        return interaction.editReply(`You have dropped out of **${escapeMd(t.name)}**. Rejoin any time registration is open.`);
+      }
+      case 'pairing': {
+        const { data, error } = await supabase.rpc('discord_my_pairing', { p_tournament: id, p_discord_user_id: who });
+        if (error) throw error;
+        return interaction.editReply(myPairingReply(Array.isArray(data) ? data[0] : data));
+      }
+      case 'standings': {
+        const { data, error } = await supabase.rpc('tournament_standings', { p_tournament: id });
+        if (error) throw error;
+        return interaction.editReply({ embeds: [buildStandingsEmbed(t, data, APP_URL)] });
+      }
+      case 'round': {
+        const { data, error } = await supabase.rpc('discord_tournament_generate_round', {
+          p_tournament: id, p_discord_user_id: who,
+        });
+        if (error) throw error;
+        // The pairing sheet itself is not posted here. postPendingRoundPosts
+        // finds the new round within the minute and announces it publicly, so
+        // the sheet lands the same way whether the round was started from
+        // Discord or from the website.
+        return interaction.editReply(`${roundStartedMessage(data)}\nThe pairings will post here shortly. ${link}`);
+      }
+      default:
+        return interaction.editReply('Unknown subcommand.');
+    }
+  } catch (err) {
+    const friendly = friendlyError(err, APP_URL);
+    if (friendly) return interaction.editReply(friendly);
+    console.error(`/tournament ${sub} failed:`, err);
+    return interaction.editReply('⚠️ Something went wrong. Please try again in a moment.');
+  }
+}
+
+/** supabase-js puts an RPC failure in `error` rather than throwing. */
+function throwOnRpcError({ error }) {
+  if (error) throw error;
+}
+
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
   try {
     if (interaction.commandName === 'search') return await handleSearchCommand(interaction);
     if (interaction.commandName === 'lf') return await handleLfCommand(interaction);
     if (interaction.commandName === 'verify') return await handleVerifyCommand(interaction);
+    if (interaction.commandName === 'tournament') return await handleTournamentCommand(interaction);
   } catch (err) {
     console.error(`/${interaction.commandName} failed:`, err);
     const msg = '⚠️ Something went wrong. Please try again in a moment.';
@@ -1528,6 +1731,10 @@ client.once(Events.ClientReady, async (c) => {
   retractEventPosts();
   setInterval(postPendingEvents, EVENT_POLL_MS);
   setInterval(retractEventPosts, EVENT_POLL_MS);
+
+  // Faster than the event poll: players are waiting to be told where to sit.
+  postPendingRounds();
+  setInterval(postPendingRounds, ROUND_POLL_MS);
 
   console.log(`✅ Bot ready — logged in as ${c.user.tag}`);
   console.log(`   Active on ${c.guilds.cache.size} server(s)`);

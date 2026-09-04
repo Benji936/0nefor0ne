@@ -88,13 +88,41 @@ test('prices render number-then-symbol, and a null price reads as trade only', (
 
 // ── definitions ───────────────────────────────────────────────────────────────
 
-test('registers exactly search, lf, verify and duel, with duel as a launch entry point', () => {
+test('registers exactly search, lf, verify, duel and tournament, with duel as a launch entry point', () => {
   const defs = commandDefinitions();
   // The list replaces the full global command set on every boot, so anything
   // missing here is a command that silently disappears from every server.
-  assert.deepEqual(defs.map((d) => d.name), ['search', 'lf', 'verify', 'duel']);
+  assert.deepEqual(defs.map((d) => d.name), ['search', 'lf', 'verify', 'duel', 'tournament']);
   const duel = defs.find((d) => d.name === 'duel');
   assert.equal(duel.type, 4); // PrimaryEntryPoint
   assert.equal(duel.handler, 2); // DiscordLaunchActivity
   assert.equal(duel.options, undefined);
+});
+
+test('/tournament is guild-only and carries the whole event loop', () => {
+  const t = commandDefinitions().find((d) => d.name === 'tournament');
+  // Every subcommand resolves the tournament through the server it was run in,
+  // so there is no useful answer in a DM.
+  assert.equal(t.dm_permission, false);
+  assert.deepEqual(
+    t.options.map((o) => o.name),
+    ['list', 'join', 'pairing', 'standings', 'checkin', 'drop', 'round'],
+  );
+  assert.ok(t.options.every((o) => o.type === 1), 'each option is a subcommand');
+});
+
+// Making somebody look up an id to join the only tournament open would be the
+// friction this is meant to remove; the handler resolves the single candidate.
+test('the tournament id is optional everywhere it appears', () => {
+  const t = commandDefinitions().find((d) => d.name === 'tournament');
+  for (const sub of t.options) {
+    if (sub.name === 'list') {
+      assert.equal(sub.options, undefined, 'list takes nothing');
+      continue;
+    }
+    assert.equal(sub.options.length, 1, `${sub.name} takes only the id`);
+    assert.equal(sub.options[0].name, 'id');
+    assert.equal(sub.options[0].required, false, `${sub.name} must not force an id`);
+    assert.equal(sub.options[0].min_value, 1);
+  }
 });

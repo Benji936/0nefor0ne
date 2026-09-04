@@ -120,9 +120,58 @@ permission, delete the row, and it will be picked up on the next poll.
 | `!seteventchannel [#channel\|clear]` | Manage Server | Where this community's events are posted (defaults to the announces channel) |
 | `!setcommunity <url\|clear>` | **Premium** + Manage Server | Set the community link shown on announces |
 | `/verify <code>` | Manage Server | Link this server to your 0nefor.one community |
+| `/tournament list` | anyone | What this server is running right now |
+| `/tournament join [id]` | anyone | Join a tournament with registration open |
+| `/tournament checkin [id]` | entrant | Check in, once check-in has opened |
+| `/tournament pairing [id]` | entrant | Your table and your opponent, privately |
+| `/tournament standings [id]` | anyone | The current standings |
+| `/tournament drop [id]` | entrant | Drop out |
+| `/tournament round [id]` | organizer | Pair the next round |
 
 The upgrade button uses `ButtonStyle.Premium` + your `sku_id`; Discord renders
 the checkout. Non-premium admins who try `!setcommunity` get the button too.
+
+---
+
+## Tournaments
+
+Needs the tournament migrations (`supabase/migrations/202609041417*.sql` and
+`20260904142050_tournament_discord.sql`) applied, and this server verified
+against a community — the guild link is `community_claim.discord_guild_id`,
+written by `/verify`. Until then `/tournament` finds nothing and the round
+announcer logs one line and stays quiet.
+
+**Setup is on the website.** Creating a tournament needs six fields and a date
+picker, and the community profile already has that form. What the bot carries is
+the loop that repeats during an event, which is where the friction is.
+
+**The id is optional everywhere.** Most servers run one thing at a time, so the
+bot resolves an omitted id to the only candidate at the right stage and asks
+only when there is a genuine choice.
+
+**Every reply is ephemeral.** A pairing is between two people and a channel full
+of bot replies is how a useful command gets muted. The one public message is the
+round announcement.
+
+**Round announcements** work like the events ledger above: `tournament_round_post`
+is polled every 15 seconds, the primary key on `round` is the idempotency
+guarantee, and the sheet goes to the events channel (`!seteventchannel`) or the
+announces channel. Faster than the 60-second event poll because players are
+standing around waiting to be told where to sit.
+
+There is deliberately **no retraction** for a round post, unlike an event post.
+An event that is no longer happening is a stale invitation and must come down. A
+pairing sheet is a record of what was played, and players scroll back to it.
+
+**The bot decides nothing.** It hands the interaction's Discord user id to a
+service-role RPC, which resolves the account that owns that snowflake, becomes
+it for the length of the transaction, and calls the same function the website
+calls. A player impersonated through the bot gets a player's permissions and
+nothing more — there is no separate privileged path to keep in sync. See the
+header comment on `20260904142050_tournament_discord.sql`.
+
+Nobody has to link anything by hand: `Trader.discord_id` is already maintained
+by two auth triggers. Someone who has never signed in gets told to, with a link.
 
 ---
 
