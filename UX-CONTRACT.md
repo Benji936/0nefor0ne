@@ -147,6 +147,8 @@ Legacy proposals remain usable. A proposal without `workflow_phase` follows the 
 | Tournament list on a profile | `TournamentsSection.vue` | live, past disclosure, owner create/edit/delete | `tournaments.test.js` `partitionTournaments`; browser check on the profile |
 | Tournament detail | `TournamentPage.vue` | player, organizer, spectator | responsive browser check, both themes |
 | Pairing and standings | plpgsql (`tournament_generate_round`, `tournament_standings`) | Swiss only today | `supabase/tests/tournament/run.sh` |
+| Duel-to-pairing score mapping | `discord-activity/shared/tournamentResult.js` | Activity result filing | `tournamentResult.test.js`; refuses outright when somebody at the table is not in the pairing |
+| Whether a duel is tracked / a tournament match | `duelReducer.js` `context:set`, from a signed grant | Activity header, match panel | `duelReducer.test.js`, `worker/live-probe.mjs` |
 
 ## Flow ledger
 
@@ -177,6 +179,7 @@ Every row below is a `SECURITY DEFINER` RPC. The website writes no pairing, no r
 | Dispute result | The opponent disputes instead, optionally saying why. | Lock the control. | Match parks as disputed. Nothing is scored. | Keep the reason and show the refusal. |
 | Resolve | The organizer rules on any match — disputed, unreported, or already confirmed. | Lock the form. | The ruling completes the match. Overturning something already scored posts reversal rows first, then the corrected ones. | Show the refusal; the earlier result stands. |
 | Finish | The organizer finishes, only when no match is open. | Lock every organizer control. | Tournament completes. | Show the refusal naming how many matches are still out. |
+| File from the Activity | A player at a tournament table taps Report once a game has been played. | Lock the button and label it Sending. | The match moves to awaiting confirmation with them as reporter, and the room records that it was filed so the opponent's screen stops asking. | Show the database's own refusal — "this result is final", "not a legal score for a best of 3" — and leave the button live. |
 
 ## Navigation and responsive behavior
 
@@ -190,6 +193,13 @@ Every row below is a `SECURITY DEFINER` RPC. The website writes no pairing, no r
 - Standings are a wide table and scroll inside their own `overflow-x` box, so the page body never scrolls sideways on a phone.
 - Reporting, disputing and ruling are inline forms under the match they belong to, not dialogs. They are entered from the
   table you are standing at, often on a phone, and a modal would hide the pairing being argued about.
+- In the Activity, a tournament match shows its round and table in the header and its pairing in the match panel. The
+  format chooser is **absent**, not disabled: the organizer already decided it, and offering a control that would
+  disagree with the row the result files against is worse than not having one. Clear match is absent for the same reason;
+  a misreported round is what Undo is for.
+- The Report button appears from the first game played, not only once the match is decided. A tournament match that ran
+  out of time at one game each is a real result, and hiding the button until somebody "wins" would push the players into
+  inventing a third game.
 - Desktop shows two card piles with a narrow center balance and an action rail. The rail holds what to do next,
   how the trade settles, and the history, and sticks to the viewport as the main column scrolls.
 - Chat is docked, not stacked. A handle fixed to the bottom-right corner opens it as a panel at the right edge,

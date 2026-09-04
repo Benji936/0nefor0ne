@@ -1,17 +1,22 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { setupDiscord, requestTournament } from './discord.js';
+import { setupDiscord, requestContext, submitResult } from './discord.js';
 import { createRoom } from './realtime.js';
 import PlayerLife from './components/PlayerLife.vue';
 import ToolsBar from './components/ToolsBar.vue';
 import DuelTimer from './components/DuelTimer.vue';
 import SidePanel from './components/SidePanel.vue';
 import MatchPanel from './components/MatchPanel.vue';
+import { canReport, resultForViewer, opponentName } from '../shared/tournamentResult.js';
 
 const status = ref('connecting'); // connecting | ready | error
 const errorMsg = ref('');
 const me = ref(null);
 const state = ref(null);
+// Only ever set by a failed filing. The success path is visible in the state
+// itself, because the room records it.
+const reportError = ref('');
+const reporting = ref(false);
 let room = null;
 
 const players = computed(() => {
@@ -25,14 +30,54 @@ function send(action) {
   if (room) room.send(action);
 }
 
+// ── The tournament, if this duel is one ──────────────────────────────────────
+
+const tournament = computed(() => state.value?.tournament ?? null);
+const opponent = computed(() => (state.value ? opponentName(state.value, me.value) : null));
+const myResult = computed(() => (state.value ? resultForViewer(state.value, me.value) : null));
+const reportable = computed(() => (state.value ? canReport(state.value) : { ok: false }));
+
+/**
+ * File the result with 0nefor.one.
+ *
+ * The scores go in the pairing's A/B order, which canReport worked out from the
+ * seat map — sending them the other way round would file a loss as a win.
+ *
+ * The room is told afterwards, and only on success, so the other player's
+ * screen stops asking. That message is a courtesy, not the record: what counts
+ * is the row this just wrote, and the opponent still has to confirm it exactly
+ * as they would a result typed on the website.
+ */
+async function report() {
+  const check = reportable.value;
+  if (!check.ok || reporting.value || !tournament.value) return;
+
+  reporting.value = true;
+  reportError.value = '';
+  const res = await submitResult({
+    matchId: tournament.value.matchId,
+    scoreA: check.scoreA,
+    scoreB: check.scoreB,
+    draws: check.draws,
+  });
+  reporting.value = false;
+
+  if (res.ok) {
+    send({ t: 'tournament:reported', scoreA: check.scoreA, scoreB: check.scoreB, draws: check.draws });
+  } else {
+    reportError.value = res.message;
+  }
+}
+
 onMounted(async () => {
   try {
     const ctx = await setupDiscord();
     me.value = ctx.user.id;
 
     // Never fatal. A duel that cannot get a grant is still a duel; it just has
-    // no match tracking, which is exactly what a free server gets.
-    const { grant } = await requestTournament({ guildId: ctx.guildId, room: ctx.instanceId });
+    // no match tracking and no table number, which is exactly what a casual one
+    // has.
+    const { grant } = await requestContext({ guildId: ctx.guildId, room: ctx.instanceId });
 
     room = createRoom({
       instanceId: ctx.instanceId,
@@ -61,6 +106,9 @@ onUnmounted(() => {
       <div class="brand">
         <span class="mark">Remote Duel</span>
         <span class="sub">{{ state?.host?.name || '0nefor.one' }}</span>
+        <span v-if="tournament" class="table">
+          R{{ tournament.roundNumber }} &middot; Table {{ tournament.tableNumber }}
+        </span>
       </div>
     </header>
 
@@ -91,13 +139,21 @@ onUnmounted(() => {
         <!-- Only in a verified store's server. Absent, not disabled: a free
              duel should look complete, not like a trial of something else. -->
         <MatchPanel
-          v-if="state.tournament"
+          v-if="state.tracked"
           :match="state.match"
           :players="players"
+          :tournament="state.tournament"
+          :reported="state.reported"
+          :opponent="opponent"
+          :my-result="myResult"
+          :reportable="reportable"
+          :reporting="reporting"
+          :report-error="reportError"
           @start="(bestOf) => send({ t: 'match:start', bestOf })"
           @round="(winner) => send({ t: 'match:round', winner })"
           @undo="send({ t: 'match:undo' })"
           @clear="send({ t: 'match:reset' })"
+          @report="report"
         />
 
         <ToolsBar

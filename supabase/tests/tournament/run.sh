@@ -58,7 +58,8 @@ for m in 20260904103000_tournament_schema \
          20260904103100_tournament_registration \
          20260904103200_tournament_pairing \
          20260904103300_tournament_results \
-         20260904110000_tournament_discord; do
+         20260904110000_tournament_discord \
+         20260904120000_activity_tournament; do
   $PSQL -f "$REPO/supabase/migrations/$m.sql" >/dev/null 2>&1
 done
 echo "migrations applied"
@@ -67,7 +68,8 @@ echo "migrations applied"
 # exit, so a broken invariant fails the run rather than scrolling past.
 fail=0
 for t in 10_setup_and_guards 20_registration_and_round_one \
-         30_results_and_disputes 40_rounds_ledger_and_rls 50_discord_bot; do
+         30_results_and_disputes 40_rounds_ledger_and_rls 50_discord_bot \
+         60_activity; do
   if ! psql -h 127.0.0.1 -p $PORT -U postgres -v ON_ERROR_STOP=1 -q -f "$DIR/$t.sql" 2>&1 \
        | grep -E "^──|ok  |FAILED|ERROR" | sed 's/^psql.*NOTICE: //'; then
     fail=1

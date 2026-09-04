@@ -68,6 +68,17 @@ body {
   text-transform: uppercase;
   letter-spacing: 1.5px;
 }
+/* Where you are sitting, which is the one thing a player at a tournament wants
+   from this bar. Carries the accent because it is the only part of the header
+   that is not the same on every duel. */
+.table {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  white-space: nowrap;
+}
 
 /* States */
 .center {

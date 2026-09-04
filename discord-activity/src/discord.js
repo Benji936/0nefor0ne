@@ -64,25 +64,69 @@ export async function setupDiscord() {
   };
 }
 
+const NO_CONTEXT = { tracked: false, host: null, match: null, grant: null };
+
 /**
- * Ask the Worker whether this duel gets tournament mode.
+ * Ask the Worker what this duel is: hosted by a verified store, a round of a
+ * tournament, both, or neither.
  *
- * Returns a grant, not a boolean the caller acts on: the grant is what the
- * socket accepts. A plain `false` here is the normal answer — the duel is free
- * and complete without it — so a failure is treated the same as a no.
+ * Returns a grant alongside the answer, and the grant is the part that matters:
+ * it is what the socket accepts. Nothing the client is told here is what makes
+ * it true — the signature is.
+ *
+ * An empty answer is the normal one. Most duels are casual and complete without
+ * any of this, so a failure is treated exactly the same as a no.
  */
-export async function requestTournament({ guildId, room }) {
-  if (!isEmbedded || !guildId || !auth?.access_token) return { tournament: false };
+export async function requestContext({ guildId, room }) {
+  if (!isEmbedded || !auth?.access_token) return NO_CONTEXT;
   try {
-    const res = await fetch('/.proxy/api/tournament', {
+    const res = await fetch('/.proxy/api/context', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ access_token: auth.access_token, guildId, room }),
     });
-    if (!res.ok) return { tournament: false };
-    return await res.json();
+    if (!res.ok) return NO_CONTEXT;
+    return { ...NO_CONTEXT, ...(await res.json()) };
   } catch {
-    return { tournament: false };
+    return NO_CONTEXT;
+  }
+}
+
+/**
+ * File the result of a tournament match.
+ *
+ * Goes through the Worker rather than straight to Supabase because an Activity
+ * reaching a non-Discord origin needs a URL mapping configured on the
+ * application, and everything here rides the built-in `/.proxy/` mapping to its
+ * own Worker instead.
+ *
+ * The scores are in the match row's A/B order, which the caller works out from
+ * the seat map in the context. Sending them the other way round would file a
+ * loss as a win, so the mapping is done once, in matchScoreForRow().
+ *
+ * Returns `{ ok }` or `{ ok: false, message }`, where the message is the
+ * database's own refusal — "this result is final", "not a legal score for a
+ * best of 3" — which is what the person filing needs to read.
+ */
+export async function submitResult({ matchId, scoreA, scoreB, draws = 0 }) {
+  if (!auth?.access_token) return { ok: false, message: 'Not signed in to Discord.' };
+  try {
+    const res = await fetch('/.proxy/api/result', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        access_token: auth.access_token,
+        match_id: matchId,
+        score_a: scoreA,
+        score_b: scoreB,
+        draws,
+      }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (res.ok && body?.ok) return { ok: true };
+    return { ok: false, message: body?.message || 'That did not go through. Try again in a moment.' };
+  } catch {
+    return { ok: false, message: 'Could not reach 0nefor.one. Try again in a moment.' };
   }
 }
 

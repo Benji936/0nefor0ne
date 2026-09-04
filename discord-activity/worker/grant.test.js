@@ -71,3 +71,46 @@ test('the signature covers the whole payload, not just the slug', async () => {
   const other = await signGrant(SECRET, payload({ guildId: '222' }));
   assert.notEqual(g.split('.')[1], other.split('.')[1]);
 });
+
+// ── The match context rides on the same signature ────────────────────────────
+
+test('a tournament match survives the round trip intact', async () => {
+  const tournament = {
+    matchId: 42, tournamentId: 7, roundNumber: 2, tableNumber: 3, bestOf: 3,
+    playerA: 11, playerB: 22, seats: { '100': 11, '200': 22 },
+  };
+  const grant = await signGrant(SECRET, {
+    room: 'room-1', host: { name: 'Red Line', slug: 'red-line' }, tournament,
+    exp: Date.now() + 60_000,
+  });
+  const read = await readGrant(SECRET, grant, 'room-1');
+  assert.deepEqual(read.tournament, tournament);
+  assert.equal(read.host.slug, 'red-line');
+});
+
+// The reason the socket takes a signature rather than a claim: a player who
+// could edit this would be handing themselves somebody else's table.
+test('editing the match id inside a grant invalidates it', async () => {
+  const grant = await signGrant(SECRET, {
+    room: 'room-1', tournament: { matchId: 42, bestOf: 3 }, exp: Date.now() + 60_000,
+  });
+  const [body, sig] = grant.split('.');
+  const payload = JSON.parse(Buffer.from(body, 'base64url').toString());
+  payload.tournament.matchId = 99;
+  const forged = Buffer.from(JSON.stringify(payload)).toString('base64url') + '.' + sig;
+
+  assert.equal(await readGrant(SECRET, forged, 'room-1'), null);
+});
+
+test('promoting a casual duel to a tournament match needs the secret', async () => {
+  // A real grant for a plain tracked duel, with the match bolted on afterwards.
+  const grant = await signGrant(SECRET, {
+    room: 'room-1', host: { name: 'Red Line', slug: 'red-line' }, exp: Date.now() + 60_000,
+  });
+  const [body, sig] = grant.split('.');
+  const payload = JSON.parse(Buffer.from(body, 'base64url').toString());
+  payload.tournament = { matchId: 1, bestOf: 5, tableNumber: 1, roundNumber: 1 };
+  const forged = Buffer.from(JSON.stringify(payload)).toString('base64url') + '.' + sig;
+
+  assert.equal(await readGrant(SECRET, forged, 'room-1'), null);
+});
