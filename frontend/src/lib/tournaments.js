@@ -7,7 +7,7 @@
 // it is answered once here where tournaments.test.js can hold it to account.
 //
 // Nothing here is authoritative. Every rule below is enforced again in plpgsql
-// (20260904103300_tournament_results.sql) and the database is what decides. The
+// (20260904142006_tournament_results.sql) and the database is what decides. The
 // point of having them here is that a player should not be offered a button
 // that is going to fail, not that the button is what stops them.
 import { getClient } from "@/lib/supabaseClient";

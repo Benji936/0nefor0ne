@@ -10,7 +10,7 @@
 -- access token against Discord itself, which is the only way to establish that
 -- the person asking really is that snowflake, and only then asks these.
 --
--- Both follow discord_act_as (20260904110000): resolve the snowflake to the
+-- Both follow discord_act_as (20260904142050): resolve the snowflake to the
 -- account that owns it, become that account for the length of the transaction,
 -- and call the ordinary function. There is no separate privileged path.
 

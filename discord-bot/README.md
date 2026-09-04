@@ -135,8 +135,8 @@ the checkout. Non-premium admins who try `!setcommunity` get the button too.
 
 ## Tournaments
 
-Needs the tournament migrations (`supabase/migrations/2026090410*.sql` and
-`20260904110000_tournament_discord.sql`) applied, and this server verified
+Needs the tournament migrations (`supabase/migrations/202609041417*.sql` and
+`20260904142050_tournament_discord.sql`) applied, and this server verified
 against a community — the guild link is `community_claim.discord_guild_id`,
 written by `/verify`. Until then `/tournament` finds nothing and the round
 announcer logs one line and stays quiet.
@@ -168,7 +168,7 @@ service-role RPC, which resolves the account that owns that snowflake, becomes
 it for the length of the transaction, and calls the same function the website
 calls. A player impersonated through the bot gets a player's permissions and
 nothing more — there is no separate privileged path to keep in sync. See the
-header comment on `20260904110000_tournament_discord.sql`.
+header comment on `20260904142050_tournament_discord.sql`.
 
 Nobody has to link anything by hand: `Trader.discord_id` is already maintained
 by two auth triggers. Someone who has never signed in gets told to, with a link.

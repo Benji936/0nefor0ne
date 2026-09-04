@@ -54,12 +54,13 @@ $PSQL -c "DROP SCHEMA IF EXISTS public CASCADE;
 $PSQL -f "$DIR/00_shim.sql"    >/dev/null
 $PSQL -f "$DIR/01_helpers.sql" >/dev/null
 
-for m in 20260904103000_tournament_schema \
-         20260904103100_tournament_registration \
-         20260904103200_tournament_pairing \
-         20260904103300_tournament_results \
-         20260904110000_tournament_discord \
-         20260904120000_activity_tournament; do
+for m in 20260904141735_tournament_schema \
+         20260904141835_tournament_registration \
+         20260904141922_tournament_pairing \
+         20260904142006_tournament_results \
+         20260904142050_tournament_discord \
+         20260904142110_activity_tournament \
+         20260904142313_tournament_pin_search_path; do
   $PSQL -f "$REPO/supabase/migrations/$m.sql" >/dev/null 2>&1
 done
 echo "migrations applied"

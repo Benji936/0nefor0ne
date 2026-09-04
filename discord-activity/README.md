@@ -201,7 +201,7 @@ requests — but it would need a credential living as long as a match, and a
 long-lived replayable token is worse than asking the person who just won to tap
 a button.
 
-Needs `supabase/migrations/20260904120000_activity_tournament.sql` and both
+Needs `supabase/migrations/20260904142110_activity_tournament.sql` and both
 `activity-context` and `activity-result` deployed. Set `DISCORD_CLIENT_SECRET`
 in the Supabase project only if you later move grant verification there; today
 neither function needs it.

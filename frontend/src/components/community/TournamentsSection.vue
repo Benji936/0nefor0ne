@@ -19,7 +19,7 @@ const props = defineProps({
 const { t } = useI18n();
 const route = useRoute();
 
-// Running a tournament needs a verified community (RLS, 20260904103000). Same
+// Running a tournament needs a verified community (RLS, 20260904141735). Same
 // reason CommunityEvents checks: filling in the whole dialog and then being
 // refused by the database is the worst possible moment to find out.
 const canCreate = computed(() => props.isOwner && !!props.community?.verified);

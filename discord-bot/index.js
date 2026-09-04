@@ -1603,7 +1603,7 @@ async function handleVerifyCommand(interaction) {
 // the interaction's Discord user id to a service-role RPC, and reports what the
 // database said. The permission checks are the same ones the website goes
 // through, because the RPC impersonates the account behind that snowflake and
-// then calls the ordinary function — see 20260904110000_tournament_discord.sql.
+// then calls the ordinary function — see 20260904142050_tournament_discord.sql.
 
 /** The live tournaments of the community that runs this guild. */
 async function guildTournaments(guildId) {
