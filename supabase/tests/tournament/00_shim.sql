@@ -46,6 +46,18 @@ ALTER TABLE public.community ENABLE ROW LEVEL SECURITY;
 CREATE POLICY community_select_public ON public.community FOR SELECT
   USING (status = 'published' OR owner = auth.uid());
 
+-- The guild link the bot resolves through. Real shape: unique per
+-- (community, claimer), which is why every consumer joins on claimer = owner.
+CREATE TABLE public.community_claim (
+  id                bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  community         bigint NOT NULL REFERENCES public.community(id) ON DELETE CASCADE,
+  claimer           uuid   NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  discord_guild_id  text,
+  created_at        timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (community, claimer)
+);
+ALTER TABLE public.community_claim ENABLE ROW LEVEL SECURITY;
+
 CREATE TABLE public.community_event (
   id        bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   community bigint NOT NULL REFERENCES public.community(id) ON DELETE CASCADE,

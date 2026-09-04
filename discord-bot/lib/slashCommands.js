@@ -117,6 +117,22 @@ function buildSearchEmbed({ query, trading = [], wanted = [], listings = [] }, a
   return embed;
 }
 
+/**
+ * Which tournament, when a server is running more than one.
+ *
+ * Optional on every subcommand on purpose. Most servers have one thing going at
+ * a time, and making somebody look up an id to join the only tournament open
+ * would be the friction this is supposed to remove. The handler resolves an
+ * omitted id to the single candidate and asks only when there is a real choice.
+ */
+const TOURNAMENT_ID_OPTION = {
+  name: 'id',
+  description: 'Which tournament (only needed when more than one is running)',
+  type: ApplicationCommandOptionType.Integer,
+  required: false,
+  min_value: 1,
+};
+
 // ── Definitions ───────────────────────────────────────────────────────────────
 // Passed to client.application.commands.set(), which replaces the full global
 // command list, so this array is the single source of truth.
@@ -181,6 +197,67 @@ function commandDefinitions() {
       description: 'Start a Remote Duel in your voice channel',
       type: ApplicationCommandType.PrimaryEntryPoint,
       handler: EntryPointCommandHandlerType.DiscordLaunchActivity,
+    },
+    {
+      // One command with subcommands rather than six top-level ones: they all
+      // answer questions about the same object, and Discord's picker groups
+      // them where a flat list would bury /search and /lf.
+      //
+      // Guild-only, because every subcommand resolves the tournament through
+      // the server it was run in. There is no useful answer in a DM.
+      //
+      // Deliberately absent: create. It needs six fields and a date picker, and
+      // the website already has that form. What is here is the loop a player or
+      // an organizer repeats during an event, which is where the friction is.
+      name: 'tournament',
+      description: 'Tournaments run by this server on 0nefor.one',
+      type: ApplicationCommandType.ChatInput,
+      dm_permission: false,
+      options: [
+        {
+          name: 'list',
+          description: "What this server is running right now",
+          type: ApplicationCommandOptionType.Subcommand,
+        },
+        {
+          name: 'join',
+          description: 'Join a tournament that has registration open',
+          type: ApplicationCommandOptionType.Subcommand,
+          options: [TOURNAMENT_ID_OPTION],
+        },
+        {
+          name: 'pairing',
+          description: 'Which table you are on, and who you are playing',
+          type: ApplicationCommandOptionType.Subcommand,
+          options: [TOURNAMENT_ID_OPTION],
+        },
+        {
+          name: 'standings',
+          description: 'The current standings',
+          type: ApplicationCommandOptionType.Subcommand,
+          options: [TOURNAMENT_ID_OPTION],
+        },
+        {
+          name: 'checkin',
+          description: 'Check in, once check-in has opened',
+          type: ApplicationCommandOptionType.Subcommand,
+          options: [TOURNAMENT_ID_OPTION],
+        },
+        {
+          name: 'drop',
+          description: 'Drop out of a tournament',
+          type: ApplicationCommandOptionType.Subcommand,
+          options: [TOURNAMENT_ID_OPTION],
+        },
+        {
+          // The one organizer action worth having here: repeated every round,
+          // needs no form, and the organizer is standing in the room.
+          name: 'round',
+          description: 'Organizer: pair the next round',
+          type: ApplicationCommandOptionType.Subcommand,
+          options: [TOURNAMENT_ID_OPTION],
+        },
+      ],
     },
   ];
 }

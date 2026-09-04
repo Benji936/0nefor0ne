@@ -20,3 +20,10 @@ BEGIN
   ELSE RAISE EXCEPTION 'FAILED: %', p_label; END IF;
 END;
 $$;
+
+-- Scratch space for ids a later test needs. Not part of the schema under test:
+-- psql will not interpolate a :variable inside a dollar-quoted DO block, and an
+-- identity id cannot be hardcoded because the sequence advances even on an
+-- insert that RLS refuses.
+CREATE TABLE IF NOT EXISTS public._t (k text PRIMARY KEY, v bigint);
+GRANT ALL ON public._t TO anon, authenticated, service_role;
