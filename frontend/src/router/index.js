@@ -18,6 +18,16 @@ const localeChildren = [
   // Verification is its own route rather than a dialog because the flow leaves
   // the origin twice, for Discord and for Stripe, and has to survive coming back.
   { path: 'community/:slug/verify', name: 'communityVerify', component: () => import(/* webpackChunkName: "community-verify" */ '@/components/Pages/App/CommunityVerifyPage.vue') },
+  // A tournament lives under the community running it, because that is what it
+  // belongs to and the URL should say so. Deliberately absent from
+  // includedRoutes in vite.config.js, from STATIC_PAGES in
+  // generate-sitemap.mjs, and from ROUTES in verify-ssg-output.mjs, for the
+  // same reason /start is: the page needs a session and live data to show
+  // anything, so prerendering it would publish an empty shell — and listing it
+  // in verify-ssg-output.mjs would actively fail the build, since that file's
+  // per-route checks assume a prerendered dist/<route>/index.html exists.
+  // TournamentPage.vue sets robots: noindex at runtime, which is the other half.
+  { path: 'community/:slug/tournament/:id', name: 'tournament', component: () => import(/* webpackChunkName: "tournament" */ '@/components/Pages/App/TournamentPage.vue') },
   // Unlinked on purpose: who may open it is decided by the admin-review Edge
   // Function's allowlist, not by hiding the URL, and there is nobody to show a
   // nav entry to.

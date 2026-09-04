@@ -48,6 +48,7 @@ import PlatformIcon from "@/components/community/PlatformIcon.vue";
 import CommunityKindIcon from "@/components/community/CommunityKindIcon.vue";
 import FollowButton from "@/components/community/FollowButton.vue";
 import CommunityEvents from "@/components/community/CommunityEvents.vue";
+import TournamentsSection from "@/components/community/TournamentsSection.vue";
 import CommunityGiveUp from "@/components/community/CommunityGiveUp.vue";
 import { ldScript } from "@/lib/jsonLd";
 
@@ -1040,6 +1041,16 @@ async function onStale() {
         :community="community"
         :is-owner="isOwner"
         @loaded="onEventsLoaded"
+      />
+
+      <!-- Under the events, because an event is the thing a shop announces and
+           a tournament is one kind of event that ran. No JSON-LD of its own:
+           a tournament page is noindex, so emitting structured data for it
+           would advertise something search engines are told not to fetch. -->
+      <TournamentsSection
+        v-if="!editing"
+        :community="community"
+        :is-owner="isOwner"
       />
 
       <!-- ── Where else you could go ────────────────────────────────────────

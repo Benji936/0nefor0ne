@@ -140,6 +140,13 @@ Legacy proposals remain usable. A proposal without `workflow_phase` follows the 
 | Select/listbox | Vuetify `v-select` | trade method and cash payer | label and keyboard check |
 | Feedback | Existing `v-snackbar` and inline dialog error | success and error | failure-path check |
 | Conversation | Existing `TradeChatPanel.vue`, docked by `TradeChatSleeve.vue` | right-edge panel on desktop, bottom sheet on phone | confirm chat never moves into the top bar; confirm the cards stay visible beside an open desktop panel |
+| What a viewer may do to a match | `lib/tournaments.js` `matchAction` | report, awaiting opponent, respond, disputed, final, resolve, watch | `tournaments.test.js`; a spectator is offered nothing in any match state |
+| Organizer controls | `lib/tournaments.js` `organizerControls` | tournament detail page | `tournaments.test.js`; pairing and finishing are both dark while a table is out |
+| Player controls | `lib/tournaments.js` `playerControls` | tournament detail page | `tournaments.test.js` |
+| Legal match score | `lib/tournaments.js` `isLegalScore`, mirrored by `tournament_score_is_legal` | report form, organizer ruling form | `tournaments.test.js` boundary table; the SQL mirror in `supabase/tests/tournament/` |
+| Tournament list on a profile | `TournamentsSection.vue` | live, past disclosure, owner create/edit/delete | `tournaments.test.js` `partitionTournaments`; browser check on the profile |
+| Tournament detail | `TournamentPage.vue` | player, organizer, spectator | responsive browser check, both themes |
+| Pairing and standings | plpgsql (`tournament_generate_round`, `tournament_standings`) | Swiss only today | `supabase/tests/tournament/run.sh` |
 
 ## Flow ledger
 
@@ -153,9 +160,36 @@ Legacy proposals remain usable. A proposal without `workflow_phase` follows the 
 | Complete exchange | Either trader confirms receipt through the existing action. | Show progress. | Preserve the existing two-person completion and rating flow. | Preserve the current exchange state and allow retry. |
 | Cancel | A participant chooses cancel and confirms when required. | Disable duplicate cancellation. | Keep the existing cancelled history record. | Return to the current state with an error. |
 
+### Tournament flows
+
+Every row below is a `SECURITY DEFINER` RPC. The website writes no pairing, no result and no point through PostgREST, because those four tables carry SELECT policies and no write policies at all.
+
+| Operation | Trigger | Pending | Success | Failure recovery |
+|---|---|---|---|---|
+| Join | A signed-in player opens a tournament in registration or check-in and joins. | Lock the join control. | Add the entrant, taking the display name and Discord id from their own Trader row. | Show the database's refusal — closed, or full. |
+| Check in | A registered player checks in during check-in. | Lock the control. | Mark them checked in. | Show the refusal and leave them registered. |
+| Drop | A player drops themselves; an organizer drops anyone. | Lock the control. | Stamp `dropped_at`; matches already played keep referencing the entrant. | Show the refusal. |
+| Start | The organizer starts from registration or check-in. | Lock every organizer control. | Lock the field, drop anyone who did not check in, seed, set the round target. Starting twice is a no-op that returns the same answer. | Show the refusal; nothing is reshuffled. |
+| Start round | The organizer pairs the next round, only when no match is open. | Lock every organizer control. | One round, one match per table, a bye where the field is odd, `current_round` advanced. | Show the refusal. A second click cannot produce a second set of pairings. |
+| Report result | Either player enters games won, from their own seat. | Lock the form; refuse an impossible score before sending. | Match moves to awaiting confirmation and waits for the opponent. | Keep the numbers on screen and show the refusal. |
+| Correct a report | The player who reported changes their own numbers before the opponent answers. | Lock the form. | Replace the reported score; it still waits for the opponent. | Keep the numbers and show the refusal. |
+| Confirm result | The opponent — never the reporter — confirms. | Lock the control. | The match completes, points post, and the round closes if it was the last table out. Immutable to both players after this. | Show the refusal. |
+| Dispute result | The opponent disputes instead, optionally saying why. | Lock the control. | Match parks as disputed. Nothing is scored. | Keep the reason and show the refusal. |
+| Resolve | The organizer rules on any match — disputed, unreported, or already confirmed. | Lock the form. | The ruling completes the match. Overturning something already scored posts reversal rows first, then the corrected ones. | Show the refusal; the earlier result stands. |
+| Finish | The organizer finishes, only when no match is open. | Lock every organizer control. | Tournament completes. | Show the refusal naming how many matches are still out. |
+
 ## Navigation and responsive behavior
 
 - Trade details keep their existing route, `/:locale/trade/:id`.
+- A tournament lives under the community running it: `/:locale/community/:slug/tournament/:id`. It needs a session and live
+  data to show anything, so it is deliberately absent from `includedRoutes` in `vite.config.js`, from `STATIC_PAGES` in
+  `generate-sitemap.mjs`, and from `ROUTES` in `verify-ssg-output.mjs` — the last one fails the build for any route listed
+  without a prerendered `dist/<route>/index.html`. The page sets `robots: noindex` at runtime.
+- The tournament page opens on the reader's own match, before the pairing list and before the standings. A player arriving
+  mid-round wants their table number, not a list to scan. A spectator has no such block and falls through to the list.
+- Standings are a wide table and scroll inside their own `overflow-x` box, so the page body never scrolls sideways on a phone.
+- Reporting, disputing and ruling are inline forms under the match they belong to, not dialogs. They are entered from the
+  table you are standing at, often on a phone, and a modal would hide the pairing being argued about.
 - Desktop shows two card piles with a narrow center balance and an action rail. The rail holds what to do next,
   how the trade settles, and the history, and sticks to the viewport as the main column scrolls.
 - Chat is docked, not stacked. A handle fixed to the bottom-right corner opens it as a panel at the right edge,
